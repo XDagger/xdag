@@ -17,36 +17,32 @@ Install and run (Linux):
 - Install dependencies: gcc, openssl-dev[el]
 - Clone from the git repository:
 
-$ git clone https://github.com/cheatoshin/cheatcoin.git
+        $ git clone https://github.com/cheatoshin/cheatcoin.git
 
 - Make:
 
-$ cd cheatcoin/cheatcoin
-$ make
+        $ cd cheatcoin/cheatcoin
+        $ make
 
 - Run, for example, with 2 CPU mining threads, attached to testnet, in daemon mode:
 
-$ ./cheatcoin -t -m 2 -d
-
-Enter random characters: [enter]
+        $ ./cheatcoin -t -m 2 -d
+        Enter random characters: [enter]
 
 - Run terminal connected to the daemon in the same folder:
 
-$ cheatcoin -i
-
-cheatcoin> help
-
-[see help]
+        $ cheatcoin -i
+        cheatcoin> help
+        [see help]
 
 - See list of your addresses:
 
-cheatcoin> account
-
-[addresses and amounts]
+        cheatcoin> account
+        [addresses and amounts]
 
 - Transfer funds to another address:
 
-cheatcoin> xfer [amount] [address]
+        cheatcoin> xfer [amount] [address]
 
 
 Main chain idea:
