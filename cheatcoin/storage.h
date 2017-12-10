@@ -1,4 +1,4 @@
-/* локальное хранилище, T13.663-T13.710 $DVS:time$ */
+/* локальное хранилище, T13.663-T13.726 $DVS:time$ */
 
 #ifndef CHEATCOIN_STORAGE_H
 #define CHEATCOIN_STORAGE_H
@@ -22,5 +22,8 @@ extern uint64_t cheatcoin_load_blocks(cheatcoin_time_t start_time, cheatcoin_tim
 
 /* в массив sums помещает суммы блоков по отрезку от start до end, делённому на 16 частей; end - start должно быть вида 16^k */
 extern int cheatcoin_load_sums(cheatcoin_time_t start_time, cheatcoin_time_t end_time, struct cheatcoin_storage_sum sums[16]);
+
+/* завершает работу с хранилищем */
+extern void cheatcoin_storage_finish(void);
 
 #endif

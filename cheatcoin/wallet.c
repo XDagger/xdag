@@ -1,8 +1,9 @@
-/* кошелёк, T13.681-T13.720 $DVS:time$ */
+/* кошелёк, T13.681-T13.726 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 #include "crypt.h"
 #include "wallet.h"
 #include "log.h"
@@ -19,11 +20,13 @@ struct key_internal {
 
 static struct key_internal *def_key = 0;
 static struct cheatcoin_public_key *keys_arr = 0;
+static pthread_mutex_t wallet_mutex = PTHREAD_MUTEX_INITIALIZER;
 int nkeys = 0, maxnkeys = 0;
 
 static int add_key(cheatcoin_hash_t priv) {
 	struct key_internal *k = malloc(sizeof(struct key_internal));
-	if (!k) goto fail;
+	if (!k) return -1;
+	pthread_mutex_lock(&wallet_mutex);
 	if (priv) {
 		memcpy(k->priv, priv, sizeof(cheatcoin_hash_t));
 		k->key = cheatcoin_private_to_key(k->priv, k->pub, &k->pub_bit);
@@ -50,9 +53,11 @@ static int add_key(cheatcoin_hash_t priv) {
 	cheatcoin_debug("Key %2d: priv=[%s] pub=[%02x:%s]", nkeys,
 			cheatcoin_log_hash(k->priv), 0x02 + k->pub_bit,  cheatcoin_log_hash(k->pub));
 	nkeys++;
+	pthread_mutex_unlock(&wallet_mutex);
 	return 0;
 fail:
-	if (k) free(k);
+	pthread_mutex_unlock(&wallet_mutex);
+	free(k);
 	return -1;
 }
 
@@ -90,4 +95,9 @@ struct cheatcoin_public_key *cheatcoin_wallet_default_key(int *n_key) {
 struct cheatcoin_public_key *cheatcoin_wallet_our_keys(int *pnkeys) {
 	*pnkeys = nkeys;
 	return keys_arr;
+}
+
+/* завершает работу с кошельком */
+void cheatcoin_wallet_finish(void) {
+	pthread_mutex_lock(&wallet_mutex);
 }

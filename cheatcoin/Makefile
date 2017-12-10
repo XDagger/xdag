@@ -1,4 +1,4 @@
-# cheatcoin: Makefile; T13.656-T13.715; $DVS:time$
+# cheatcoin: Makefile; T13.656-T13.726; $DVS:time$
 
 dnet	 = ../dnet
 dfstools = ../dus/programs/dfstools/source
@@ -71,7 +71,7 @@ headers = \
 	$(ldusinc)/rbtree.h				\
 
 
-flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -g -lpthread -lcrypto -lm -Wall -Werror -Wmissing-prototypes
+flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -g -lpthread -lcrypto -lm -Wall -Wmissing-prototypes
 
 
 all: cheatcoin

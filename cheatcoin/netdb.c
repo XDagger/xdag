@@ -1,4 +1,4 @@
-/* база хостов, T13.714-T13.716 $DVS:time$ */
+/* база хостов, T13.714-T13.726 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -183,4 +183,9 @@ unsigned cheatcoin_netdb_receive(const uint8_t *data, unsigned len) {
 		find_add_host(&h);
 	}
 	return 6 * i;
+}
+
+/* завершает работу с базой хостов */
+void cheatcoin_netdb_finish(void) {
+	pthread_mutex_lock(&host_mutex);
 }

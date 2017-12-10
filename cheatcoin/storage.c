@@ -1,4 +1,4 @@
-/* локальное хранилище, T13.663-T13.715 $DVS:time$ */
+/* локальное хранилище, T13.663-T13.726 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -184,4 +184,9 @@ int cheatcoin_load_sums(cheatcoin_time_t start_time, cheatcoin_time_t end_time, 
 		for (i = 0; i < 256; ++i) sums[i >> 4].size += buf[i].size, sums[i >> 4].sum += buf[i].sum;
 	} else memcpy(sums, buf + (start_time >> ((level + 4) * 4) & 0xf0), 16 * sizeof(struct cheatcoin_storage_sum));
 	return 1;
+}
+
+/* завершает работу с хранилищем */
+void cheatcoin_storage_finish(void) {
+	pthread_mutex_lock(&storage_mutex);
 }

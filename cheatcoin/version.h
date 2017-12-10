@@ -3,9 +3,12 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.720" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.726" /* $DVS:time$ */
 
 /* история
+
+T13.726 исправлена ошибка, когда вновь созданный блок отвергается; сделана команда
+	terminate для завершения демона
 
 T13.720 добавлены генерация новых ключей и транзакции с разными ключами, README.md
 

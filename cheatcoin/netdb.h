@@ -1,4 +1,4 @@
-/* база хостов, T13.714-T13.715 $DVS:time$ */
+/* база хостов, T13.714-T13.726 $DVS:time$ */
 
 #ifndef CHEATCOIN_NETDB_H
 #define CHEATCOIN_NETDB_H
@@ -12,5 +12,8 @@ extern unsigned cheatcoin_netdb_send(uint8_t *data, unsigned len);
 
 /* читает данные, переданные другим хостом */
 extern unsigned cheatcoin_netdb_receive(const uint8_t *data, unsigned len);
+
+/* завершает работу с базой хостов */
+extern void cheatcoin_netdb_finish(void);
 
 #endif

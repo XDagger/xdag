@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.720 $DVS:time$ */
+/* работа с блоками, T13.654-T13.726 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -416,8 +416,10 @@ begin:
 	b[0].field[0].type = CHEATCOIN_FIELD_HEAD | (mining ? (uint64_t)CHEATCOIN_FIELD_SIGN_IN << ((CHEATCOIN_BLOCK_FIELDS - 1) * 4) : 0);
 	b[0].field[0].time = send_time;
 	b[0].field[0].amount = fee;
-	if (res < CHEATCOIN_BLOCK_FIELDS && mining && top_main_chain) { setfld(CHEATCOIN_FIELD_OUT, top_main_chain->hash, cheatcoin_hashlow_t); res++; }
-	for (ref = noref_first; ref && res < CHEATCOIN_BLOCK_FIELDS; ref = ref->ref, ++res) setfld(CHEATCOIN_FIELD_OUT, ref->hash, cheatcoin_hashlow_t);
+	if (res < CHEATCOIN_BLOCK_FIELDS && mining && top_main_chain && top_main_chain->time < send_time)
+		{ setfld(CHEATCOIN_FIELD_OUT, top_main_chain->hash, cheatcoin_hashlow_t); res++; }
+	for (ref = noref_first; ref && res < CHEATCOIN_BLOCK_FIELDS; ref = ref->ref) if (ref->time < send_time)
+		{ setfld(CHEATCOIN_FIELD_OUT, ref->hash, cheatcoin_hashlow_t); res++; }
 	for (j = 0; j < ninput; ++j) setfld(CHEATCOIN_FIELD_IN, fields + j, cheatcoin_hash_t);
 	for (j = 0; j < noutput; ++j) setfld(CHEATCOIN_FIELD_OUT, fields + ninput + j, cheatcoin_hash_t);
 	for (j = 0; j < nkeysnum; ++j) {

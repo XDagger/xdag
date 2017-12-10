@@ -1,6 +1,7 @@
-/* cheatcoin main, T13.654-T13.720 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.726 $DVS:time$ */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -148,7 +149,8 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 		    "  level [N]   - print level of logging or set it to N (0 - nothing, ..., 9 - all)\n"
 		    "  net command - run transport layer command, try 'net help'\n"
 		    "  stats       - print statistics for loaded and all known blocks\n"
-		    "  xfer S A    - transfer S our cheatcoins to the address A\n"
+			"  terminate   - terminate both daemon and this program\n"
+			"  xfer S A    - transfer S our cheatcoins to the address A\n"
 		);
 	} else if (!strcmp(cmd, "keygen")) {
 		int res = cheatcoin_wallet_new_key();
@@ -182,6 +184,11 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			amount2cheatcoins(cheatcoin_get_supply(g_cheatcoin_stats.nmain)),
 			amount2cheatcoins(cheatcoin_get_supply(g_cheatcoin_stats.total_nmain))
 		);
+	} else if (!strcmp(cmd, "terminate")) {
+		cheatcoin_wallet_finish();
+		cheatcoin_netdb_finish();
+		cheatcoin_storage_finish();
+		return -1;
 	} else if (!strcmp(cmd, "xfer")) {
 		struct xfer_callback_data xfer;
 		memset(&xfer, 0, sizeof(xfer));
@@ -221,13 +228,14 @@ static int terminal(void) {
 		if (fd < 0) { printf("Can't open pipe.\n"); continue; }
 		while (read(fd, &c, 1) == 1 && c) putchar(c);
 		close(fd);
+		if (!strcmp(ptr, "terminate")) break;
 	}
 	return 0;
 }
 
 static void *terminal_thread(void *arg) {
 	char cmd[CHEATCOIN_COMMAND_MAX];
-	int pos, in, out, c;
+	int pos, in, out, c, res;
 	FILE *fout;
 	mkfifo(FIFO_IN, 0660);
 	mkfifo(FIFO_OUT, 0660);
@@ -238,12 +246,13 @@ static void *terminal_thread(void *arg) {
 		fout = fdopen(out, "w"); if (!fout) { cheatcoin_err("Can't fdopen " FIFO_OUT); break; }
 		for (pos = 0; pos < CHEATCOIN_COMMAND_MAX - 1 && read(in, &c, 1) == 1 && c; ++pos) cmd[pos] = c;
 		cmd[pos] = 0;
-		cheatcoin_command(cmd, fout);
+		res = cheatcoin_command(cmd, fout);
 		fputc(0, fout);
 		fflush(fout);
 		fclose(fout);
 //		close(out);
 		close(in);
+		if (res < 0) exit(0);
 		sleep(1);
 	}
 	return 0;
