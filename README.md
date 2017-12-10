@@ -1,6 +1,9 @@
 The cheatcoin cryptocurrency
 ============================
 
+Official site: http://cheatcoin.atwebpages.com
+
+
 Principles:
 ----------
 
@@ -14,7 +17,12 @@ Principles:
 Install and run (Linux):
 -----------------------
 
-- Install dependencies: gcc, openssl-dev[el]
+- Install dependencies:
+
+		$ sudo dnf install gcc openssl-devel
+		or
+		$ sudo apt-get install gcc libssl-dev
+
 - Clone from the git repository:
 
         $ git clone https://github.com/cheatoshin/cheatcoin.git
