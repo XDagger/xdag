@@ -1,4 +1,4 @@
-/* база хостов, T13.714-T13.726 $DVS:time$ */
+/* база хостов, T13.714-T13.734 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -104,7 +104,7 @@ static int read_database(const char *fname, int flags) {
 	char str[64], *p;
 	FILE *f = fopen(fname, "r");
 	int n = 0;
-	if (!f) return 0;
+	if (!f) return -1;
 	while(fscanf(f, "%s", str) == 1) {
 		p = strchr(str, ':');
 		if (!p || !p[1]) continue;
@@ -135,6 +135,7 @@ static void *monitor_thread(void *arg) {
 		n_selected_hosts = 0;
 		if (our_host) selected_hosts[n_selected_hosts++] = our_host;
 		n = read_database("netdb.tmp", HOST_CONNECTED | HOST_SET | HOST_NOT_ADD);
+		if (n < 0) n = 0;
 		for (i = 0; i < MAX_SELECTED_HOSTS; ++i) {
 			struct host *h = random_host(HOST_CONNECTED | HOST_OUR);
 			char str[64];
@@ -156,7 +157,7 @@ static void *monitor_thread(void *arg) {
 int cheatcoin_netdb_init(const char *our_host_str, int npairs, const char **addr_port_pairs) {
 	pthread_t t;
 	int i;
-	read_database(DATABASE, HOST_INDB);
+	if (read_database(DATABASE, HOST_INDB) < 0) { cheatcoin_fatal("Can't find file '%s'\n", DATABASE); return -1; }
 	our_host = find_add_ipport(our_host_str, HOST_OUR | HOST_SET);
 	for (i = 0; i < npairs; ++i) find_add_ipport(addr_port_pairs[i], 0);
 	if (pthread_create(&t, 0, monitor_thread, 0)) { cheatcoin_fatal("Can't start netdb thread\n"); return -1; }

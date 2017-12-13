@@ -1,4 +1,4 @@
-/* транспорт, T13.654-T13.718 $DVS:time$ */
+/* транспорт, T13.654-T13.734 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -58,12 +58,16 @@ static int block_arrive_callback(void *packet, void *connection) {
 				case CHEATCOIN_MESSAGE_BLOCKS_REQUEST:
 					{
 						struct cheatcoin_send_data *d = (struct cheatcoin_send_data *)malloc(sizeof(struct cheatcoin_send_data));
-						pthread_t t;
 						if (!d) return -1;
 						memcpy(&d->b, b, sizeof(struct cheatcoin_block));
 						d->connection = connection;
-						if (pthread_create(&t, 0, cheatcoin_send_thread, d) < 0) { free(d); return -1; }
-						pthread_detach(t);
+						if (b->field[0].end_time - b->field[0].time == 1ll << 16) {
+							cheatcoin_send_thread(d);
+						} else {
+							pthread_t t;
+							if (pthread_create(&t, 0, cheatcoin_send_thread, d) < 0) { free(d); return -1; }
+							pthread_detach(t);
+						}
 					}
 					break;
 				case CHEATCOIN_MESSAGE_BLOCKS_REPLY:

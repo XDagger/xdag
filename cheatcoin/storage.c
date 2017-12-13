@@ -1,4 +1,4 @@
-/* локальное хранилище, T13.663-T13.726 $DVS:time$ */
+/* локальное хранилище, T13.663-T13.734 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -81,6 +81,7 @@ int64_t cheatcoin_storage_save(const struct cheatcoin_block *b) {
 	pthread_mutex_lock(&storage_mutex);
 	f = fopen(path, "a");
 	if (f) {
+		fseek(f, 0, SEEK_END);
 		res = ftell(f);
 		fwrite(b, sizeof(struct cheatcoin_block), 1, f);
 		fclose(f);

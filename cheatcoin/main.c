@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.726 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.734 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -138,8 +138,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			balance = cheatcoin_get_balance(hash);
 		} else balance = cheatcoin_get_balance(0);
 		fprintf(out, "Balance: %.9Lf cheatcoins\n", amount2cheatcoins(balance));
-	} else if (!strcmp(cmd, "exit")) return -1;
-	else if (!strcmp(cmd, "help")) {
+	} else if (!strcmp(cmd, "help")) {
 		fprintf(out, "Commands:\n"
 			"  account [N] - print first N (20 by default) our addresses with their amounts\n"
 			"  balance [A] - print balance of the address A or total balance for all our addresses\n"
@@ -184,7 +183,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			amount2cheatcoins(cheatcoin_get_supply(g_cheatcoin_stats.nmain)),
 			amount2cheatcoins(cheatcoin_get_supply(g_cheatcoin_stats.total_nmain))
 		);
-	} else if (!strcmp(cmd, "terminate")) {
+	} else if (!strcmp(cmd, "exit") || !strcmp(cmd, "terminate")) {
 		cheatcoin_wallet_finish();
 		cheatcoin_netdb_finish();
 		cheatcoin_storage_finish();
