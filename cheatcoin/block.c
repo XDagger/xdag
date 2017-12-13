@@ -73,7 +73,7 @@ static inline int lessthen(struct ldus_rbtree *l, struct ldus_rbtree *r) {
 
 ldus_rbtree_define_prefix(lessthen, static inline, )
 
-static struct block_internal *block_by_hash(cheatcoin_hashlow_t hash) {
+static struct block_internal *block_by_hash(const cheatcoin_hashlow_t hash) {
 	return (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
 }
 
@@ -547,7 +547,20 @@ int cheatcoin_traverse_our_blocks(void *data, int (*callback)(void *data, cheatc
 cheatcoin_amount_t cheatcoin_get_balance(cheatcoin_hash_t hash) {
 	struct block_internal *bi;
 	if (!hash) return g_balance;
+	pthread_mutex_lock(&block_mutex);
 	bi = block_by_hash(hash);
+	pthread_mutex_unlock(&block_mutex);
 	if (!bi) return 0;
 	return bi->amount;
+}
+
+/* по хешу блока возвращает его позицию в хранилище и время */
+int64_t cheatcoin_get_block_pos(const cheatcoin_hash_t hash, cheatcoin_time_t *t) {
+	struct block_internal *bi;
+	pthread_mutex_lock(&block_mutex);
+	bi = block_by_hash(hash);
+	pthread_mutex_unlock(&block_mutex);
+	if (!bi) return -1;
+	*t = bi->time;
+	return bi->storage_pos;
 }

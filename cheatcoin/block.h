@@ -22,6 +22,9 @@ enum cheatcoin_message_type {
 	CHEATCOIN_MESSAGE_BLOCKS_REPLY,
 	CHEATCOIN_MESSAGE_SUMS_REQUEST,
 	CHEATCOIN_MESSAGE_SUMS_REPLY,
+	CHEATCOIN_MESSAGE_BLOCKEXT_REQUEST,
+	CHEATCOIN_MESSAGE_BLOCKEXT_REPLY,
+	CHEATCOIN_MESSAGE_BLOCK_REQUEST,
 };
 
 #define CHEATCOIN_BLOCK_FIELDS 16
@@ -76,5 +79,8 @@ extern cheatcoin_amount_t cheatcoin_get_balance(cheatcoin_hash_t hash);
 
 /* по данному кол-ву главных блоков возвращает объем циркулирующих читкоинов */
 extern cheatcoin_amount_t cheatcoin_get_supply(uint64_t nmain);
+
+/* по хешу блока возвращает его позицию в хранилище и время */
+extern int64_t cheatcoin_get_block_pos(const cheatcoin_hash_t hash, cheatcoin_time_t *time);
 
 #endif
