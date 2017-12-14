@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "system.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_random.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_string.h"
@@ -18,8 +19,13 @@
 #define SECTOR_SIZE (1 << SECTOR_LOG)
 #define KEYLEN_MIN	(DNET_KEYLEN / 4)
 
+#ifndef _WIN32
 extern int gethostname(char *name, size_t namelen);
 extern int getlogin_r(char *name, size_t namesize);
+#else
+#define gethostname(n, l) strncpy(n, "localhost", l)
+#define getlogin_r(n, l) strncpy(n, "Administrator", l)
+#endif
 
 struct dnet_keys {
     struct dnet_key priv;

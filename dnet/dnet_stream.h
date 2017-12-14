@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <sys/types.h>
+#include "system.h"
 #include "dthread.h"
 #include "dnet_packet.h"
 #include "dnet_log.h"

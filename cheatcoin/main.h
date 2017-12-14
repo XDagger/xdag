@@ -9,7 +9,7 @@ extern struct cheatcoin_stats {
 	cheatcoin_diff_t difficulty, max_difficulty;
 	uint64_t nblocks, total_nblocks;
 	uint64_t nmain, total_nmain;
-	uint32_t nhosts, total_nhosts;
+	uint32_t nhosts, total_nhosts, reserved1, reserved2;
 } g_cheatcoin_stats;
 
 extern struct cheatcoin_ext_stats {

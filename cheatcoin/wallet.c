@@ -33,7 +33,7 @@ static int add_key(cheatcoin_hash_t priv) {
 	} else {
 		FILE *f;
 		k->key = cheatcoin_create_key(k->priv, k->pub, &k->pub_bit);
-		f = fopen(WALLET_FILE, "a");
+		f = fopen(WALLET_FILE, "ab");
 		if (!f) goto fail;
 		if (fwrite(k->priv, sizeof(cheatcoin_hash_t), 1, f) != 1) { fclose(f); goto fail; }
 		fclose(f);
@@ -71,7 +71,7 @@ int cheatcoin_wallet_new_key(void) {
 /* инициализировать кошелёк */
 int cheatcoin_wallet_init(void) {
 	cheatcoin_hash_t priv;
-	FILE *f = fopen(WALLET_FILE, "r");
+	FILE *f = fopen(WALLET_FILE, "rb");
 	if (!f) {
 		if (add_key(0)) return -1;
 		f = fopen(WALLET_FILE, "r");

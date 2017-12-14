@@ -1,4 +1,4 @@
-/* транспорт, T13.654-T13.734 $DVS:time$ */
+/* транспорт, T13.654-T13.718 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -47,7 +47,7 @@ static int block_arrive_callback(void *packet, void *connection) {
 	    case CHEATCOIN_FIELD_NONCE:
 			{
 			struct cheatcoin_stats *s = (struct cheatcoin_stats *)&b->field[2], *g = &g_cheatcoin_stats;
-			if (s->max_difficulty > g->max_difficulty) g->max_difficulty = s->max_difficulty;
+			if (cheatcoin_diff_gt(s->max_difficulty, g->max_difficulty)) g->max_difficulty = s->max_difficulty;
 			if (s->total_nblocks  > g->total_nblocks)  g->total_nblocks  = s->total_nblocks;
 			if (s->total_nmain    > g->total_nmain)    g->total_nmain    = s->total_nmain;
 			if (s->total_nhosts   > g->total_nhosts)   g->total_nhosts   = s->total_nhosts;
@@ -141,7 +141,7 @@ int cheatcoin_generate_random_array(void *array, unsigned long size) {
 static int do_request(int type, cheatcoin_time_t start_time, cheatcoin_time_t end_time, void *data,
 		void *(*callback)(void *block, void *data)) {
 	struct cheatcoin_block b;
-	int i;
+	time_t t;
 	b.field[0].type = type << 4 | CHEATCOIN_FIELD_NONCE;
 	b.field[0].time = start_time;
 	b.field[0].end_time = end_time;
@@ -150,15 +150,15 @@ static int do_request(int type, cheatcoin_time_t start_time, cheatcoin_time_t en
 	memcpy(&b.field[2], &g_cheatcoin_stats, sizeof(g_cheatcoin_stats));
 	cheatcoin_netdb_send((uint8_t *)&b.field[2] + sizeof(struct cheatcoin_stats),
 			14 * sizeof(struct cheatcoin_field) - sizeof(struct cheatcoin_stats));
-	reply_result = -1l;
+	reply_result = -1ll;
 	reply_data = data;
 	reply_callback = callback;
-	if (!start_time && end_time == 1l << 48) {
+	if (!start_time && end_time == 1ll << 48) {
 		reply_connection = dnet_send_cheatcoin_packet(&b, 0);
 		if (!reply_connection) return 0;
 	} else dnet_send_cheatcoin_packet(&b, reply_connection);
-	for (i = 0; i < 10 && reply_result < 0; ++i) sleep(1);
-	return reply_result;
+	for (t = time(0); reply_result < 0 && time(0) - t < 10; ) sleep(1);
+	return (int)reply_result;
 }
 
 /* запросить у другого хоста все блоки, попадающиев данный временной интервал; для каждого блока вызывается функция

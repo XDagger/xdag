@@ -5,9 +5,11 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
+#ifndef _WIN32
 #include <signal.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#endif
 #include "dnet_crypt.h"
 #include "dnet_database.h"
 #include "dnet_history.h"
@@ -28,6 +30,7 @@ static void catcher(int signum) {
 #endif
 
 static void daemonize(void) {
+#ifndef _WIN32
 #ifndef QDNET
 	int i;
 #ifndef __LDuS__
@@ -62,10 +65,11 @@ static void daemonize(void) {
 		signal(i, &catcher);
 #endif
 #endif
+#endif
 }
 
 static void angelize(void) {
-#if !defined(__LDuS__) && !defined(QDNET)
+#if !defined(__LDuS__) && !defined(QDNET) && !defined(_WIN32)
     int stat;
     pid_t childpid;
 	while ((childpid = fork())) {
@@ -102,7 +106,7 @@ int main(int argc, char **argv) {
 	}
 #endif
 
-    if (dnet_threads_init() || dnet_hosts_init()) {
+    if (system_init() || dnet_threads_init() || dnet_hosts_init()) {
 		err = 4; mess = "initializing error"; goto end;
     }
 

@@ -3,6 +3,12 @@
 #ifndef DFSLIB_TYPES_H_INCLUDED
 #define DFSLIB_TYPES_H_INCLUDED
 
+#ifdef _WIN32
+#ifndef inline
+#define inline __inline
+#endif
+#endif
+
 enum dfslib_errors {
 	DFSLIB_ERROR_MAX		= -2,
 	DFSLIB_NOT_REALIZED		= -2,

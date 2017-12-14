@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef CHEATCOIN
 #include <dirent.h>
 #include <limits.h>
 #include <pthread.h>
@@ -11,6 +12,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#endif
 #include "dnet_files.h"
 #include "dnet_command.h"
 #include "dnet_threads.h"
@@ -20,6 +22,7 @@
 
 /* копирование из источника from в назначение to; источник и назначение заданы в формате [host:]port */
 int dnet_file_command(const char *from, const char *to, const char *param, struct dnet_output *out) {
+#ifndef CHEATCOIN
 	char hostname[DNET_HOST_NAME_MAX];
 	struct dnet_host *h;
 	const char *s;
@@ -71,8 +74,12 @@ int dnet_file_command(const char *from, const char *to, const char *param, struc
 		}
 		return res;
 	}
+#else
+	return -1;
+#endif
 }
 
+#ifndef CHEATCOIN
 struct copy_data {
 	char path[PATH_MAX];
 	struct stat stat;
@@ -283,9 +290,11 @@ static int process_head_packet(struct dnet_packet_stream *st, struct file_receiv
 	}
 	return 0;
 }
+#endif
 
 /* обработка принятого файлового пакета */
 int dnet_process_file_packet(struct dnet_packet_stream *st) {
+#ifndef CHEATCOIN
 	struct file_receiver *fr;
 	time_t t;
 	int i, len;
@@ -338,5 +347,6 @@ found:
 		fwrite(st->data, 1, len, fr->f);
 		fr->seq += len;
 	}
+#endif
 	return 0;
 }

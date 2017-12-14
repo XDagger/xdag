@@ -5,6 +5,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "system.h"
 
 typedef uint64_t cheatcoin_hash_t[4];
 typedef uint64_t cheatcoin_hashlow_t[3];

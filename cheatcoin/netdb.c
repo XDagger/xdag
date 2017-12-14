@@ -1,10 +1,11 @@
-/* база хостов, T13.714-T13.734 $DVS:time$ */
+/* база хостов, T13.714-T13.726 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include "system.h"
 #include "../ldus/source/include/ldus/rbtree.h"
 #include "transport.h"
 #include "netdb.h"
@@ -31,7 +32,8 @@ struct host {
 };
 
 static inline int lessthen(struct ldus_rbtree *l, struct ldus_rbtree *r) {
-	return memcmp(l + 1, r + 1, 6) < 0;
+	struct host *lh = (struct host *)l, *rh = (struct host *)r;
+	return lh->ip < rh->ip || (lh->ip == rh->ip && lh->port < rh->port);
 }
 
 ldus_rbtree_define_prefix(lessthen, static inline, )
@@ -77,16 +79,17 @@ static struct host *random_host(int mask) {
 			r = (rand() & 1 ? p->left : p->right);
 			n >>= 1;
 		}
-		if (p && ((struct host *)p)->flags & mask) p = 0;
+		if (p && (((struct host *)p)->flags & mask)) p = 0;
 		pthread_mutex_unlock(&host_mutex);
 	}
 	return (struct host *)p;
 }
 
 static struct host *ipport2host(const char *ipport, int flags) {
-	static struct host h; uint8_t ip[4];
-	if (sscanf(ipport, "%hhu.%hhu.%hhu.%hhu:%hu", ip, ip + 1, ip + 2, ip + 3, &h.port) != 5) return 0;
-	memcpy(&h.ip, ip, 4);
+	static struct host h; unsigned ip[5];
+	if (sscanf(ipport, "%u.%u.%u.%u:%u", ip, ip + 1, ip + 2, ip + 3, ip + 4) != 5 || (ip[0] | ip[1] | ip[2] | ip[3]) & ~0xff || ip[4] & ~0xffff) return 0;
+	h.ip = ip[0] | ip[1] << 8 | ip[2] << 16 | ip[3] << 24;
+	h.port = ip[4];
 	h.flags = flags;
 	return &h;
 }
@@ -110,6 +113,7 @@ static int read_database(const char *fname, int flags) {
 		if (!p || !p[1]) continue;
 		h = find_add_ipport(str, flags);
 		if (!h) continue;
+		cheatcoin_debug("Netdb : host=%lx, flags=%x, read '%s'", (long)h, h->flags, str);
 		if (flags & HOST_CONNECTED && n_selected_hosts < MAX_SELECTED_HOSTS / 2) selected_hosts[n_selected_hosts++] = h;
 		n++;
 	}
@@ -126,6 +130,7 @@ static void *monitor_thread(void *arg) {
 	for(;;) {
 		FILE *f = fopen("netdb.tmp", "w");
 		int n, i;
+		time_t t = time(0);
 		if (!f) continue;
 		cheatcoin_net_command("conn", f);
 		fclose(f);
@@ -140,15 +145,16 @@ static void *monitor_thread(void *arg) {
 			struct host *h = random_host(HOST_CONNECTED | HOST_OUR);
 			char str[64];
 			if (!h) continue;
-			h->flags |= HOST_CONNECTED;
 			if (n < MAX_SELECTED_HOSTS) {
 				sprintf(str, "connect %u.%u.%u.%u:%u", h->ip & 0xff, h->ip >> 8 & 0xff, h->ip >> 16 & 0xff, h->ip >> 24 & 0xff, h->port);
+				cheatcoin_debug("Netdb : host=%lx flags=%x query='%s'", (long)h, h->flags, str);
 				cheatcoin_net_command(str, stderr);
 				n++;
 			}
+			h->flags |= HOST_CONNECTED;
 			if (n_selected_hosts < MAX_SELECTED_HOSTS) selected_hosts[n_selected_hosts++] = h;
 		}
-		sleep(67);
+		while (time(0) - t < 67) sleep(1);
 	}
 	return 0;
 }
@@ -167,8 +173,10 @@ int cheatcoin_netdb_init(const char *our_host_str, int npairs, const char **addr
 /* записывает в массив данные для передачи другому хосту */
 unsigned cheatcoin_netdb_send(uint8_t *data, unsigned len) {
 	unsigned i;
-	for (i = 0; i < n_selected_hosts && len >= 6; ++i, len -= 6, data += 6)
-		memcpy(data, &selected_hosts[i]->ip, 6);
+	for (i = 0; i < n_selected_hosts && len >= 6; ++i, len -= 6, data += 6) {
+		memcpy(data, &selected_hosts[i]->ip, 4);
+		memcpy(data + 4, &selected_hosts[i]->port, 2);
+	}
 	memset(data, 0, len);
 	return i * 6;
 }
@@ -179,7 +187,8 @@ unsigned cheatcoin_netdb_receive(const uint8_t *data, unsigned len) {
 	int i;
 	h.flags = 0;
 	for (i = 0; len >= 6; ++i, len -= 6, data += 6) {
-		memcpy(&h.ip, data, 6);
+		memcpy(&h.ip, data, 4);
+		memcpy(&h.port, data + 4, 2);
 		if (!h.ip || !h.port) continue;
 		find_add_host(&h);
 	}

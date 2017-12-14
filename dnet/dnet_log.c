@@ -69,7 +69,7 @@ static void dnet_log_open(struct dnet_output *out) {
     struct tm tm;
     char tbuf[64];
     localtime_r(&t, &tm);
-    strftime(tbuf, 64, "%F %T  ", &tm);
+    strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S  ", &tm);
     pthread_mutex_lock(&dnet_log_mutex);
     out->f = fopen("dnet.log", "a");
     if (!out->f) out->f = stderr;

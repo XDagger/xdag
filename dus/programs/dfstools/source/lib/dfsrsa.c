@@ -121,7 +121,7 @@ static int dfsrsa_getlen(dfsrsa_t *num, int len) {
 
 /* сравнивает два длинных числа и возвращает -1, 0, 1
 */
-static int dfsrsa_cmp(dfsrsa_t *left, dfsrsa_t *right, int len) {
+int dfsrsa_cmp(dfsrsa_t *left, dfsrsa_t *right, int len) {
 	left += len, right += len;
 	while (len-- && *--left == *--right);
 	if (len < 0) return 0;
@@ -140,7 +140,7 @@ static void dfsrsa_addeq(dfsrsa_t *sum, dfsrsa_t small, int len){
 
 /* складывает два длинных числа, перенос возвращает (0 или 1)
 */
-static int dfsrsa_add(dfsrsa_t *sum, dfsrsa_t *add1, dfsrsa_t *add2, int len){
+int dfsrsa_add(dfsrsa_t *sum, dfsrsa_t *add1, dfsrsa_t *add2, int len){
 	dfsrsa_long_t res = 0;
 	while (len--) {
 	    res += (dfsrsa_long_t)*add1++ + *add2++;
@@ -680,7 +680,7 @@ static int dfsrsa_mod(dfsrsa_t *mod, int mlen, dfsrsa_t *div, int len){
    частное помещает в массив quotient длины mlen, остаток - в массив mod;
    возвращает -1 при делении на 0
 */
-static int dfsrsa_divmod(dfsrsa_t *mod, int mlen, dfsrsa_t *div, int len,
+int dfsrsa_divmod(dfsrsa_t *mod, int mlen, dfsrsa_t *div, int len,
 		dfsrsa_t *quotient){
 	int res, offset; dfsrsa_long_t mod0, div0, div1, div2;
 	dfsrsa_debug(MOD, "divisor", mod, mlen);

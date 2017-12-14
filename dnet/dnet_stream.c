@@ -75,12 +75,15 @@ int dnet_send_stream_packet(struct dnet_packet_stream *st, struct dnet_connectio
 	return 0;
 }
 
+#ifndef CHEATCOIN
 static void sigint_handler(int __attribute__((unused)) sig) {
 	g_ctrlc_handled = 1;
 }
+#endif
 
 void *dnet_thread_stream(void *arg) {
 	struct dnet_thread *t = (struct dnet_thread *)arg;
+#ifndef CHEATCOIN
 	struct dnet_packet_stream st;
 	ssize_t data_len;
 	char *slavedevice;
@@ -290,10 +293,12 @@ void *dnet_thread_stream(void *arg) {
 		signal(SIGINT, old_handler);
 	dnet_log_printf("stream %04x: finished, %d sec, %lld/%lld in/out bytes\n",
 		t->st.id.id[0] & 0xFFFF, (int)(time(0) - t->st.creation_time), (long long)t->st.ack, (long long)t->st.seq);
+#endif
 	t->to_remove = 1;
 	return 0;
 }
 
+#ifndef CHEATCOIN
 static void init_screen(struct termios *oldt) {
 	struct termios newt;
 	tcgetattr(STDIN_FILENO, oldt);
@@ -311,8 +316,10 @@ static void finish_screen(struct termios *oldt) {
 //    ioctl(STDIN_FILENO, KDSKBMODE, K_RAW);
 	tcsetattr(STDIN_FILENO, TCSANOW, oldt);
 }
+#endif
 
 int dnet_stream_main(uint32_t crc_to) {
+#ifndef CHEATCOIN
 	struct termios oldt;
 	struct dnet_thread *t = (struct dnet_thread *)malloc(sizeof(struct dnet_thread));
 	int res;
@@ -332,6 +339,9 @@ int dnet_stream_main(uint32_t crc_to) {
 	}
 	finish_screen(&oldt);
 	return res;
+#else
+	return -1;
+#endif
 }
 
 static int tunnel_callback(struct dnet_stream *st, void *data) {

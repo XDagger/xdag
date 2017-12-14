@@ -88,7 +88,7 @@ void dfslib_random_init(void) {
 	GetSystemTimeAsFileTime(ft);
 	time1 = ft->dwHighDateTime;
 	time2 = ft->dwLowDateTime;
-	clock = GetTickCount64();
+	clock = GetTickCount();
 #endif
 	pid = getpid();
 	seed ^= time1;	seed *= 0x8E230615u;

@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include "system.h"
 
 struct dnet_output {
     FILE *f;

@@ -13,6 +13,7 @@
 #ifdef __LDuS__
 #include <ldus/system/network.h>
 #endif
+#include "system.h"
 #include "dnet_threads.h"
 #include "dnet_connection.h"
 #include "dnet_packet.h"
@@ -26,6 +27,9 @@
 #define LOG_PERIOD          300
 #define GC_PERIOD           300
 #define UPDATE_PERIOD	    DNET_UPDATE_PERIOD
+#ifndef _WIN32
+#define INVALID_SOCKET -1
+#endif
 
 struct list *g_threads;
 pthread_rwlock_t g_threads_rwlock;
@@ -47,8 +51,8 @@ static void dnet_thread_work(struct dnet_thread *t) {
 	}
 
     // Create a socket
-	t->conn.socket = socket(AF_INET, (proto == DNET_TCP ? SOCK_STREAM : SOCK_DGRAM), 0);
-    if (t->conn.socket < 0) { mess = "cannot create a socket"; goto err; }
+	t->conn.socket = socket(AF_INET, (proto == DNET_TCP ? SOCK_STREAM : SOCK_DGRAM), IPPROTO_TCP);
+    if (t->conn.socket == INVALID_SOCKET) { mess = "cannot create a socket"; goto err; }
     if (fcntl(t->conn.socket, F_SETFD, FD_CLOEXEC) == -1) {
 		dnet_log_printf("dnet.%d: can't set FD_CLOEXEC flag on socket, %s\n", t->nthread, strerror(errno));
     }
@@ -95,7 +99,7 @@ static void dnet_thread_work(struct dnet_thread *t) {
 
         // Set the "LINGER" timeout to zero, to close the listen socket
         // immediately at program termination.
-        setsockopt(t->conn.socket, SOL_SOCKET, SO_LINGER, &linger_opt, sizeof(linger_opt));
+        setsockopt(t->conn.socket, SOL_SOCKET, SO_LINGER, (char *)&linger_opt, sizeof(linger_opt));
 
 		if (proto == DNET_UDP) {
 			if (t->type != DNET_THREAD_STREAM) {
@@ -413,13 +417,13 @@ int dnet_thread_create(struct dnet_thread *t) {
     t->nthread = g_nthread++;
     t->conn.sess = 0;
     t->to_remove = 0;
-	t->id = -1;
+	t->id = pthread_invalid;
 	dthread_mutex_init(&t->conn.mutex, 0);
     pthread_rwlock_wrlock(&g_threads_rwlock);
     list_insert_before(g_threads, &t->threads);
     pthread_rwlock_unlock(&g_threads_rwlock);
 	res = pthread_create(&t->id, NULL, run, t);
-	if (res) t->id = -1;
+	if (res) t->id = pthread_invalid;
 	else pthread_detach(t->id);
 	return res;
 }

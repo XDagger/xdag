@@ -37,6 +37,16 @@ DFSRSA_EXT int dfsrsa_keygen(dfsrsa_t *privkey, dfsrsa_t *pubkey, int keylen);
 */
 DFSRSA_EXT int dfsrsa_crypt(dfsrsa_t *data, int datalen, dfsrsa_t *key, int keylen);
 
+/* сравнивает два длинных числа и возвращает -1, 0, 1
+*/
+DFSRSA_EXT int dfsrsa_cmp(dfsrsa_t *left, dfsrsa_t *right, int len);
+
+/* складывает два длинных числа, перенос возвращает (0 или 1)
+*/
+DFSRSA_EXT int dfsrsa_add(dfsrsa_t *sum, dfsrsa_t *add1, dfsrsa_t *add2, int len);
+
+DFSRSA_EXT int dfsrsa_divmod(dfsrsa_t *mod, int mlen, dfsrsa_t *div, int len, dfsrsa_t *quotient);
+
 #undef DFSRSA_EXT
 
 #endif

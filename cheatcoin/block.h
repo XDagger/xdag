@@ -31,7 +31,6 @@ enum cheatcoin_message_type {
 
 typedef uint64_t cheatcoin_time_t;
 typedef uint64_t cheatcoin_amount_t;
-typedef unsigned __int128 cheatcoin_diff_t;
 
 struct cheatcoin_field {
 	union {

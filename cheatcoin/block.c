@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include "system.h"
 #include "../ldus/source/include/ldus/rbtree.h"
 #include "block.h"
 #include "crypt.h"
@@ -19,10 +20,10 @@
 #define MAIN_CHAIN_PERIOD	(64 << 10)
 #define MAX_WAITING_MAIN	2
 #define DEF_TIME_LIMIT		0 /*(MAIN_CHAIN_PERIOD / 2)*/
-#define CHEATCOIN_TEST_ERA	0x16800000000l
-#define CHEATCOIN_MAIN_ERA	0x16900000000l
+#define CHEATCOIN_TEST_ERA	0x16800000000ll
+#define CHEATCOIN_MAIN_ERA	0x16900000000ll
 #define CHEATCOIN_ERA		cheatcoin_era
-#define MAIN_START_AMOUNT	(1l << 42)
+#define MAIN_START_AMOUNT	(1ll << 42)
 #define MAIN_BIG_PERIOD_LOG	21
 #define MAIN_TIME(t)		((t) >> 16)
 #define MAX_LINKS			15
@@ -64,7 +65,7 @@ static pthread_mutex_t block_mutex;
 static uint64_t get_timestamp(void) {
 	struct timeval tp;
 	gettimeofday(&tp, 0);
-	return tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
+	return (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
 }
 
 static inline int lessthen(struct ldus_rbtree *l, struct ldus_rbtree *r) {
@@ -78,7 +79,7 @@ static struct block_internal *block_by_hash(const cheatcoin_hashlow_t hash) {
 }
 
 static void log_block(const char *mess, cheatcoin_hash_t h, cheatcoin_time_t t) {
-	cheatcoin_info("%s: %016lx%016lx%016lx%016lx t=%lx", mess,
+	cheatcoin_info("%s: %016llx%016llx%016llx%016llx t=%llx", mess,
 		((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t);
 }
 
@@ -218,8 +219,9 @@ static inline void hash_for_signature(struct cheatcoin_block b[2], const struct 
 }
 
 static inline cheatcoin_diff_t hash_difficulty(cheatcoin_hash_t hash) {
-	cheatcoin_diff_t res = ((cheatcoin_diff_t *)hash)[1];
-	return -(cheatcoin_diff_t)1 / (res >> 32);
+	cheatcoin_diff_t res = ((cheatcoin_diff_t *)hash)[1], max = cheatcoin_diff_max;
+	cheatcoin_diff_shr32(&res);
+	return cheatcoin_diff_div(max, res);
 }
 
 /* возвращает номер открытого ключа из массива keys длины nkeys, который подходит к подписи, начинающейся с поля signo_r блока b,
@@ -304,13 +306,13 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 		if (*psum + b->field[i].amount < *psum) { err = 0xA; goto end; }
 		*psum += b->field[i].amount;
 		bi.link[bi.nlinks] = ref;
-		if (MAIN_TIME(ref->time) < MAIN_TIME(bi.time)) diff = diff0 + ref->difficulty;
+		if (MAIN_TIME(ref->time) < MAIN_TIME(bi.time)) diff = cheatcoin_diff_add(diff0, ref->difficulty);
 		else {
 			diff = ref->difficulty;
 			while (ref && MAIN_TIME(ref->time) == MAIN_TIME(bi.time)) ref = ref->link[ref->max_diff_link];
-			if (ref && diff < diff0 + ref->difficulty) diff = diff0 + ref->difficulty;
+			if (ref && cheatcoin_diff_gt(cheatcoin_diff_add(diff0, ref->difficulty), diff)) diff = cheatcoin_diff_add(diff0, ref->difficulty);
 		}
-		if (diff > bi.difficulty) bi.difficulty = diff, bi.max_diff_link = bi.nlinks;
+		if (cheatcoin_diff_gt(diff, bi.difficulty)) bi.difficulty = diff, bi.max_diff_link = bi.nlinks;
 		bi.nlinks++;
 	}
 	if (bi.in_mask ? sum_in < sum_out : sum_out != b->field[0].amount) { err = 0xB; goto end; }
@@ -323,11 +325,10 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 	g_cheatcoin_stats.nblocks++;
 	if (g_cheatcoin_stats.nblocks > g_cheatcoin_stats.total_nblocks)
 		g_cheatcoin_stats.total_nblocks = g_cheatcoin_stats.nblocks;
-	if (bi.difficulty > g_cheatcoin_stats.difficulty) {
-		cheatcoin_info("Diff  : %lx%016lx (+%lx%016lx)", (unsigned long)(bi.difficulty >> 64), (unsigned long)bi.difficulty,
-				(unsigned long)(diff0 >> 64), (unsigned long)diff0);
+	if (cheatcoin_diff_gt(bi.difficulty, g_cheatcoin_stats.difficulty)) {
+		cheatcoin_info("Diff  : %llx%016llx (+%llx%016llx)", cheatcoin_diff_args(bi.difficulty), cheatcoin_diff_args(diff0));
 		for (ref = bsaved, ref0 = 0; ref && !(ref->flags & BI_MAIN_CHAIN); ref = ref->link[ref->max_diff_link]) {
-			if ((!ref->link[ref->max_diff_link] || ref->link[ref->max_diff_link]->difficulty < ref->difficulty)
+			if ((!ref->link[ref->max_diff_link] || cheatcoin_diff_gt(ref->difficulty, ref->link[ref->max_diff_link]->difficulty))
 					&& (!ref0 || MAIN_TIME(ref0->time) > MAIN_TIME(ref->time)))
 				{ ref->flags |= BI_MAIN_CHAIN; if (ref0 == bsaved) pretop_main_chain = ref; ref0 = ref; }
 		}
@@ -335,7 +336,7 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 		unwind_main(ref);
 		top_main_chain = bsaved;
 		g_cheatcoin_stats.difficulty = bi.difficulty;
-		if (g_cheatcoin_stats.difficulty > g_cheatcoin_stats.max_difficulty)
+		if (cheatcoin_diff_gt(g_cheatcoin_stats.difficulty, g_cheatcoin_stats.max_difficulty))
 			g_cheatcoin_stats.max_difficulty = g_cheatcoin_stats.difficulty;
 	}
 	if (bi.flags & BI_OURS)
@@ -471,14 +472,14 @@ static int request_blocks(cheatcoin_time_t t, cheatcoin_time_t dt) {
 	int i, res;
 	if (dt <= MAIN_CHAIN_PERIOD) {
 		cheatcoin_time_t t0 = time_limit;
-		for (i = 0; cheatcoin_info("QueryB: t=%lx dt=%lx", t, dt),
+		for (i = 0; cheatcoin_info("QueryB: t=%llx dt=%llx", t, dt),
 				i < QUERY_RETRIES && (res = cheatcoin_request_blocks(t, t + dt, &t0, add_block_callback)) < 0; ++i);
 		if (res <= 0) return -1;
 	} else {
 		struct cheatcoin_storage_sum lsums[16], rsums[16];
 		if (cheatcoin_load_sums(t, t + dt, lsums) <= 0) return -1;
 		cheatcoin_debug("Local : [%s]", cheatcoin_log_array(lsums, 16 * sizeof(struct cheatcoin_storage_sum)));
-		for (i = 0; cheatcoin_info("QueryS: t=%lx dt=%lx", t, dt),
+		for (i = 0; cheatcoin_info("QueryS: t=%llx dt=%llx", t, dt),
 				i < QUERY_RETRIES && (res = cheatcoin_request_sums(t, t + dt, rsums)) < 0; ++i);
 		if (res <= 0) return -1;
 		dt >>= 4;
@@ -509,7 +510,7 @@ static void *work_thread(void *arg) {
 	cheatcoin_mess("Entering main cycle...");
 	for (;;) {
 		st = get_timestamp();
-		if (st - t >= MAIN_CHAIN_PERIOD) t = st, request_blocks(0, 1l << 48);
+		if (st - t >= MAIN_CHAIN_PERIOD) t = st, request_blocks(0, 1ll << 48);
 		if (g_cheatcoin_extstats.nnoref > CHEATCOIN_BLOCK_FIELDS - 5 && !(rand() % MAKE_BLOCK_PERIOD))
 			cheatcoin_create_block(0, 0, 0, 0, 0);
 		pthread_mutex_lock(&block_mutex);

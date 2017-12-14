@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.734 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.726 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,7 +60,7 @@ static cheatcoin_amount_t cheatcoins2amount(const char *str) {
 	sum -= flr;
 	for (i = 31; i >= 0; --i) {
 		sum *= 2;
-		if (sum >= 1) res |= 1l << i, sum--;
+		if (sum >= 1) res |= 1ll << i, sum--;
 	}
 	return res;
 }
@@ -169,17 +169,17 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 	} else if (!strcmp(cmd, "stats")) {
 		fprintf(out, "Statistics for ours and maximum known parameters:\n"
 			"            hosts: %u of %u\n"
-			"           blocks: %lu of %lu\n"
-			"      main blocks: %lu of %lu\n"
-			"    orphan blocks: %lu\n"
-			" chain difficulty: %lx%016lx of %lx%016lx\n"
+			"           blocks: %llu of %llu\n"
+			"      main blocks: %llu of %llu\n"
+			"    orphan blocks: %llu\n"
+			" chain difficulty: %llx%016llx of %llx%016llx\n"
 			"cheatcoins supply: %.9Lf of %.9Lf\n",
 			g_cheatcoin_stats.nhosts, g_cheatcoin_stats.total_nhosts,
-			g_cheatcoin_stats.nblocks, g_cheatcoin_stats.total_nblocks,
-			g_cheatcoin_stats.nmain, g_cheatcoin_stats.total_nmain,
-			g_cheatcoin_extstats.nnoref,
-			(unsigned long)(g_cheatcoin_stats.difficulty >> 64), (unsigned long)g_cheatcoin_stats.difficulty,
-			(unsigned long)(g_cheatcoin_stats.max_difficulty >> 64), (unsigned long)g_cheatcoin_stats.max_difficulty,
+			(long long)g_cheatcoin_stats.nblocks, (long long)g_cheatcoin_stats.total_nblocks,
+			(long long)g_cheatcoin_stats.nmain, (long long)g_cheatcoin_stats.total_nmain,
+			(long long)g_cheatcoin_extstats.nnoref,
+			cheatcoin_diff_args(g_cheatcoin_stats.difficulty),
+			cheatcoin_diff_args(g_cheatcoin_stats.max_difficulty),
 			amount2cheatcoins(cheatcoin_get_supply(g_cheatcoin_stats.nmain)),
 			amount2cheatcoins(cheatcoin_get_supply(g_cheatcoin_stats.total_nmain))
 		);
@@ -209,6 +209,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 }
 
 static int terminal(void) {
+#ifndef _WIN32
 	char cmd[CHEATCOIN_COMMAND_MAX], cmd2[CHEATCOIN_COMMAND_MAX], *ptr, *lasts;
 	int fd;
 	int c = 0;
@@ -229,10 +230,12 @@ static int terminal(void) {
 		close(fd);
 		if (!strcmp(ptr, "terminate")) break;
 	}
+#endif
 	return 0;
 }
 
 static void *terminal_thread(void *arg) {
+#ifndef _WIN32
 	char cmd[CHEATCOIN_COMMAND_MAX];
 	int pos, in, out, c, res;
 	FILE *fout;
@@ -254,6 +257,7 @@ static void *terminal_thread(void *arg) {
 		if (res < 0) exit(0);
 		sleep(1);
 	}
+#endif
 	return 0;
 }
 
@@ -261,7 +265,9 @@ int main(int argc, char **argv) {
 	const char *addrports[256], *bindto = 0, *pubaddr = 0;
 	int transport_flags = 0, n_addrports = 0, n_maining_threads = 0, i;
 	pthread_t th;
+#ifndef _WIN32
 	signal(SIGPIPE, SIG_IGN);
+#endif
 	printf("Cheatcoin full node client/server, version %s.\n", CHEATCOIN_VERSION);
 	if (argc <= 1) goto help;
 	for (i = 1; i < argc; ++i) {

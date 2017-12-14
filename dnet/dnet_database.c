@@ -195,6 +195,7 @@ int dnet_trust_host(struct dnet_host *host) {
 }
 
 int dnet_untrust_host(struct dnet_host *host) {
+#ifndef CHEATCOIN
 	struct dnet_key key;
 	FILE *f;
 	int res = 10;
@@ -218,6 +219,9 @@ int dnet_untrust_host(struct dnet_host *host) {
 	}
 	fclose(f);
 	return res;
+#else
+	return -1;
+#endif
 }
 
 int dnet_set_host_name(struct dnet_host *host, const char *name, size_t len) {

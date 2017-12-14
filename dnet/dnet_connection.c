@@ -6,6 +6,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/time.h>
+#ifdef _WIN32
+#include <sys/socket.h>
+#endif
 #include "dnet_connection.h"
 #include "dnet_packet.h"
 #include "dnet_threads.h"
@@ -153,12 +156,12 @@ int dnet_traverse_connections(int (*callback)(struct dnet_connection *conn, void
 }
 
 int dnet_print_connection(struct dnet_connection *conn, struct dnet_output *out) {
-    int len;
-    dnet_printf(out, " %2d. ", out->count);
-    dnet_printf(out, "%d.%d.%d.%d:%d%n", conn->ipaddr >> 24 & 0xFF, conn->ipaddr >> 16 & 0xFF, conn->ipaddr >> 8 & 0xFF, conn->ipaddr & 0xFF,
-       conn->port, &len);
-    dnet_printf(out, "%*d sec, %lld/%lld in/out bytes, %lld/%lld packets, %lld/%lld dropped\n",
-		28 - len, (int)(time(0) - conn->creation_time),
+	char buf[32];
+	int len;
+	sprintf(buf, "%d.%d.%d.%d:%d", conn->ipaddr >> 24 & 0xFF, conn->ipaddr >> 16 & 0xFF, conn->ipaddr >> 8 & 0xFF, conn->ipaddr & 0xFF, conn->port);
+	len = strlen(buf);
+    dnet_printf(out, " %2d. %s%*d sec, %lld/%lld in/out bytes, %lld/%lld packets, %lld/%lld dropped\n",
+		out->count, buf, 28 - len, (int)(time(0) - conn->creation_time),
 		(long long)conn->counters[DNET_C_IN_BYTES], (long long)conn->counters[DNET_C_OUT_BYTES],
 		(long long)conn->counters[DNET_C_IN_PACKETS], (long long)conn->counters[DNET_C_OUT_PACKETS],
 		(long long)conn->counters[DNET_C_IN_DROPPED], (long long)conn->counters[DNET_C_OUT_DROPPED]

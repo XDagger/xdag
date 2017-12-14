@@ -173,10 +173,12 @@ static uint8_t *add_number_to_sign(uint8_t *sign, const cheatcoin_hash_t num) {
 /* проверить, что подпись (sign_r, sign_s) соответствует хешу hash, версия для собственного ключа; возвращает 0 при успехе */
 int cheatcoin_verify_signature(const void *key, const cheatcoin_hash_t hash, const cheatcoin_hash_t sign_r, const cheatcoin_hash_t sign_s) {
 	uint8_t buf[72], *ptr;
+	int res;
 	ptr = add_number_to_sign(buf + 2, sign_r);
 	ptr = add_number_to_sign(ptr, sign_s);
 	buf[0] = 0x30, buf[1] = ptr - buf - 2;
-	cheatcoin_debug("Verify: hash=[%s] sign=[%s] r=[%s], s=[%s]", cheatcoin_log_hash(hash),
+	res = ECDSA_verify(0, (const uint8_t *)hash, sizeof(cheatcoin_hash_t), buf, ptr - buf, (EC_KEY *)key);
+	cheatcoin_debug("Verify: res=%2d key=%lx hash=[%s] sign=[%s] r=[%s], s=[%s]", res, (long)key, cheatcoin_log_hash(hash),
 	        cheatcoin_log_array(buf, ptr - buf), cheatcoin_log_hash(sign_r), cheatcoin_log_hash(sign_s));
-	return ECDSA_verify(0, (const uint8_t *)hash, sizeof(cheatcoin_hash_t), buf, ptr - buf, (EC_KEY *)key) != 1;
+	return res != 1;
 }
