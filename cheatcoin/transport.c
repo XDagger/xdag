@@ -9,6 +9,7 @@
 #include "block.h"
 #include "netdb.h"
 #include "main.h"
+#include "sync.h"
 #include "../dnet/dnet_main.h"
 
 #define NEW_BLOCK_TTL 5
@@ -41,8 +42,7 @@ static int block_arrive_callback(void *packet, void *connection) {
 	int res = 0;
 	switch (cheatcoin_type(b, 0)) {
 		case CHEATCOIN_FIELD_HEAD:
-			if (connection == reply_connection && ((uint8_t *)packet)[1] == 1 && reply_callback) (*reply_callback)(b, reply_data);
-			else res = cheatcoin_add_block(b);
+			cheatcoin_sync_add_block(b, connection);
 			break;
 	    case CHEATCOIN_FIELD_NONCE:
 			{
@@ -182,4 +182,24 @@ int cheatcoin_send_new_block(struct cheatcoin_block *b) {
 
 int cheatcoin_net_command(const char *cmd, void *out) {
 	return dnet_execute_command(cmd, out);
+}
+
+/* разослать пакет, conn - то же, что и в dnet_send_cheatcoin_packet */
+int cheatcoin_send_packet(struct cheatcoin_block *b, void *conn) {
+	dnet_send_cheatcoin_packet(b, conn);
+	return 0;
+}
+
+/* запросить у другого хоста (по данному соединению) блок по его хешу */
+int cheatcoin_request_block(cheatcoin_hash_t hash, void *conn) {
+	struct cheatcoin_block b;
+	b.field[0].type = CHEATCOIN_MESSAGE_BLOCK_REQUEST << 4 | CHEATCOIN_FIELD_NONCE;
+	b.field[0].time = b.field[0].end_time = 0;
+	cheatcoin_generate_random_array(&b.field[1], sizeof(struct cheatcoin_field));
+	memcpy(&b.field[2], &g_cheatcoin_stats, sizeof(g_cheatcoin_stats));
+	memcpy(&b.field[CHEATCOIN_BLOCK_FIELDS - 1], hash, sizeof(cheatcoin_hash_t));
+	cheatcoin_netdb_send((uint8_t *)&b.field[2] + sizeof(struct cheatcoin_stats),
+			13 * sizeof(struct cheatcoin_field) - sizeof(struct cheatcoin_stats));
+	dnet_send_cheatcoin_packet(&b, conn);
+	return 0;
 }

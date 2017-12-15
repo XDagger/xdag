@@ -14,6 +14,7 @@ extern struct cheatcoin_stats {
 
 extern struct cheatcoin_ext_stats {
 	uint64_t nnoref;
+	uint32_t nwaitsync;
 } g_cheatcoin_extstats;
 
 /* 1 - программа работает в тестовой сети */

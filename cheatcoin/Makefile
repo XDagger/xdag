@@ -16,6 +16,7 @@ sources = \
 	netdb.c						\
 	sha256.c					\
 	storage.c					\
+	sync.c						\
 	transport.c					\
 	wallet.c					\
 	$(dnet)/dnet_crypt.c		\
@@ -46,6 +47,7 @@ headers = \
 	netdb.h							\
 	sha256.h						\
 	storage.h						\
+	sync.h							\
 	transport.h						\
 	wallet.h						\
 	$(dnet)/dnet_crypt.h			\

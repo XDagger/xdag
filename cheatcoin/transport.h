@@ -25,11 +25,17 @@ extern int cheatcoin_send_new_block(struct cheatcoin_block *b);
 extern int cheatcoin_request_blocks(cheatcoin_time_t start_time, cheatcoin_time_t end_time, void *data,
 		void *(*callback)(void *, void *));
 
+/* запросить у другого хоста (по данному соединению) блок по его хешу */
+extern int cheatcoin_request_block(cheatcoin_hash_t hash, void *conn);
+
 /* запрашивает на удалённом хосте и помещает в массив sums суммы блоков по отрезку от start до end, делённому на 16 частей;
  * end - start должно быть вида 16^k */
 extern int cheatcoin_request_sums(cheatcoin_time_t start_time, cheatcoin_time_t end_time, struct cheatcoin_storage_sum sums[16]);
 
 /* выполнить команду транспортного уровня, out - поток для вывода результата выполнения команды */
 extern int cheatcoin_net_command(const char *cmd, void *out);
+
+/* разослать пакет, conn - то же, что и в dnet_send_cheatcoin_packet */
+extern int cheatcoin_send_packet(struct cheatcoin_block *b, void *conn);
 
 #endif

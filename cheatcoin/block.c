@@ -16,6 +16,7 @@
 #include "transport.h"
 #include "log.h"
 #include "main.h"
+#include "sync.h"
 
 #define MAIN_CHAIN_PERIOD	(64 << 10)
 #define MAX_WAITING_MAIN	2
@@ -356,7 +357,8 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 end:
 	{
 		char buf[32];
-		sprintf(buf, "Err %2x", ((i << 4) | err) & 0xff);
+		err |= i << 4;
+		sprintf(buf, "Err %2x", err & 0xff);
 		log_block(buf, bi.hash, bi.time);
 		err = -err;
 	}
@@ -366,10 +368,12 @@ end:
 static void *add_block_callback(void *block, void *data) {
 	struct cheatcoin_block *b = (struct cheatcoin_block *)block;
 	cheatcoin_time_t *t = (cheatcoin_time_t *)data;
+	int res;
 	pthread_mutex_lock(&block_mutex);
-	if (*t < CHEATCOIN_ERA) add_block_nolock(b, *t);
-	else if (add_block_nolock(b, 0) >= 0 && b->field[0].time > *t) *t = b->field[0].time;
+	if (*t < CHEATCOIN_ERA) (res = add_block_nolock(b, *t));
+	else if ((res = add_block_nolock(b, 0)) >= 0 && b->field[0].time > *t) *t = b->field[0].time;
 	pthread_mutex_unlock(&block_mutex);
+	if (res >= 0) cheatcoin_sync_pop_block(b);
 	return 0;
 }
 

@@ -18,6 +18,7 @@
 #include "wallet.h"
 #include "netdb.h"
 #include "main.h"
+#include "sync.h"
 
 #define CHEATCOIN_COMMAND_MAX	0x1000
 #define FIFO_IN					"cheatcoin_cmd.dat"
@@ -172,12 +173,13 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			"           blocks: %llu of %llu\n"
 			"      main blocks: %llu of %llu\n"
 			"    orphan blocks: %llu\n"
+			" wait sync blocks: %u\n"
 			" chain difficulty: %llx%016llx of %llx%016llx\n"
 			"cheatcoins supply: %.9Lf of %.9Lf\n",
 			g_cheatcoin_stats.nhosts, g_cheatcoin_stats.total_nhosts,
 			(long long)g_cheatcoin_stats.nblocks, (long long)g_cheatcoin_stats.total_nblocks,
 			(long long)g_cheatcoin_stats.nmain, (long long)g_cheatcoin_stats.total_nmain,
-			(long long)g_cheatcoin_extstats.nnoref,
+			(long long)g_cheatcoin_extstats.nnoref, g_cheatcoin_extstats.nwaitsync,
 			cheatcoin_diff_args(g_cheatcoin_stats.difficulty),
 			cheatcoin_diff_args(g_cheatcoin_stats.max_difficulty),
 			amount2cheatcoins(cheatcoin_get_supply(g_cheatcoin_stats.nmain)),
@@ -322,6 +324,8 @@ int main(int argc, char **argv) {
 	memset(&g_cheatcoin_extstats, 0, sizeof(g_cheatcoin_extstats));
 
 	cheatcoin_mess("Starting cheatcoin, version %s", CHEATCOIN_VERSION);
+	cheatcoin_mess("Starting synchonization engine...");
+	if (cheatcoin_sync_init()) return -1;
 	cheatcoin_mess("Starting dnet transport...");
 	printf("Transport module: ");
 	if (cheatcoin_transport_start(transport_flags, bindto, n_addrports, addrports)) return -1;
