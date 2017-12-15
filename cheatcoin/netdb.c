@@ -1,4 +1,4 @@
-/* база хостов, T13.714-T13.726 $DVS:time$ */
+/* база хостов, T13.714-T13.734 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>

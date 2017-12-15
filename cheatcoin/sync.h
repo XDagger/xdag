@@ -1,4 +1,4 @@
-/* синхронизация, T13.738-T13.000 $DVS:time$ */
+/* синхронизация, T13.738-T13.738 $DVS:time$ */
 
 #ifndef CHEATCOIN_SYNC_H
 #define CHEATCOIN_SYNC_H

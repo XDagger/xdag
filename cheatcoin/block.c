@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.726 $DVS:time$ */
+/* работа с блоками, T13.654-T13.738 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>

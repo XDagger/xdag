@@ -1,4 +1,4 @@
-/* синхронизация, T13.738-T13.000 $DVS:time$ */
+/* синхронизация, T13.738-T13.739 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -14,18 +14,23 @@
 struct sync_block {
 	struct cheatcoin_block b;
 	struct sync_block *next;
+	void *conn;
 	uint8_t nfield;
+	uint8_t ttl;
 };
 
 static struct sync_block **g_sync_hash;
 static pthread_mutex_t g_sync_hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* заносит блок в лист ожидания, ожидается блок с хешем, записанным в поле nfield блока b */
-static int push_block(struct cheatcoin_block *b, int nfield) {
+static int push_block(struct cheatcoin_block *b, void *conn, int nfield, int ttl) {
 	struct sync_block **p, *q;
 	pthread_mutex_lock(&g_sync_hash_mutex);
 	for (p = get_list(b->field[nfield].hash), q = *p; q; q = q->next) {
 		if (!memcmp(&q->b, b, sizeof(struct cheatcoin_block))) {
+			q->conn = conn;
+			q->nfield = nfield;
+			q->ttl = ttl;
 			pthread_mutex_unlock(&g_sync_hash_mutex);
 			return 0;
 		}
@@ -33,7 +38,9 @@ static int push_block(struct cheatcoin_block *b, int nfield) {
 	q = (struct sync_block *)malloc(sizeof(struct sync_block));
 	if (!q) return -1;
 	memcpy(&q->b, b, sizeof(struct cheatcoin_block));
+	q->conn = conn;
 	q->nfield = nfield;
+	q->ttl = ttl;
 	q->next = *p;
 	*p = q;
 	g_cheatcoin_extstats.nwaitsync++;
@@ -53,7 +60,8 @@ int cheatcoin_sync_pop_block(struct cheatcoin_block *b) {
 			*p = q->next;
 			g_cheatcoin_extstats.nwaitsync--;
 			pthread_mutex_unlock(&g_sync_hash_mutex);
-			cheatcoin_sync_add_block(&q->b, 0);
+			b->field[0].transport_header = q->ttl << 8;
+			cheatcoin_sync_add_block(&q->b, q->conn);
 			free(q);
 		}
 	}
@@ -63,14 +71,18 @@ int cheatcoin_sync_pop_block(struct cheatcoin_block *b) {
 
 /* проверить блок и включить его в базу данных с учётом синхронизации, возвращает не 0 в случае ошибки */
 int cheatcoin_sync_add_block(struct cheatcoin_block *b, void *conn) {
-	int res = cheatcoin_add_block(b);
+	int res, ttl = b->field[0].transport_header >> 8 & 0xff;
+	res = cheatcoin_add_block(b);
 	if (res >= 0) {
 		cheatcoin_sync_pop_block(b);
-		if (res > 0) cheatcoin_send_packet(b, (void *)((long)conn | 1l));
+		if (res > 0 && ttl > 2) {
+			b->field[0].transport_header = ttl << 8;
+			cheatcoin_send_packet(b, (void *)((long)conn | 1l));
+		}
 	} else if (((res = -res) & 0xf) == 5) {
 		res = (res >> 4) & 0xf;
-		push_block(b, res);
-		cheatcoin_request_block(b->field[res].hash, (conn ? conn : (void *)1l));
+		push_block(b, conn, res, ttl);
+		cheatcoin_request_block(b->field[res].hash, conn);
 	}
 	return 0;
 }
