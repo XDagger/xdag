@@ -61,7 +61,7 @@ int cheatcoin_sync_pop_block(struct cheatcoin_block *b) {
 			*p = q->next;
 			g_cheatcoin_extstats.nwaitsync--;
 			pthread_mutex_unlock(&g_sync_hash_mutex);
-			b->field[0].transport_header = q->ttl << 8 | 1;
+			q->b.field[0].transport_header = q->ttl << 8 | 1;
 			cheatcoin_sync_add_block(&q->b, q->conn);
 			free(q);
 		}
@@ -84,7 +84,7 @@ int cheatcoin_sync_add_block(struct cheatcoin_block *b, void *conn) {
 		res = (res >> 4) & 0xf;
 		push_block(b, conn, res, ttl);
 		cheatcoin_request_block(b->field[res].hash, conn);
-		cheatcoin_info("ReqBlk: %016lx%016lx%016lx%016lx", ((uint64_t*)b->field[res].hash)[3],
+		cheatcoin_info("ReqBlk: %016llx%016llx%016llx%016llx", b->field[res].amount,
 			((uint64_t*)b->field[res].hash)[2], ((uint64_t*)b->field[res].hash)[1], ((uint64_t*)b->field[res].hash)[0]);
 	}
 	return 0;
