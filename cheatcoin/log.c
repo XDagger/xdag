@@ -1,4 +1,4 @@
-/* логирование, T13.670-T13.707 $DVS:time$ */
+/* логирование, T13.670-T13.740 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdint.h>
@@ -11,11 +11,7 @@
 #define CHEATCOIN_LOG_FILE "cheatcoin.log"
 
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
-#ifdef _WIN32
-static int log_level = CHEATCOIN_DEBUG;
-#else
 static int log_level = CHEATCOIN_INFO;
-#endif
 
 int cheatcoin_log(int level, const char *format, ...) {
 	static const char lvl[] = "NONEFATACRITINTEERROWARNMESSINFODBUGTRAC";

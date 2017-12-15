@@ -1,4 +1,4 @@
-/* логирование, T13.670-T13.714 $DVS:time$ */
+/* логирование, T13.670-T13.740 $DVS:time$ */
 
 #ifndef CHEATCOIN_LOG_H
 #define CHEATCOIN_LOG_H
@@ -29,6 +29,10 @@ extern int cheatcoin_set_log_level(int level);
 #define cheatcoin_err(...)   cheatcoin_log(CHEATCOIN_ERROR  , __VA_ARGS__)
 #define cheatcoin_mess(...)  cheatcoin_log(CHEATCOIN_MESSAGE, __VA_ARGS__)
 #define cheatcoin_info(...)  cheatcoin_log(CHEATCOIN_INFO   , __VA_ARGS__)
+#ifndef NDEBUG
 #define cheatcoin_debug(...) cheatcoin_log(CHEATCOIN_DEBUG  , __VA_ARGS__)
+#else
+#define cheatcoin_debug(...)
+#endif
 
 #endif
