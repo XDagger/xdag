@@ -197,7 +197,7 @@ int cheatcoin_request_block(cheatcoin_hash_t hash, void *conn) {
 	memcpy(&b.field[1], hash, sizeof(cheatcoin_hash_t));
 	memcpy(&b.field[2], &g_cheatcoin_stats, sizeof(g_cheatcoin_stats));
 	cheatcoin_netdb_send((uint8_t *)&b.field[2] + sizeof(struct cheatcoin_stats),
-			13 * sizeof(struct cheatcoin_field) - sizeof(struct cheatcoin_stats));
+			14 * sizeof(struct cheatcoin_field) - sizeof(struct cheatcoin_stats));
 	dnet_send_cheatcoin_packet(&b, conn);
 	return 0;
 }
