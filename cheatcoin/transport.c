@@ -52,8 +52,7 @@ static int block_arrive_callback(void *packet, void *connection) {
 			if (s->total_nmain    > g->total_nmain)    g->total_nmain    = s->total_nmain;
 			if (s->total_nhosts   > g->total_nhosts)   g->total_nhosts   = s->total_nhosts;
 			cheatcoin_netdb_receive((uint8_t *)&b->field[2] + sizeof(struct cheatcoin_stats),
-					(cheatcoin_type(b, 1) == CHEATCOIN_MESSAGE_SUMS_REPLY ? 6 :
-					(cheatcoin_type(b, 1) == CHEATCOIN_MESSAGE_BLOCK_REQUEST ? 13 : 14)) * sizeof(struct cheatcoin_field)
+					(cheatcoin_type(b, 1) == CHEATCOIN_MESSAGE_SUMS_REPLY ? 6 : 14) * sizeof(struct cheatcoin_field)
 					- sizeof(struct cheatcoin_stats));
 			switch (cheatcoin_type(b, 1)) {
 				case CHEATCOIN_MESSAGE_BLOCKS_REQUEST:
@@ -100,7 +99,7 @@ static int block_arrive_callback(void *packet, void *connection) {
 					{
 						struct cheatcoin_block buf, *blk;
 						cheatcoin_time_t t;
-						int64_t pos = cheatcoin_get_block_pos(b->field[CHEATCOIN_BLOCK_FIELDS - 1].hash, &t);
+						int64_t pos = cheatcoin_get_block_pos(b->field[1].hash, &t);
 						if (pos >= 0 && (blk = cheatcoin_storage_load(t, pos, &buf)))
 							dnet_send_cheatcoin_packet(blk, connection);
 					}
@@ -195,9 +194,8 @@ int cheatcoin_request_block(cheatcoin_hash_t hash, void *conn) {
 	struct cheatcoin_block b;
 	b.field[0].type = CHEATCOIN_MESSAGE_BLOCK_REQUEST << 4 | CHEATCOIN_FIELD_NONCE;
 	b.field[0].time = b.field[0].end_time = 0;
-	cheatcoin_generate_random_array(&b.field[1], sizeof(struct cheatcoin_field));
+	memcpy(&b.field[1], hash, sizeof(cheatcoin_hash_t));
 	memcpy(&b.field[2], &g_cheatcoin_stats, sizeof(g_cheatcoin_stats));
-	memcpy(&b.field[CHEATCOIN_BLOCK_FIELDS - 1], hash, sizeof(cheatcoin_hash_t));
 	cheatcoin_netdb_send((uint8_t *)&b.field[2] + sizeof(struct cheatcoin_stats),
 			13 * sizeof(struct cheatcoin_field) - sizeof(struct cheatcoin_stats));
 	dnet_send_cheatcoin_packet(&b, conn);
