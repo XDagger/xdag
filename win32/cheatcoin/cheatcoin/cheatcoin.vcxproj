@@ -20,6 +20,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -38,7 +39,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <IncludePath>..\..\OpenSSL-Win32\include;.;..\..\Pre-built.2\include;$(IncludePath)</IncludePath>
     <LibraryPath>..\..\OpenSSL-Win32\lib\VC\static;..\..\Pre-built.2\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -50,8 +51,14 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;DFSTOOLS;CHEATCOIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;DFSTOOLS;CHEATCOIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -59,6 +66,8 @@
       <AdditionalDependencies>ws2_32.lib;pthreadVC2.lib;libeay32MD.lib;ssleay32MD.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>10000000</StackReserveSize>
       <StackCommitSize>10000000</StackCommitSize>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -88,6 +97,7 @@
     <ClCompile Include="..\..\..\cheatcoin\netdb.c" />
     <ClCompile Include="..\..\..\cheatcoin\sha256.c" />
     <ClCompile Include="..\..\..\cheatcoin\storage.c" />
+    <ClCompile Include="..\..\..\cheatcoin\sync.c" />
     <ClCompile Include="..\..\..\cheatcoin\transport.c" />
     <ClCompile Include="..\..\..\cheatcoin\wallet.c" />
     <ClCompile Include="..\..\..\dnet\dnet_command.c" />
@@ -118,6 +128,7 @@
     <ClInclude Include="..\..\..\cheatcoin\netdb.h" />
     <ClInclude Include="..\..\..\cheatcoin\sha256.h" />
     <ClInclude Include="..\..\..\cheatcoin\storage.h" />
+    <ClInclude Include="..\..\..\cheatcoin\sync.h" />
     <ClInclude Include="..\..\..\cheatcoin\system.h" />
     <ClInclude Include="..\..\..\cheatcoin\transport.h" />
     <ClInclude Include="..\..\..\cheatcoin\version.h" />
