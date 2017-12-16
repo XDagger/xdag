@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <pthread.h>
 #include "sync.h"
 #include "hash.h"
@@ -9,13 +10,15 @@
 #include "transport.h"
 #include "log.h"
 
-#define SYNC_HASH_SIZE 0x10000
-#define get_list(hash) (g_sync_hash + ((hash)[0] & (SYNC_HASH_SIZE - 1)))
+#define SYNC_HASH_SIZE	0x10000
+#define get_list(hash)	(g_sync_hash + ((hash)[0] & (SYNC_HASH_SIZE - 1)))
+#define REQ_PERIOD		64
 
 struct sync_block {
 	struct cheatcoin_block b;
 	struct sync_block *next;
 	void *conn;
+	time_t t;
 	uint8_t nfield;
 	uint8_t ttl;
 };
@@ -27,12 +30,15 @@ static pthread_mutex_t g_sync_hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int push_block(struct cheatcoin_block *b, void *conn, int nfield, int ttl) {
 	struct sync_block **p, *q;
 	int res;
+	time_t t = time(0);
 	pthread_mutex_lock(&g_sync_hash_mutex);
 	for (p = get_list(b->field[nfield].hash), q = *p; q; q = q->next) {
 		if (!memcmp(&q->b, b, sizeof(struct cheatcoin_block))) {
-			res = (q->conn != conn);
+			res = (t - q->t >= REQ_PERIOD);
+			q->conn = conn;
 			q->nfield = nfield;
 			q->ttl = ttl;
+			if (res) q->t = t;
 			pthread_mutex_unlock(&g_sync_hash_mutex);
 			return res;
 		}
@@ -43,6 +49,7 @@ static int push_block(struct cheatcoin_block *b, void *conn, int nfield, int ttl
 	q->conn = conn;
 	q->nfield = nfield;
 	q->ttl = ttl;
+	q->t = t;
 	q->next = *p;
 	*p = q;
 	g_cheatcoin_extstats.nwaitsync++;
