@@ -1,4 +1,4 @@
-/* dnet: main file; T11.231-T13.738; $DVS:time$ */
+/* dnet: main file; T11.231-T13.742; $DVS:time$ */
 
 #include <stdio.h>
 #include <string.h>
@@ -19,6 +19,8 @@
 #include "dnet_command.h"
 #include "dnet_main.h"
 
+//#define NO_DNET_FORK
+
 extern int getdtablesize(void);
 
 #ifdef __LDuS__
@@ -30,8 +32,7 @@ static void catcher(int signum) {
 #endif
 
 static void daemonize(void) {
-#ifndef _WIN32
-#ifndef QDNET
+#if !defined(_WIN32) && !defined(QDNET) && !defined(NO_DNET_FORK)
 	int i;
 #ifndef __LDuS__
     if (getppid() == 1) exit(0); /* already a daemon */
@@ -65,11 +66,10 @@ static void daemonize(void) {
 		signal(i, &catcher);
 #endif
 #endif
-#endif
 }
 
 static void angelize(void) {
-#if !defined(__LDuS__) && !defined(QDNET) && !defined(_WIN32)
+#if !defined(__LDuS__) && !defined(QDNET) && !defined(_WIN32) && !defined(NO_DNET_FORK)
     int stat;
     pid_t childpid;
 	while ((childpid = fork())) {

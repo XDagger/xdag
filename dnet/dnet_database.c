@@ -1,4 +1,4 @@
-/* dnet: database; T11.231-T13.410; $DVS:time$ */
+/* dnet: database; T11.231-T13.742; $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "../dus/programs/dar/source/include/crc.h"
 #include "dnet_database.h"
+#include "dnet_main.h"
 
 #define DNET_HOST_MAX           0x1000
 #define DNET_NEW_HOST_TIMEOUT	DNET_ACTIVE_PERIOD
@@ -250,6 +251,14 @@ int dnet_set_host_version(struct dnet_host *host, const char *version) {
 	if (host == g_dnet_hosts && host->version[0]) return -2;
 	host->last_appear = time(0);
 	strcpy(host->version, version);
+	return 0;
+}
+
+int dnet_set_self_version(const char *version) {
+	if (!g_dnet_n_hosts || strlen(version) >= sizeof(g_dnet_hosts->version)) return -1;
+	if (!strcmp(g_dnet_hosts->version, version)) return 0;
+	g_dnet_hosts->last_appear = time(0);
+	strcpy(g_dnet_hosts->version, version);
 	return 0;
 }
 

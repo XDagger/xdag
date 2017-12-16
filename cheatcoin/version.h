@@ -3,9 +3,12 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.740" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.742" /* $DVS:time$ */
 
 /* история
+
+T13.742 улучшение алгоритма синхронизации, улучшение алгоритма майнинга,
+	теперь команда net hosts будет выводить версии cheatcoin, а не dnet
 
 T13.740 код для Windows и Linux объединён, новый алгоритм синхронизации хостов
 

@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.738 $DVS:time$ */
+/* работа с блоками, T13.654-T13.742 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -59,8 +59,8 @@ struct block_internal {
 static cheatcoin_amount_t g_balance = 0;
 static cheatcoin_time_t time_limit = DEF_TIME_LIMIT, cheatcoin_era = CHEATCOIN_MAIN_ERA;
 static struct ldus_rbtree *root = 0;
-static struct block_internal *top_main_chain = 0, *pretop_main_chain = 0,
-		*ourfirst = 0, *ourlast = 0, *noref_first = 0, *noref_last = 0;
+static struct block_internal * volatile top_main_chain = 0, * volatile pretop_main_chain = 0;
+static struct block_internal *ourfirst = 0, *ourlast = 0, *noref_first = 0, *noref_last = 0;
 static pthread_mutex_t block_mutex;
 
 static uint64_t get_timestamp(void) {
@@ -245,6 +245,12 @@ static int valid_signature(const struct cheatcoin_block *b, int signo_r, int nke
 	return -1;
 }
 
+#define set_pretop(b) if ((b) && MAIN_TIME((b)->time) < MAIN_TIME(timestamp) && \
+		(!pretop_main_chain || cheatcoin_diff_gt((b)->difficulty, pretop_main_chain->difficulty))) { \
+	pretop_main_chain = (b); \
+	log_block("Pretop", (b)->hash, (b)->time); \
+}
+
 /* основная функция; проверить и добавить в базу новый блок; возвращает: > 0 - добавлен, = 0  - уже есть, < 0 - ошибка */
 static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 	uint64_t timestamp = get_timestamp(), sum_in = 0, sum_out = 0, *psum, theader = b->field[0].transport_header;
@@ -326,12 +332,14 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 	g_cheatcoin_stats.nblocks++;
 	if (g_cheatcoin_stats.nblocks > g_cheatcoin_stats.total_nblocks)
 		g_cheatcoin_stats.total_nblocks = g_cheatcoin_stats.nblocks;
+	set_pretop(bsaved);
+	set_pretop(top_main_chain);
 	if (cheatcoin_diff_gt(bi.difficulty, g_cheatcoin_stats.difficulty)) {
 		cheatcoin_info("Diff  : %llx%016llx (+%llx%016llx)", cheatcoin_diff_args(bi.difficulty), cheatcoin_diff_args(diff0));
 		for (ref = bsaved, ref0 = 0; ref && !(ref->flags & BI_MAIN_CHAIN); ref = ref->link[ref->max_diff_link]) {
 			if ((!ref->link[ref->max_diff_link] || cheatcoin_diff_gt(ref->difficulty, ref->link[ref->max_diff_link]->difficulty))
 					&& (!ref0 || MAIN_TIME(ref0->time) > MAIN_TIME(ref->time)))
-				{ ref->flags |= BI_MAIN_CHAIN; if (ref0 == bsaved) pretop_main_chain = ref; ref0 = ref; }
+				{ ref->flags |= BI_MAIN_CHAIN; ref0 = ref; }
 		}
 		if (ref && MAIN_TIME(ref->time) == MAIN_TIME(bsaved->time)) ref = ref->link[ref->max_diff_link];
 		unwind_main(ref);
@@ -401,7 +409,7 @@ int cheatcoin_create_block(struct cheatcoin_field *fields, int ninput, int noutp
 	int i, j, res, mining, defkeynum, keysnum[CHEATCOIN_BLOCK_FIELDS], nkeys, nkeysnum = 0, outsigkeyind = -1;
 	struct cheatcoin_public_key *defkey = cheatcoin_wallet_default_key(&defkeynum), *keys = cheatcoin_wallet_our_keys(&nkeys), *key;
 	cheatcoin_hash_t hash, min_hash;
-	struct block_internal *ref, *pretop = pretop_block();
+	struct block_internal *ref, *pretop = pretop_block(), *pretop_new;
 	for (i = 0; i < ninput; ++i) {
 		ref = block_by_hash(fields[i].hash);
 		if (!ref || !(ref->flags & BI_OURS)) return -1;
@@ -421,8 +429,8 @@ begin:
 	b[0].field[0].type = CHEATCOIN_FIELD_HEAD | (mining ? (uint64_t)CHEATCOIN_FIELD_SIGN_IN << ((CHEATCOIN_BLOCK_FIELDS - 1) * 4) : 0);
 	b[0].field[0].time = send_time;
 	b[0].field[0].amount = fee;
-	if (res < CHEATCOIN_BLOCK_FIELDS && mining && top_main_chain && top_main_chain->time < send_time)
-		{ setfld(CHEATCOIN_FIELD_OUT, top_main_chain->hash, cheatcoin_hashlow_t); res++; }
+	if (res < CHEATCOIN_BLOCK_FIELDS && mining && pretop && pretop->time < send_time)
+		{ setfld(CHEATCOIN_FIELD_OUT, pretop->hash, cheatcoin_hashlow_t); res++; }
 	for (ref = noref_first; ref && res < CHEATCOIN_BLOCK_FIELDS; ref = ref->ref) if (ref->time < send_time)
 		{ setfld(CHEATCOIN_FIELD_OUT, ref->hash, cheatcoin_hashlow_t); res++; }
 	for (j = 0; j < ninput; ++j) setfld(CHEATCOIN_FIELD_IN, fields + j, cheatcoin_hash_t);
@@ -452,8 +460,9 @@ begin:
 				min_nonce = b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].amount; j = 1;
 			}
 			b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].amount++;
-			if (pretop != pretop_block() && get_timestamp() < send_time) {
-				pretop = pretop_block();
+			pretop_new = pretop_block();
+			if (pretop != pretop_new && get_timestamp() < send_time) {
+				pretop = pretop_new;
 				cheatcoin_info("Mining: start from beginning because of pre-top block changed");
 				goto begin;
 			}

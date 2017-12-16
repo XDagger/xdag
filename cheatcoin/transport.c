@@ -1,4 +1,4 @@
-/* транспорт, T13.654-T13.738 $DVS:time$ */
+/* транспорт, T13.654-T13.742 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +10,7 @@
 #include "netdb.h"
 #include "main.h"
 #include "sync.h"
+#include "version.h"
 #include "../dnet/dnet_main.h"
 
 #define NEW_BLOCK_TTL 5
@@ -120,8 +121,8 @@ static int block_arrive_callback(void *packet, void *connection) {
 /* запустить транспортную подсистему; bindto - ip:port у которому привязать сокет, принимающий внешние соединения,
  * addr-port_pairs - массив указателей на строки ip:port, содержащие параметры других хостов для подключения; npairs - их число */
 int cheatcoin_transport_start(int flags, const char *bindto, int npairs, const char **addr_port_pairs) {
-	const char **argv = malloc((npairs + 5) * sizeof(char *));
-	int argc = 0, i;
+	const char **argv = malloc((npairs + 5) * sizeof(char *)), *version;
+	int argc = 0, i, res;
 	if (!argv) return -1;
 	argv[argc++] = "dnet";
 	if (flags & CHEATCOIN_DAEMON) { argv[argc++] = "-d"; }
@@ -129,7 +130,12 @@ int cheatcoin_transport_start(int flags, const char *bindto, int npairs, const c
 	for (i = 0; i < npairs; ++i) argv[argc++] = addr_port_pairs[i];
 	argv[argc] = 0;
 	dnet_set_cheatcoin_callback(block_arrive_callback);
-	return dnet_init(argc, (char **)argv);
+	res = dnet_init(argc, (char **)argv);
+	if (!res) {
+		version = strchr(CHEATCOIN_VERSION, '-');
+		if (version) dnet_set_self_version(version + 1);
+	}
+	return res;
 }
 
 /* сгенерировать массив случайныз данных */

@@ -1,4 +1,4 @@
-/* dnet: external interface; T13.011-T13.714; $DVS:time$ */
+/* dnet: external interface; T13.011-T13.742; $DVS:time$ */
 
 #ifndef DNET_MAIN_H_INCLUDED
 #define DNET_MAIN_H_INCLUDED
@@ -22,6 +22,8 @@ extern int dnet_set_cheatcoin_callback(int (*callback)(void *block, void *connec
 extern void *dnet_send_cheatcoin_packet(void *block, void *connection_to);
 
 extern int dnet_execute_command(const char *cmd, void *fileout);
+
+extern int dnet_set_self_version(const char *version);
 
 #ifdef __cplusplus
 }
