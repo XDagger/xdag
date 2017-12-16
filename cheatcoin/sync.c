@@ -1,4 +1,4 @@
-/* синхронизация, T13.738-T13.740 $DVS:time$ */
+/* синхронизация, T13.738-T13.741 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -26,14 +26,15 @@ static pthread_mutex_t g_sync_hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 /* заносит блок в лист ожидания, ожидается блок с хешем, записанным в поле nfield блока b */
 static int push_block(struct cheatcoin_block *b, void *conn, int nfield, int ttl) {
 	struct sync_block **p, *q;
+	int res;
 	pthread_mutex_lock(&g_sync_hash_mutex);
 	for (p = get_list(b->field[nfield].hash), q = *p; q; q = q->next) {
 		if (!memcmp(&q->b, b, sizeof(struct cheatcoin_block))) {
-			q->conn = conn;
+			res = (q->conn != conn);
 			q->nfield = nfield;
 			q->ttl = ttl;
 			pthread_mutex_unlock(&g_sync_hash_mutex);
-			return 0;
+			return res;
 		}
 	}
 	q = (struct sync_block *)malloc(sizeof(struct sync_block));
@@ -82,10 +83,11 @@ int cheatcoin_sync_add_block(struct cheatcoin_block *b, void *conn) {
 		}
 	} else if (((res = -res) & 0xf) == 5) {
 		res = (res >> 4) & 0xf;
-		push_block(b, conn, res, ttl);
-		cheatcoin_request_block(b->field[res].hash, conn);
-		cheatcoin_info("ReqBlk: %016llx%016llx%016llx%016llx", b->field[res].amount,
-			((uint64_t*)b->field[res].hash)[2], ((uint64_t*)b->field[res].hash)[1], ((uint64_t*)b->field[res].hash)[0]);
+		if (push_block(b, conn, res, ttl)) {
+			cheatcoin_request_block(b->field[res].hash, conn);
+			cheatcoin_info("ReqBlk: %016llx%016llx%016llx%016llx", b->field[res].amount,
+				((uint64_t*)b->field[res].hash)[2], ((uint64_t*)b->field[res].hash)[1], ((uint64_t*)b->field[res].hash)[0]);
+		}
 	}
 	return 0;
 }
