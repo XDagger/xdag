@@ -64,8 +64,8 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>ws2_32.lib;pthreadVC2.lib;libeay32MD.lib;ssleay32MD.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <StackReserveSize>10000000</StackReserveSize>
-      <StackCommitSize>10000000</StackCommitSize>
+      <StackReserveSize>40000000</StackReserveSize>
+      <StackCommitSize>1000000</StackCommitSize>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
     </Link>
