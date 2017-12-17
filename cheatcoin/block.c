@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.742 $DVS:time$ */
+/* работа с блоками, T13.654-T13.744 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -406,7 +406,7 @@ int cheatcoin_add_block(struct cheatcoin_block *b) {
  * проводится майнинг для генерации наиболее оптимального хеша */
 int cheatcoin_create_block(struct cheatcoin_field *fields, int ninput, int noutput, cheatcoin_amount_t fee, cheatcoin_time_t send_time) {
 	struct cheatcoin_block b[2];
-	int i, j, res, mining, defkeynum, keysnum[CHEATCOIN_BLOCK_FIELDS], nkeys, nkeysnum = 0, outsigkeyind = -1;
+	int i, j, res, res0, mining, defkeynum, keysnum[CHEATCOIN_BLOCK_FIELDS], nkeys, nkeysnum = 0, outsigkeyind = -1;
 	struct cheatcoin_public_key *defkey = cheatcoin_wallet_default_key(&defkeynum), *keys = cheatcoin_wallet_our_keys(&nkeys), *key;
 	cheatcoin_hash_t hash, min_hash;
 	struct block_internal *ref, *pretop = pretop_block(), *pretop_new;
@@ -419,18 +419,19 @@ int cheatcoin_create_block(struct cheatcoin_field *fields, int ninput, int noutp
 			keysnum[nkeysnum++] = ref->n_our_key;
 		}
 	}
-	res = 1 + ninput + noutput + 3 * nkeysnum + (outsigkeyind < 0 ? 2 : 0);
-	if (res > CHEATCOIN_BLOCK_FIELDS) return -1;
+	res0 = 1 + ninput + noutput + 3 * nkeysnum + (outsigkeyind < 0 ? 2 : 0);
+	if (res0 > CHEATCOIN_BLOCK_FIELDS) return -1;
 	if (!send_time) send_time = get_timestamp(), mining = 0;
-	else mining = (send_time > get_timestamp() && res + 1 <= CHEATCOIN_BLOCK_FIELDS);
-	res += mining;
+	else mining = (send_time > get_timestamp() && res0 + 1 <= CHEATCOIN_BLOCK_FIELDS);
+	res0 += mining;
 begin:
+	res = res0;
 	memset(b, 0, sizeof(struct cheatcoin_block)); i = 1;
 	b[0].field[0].type = CHEATCOIN_FIELD_HEAD | (mining ? (uint64_t)CHEATCOIN_FIELD_SIGN_IN << ((CHEATCOIN_BLOCK_FIELDS - 1) * 4) : 0);
 	b[0].field[0].time = send_time;
 	b[0].field[0].amount = fee;
 	if (res < CHEATCOIN_BLOCK_FIELDS && mining && pretop && pretop->time < send_time)
-		{ setfld(CHEATCOIN_FIELD_OUT, pretop->hash, cheatcoin_hashlow_t); res++; }
+		{ log_block("Mintop", pretop->hash, pretop->time); setfld(CHEATCOIN_FIELD_OUT, pretop->hash, cheatcoin_hashlow_t); res++; }
 	for (ref = noref_first; ref && res < CHEATCOIN_BLOCK_FIELDS; ref = ref->ref) if (ref->time < send_time)
 		{ setfld(CHEATCOIN_FIELD_OUT, ref->hash, cheatcoin_hashlow_t); res++; }
 	for (j = 0; j < ninput; ++j) setfld(CHEATCOIN_FIELD_IN, fields + j, cheatcoin_hash_t);
