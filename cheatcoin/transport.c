@@ -15,20 +15,48 @@
 
 #define NEW_BLOCK_TTL	5
 #define REQUEST_WAIT	64
-#define N_CONN_CLOSED	16
+#define N_CONNS			4096
 
 static void *reply_data;
 static void *(*reply_callback)(void *block, void *data) = 0;
 static void *reply_connection;
 static cheatcoin_hash_t reply_id;
 static int64_t reply_result;
-static void *connection_closed[N_CONN_CLOSED];
-static int connection_closed_ind;
+static void **connections = 0;
+static int N_connections = 0;
+static pthread_mutex_t conn_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct cheatcoin_send_data {
 	struct cheatcoin_block b;
 	void *connection;
 };
+
+static int conn_add_rm(void *conn, int addrm) {
+	int b, e, m;
+	pthread_mutex_lock(&conn_mutex);
+	b = 0, e = N_connections;
+	while (b < e) {
+		m = (b + e) / 2;
+		if (connections[m] == conn) {
+			if (addrm < 0) {
+				if (m < N_connections - 1) memmove(connections + m, connections + m + 1, (N_connections - m - 1) * sizeof(void *));
+				N_connections--;
+				m = -1;
+			}
+			pthread_mutex_unlock(&conn_mutex);
+			return m;
+		}
+		if (connections[m] < conn) b = m + 1;
+		else e = m;
+	}
+	if (addrm > 0 && N_connections < N_CONNS) {
+		if (b < N_connections) memmove(connections + b + 1, connections + b, (N_connections - b) * sizeof(void *));
+		N_connections++;
+		connections[b] = conn;
+	} else b = -1;
+	pthread_mutex_unlock(&conn_mutex);
+	return b;
+}
 
 static void *cheatcoin_send_thread(void *arg) {
 	struct cheatcoin_send_data *d = (struct cheatcoin_send_data *)arg;
@@ -45,6 +73,7 @@ static void *cheatcoin_send_thread(void *arg) {
 static int block_arrive_callback(void *packet, void *connection) {
 	struct cheatcoin_block *b = (struct cheatcoin_block *)packet;
 	int res = 0;
+	conn_add_rm(connection, 1);
 	switch (cheatcoin_type(b, 0)) {
 		case CHEATCOIN_FIELD_HEAD:
 			cheatcoin_sync_add_block(b, connection);
@@ -121,7 +150,8 @@ static int block_arrive_callback(void *packet, void *connection) {
 }
 
 static void conn_close_notify(void *conn) {
-	connection_closed[connection_closed_ind++ & (N_CONN_CLOSED - 1)] = conn;
+	conn_add_rm(conn, -1);
+	if (reply_connection == conn) reply_connection = 0;
 }
 
 /* внешний интерфейс */
@@ -139,6 +169,8 @@ int cheatcoin_transport_start(int flags, const char *bindto, int npairs, const c
 	argv[argc] = 0;
 	dnet_set_cheatcoin_callback(block_arrive_callback);
 	dnet_connection_close_notify = &conn_close_notify;
+	connections = (void **)malloc(N_CONNS * sizeof(void *));
+	if (!connections) return -1;
 	res = dnet_init(argc, (char **)argv);
 	if (!res) {
 		version = strchr(CHEATCOIN_VERSION, '-');
@@ -200,10 +232,7 @@ int cheatcoin_net_command(const char *cmd, void *out) {
 
 /* разослать пакет, conn - то же, что и в dnet_send_cheatcoin_packet */
 int cheatcoin_send_packet(struct cheatcoin_block *b, void *conn) {
-	if ((long)conn & ~0xffl && !((long)conn & 1)) {
-		int i;
-		for (i = 0; i < N_CONN_CLOSED; ++i) if (conn == connection_closed[i]) { conn = (void *)1l; break; }
-	}
+	if ((long)conn & ~0xffl && !((long)conn & 1) && conn_add_rm(conn, 0) < 0) conn = (void *)1l;
 	dnet_send_cheatcoin_packet(b, conn);
 	return 0;
 }
@@ -217,6 +246,7 @@ int cheatcoin_request_block(cheatcoin_hash_t hash, void *conn) {
 	memcpy(&b.field[2], &g_cheatcoin_stats, sizeof(g_cheatcoin_stats));
 	cheatcoin_netdb_send((uint8_t *)&b.field[2] + sizeof(struct cheatcoin_stats),
 			14 * sizeof(struct cheatcoin_field) - sizeof(struct cheatcoin_stats));
+	if ((long)conn & ~0xffl && !((long)conn & 1) && conn_add_rm(conn, 0) < 0) conn = (void *)1l;
 	dnet_send_cheatcoin_packet(&b, conn);
 	return 0;
 }
