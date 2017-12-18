@@ -1,4 +1,4 @@
-/* dnet: commands; T11.261-T13.714; $DVS:time$ */
+/* dnet: commands; T11.261-T13.748; $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -72,10 +72,11 @@ begin:
 		char *host  = dnet_strtok_r(0, " \t\r\n", &lasts);
 		if (!host) dnet_printf(out, "dnet: host is not given\n");
 		else {
-			struct dnet_thread *thread = malloc(sizeof(struct dnet_thread));
+			struct dnet_thread *thread = malloc(sizeof(struct dnet_thread) + strlen(host) + 1);
 			int res = 1;
 			if (thread) {
-				thread->arg = strdup(host);
+				strcpy((char *)(thread + 1), host);
+				thread->arg = (char *)(thread + 1);
 				thread->conn.socket = -1;
 				thread->type = DNET_THREAD_CLIENT;
 				res = dnet_thread_create(thread);
