@@ -34,6 +34,7 @@
 struct list *g_threads;
 pthread_rwlock_t g_threads_rwlock;
 int g_nthread;
+void (*dnet_connection_close_notify)(void *conn) = 0;
 
 static void dnet_thread_work(struct dnet_thread *t) {
     char buf[0x100];
@@ -192,7 +193,10 @@ static void *dnet_thread_client_server(void *arg) {
 			close(t->conn.socket); t->conn.socket = -1;
 		}
 #ifndef CHEATCOIN
-		if (t->to_remove) break;
+		if (t->to_remove) {
+			if (dnet_connection_close_notify) (*dnet_connection_close_notify)(&t->conn);
+			break;
+		}
 		sleep(5);
 #else
 		break;

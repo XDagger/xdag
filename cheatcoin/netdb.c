@@ -1,4 +1,4 @@
-/* база хостов, T13.714-T13.734 $DVS:time$ */
+/* база хостов, T13.714-T13.744 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -141,6 +141,7 @@ static void *monitor_thread(void *arg) {
 		if (our_host) selected_hosts[n_selected_hosts++] = our_host;
 		n = read_database("netdb.tmp", HOST_CONNECTED | HOST_SET | HOST_NOT_ADD);
 		if (n < 0) n = 0;
+		f = fopen("netdb.log", "a");
 		for (i = 0; i < MAX_SELECTED_HOSTS; ++i) {
 			struct host *h = random_host(HOST_CONNECTED | HOST_OUR);
 			char str[64];
@@ -148,12 +149,13 @@ static void *monitor_thread(void *arg) {
 			if (n < MAX_SELECTED_HOSTS) {
 				sprintf(str, "connect %u.%u.%u.%u:%u", h->ip & 0xff, h->ip >> 8 & 0xff, h->ip >> 16 & 0xff, h->ip >> 24 & 0xff, h->port);
 				cheatcoin_debug("Netdb : host=%lx flags=%x query='%s'", (long)h, h->flags, str);
-				cheatcoin_net_command(str, stderr);
+				cheatcoin_net_command(str, (f ? f : stderr));
 				n++;
 			}
 			h->flags |= HOST_CONNECTED;
 			if (n_selected_hosts < MAX_SELECTED_HOSTS) selected_hosts[n_selected_hosts++] = h;
 		}
+		if (f) fclose(f);
 		while (time(0) - t < 67) sleep(1);
 	}
 	return 0;

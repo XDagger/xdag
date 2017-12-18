@@ -25,6 +25,8 @@ extern int dnet_execute_command(const char *cmd, void *fileout);
 
 extern int dnet_set_self_version(const char *version);
 
+extern void (*dnet_connection_close_notify)(void *conn);
+
 #ifdef __cplusplus
 }
 #endif

@@ -13,13 +13,17 @@
 #include "version.h"
 #include "../dnet/dnet_main.h"
 
-#define NEW_BLOCK_TTL 5
+#define NEW_BLOCK_TTL	5
+#define REQUEST_WAIT	64
+#define N_CONN_CLOSED	16
 
 static void *reply_data;
 static void *(*reply_callback)(void *block, void *data) = 0;
 static void *reply_connection;
 static cheatcoin_hash_t reply_id;
 static int64_t reply_result;
+static void *connection_closed[N_CONN_CLOSED];
+static int connection_closed_ind;
 
 struct cheatcoin_send_data {
 	struct cheatcoin_block b;
@@ -116,6 +120,10 @@ static int block_arrive_callback(void *packet, void *connection) {
 	return res;
 }
 
+static void conn_close_notify(void *conn) {
+	connection_closed[connection_closed_ind++ & (N_CONN_CLOSED - 1)] = conn;
+}
+
 /* внешний интерфейс */
 
 /* запустить транспортную подсистему; bindto - ip:port у которому привязать сокет, принимающий внешние соединения,
@@ -130,6 +138,7 @@ int cheatcoin_transport_start(int flags, const char *bindto, int npairs, const c
 	for (i = 0; i < npairs; ++i) argv[argc++] = addr_port_pairs[i];
 	argv[argc] = 0;
 	dnet_set_cheatcoin_callback(block_arrive_callback);
+	dnet_connection_close_notify = &conn_close_notify;
 	res = dnet_init(argc, (char **)argv);
 	if (!res) {
 		version = strchr(CHEATCOIN_VERSION, '-');
@@ -162,7 +171,7 @@ static int do_request(int type, cheatcoin_time_t start_time, cheatcoin_time_t en
 		reply_connection = dnet_send_cheatcoin_packet(&b, 0);
 		if (!reply_connection) return 0;
 	} else dnet_send_cheatcoin_packet(&b, reply_connection);
-	for (t = time(0); reply_result < 0 && time(0) - t < 10; ) sleep(1);
+	for (t = time(0); reply_result < 0 && time(0) - t < REQUEST_WAIT; ) sleep(1);
 	return (int)reply_result;
 }
 
@@ -191,6 +200,10 @@ int cheatcoin_net_command(const char *cmd, void *out) {
 
 /* разослать пакет, conn - то же, что и в dnet_send_cheatcoin_packet */
 int cheatcoin_send_packet(struct cheatcoin_block *b, void *conn) {
+	if ((long)conn & ~0xffl && !((long)conn & 1)) {
+		int i;
+		for (i = 0; i < N_CONN_CLOSED; ++i) if (conn == connection_closed[i]) { conn = (void *)1l; break; }
+	}
 	dnet_send_cheatcoin_packet(b, conn);
 	return 0;
 }
