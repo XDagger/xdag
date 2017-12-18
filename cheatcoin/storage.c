@@ -1,4 +1,4 @@
-/* локальное хранилище, T13.663-T13.737 $DVS:time$ */
+/* локальное хранилище, T13.663-T13.748 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,7 +45,10 @@ static int correct_storage_sum(const char *path, int pos, const struct cheatcoin
 	}
 	if (!add) {
 		if (sums[pos].size == sum->size && sums[pos].sum == sum->sum) { fclose(f); return 0; }
-		if (sums[pos].size || sums[pos].sum) { fclose(f); cheatcoin_err("Storag: corrupted, sums file %s, pos %x", path, pos); return -1; }
+		if (sums[pos].size || sums[pos].sum) {
+			sums[pos].size = sums[pos].sum = 0;
+			cheatcoin_err("Storag: corrupted, sums file %s, pos %x", path, pos);
+		}
 	}
 	sums[pos].size += sum->size;
 	sums[pos].sum  += sum->sum;
