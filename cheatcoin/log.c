@@ -1,4 +1,4 @@
-/* логирование, T13.670-T13.740 $DVS:time$ */
+/* логирование, T13.670-T13.753 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdint.h>
@@ -7,15 +7,16 @@
 #include <sys/time.h>
 #include "system.h"
 #include "log.h"
+#include "main.h"
 
-#define CHEATCOIN_LOG_FILE "cheatcoin.log"
+#define CHEATCOIN_LOG_FILE "%s.log"
 
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int log_level = CHEATCOIN_INFO;
 
 int cheatcoin_log(int level, const char *format, ...) {
 	static const char lvl[] = "NONEFATACRITINTEERROWARNMESSINFODBUGTRAC";
-	char tbuf[64];
+	char tbuf[64], buf[64];
 	struct tm tm;
 	va_list arg;
 	struct timeval tv;
@@ -30,7 +31,8 @@ int cheatcoin_log(int level, const char *format, ...) {
 	localtime_r(&t, &tm);
 	strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
 	pthread_mutex_lock(&log_mutex);
-	f = fopen(CHEATCOIN_LOG_FILE, "a");
+	sprintf(buf, CHEATCOIN_LOG_FILE, g_coinname);
+	f = fopen(buf, "a");
 	if (!f) { done = -1; goto end; }
 	fprintf(f, "%s.%03d [%012llx:%.4s]  ", tbuf, (int)(tv.tv_usec / 1000), (long long)pthread_self_ptr(), lvl + 4 * level);
 

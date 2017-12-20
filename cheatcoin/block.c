@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.744 $DVS:time$ */
+/* работа с блоками, T13.654-T13.753 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -484,7 +484,7 @@ static void *maining_thread(void *arg) {
 
 static int request_blocks(cheatcoin_time_t t, cheatcoin_time_t dt) {
 	int i, res;
-	if (dt <= MAIN_CHAIN_PERIOD) {
+	if (dt <= REQUEST_BLOCKS_MAX_TIME) {
 		cheatcoin_time_t t0 = time_limit;
 		for (i = 0; cheatcoin_info("QueryB: t=%llx dt=%llx", t, dt),
 				i < QUERY_RETRIES && (res = cheatcoin_request_blocks(t, t + dt, &t0, add_block_callback)) < 0; ++i);

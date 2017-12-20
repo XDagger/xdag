@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.748" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.753" /* $DVS:time$ */
 
 /* история
+
+T13.753 увеличен период, за котоырй запрашиваются все блоки, сделана версия для win64
 
 T13.748 добавлен код, позволяющий избежать падений из-за отключения соединений
 

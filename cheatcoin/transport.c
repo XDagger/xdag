@@ -1,4 +1,4 @@
-/* транспорт, T13.654-T13.748 $DVS:time$ */
+/* транспорт, T13.654-T13.753 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -95,7 +95,7 @@ static int block_arrive_callback(void *packet, void *connection) {
 						if (!d) return -1;
 						memcpy(&d->b, b, sizeof(struct cheatcoin_block));
 						d->connection = connection;
-						if (b->field[0].end_time - b->field[0].time == 1ll << 16) {
+						if (b->field[0].end_time - b->field[0].time <= REQUEST_BLOCKS_MAX_TIME) {
 							cheatcoin_send_thread(d);
 						} else {
 							pthread_t t;
