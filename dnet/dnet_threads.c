@@ -27,8 +27,8 @@
 #define LOG_PERIOD          300
 #define GC_PERIOD           300
 #define UPDATE_PERIOD	    DNET_UPDATE_PERIOD
-#ifndef _WIN32
-#define INVALID_SOCKET -1
+#if !defined(_WIN32) && !defined(_WIN64)
+#define INVALID_SOCKET		-1
 #endif
 
 struct list *g_threads;

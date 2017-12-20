@@ -3,16 +3,18 @@
 #ifndef	LDUS_RBTREE_H_INCLUDED
 #define LDUS_RBTREE_H_INCLUDED
 
+#include <stdint.h>
+
 struct ldus_rbtree {
 	struct ldus_rbtree *left;
 	struct ldus_rbtree *right;
 };
 
-static inline struct ldus_rbtree *_rbtree_ptr(struct ldus_rbtree *ptr) { return (struct ldus_rbtree *)((unsigned long)ptr & ~1ul); }
+static inline struct ldus_rbtree *_rbtree_ptr(struct ldus_rbtree *ptr) { return (struct ldus_rbtree *)((uintptr_t)ptr & ~(uintptr_t)1); }
 
-static inline int _rbtree_color(struct ldus_rbtree *ptr) { return (unsigned long)ptr & 1; }
+static inline int _rbtree_color(struct ldus_rbtree *ptr) { return (uintptr_t)ptr & 1; }
 
-static inline struct ldus_rbtree *_rbtree_set_color(struct ldus_rbtree *ptr, int color) { return (struct ldus_rbtree *)(((unsigned long)ptr & ~1ul) | color); }
+static inline struct ldus_rbtree *_rbtree_set_color(struct ldus_rbtree *ptr, int color) { return (struct ldus_rbtree *)(((uintptr_t)ptr & ~(uintptr_t)1) | color); }
 
 static inline void ldus_rbtree_init(struct ldus_rbtree **proot) { *proot = 0; }
 

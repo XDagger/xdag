@@ -222,7 +222,7 @@ int cheatcoin_request_sums(cheatcoin_time_t start_time, cheatcoin_time_t end_tim
 
 /* разослать другим участникам сети новый блок */
 int cheatcoin_send_new_block(struct cheatcoin_block *b) {
-	dnet_send_cheatcoin_packet(b, (void *)(long)NEW_BLOCK_TTL);
+	dnet_send_cheatcoin_packet(b, (void *)(uintptr_t)NEW_BLOCK_TTL);
 	return 0;
 }
 
@@ -232,7 +232,7 @@ int cheatcoin_net_command(const char *cmd, void *out) {
 
 /* разослать пакет, conn - то же, что и в dnet_send_cheatcoin_packet */
 int cheatcoin_send_packet(struct cheatcoin_block *b, void *conn) {
-	if ((long)conn & ~0xffl && !((long)conn & 1) && conn_add_rm(conn, 0) < 0) conn = (void *)1l;
+	if ((uintptr_t)conn & ~0xffl && !((uintptr_t)conn & 1) && conn_add_rm(conn, 0) < 0) conn = (void *)1l;
 	dnet_send_cheatcoin_packet(b, conn);
 	return 0;
 }
@@ -246,7 +246,7 @@ int cheatcoin_request_block(cheatcoin_hash_t hash, void *conn) {
 	memcpy(&b.field[2], &g_cheatcoin_stats, sizeof(g_cheatcoin_stats));
 	cheatcoin_netdb_send((uint8_t *)&b.field[2] + sizeof(struct cheatcoin_stats),
 			14 * sizeof(struct cheatcoin_field) - sizeof(struct cheatcoin_stats));
-	if ((long)conn & ~0xffl && !((long)conn & 1) && conn_add_rm(conn, 0) < 0) conn = (void *)1l;
+	if ((uintptr_t)conn & ~0xffl && !((uintptr_t)conn & 1) && conn_add_rm(conn, 0) < 0) conn = (void *)(uintptr_t)1l;
 	dnet_send_cheatcoin_packet(&b, conn);
 	return 0;
 }

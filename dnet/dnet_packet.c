@@ -77,14 +77,14 @@ void *dnet_send_cheatcoin_packet(void *block, void *connection_to) {
 	if (!d.conn) {
 		d.p->header.ttl = 1;
 		d.nconn = 0;
-	} else if ((unsigned long)d.conn < 256) {
-		d.p->header.ttl = (uint8_t)(unsigned long)d.conn;
+	} else if ((uintptr_t)d.conn < 256) {
+		d.p->header.ttl = (uint8_t)(uintptr_t)d.conn;
 		d.conn = 0;
 		d.nconn = -1;
-	} else if ((long)d.conn & 1) {
+	} else if ((uintptr_t)d.conn & 1) {
 		if (d.p->header.ttl <= 2) return 0;
 		d.p->header.ttl--;
-		d.conn = (struct dnet_connection *)((long)d.conn - 1);
+		d.conn = (struct dnet_connection *)((uintptr_t)d.conn - 1);
 		d.nconn = -1;
 	} else {
 		d.p->header.ttl = 1;
@@ -285,7 +285,7 @@ int dnet_process_packet(struct dnet_packet *p, struct dnet_connection *conn) {
 			if (res < 0) return 0x39;
 			if (res > 0 && ttl > 2) {
 				p->header.ttl = ttl;
-				dnet_send_cheatcoin_packet(p, (void *)((long)conn | 1));
+				dnet_send_cheatcoin_packet(p, (void *)((uintptr_t)conn | 1));
 			}
 		}
 		break;

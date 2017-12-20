@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/time.h>
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 #include <sys/socket.h>
 #endif
 #include "dnet_connection.h"

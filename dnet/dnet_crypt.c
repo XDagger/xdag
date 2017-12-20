@@ -19,7 +19,7 @@
 #define SECTOR_SIZE (1 << SECTOR_LOG)
 #define KEYLEN_MIN	(DNET_KEYLEN / 4)
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(_WIN64)
 extern int gethostname(char *name, size_t namelen);
 extern int getlogin_r(char *name, size_t namesize);
 #else

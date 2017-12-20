@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(_WIN64)
 #include <signal.h>
 #include <unistd.h>
 #include <sys/wait.h>
@@ -32,7 +32,7 @@ static void catcher(int signum) {
 #endif
 
 static void daemonize(void) {
-#if !defined(_WIN32) && !defined(QDNET) && !defined(NO_DNET_FORK)
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(QDNET) && !defined(NO_DNET_FORK)
 	int i;
 #ifndef __LDuS__
     if (getppid() == 1) exit(0); /* already a daemon */
@@ -69,7 +69,7 @@ static void daemonize(void) {
 }
 
 static void angelize(void) {
-#if !defined(__LDuS__) && !defined(QDNET) && !defined(_WIN32) && !defined(NO_DNET_FORK)
+#if !defined(__LDuS__) && !defined(QDNET) && !defined(_WIN32) && !defined(_WIN64) && !defined(NO_DNET_FORK)
     int stat;
     pid_t childpid;
 	while ((childpid = fork())) {

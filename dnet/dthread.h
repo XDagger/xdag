@@ -5,7 +5,7 @@
 
 #include <pthread.h>
 
-#if !defined(__LDuS__) && !defined(_WIN32)
+#if !defined(__LDuS__) && !defined(_WIN32) && !defined(_WIN64)
 
 #include <sched.h>
 #include "../ldus/source/include/ldus/atomic.h"

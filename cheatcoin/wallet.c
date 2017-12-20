@@ -49,7 +49,7 @@ static int add_key(cheatcoin_hash_t priv) {
 		keys_arr = newarr;
 	}
 	keys_arr[nkeys].key = k->key;
-	keys_arr[nkeys].pub = (uint64_t *)((long)&k->pub | k->pub_bit);
+	keys_arr[nkeys].pub = (uint64_t *)((uintptr_t)&k->pub | k->pub_bit);
 	cheatcoin_debug("Key %2d: priv=[%s] pub=[%02x:%s]", nkeys,
 			cheatcoin_log_hash(k->priv), 0x02 + k->pub_bit,  cheatcoin_log_hash(k->pub));
 	nkeys++;

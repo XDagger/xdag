@@ -1,6 +1,6 @@
 /* dnet: communication with tap interface; T13.137-T13.138; $DVS:time$ */
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 
 int dnet_tap_open(int tap_number) {
 	return -1;

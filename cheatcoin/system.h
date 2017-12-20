@@ -1,14 +1,19 @@
 #ifndef _SYSTEM_H
 #define _SYSTEM_H
 
-#ifdef _WIN32
-#define inline __inline
+#if defined(_WIN32) || defined(_WIN64)
+
+#define inline				__inline
 #include "../dus/programs/dfstools/source/include/dfsrsa.h"
 
-#define strtok_r strtok_s
-#define localtime_r(a,b) localtime_s(b,a)
-#define sleep _sleep
-#define pthread_self_ptr() pthread_self().p
+#define strtok_r			strtok_s
+#define localtime_r(a,b)	localtime_s(b,a)
+#ifdef _WIN64
+#define sleep(x)			Sleep((x)*1000)
+#else
+#define sleep(x)			_sleep(x)
+#endif
+#define pthread_self_ptr()	pthread_self().p
 
 typedef struct {
 	dfsrsa_t num[4];
@@ -29,11 +34,12 @@ static inline cheatcoin_diff_t cheatcoin_diff_div(cheatcoin_diff_t p, cheatcoin_
 	return r;
 }
 #define cheatcoin_mkdir(d)		mkdir(d)
+#define strdup(x)				_strdup(x)
 
 #else
 
-#define pthread_self_ptr() pthread_self()
-typedef unsigned __int128 cheatcoin_diff_t;
+#define pthread_self_ptr()		pthread_self()
+typedef unsigned __int128		cheatcoin_diff_t;
 #define cheatcoin_diff_max		(-(cheatcoin_diff_t)1)
 #define cheatcoin_diff_gt(l, r) ((l) > (r))
 #define cheatcoin_diff_shr32(p)	(*(p) >>= 32)

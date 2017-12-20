@@ -214,7 +214,7 @@ static void dfsrsa_mulsub(dfsrsa_t *sub, dfsrsa_t *big, dfsrsa_t small, int len)
 	    res += *sub - (dfsrsa_long_t)*big++ * small;
 	    *sub++ = (dfsrsa_t)res, res >>= DFSRSA_T_BITS;
 	    if (res) {
-		res |= -((dfsrsa_long_t)1 << DFSRSA_T_BITS);
+		res |= (dfsrsa_long_t)0-((dfsrsa_long_t)1 << DFSRSA_T_BITS);
 	    }
 	}
 	if (res) *sub += (dfsrsa_t)res;

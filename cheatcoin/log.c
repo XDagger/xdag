@@ -32,7 +32,7 @@ int cheatcoin_log(int level, const char *format, ...) {
 	pthread_mutex_lock(&log_mutex);
 	f = fopen(CHEATCOIN_LOG_FILE, "a");
 	if (!f) { done = -1; goto end; }
-	fprintf(f, "%s.%03d [%012lx:%.4s]  ", tbuf, (int)(tv.tv_usec / 1000), (long)pthread_self_ptr(), lvl + 4 * level);
+	fprintf(f, "%s.%03d [%012llx:%.4s]  ", tbuf, (int)(tv.tv_usec / 1000), (long long)pthread_self_ptr(), lvl + 4 * level);
 
 	va_start(arg, format);
 	done = vfprintf(f, format, arg);

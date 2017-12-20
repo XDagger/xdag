@@ -10,7 +10,7 @@
 #include "log.h"
 #include "main.h"
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 #define SLASH "\\"
 #else
 #define SLASH "/"

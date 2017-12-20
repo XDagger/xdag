@@ -135,7 +135,7 @@ static uint64_t apply_block(struct block_internal *bi) {
 	}
 	if (sum_in + bi->amount < sum_in || sum_in + bi->amount < sum_out) return 0;
 	for (i = 0; i < bi->nlinks; ++i) {
-		if (1 << i & bi->in_mask) accept_amount(bi->link[i], -link_amount[i]);
+		if (1 << i & bi->in_mask) accept_amount(bi->link[i], (cheatcoin_amount_t)0-link_amount[i]);
 		else accept_amount(bi->link[i], link_amount[i]);
 	}
 	accept_amount(bi, sum_in - sum_out);
@@ -152,7 +152,7 @@ static uint64_t unapply_block(struct block_internal *bi) {
 			if (cheatcoin_type(b, i) == CHEATCOIN_FIELD_IN)
 				accept_amount(bi->link[n++],  b->field[i].amount), sum -= b->field[i].amount;
 			else if (cheatcoin_type(b, i) == CHEATCOIN_FIELD_OUT)
-				accept_amount(bi->link[n++], -b->field[i].amount), sum += b->field[i].amount;
+				accept_amount(bi->link[n++], (cheatcoin_amount_t)0-b->field[i].amount), sum += b->field[i].amount;
 		}
 		accept_amount(bi, sum);
 		bi->flags &= ~BI_APPLIED;
@@ -160,7 +160,7 @@ static uint64_t unapply_block(struct block_internal *bi) {
 	bi->flags &= ~BI_MAIN_REF;
 	for (i = 0; i < bi->nlinks; ++i)
 		if (bi->link[i]->ref == bi && bi->link[i]->flags & BI_MAIN_REF) accept_amount(bi, unapply_block(bi->link[i]));
-	return b ? -b->field[0].amount : 0;
+	return b ? (cheatcoin_amount_t)0-b->field[0].amount : 0;
 }
 
 /* по данному кол-ву главных блоков возвращает объем циркулирующих читкоинов */
@@ -192,7 +192,7 @@ static void unset_main(struct block_internal *m) {
 	g_cheatcoin_stats.total_nmain--;
 	amount = MAIN_START_AMOUNT >> (g_cheatcoin_stats.nmain >> MAIN_BIG_PERIOD_LOG);
 	m->flags &= ~BI_MAIN;
-	accept_amount(m, -amount);
+	accept_amount(m, (cheatcoin_amount_t)0-amount);
 	accept_amount(m, unapply_block(m));
 	log_block("UNMAIN", m->hash, m->time);
 }
@@ -212,8 +212,8 @@ static void unwind_main(struct block_internal *b) {
 }
 
 static inline void hash_for_signature(struct cheatcoin_block b[2], const struct cheatcoin_public_key *key, cheatcoin_hash_t hash) {
-	memcpy((uint8_t *)(b + 1) + 1, (void *)((long)key->pub & ~1l), sizeof(cheatcoin_hash_t));
-	*(uint8_t *)(b + 1) = ((long)key->pub & 1) | 0x02;
+	memcpy((uint8_t *)(b + 1) + 1, (void *)((uintptr_t)key->pub & ~1l), sizeof(cheatcoin_hash_t));
+	*(uint8_t *)(b + 1) = ((uintptr_t)key->pub & 1) | 0x02;
 	cheatcoin_hash(b, sizeof(struct cheatcoin_block) + sizeof(cheatcoin_hash_t) + 1, hash);
 	cheatcoin_debug("Hash  : hash=[%s] data=[%s]", cheatcoin_log_hash(hash),
 			cheatcoin_log_array(b, sizeof(struct cheatcoin_block) + sizeof(cheatcoin_hash_t) + 1));
@@ -277,7 +277,7 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 		case CHEATCOIN_FIELD_PUBLIC_KEY_0:
 		case CHEATCOIN_FIELD_PUBLIC_KEY_1:
 			if ((public_keys[nkeys].key = cheatcoin_public_to_key(b->field[i].data, type - CHEATCOIN_FIELD_PUBLIC_KEY_0)))
-				public_keys[nkeys++].pub = (uint64_t *)((long)&b->field[i].data | (type - CHEATCOIN_FIELD_PUBLIC_KEY_0));
+				public_keys[nkeys++].pub = (uint64_t *)((uintptr_t)&b->field[i].data | (type - CHEATCOIN_FIELD_PUBLIC_KEY_0));
 			break;
 		default: err = 3; goto end;
 	}
@@ -439,7 +439,7 @@ begin:
 	for (j = 0; j < nkeysnum; ++j) {
 		key = keys + keysnum[j];
 		b[0].field[0].type |= (uint64_t)((j == outsigkeyind ? CHEATCOIN_FIELD_SIGN_OUT : CHEATCOIN_FIELD_SIGN_IN) * 0x11) << ((i + j + nkeysnum) * 4);
-		setfld(CHEATCOIN_FIELD_PUBLIC_KEY_0 + ((long)key->pub & 1), (long)key->pub & ~1l, cheatcoin_hash_t);
+		setfld(CHEATCOIN_FIELD_PUBLIC_KEY_0 + ((uintptr_t)key->pub & 1), (uintptr_t)key->pub & ~1l, cheatcoin_hash_t);
 	}
 	if (outsigkeyind < 0) b[0].field[0].type |= (uint64_t)(CHEATCOIN_FIELD_SIGN_OUT * 0x11) << ((i + j + nkeysnum) * 4);
 	for (j = 0; j < nkeysnum; ++j, i += 2) {
@@ -507,7 +507,7 @@ static int request_blocks(cheatcoin_time_t t, cheatcoin_time_t dt) {
 /* основной поток, работающий с блоками */
 static void *work_thread(void *arg) {
 	cheatcoin_time_t t = CHEATCOIN_ERA, st;
-	int nmaining = (long)arg;
+	int nmaining = (uintptr_t)arg;
 
 	/* загрузка блоков из локального хранилища */
 	cheatcoin_mess("Loading blocks from local storage...");
@@ -543,7 +543,7 @@ int cheatcoin_blocks_start(int n_maining_threads) {
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&block_mutex, &attr);
-	return pthread_create(&t, 0, work_thread, (void *)(long)n_maining_threads);
+	return pthread_create(&t, 0, work_thread, (void *)(uintptr_t)n_maining_threads);
 }
 
 /* для каждого своего блока вызывается callback */

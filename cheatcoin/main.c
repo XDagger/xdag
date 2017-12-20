@@ -211,7 +211,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 }
 
 static int terminal(void) {
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(_WIN64)
 	char cmd[CHEATCOIN_COMMAND_MAX], cmd2[CHEATCOIN_COMMAND_MAX], *ptr, *lasts;
 	int fd;
 	int c = 0;
@@ -237,7 +237,7 @@ static int terminal(void) {
 }
 
 static void *terminal_thread(void *arg) {
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(_WIN64)
 	char cmd[CHEATCOIN_COMMAND_MAX];
 	int pos, in, out, c, res;
 	FILE *fout;
@@ -267,7 +267,7 @@ int main(int argc, char **argv) {
 	const char *addrports[256], *bindto = 0, *pubaddr = 0;
 	int transport_flags = 0, n_addrports = 0, n_maining_threads = 0, i;
 	pthread_t th;
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(_WIN64)
 	signal(SIGPIPE, SIG_IGN);
 #endif
 	printf("Cheatcoin full node client/server, version %s.\n", CHEATCOIN_VERSION);

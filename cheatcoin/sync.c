@@ -96,7 +96,7 @@ int cheatcoin_sync_add_block(struct cheatcoin_block *b, void *conn) {
 		cheatcoin_sync_pop_block(b);
 		if (res > 0 && ttl > 2) {
 			b->field[0].transport_header = ttl << 8;
-			cheatcoin_send_packet(b, (void *)((long)conn | 1l));
+			cheatcoin_send_packet(b, (void *)((uintptr_t)conn | 1l));
 		}
 	} else if (((res = -res) & 0xf) == 5) {
 		res = (res >> 4) & 0xf;

@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 #include <time.h>
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(_WIN64)
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/times.h>
@@ -76,7 +76,7 @@ void dfslib_random_sector(dfs32 *sector, struct dfslib_crypt *crypt0,
 
 void dfslib_random_init(void) {
 	dfs64 seed = 0, time1, time2, clock, pid;
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(_WIN64)
 	struct timeval tv[1];
 	struct tms tms[1];
 	gettimeofday(tv, NULL);
