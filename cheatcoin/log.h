@@ -1,4 +1,4 @@
-/* логирование, T13.670-T13.740 $DVS:time$ */
+/* логирование, T13.670-T13.759 $DVS:time$ */
 
 #ifndef CHEATCOIN_LOG_H
 #define CHEATCOIN_LOG_H
@@ -19,6 +19,8 @@ enum cheatcoin_debug_levels {
 extern int cheatcoin_log(int level, const char *format, ...);
 
 extern char *cheatcoin_log_array(const void *arr, unsigned size);
+
+extern int cheatcoin_log_init(void);
 
 #define cheatcoin_log_hash(hash) cheatcoin_log_array(hash, sizeof(cheatcoin_hash_t))
 

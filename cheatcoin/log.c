@@ -1,4 +1,4 @@
-/* логирование, T13.670-T13.753 $DVS:time$ */
+/* логирование, T13.670-T13.759 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdint.h>
@@ -63,3 +63,61 @@ extern int cheatcoin_set_log_level(int level) {
 	if (level >= 0 && level <= CHEATCOIN_TRACE) log_level = level;
 	return level0;
 }
+
+
+#if !defined(_WIN32) && !defined(_WIN64)
+#define __USE_GNU
+#include <stdlib.h>
+#include <string.h>
+#include <signal.h>
+#include <unistd.h>
+#include <execinfo.h>
+#include <ucontext.h>
+
+#define REG_(name) sprintf(buf + strlen(buf), #name "=%llx, ", (unsigned long long)uc->uc_mcontext.gregs[REG_##name])
+
+static void sigCatch(int signum, siginfo_t *info, void *context) {
+	static void *callstack[100];
+	int frames, i;
+	char **strs;
+	cheatcoin_fatal("Signal %d delivered", signum);
+#ifdef __x86_64__
+	{
+	static char buf[0x100]; *buf = 0;
+	ucontext_t *uc = (ucontext_t *)context;
+	REG_(RIP); REG_(EFL); REG_(ERR); REG_(CR2);
+	cheatcoin_fatal("%s", buf); *buf = 0;
+	REG_(RAX); REG_(RBX); REG_(RCX); REG_(RDX); REG_(RSI); REG_(RDI); REG_(RBP); REG_(RSP);
+	cheatcoin_fatal("%s", buf); *buf = 0;
+	REG_(R8); REG_(R9); REG_(R10); REG_(R11); REG_(R12); REG_(R13); REG_(R14); REG_(R15);
+	cheatcoin_fatal("%s", buf);
+	}
+#endif
+	frames = backtrace(callstack, 100);
+	strs = backtrace_symbols(callstack, frames);
+	for (i = 0; i < frames; ++i)
+		cheatcoin_fatal("%s", strs[i]);
+	signal(signum, SIG_DFL);
+	kill(getpid(), signum);
+	exit(-1);
+}
+
+int cheatcoin_log_init(void) {
+	int i;
+	struct sigaction sa;
+	sa.sa_sigaction = sigCatch;
+	sigemptyset (&sa.sa_mask);
+	sa.sa_flags = SA_RESTART | SA_SIGINFO;
+	for (i = 1; i < 32; ++i) {
+		if (i != SIGURG && i != SIGCHLD && i != SIGCONT) {
+			sigaction(i, &sa, 0);
+		}
+	}
+	return 0;
+}
+
+#else
+
+int cheatcoin_log_init(void) { return 0; }
+
+#endif

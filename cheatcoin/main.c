@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.753 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.759 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -338,6 +338,8 @@ int main(int argc, char **argv) {
 	cheatcoin_mess("Starting dnet transport...");
 	printf("Transport module: ");
 	if (cheatcoin_transport_start(transport_flags, bindto, n_addrports, addrports)) return -1;
+	cheatcoin_mess("Initializing log system...");
+	if (cheatcoin_log_init()) return -1;
 	cheatcoin_mess("Reading hosts database...");
 	if (cheatcoin_netdb_init(pubaddr, n_addrports, addrports)) return -1;
 	cheatcoin_mess("Initializing cryptography...");

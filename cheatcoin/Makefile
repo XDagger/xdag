@@ -73,7 +73,7 @@ headers = \
 	$(ldusinc)/rbtree.h				\
 
 
-flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -g -lpthread -lcrypto -lm -Wall -Wmissing-prototypes
+flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lm -Wall -Wmissing-prototypes -Wl,--export-dynamic
 
 
 all: cheatcoin

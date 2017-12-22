@@ -3,9 +3,12 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.753" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.759" /* $DVS:time$ */
 
 /* история
+
+T13.759 Linux: при падении в лог добавляется стек вызовов, программа компилируется 
+	с NDEBUG, отключены fifo-мьютексы dthread
 
 T13.753 увеличен период, за котоырй запрашиваются все блоки, сделана версия для win64
 
