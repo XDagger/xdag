@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.760" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.761" /* $DVS:time$ */
 
 /* история
+
+T13.761 сделан быстрый механизм перебора хешей в майнере, дающий выгоду x2-x3
 
 T13.760 добавлен вывод своего и обзего хешрейта сети за прошедший час
 

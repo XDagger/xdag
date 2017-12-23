@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.760 $DVS:time$ */
+/* работа с блоками, T13.654-T13.761 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -461,23 +461,27 @@ begin:
 		cheatcoin_sign(defkey->key, hash, b[0].field[i].data, b[0].field[i + 1].data);
 	}
 	if (mining) {
-		cheatcoin_amount_t min_nonce;
+		cheatcoin_amount_t nonce, min_nonce;
+		void *ctx = malloc(cheatcoin_hash_ctx_size());
+		if (!ctx) return (-1);
 		cheatcoin_generate_random_array(b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].data, sizeof(cheatcoin_hash_t));
+		cheatcoin_prehash(b, sizeof(struct cheatcoin_block) - sizeof(uint64_t), ctx);
 		j = 0; do {
-			cheatcoin_hash(b, sizeof(struct cheatcoin_block), hash);
+			nonce = cheatcoin_finalhash(ctx, (uint64_t *)(b + 1) - 1, 64, hash);
 			if (!j || cheatcoin_cmphash(hash, min_hash) < 0) {
 				memcpy(min_hash, hash, sizeof(cheatcoin_hash_t));
-				min_nonce = b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].amount; j = 1;
+				min_nonce = nonce; j = 1;
 			}
-			b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].amount++;
 			pretop_new = pretop_block();
 			if (pretop != pretop_new && get_timestamp() < send_time) {
 				pretop = pretop_new;
 				cheatcoin_info("Mining: start from beginning because of pre-top block changed");
+				free(ctx);
 				goto begin;
 			}
 		} while (get_timestamp() <= send_time);
 		b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].amount = min_nonce;
+		free(ctx);
 	} else cheatcoin_hash(b, sizeof(struct cheatcoin_block), min_hash);
 	b[0].field[0].transport_header = 1;
 	log_block("Create", min_hash, b[0].field[0].time);

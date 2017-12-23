@@ -1,11 +1,11 @@
-/* FIFO-мьютексы и другие изменения стандартных фукнций из pthread.h; T13.093-T13.096; $DVS:time$ */
+/* FIFO-мьютексы и другие изменения стандартных фукнций из pthread.h; T13.093-T13.760; $DVS:time$ */
 
 #ifndef DTHREAD_H_INCLUDED
 #define DTHREAD_H_INCLUDED
 
 #include <pthread.h>
 
-#if !defined(__LDuS__) && !defined(_WIN32) && !defined(_WIN64) && !defined(CHEATCOIN)
+#if !defined(__LDuS__) && !defined(_WIN32) && !defined(_WIN64)
 
 #include <sched.h>
 #include "../ldus/source/include/ldus/atomic.h"

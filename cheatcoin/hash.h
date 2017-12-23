@@ -1,4 +1,4 @@
-/* хеш-функция, T13.654-T13.701 $DVS:time$ */
+/* хеш-функция, T13.654-T13.761 $DVS:time$ */
 
 #ifndef CHEATCOIN_HASH_H
 #define CHEATCOIN_HASH_H
@@ -17,5 +17,11 @@ static inline int cheatcoin_cmphash(cheatcoin_hash_t l, cheatcoin_hash_t r) {
 	for (i = 3; i >= 0; --i) if (l[i] != r[i]) return (l[i] < r[i] ? -1 : 1);
 	return 0;
 }
+
+extern unsigned cheatcoin_hash_ctx_size(void);
+
+extern void cheatcoin_prehash(void *data, size_t size, void *ctxv);
+
+extern uint64_t cheatcoin_finalhash(void *ctxv, uint64_t *nonce, int attempts, cheatcoin_hash_t hash);
 
 #endif
