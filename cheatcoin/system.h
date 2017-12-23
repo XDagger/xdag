@@ -33,6 +33,7 @@ static inline cheatcoin_diff_t cheatcoin_diff_div(cheatcoin_diff_t p, cheatcoin_
 	dfsrsa_divmod(p.num, 4, q.num, 4, r.num);
 	return r;
 }
+#define cheatcoin_diff_to64(d)	(*(uint64_t*)&d.num[0])
 #define cheatcoin_mkdir(d)		mkdir(d)
 #define strdup(x)				_strdup(x)
 
@@ -46,6 +47,7 @@ typedef unsigned __int128		cheatcoin_diff_t;
 #define cheatcoin_diff_args(d)	(unsigned long long)((d) >> 64), (unsigned long long)(d)
 #define cheatcoin_diff_add(p,q)	((p) + (q))
 #define cheatcoin_diff_div(p,q)	((p) / (q))
+#define cheatcoin_diff_to64(d)	((uint64_t)(d))
 #define cheatcoin_mkdir(d)		mkdir(d, 0770)
 
 #endif

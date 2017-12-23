@@ -1,4 +1,4 @@
-/* логирование, T13.670-T13.759 $DVS:time$ */
+/* логирование, T13.670-T13.760 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdint.h>
@@ -109,7 +109,7 @@ int cheatcoin_log_init(void) {
 	sigemptyset (&sa.sa_mask);
 	sa.sa_flags = SA_RESTART | SA_SIGINFO;
 	for (i = 1; i < 32; ++i) {
-		if (i != SIGURG && i != SIGCHLD && i != SIGCONT) {
+		if (i != SIGURG && i != SIGCHLD && i != SIGCONT && i != SIGPIPE) {
 			sigaction(i, &sa, 0);
 		}
 	}

@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.759 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.760 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,6 +53,15 @@ static long double amount2cheatcoins(cheatcoin_amount_t amount) {
 		if (i < 32) res /= 2; else d *= 2;
 	}
 	return res;
+}
+
+static long double hashrate(cheatcoin_diff_t *diff) {
+	cheatcoin_diff_t sum;
+	int i;
+	memset(&sum, 0, sizeof(sum));
+	for (i = 0; i < HASHRATE_LAST_MAX_TIME; ++i) sum = cheatcoin_diff_add(sum, diff[i]);
+	cheatcoin_diff_shr32(&sum);
+	return amount2cheatcoins(cheatcoin_diff_to64(sum));
 }
 
 static cheatcoin_amount_t cheatcoins2amount(const char *str) {
@@ -179,7 +188,8 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			"    orphan blocks: %llu\n"
 			" wait sync blocks: %u\n"
 			" chain difficulty: %llx%016llx of %llx%016llx\n"
-			"%9ss supply: %.9Lf of %.9Lf\n",
+			"%9ss supply: %.9Lf of %.9Lf\n"
+			"hour hashrate MHs: %.2Lf of %.2Lf\n",
 			g_cheatcoin_stats.nhosts, g_cheatcoin_stats.total_nhosts,
 			(long long)g_cheatcoin_stats.nblocks, (long long)g_cheatcoin_stats.total_nblocks,
 			(long long)g_cheatcoin_stats.nmain, (long long)g_cheatcoin_stats.total_nmain,
@@ -187,7 +197,8 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			cheatcoin_diff_args(g_cheatcoin_stats.difficulty),
 			cheatcoin_diff_args(g_cheatcoin_stats.max_difficulty), coinname,
 			amount2cheatcoins(cheatcoin_get_supply(g_cheatcoin_stats.nmain)),
-			amount2cheatcoins(cheatcoin_get_supply(g_cheatcoin_stats.total_nmain))
+			amount2cheatcoins(cheatcoin_get_supply(g_cheatcoin_stats.total_nmain)),
+			hashrate(g_cheatcoin_extstats.hashrate_ours), hashrate(g_cheatcoin_extstats.hashrate_total)
 		);
 	} else if (!strcmp(cmd, "exit") || !strcmp(cmd, "terminate")) {
 		cheatcoin_wallet_finish();

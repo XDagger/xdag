@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.759" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.760" /* $DVS:time$ */
 
 /* история
+
+T13.760 добавлен вывод своего и обзего хешрейта сети за прошедший час
 
 T13.759 Linux: при падении в лог добавляется стек вызовов, программа компилируется 
 	с NDEBUG, отключены fifo-мьютексы dthread

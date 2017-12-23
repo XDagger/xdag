@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.753 $DVS:time$ */
+/* работа с блоками, T13.654-T13.760 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -361,6 +361,15 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 	noref_last = bsaved;
 	g_cheatcoin_extstats.nnoref++;
 	log_block((bi.flags & BI_OURS ? "Good +" : "Good  "), bi.hash, bi.time);
+	i = MAIN_TIME(bsaved->time) & (HASHRATE_LAST_MAX_TIME - 1);
+	if (MAIN_TIME(bsaved->time) > MAIN_TIME(g_cheatcoin_extstats.hashrate_last_time)) {
+		memset(g_cheatcoin_extstats.hashrate_total + i, 0, sizeof(cheatcoin_diff_t));
+		memset(g_cheatcoin_extstats.hashrate_ours  + i, 0, sizeof(cheatcoin_diff_t));
+		g_cheatcoin_extstats.hashrate_last_time = bsaved->time;
+	}
+	g_cheatcoin_extstats.hashrate_total[i] = cheatcoin_diff_add(g_cheatcoin_extstats.hashrate_total[i], diff0);
+	if (bi.flags & BI_OURS)
+		g_cheatcoin_extstats.hashrate_ours[i] = cheatcoin_diff_add(g_cheatcoin_extstats.hashrate_ours[i], diff0);
 	return 1;
 end:
 	{
