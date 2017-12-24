@@ -27,6 +27,7 @@ struct sync_block {
 
 static struct sync_block **g_sync_hash, **g_sync_hash_r;
 static pthread_mutex_t g_sync_hash_mutex = PTHREAD_MUTEX_INITIALIZER;
+int g_cheatcoin_sync_on = 0;
 
 /* заносит блок в лист ожидания, ожидается блок с хешем, записанным в поле nfield блока b */
 static int push_block(struct cheatcoin_block *b, void *conn, int nfield, int ttl) {
@@ -98,7 +99,7 @@ int cheatcoin_sync_add_block(struct cheatcoin_block *b, void *conn) {
 			b->field[0].transport_header = ttl << 8;
 			cheatcoin_send_packet(b, (void *)((uintptr_t)conn | 1l));
 		}
-	} else if (((res = -res) & 0xf) == 5) {
+	} else if (g_cheatcoin_sync_on && ((res = -res) & 0xf) == 5) {
 		res = (res >> 4) & 0xf;
 		if (push_block(b, conn, res, ttl)) {
 			struct sync_block **p, *q;
@@ -117,7 +118,7 @@ int cheatcoin_sync_add_block(struct cheatcoin_block *b, void *conn) {
 					goto begin;
 				}
 			pthread_mutex_unlock(&g_sync_hash_mutex);
-			cheatcoin_request_block(hash, conn);
+			cheatcoin_request_block(hash, (void *)(uintptr_t)1l);
 			cheatcoin_info("ReqBlk: %016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0]);
 		}
 	}

@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.763 $DVS:time$ */
+/* работа с блоками, T13.654-T13.764 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -520,6 +520,7 @@ static int request_blocks(cheatcoin_time_t t, cheatcoin_time_t dt) {
 /* длинная процедура синхронизации */
 static void *sync_thread(void *arg) {
 	cheatcoin_time_t t = 0, st;
+	g_cheatcoin_sync_on = 1;
 	for (;;) {
 		st = get_timestamp();
 		if (st - t >= MAIN_CHAIN_PERIOD) t = st, request_blocks(0, 1ll << 48);
