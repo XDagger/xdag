@@ -1,4 +1,4 @@
-/* dnet: threads; T11.231-T13.759; $DVS:time$ */
+/* dnet: threads; T11.231-T13.764; $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -183,7 +183,11 @@ err:
 
 static void *dnet_thread_client_server(void *arg) {
     struct dnet_thread *t = (struct dnet_thread *)arg;
-    for(;;) {
+#ifdef CHEATCOIN
+	extern int g_cheatcoin_sync_on;
+	while (!g_cheatcoin_sync_on) sleep(1);
+#endif
+	for(;;) {
 #ifndef QDNET
         if (dnet_limited_version) dnet_log_printf("dnet.%d: starting connection.\n", t->nthread);
 		else dnet_log_printf("dnet.%d: starting connection with %s.\n", t->nthread, t->arg);
