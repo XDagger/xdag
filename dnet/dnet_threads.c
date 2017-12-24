@@ -129,9 +129,10 @@ static void dnet_thread_work(struct dnet_thread *t) {
             *t1 = *t;
             // Accept a connection (the "accept" command waits for a connection with
             // no timeout limit...)
-			while (g_n_inbound >= MAX_N_INBOUND) sleep(1);
-            t1->conn.socket = accept(t->conn.socket, (struct sockaddr*) &peeraddr, &peeraddr_len);
-            if (t1->conn.socket < 0) { free(t1); mess = "cannot accept"; goto err; }
+			begin:
+			t1->conn.socket = accept(t->conn.socket, (struct sockaddr*) &peeraddr, &peeraddr_len);
+			if (t1->conn.socket < 0) { free(t1); mess = "cannot accept"; goto err; }
+			if (g_n_inbound >= MAX_N_INBOUND) { close(t1->conn.socket); goto begin; }
 			if (fcntl(t1->conn.socket, F_SETFD, FD_CLOEXEC) == -1) {
 				dnet_log_printf("dnet.%d: can't set FD_CLOEXEC flag on accepted socket, %s\n", t->nthread, strerror(errno));
 			}
