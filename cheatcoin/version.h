@@ -3,11 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.763" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.764" /* $DVS:time$ */
 
 /* история
 
-T13.363 улучшения в синхронизации
+T13.764 улучшения в синхронизации
 
 T13.761 сделан быстрый механизм перебора хешей в майнере, дающий выгоду x2-x3
 

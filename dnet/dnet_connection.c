@@ -1,4 +1,4 @@
-/* dnet: connections; T11.253-T13.730; $DVS:time$ */
+/* dnet: connections; T11.253-T13.764; $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +8,9 @@
 #include <sys/time.h>
 #if defined(_WIN32) || defined(_WIN64)
 #include <sys/socket.h>
+#define poll WSAPoll
+#else
+#include <poll.h>
 #endif
 #include "dnet_connection.h"
 #include "dnet_packet.h"
@@ -53,7 +56,12 @@ static ssize_t dnet_conn_write(void *private_data, void *buf, size_t size) {
     struct dnet_connection *conn = (struct dnet_connection *)private_data;
     ssize_t res = 0, done;
     while (size) {
-        done = write(conn->socket, buf, size);
+		struct pollfd fd;
+		fd.fd = conn->socket;
+		fd.events = POLLOUT;
+		fd.revents = 0;
+		if (poll(&fd, 1, 0) != 1 || !(fd.revents & POLLOUT)) break;
+		done = write(conn->socket, buf, size);
         if (done < 0) break;
         res += done;
         size -= done;
