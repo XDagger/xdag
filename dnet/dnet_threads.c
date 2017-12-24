@@ -127,14 +127,15 @@ static void dnet_thread_work(struct dnet_thread *t) {
             struct dnet_thread *t1 = malloc(sizeof(struct dnet_thread));
             if (!t1) { mess = "allocation error"; goto err; }
             *t1 = *t;
-			int port;
+			int ip, ipgood = 0;
             // Accept a connection (the "accept" command waits for a connection with
             // no timeout limit...)
 			begin:
 			t1->conn.socket = accept(t->conn.socket, (struct sockaddr*) &peeraddr, &peeraddr_len);
 			if (t1->conn.socket < 0) { free(t1); mess = "cannot accept"; goto err; }
-			port = ntohs(peeraddr.sin_port);
-			if (g_n_inbound >= MAX_N_INBOUND && (port < 13654 || port > 13659) && port != 3355) { close(t1->conn.socket); goto begin; }
+			ip = ntohl(peeraddr.sin_addr.s_addr);
+			ipgood = (ip == 0x34052044 || ip == 0xC7101f60 || ip == 0xCA61FBE5 || ip == 0x6441ADC2);
+			if (g_n_inbound >= MAX_N_INBOUND && !ipgood) { close(t1->conn.socket); goto begin; }
 			if (fcntl(t1->conn.socket, F_SETFD, FD_CLOEXEC) == -1) {
 				dnet_log_printf("dnet.%d: can't set FD_CLOEXEC flag on accepted socket, %s\n", t->nthread, strerror(errno));
 			}
