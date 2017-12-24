@@ -1,4 +1,4 @@
-/* транспорт, T13.654-T13.753 $DVS:time$ */
+/* транспорт, T13.654-T13.763 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -199,7 +199,7 @@ static int do_request(int type, cheatcoin_time_t start_time, cheatcoin_time_t en
 	reply_result = -1ll;
 	reply_data = data;
 	reply_callback = callback;
-	if (!start_time && end_time == 1ll << 48) {
+	if (type == CHEATCOIN_MESSAGE_SUMS_REQUEST) {
 		reply_connection = dnet_send_cheatcoin_packet(&b, 0);
 		if (!reply_connection) return 0;
 	} else dnet_send_cheatcoin_packet(&b, reply_connection);

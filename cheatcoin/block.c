@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.761 $DVS:time$ */
+/* работа с блоками, T13.654-T13.763 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -517,10 +517,22 @@ static int request_blocks(cheatcoin_time_t t, cheatcoin_time_t dt) {
 	return 0;
 }
 
+/* длинная процедура синхронизации */
+static void *sync_thread(void *arg) {
+	cheatcoin_time_t t = 0, st;
+	for (;;) {
+		st = get_timestamp();
+		if (st - t >= MAIN_CHAIN_PERIOD) t = st, request_blocks(0, 1ll << 48);
+		sleep(1);
+	}
+	return 0;
+}
+
 /* основной поток, работающий с блоками */
 static void *work_thread(void *arg) {
-	cheatcoin_time_t t = CHEATCOIN_ERA, st;
+	cheatcoin_time_t t = CHEATCOIN_ERA;
 	int nmaining = (uintptr_t)arg;
+	pthread_t th;
 
 	/* загрузка блоков из локального хранилища */
 	cheatcoin_mess("Loading blocks from local storage...");
@@ -528,22 +540,23 @@ static void *work_thread(void *arg) {
 
 	/* запуск потоков майнинга */
 	cheatcoin_mess("Starting %d maining threads...", nmaining);
-	while (nmaining--) {
-		pthread_t th;
+	while (nmaining--)
 		pthread_create(&th, 0, maining_thread, 0);
-	}
 
-	/* периодическая контрольная загрузка блоков из сети и определение главного блока */
+	/* запуск потока синхронизации */
+	cheatcoin_mess("Starting sync thread...");
+	pthread_create(&th, 0, sync_thread, 0);
+
+	/* периодическая генерация блоков и определение главного блока */
 	cheatcoin_mess("Entering main cycle...");
 	for (;;) {
-		st = get_timestamp();
-		if (st - t >= MAIN_CHAIN_PERIOD) t = st, request_blocks(0, 1ll << 48);
+		t = get_timestamp();
 		if (g_cheatcoin_extstats.nnoref > CHEATCOIN_BLOCK_FIELDS - 5 && !(rand() % MAKE_BLOCK_PERIOD))
 			cheatcoin_create_block(0, 0, 0, 0, 0);
 		pthread_mutex_lock(&block_mutex);
 		check_new_main();
 		pthread_mutex_unlock(&block_mutex);
-		sleep(1);
+		while (get_timestamp() - t < 1024) sleep(1);
 	}
 	return 0;
 }
