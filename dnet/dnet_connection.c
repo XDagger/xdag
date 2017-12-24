@@ -60,7 +60,8 @@ static ssize_t dnet_conn_write(void *private_data, void *buf, size_t size) {
 		fd.fd = conn->socket;
 		fd.events = POLLOUT;
 		fd.revents = 0;
-		if (poll(&fd, 1, 0) != 1 || !(fd.revents & POLLOUT)) break;
+		if (poll(&fd, 1, 3000) != 1 || !(fd.revents & POLLOUT))
+			dnet_log_printf("poll failed for socket %d\n", conn->socket);
 		done = write(conn->socket, buf, size);
         if (done < 0) break;
         res += done;

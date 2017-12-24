@@ -1,4 +1,4 @@
-/* синхронизация, T13.738-T13.763 $DVS:time$ */
+/* синхронизация, T13.738-T13.764 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -117,7 +117,7 @@ int cheatcoin_sync_add_block(struct cheatcoin_block *b, void *conn) {
 					goto begin;
 				}
 			pthread_mutex_unlock(&g_sync_hash_mutex);
-			cheatcoin_request_block(hash, (void *)(uintptr_t)1l);
+			cheatcoin_request_block(hash, conn);
 			cheatcoin_info("ReqBlk: %016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0]);
 		}
 	}
