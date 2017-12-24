@@ -31,10 +31,13 @@
 #define INVALID_SOCKET		-1
 #endif
 
+#define MAX_N_INBOUND		20
+
 struct list *g_threads;
 pthread_rwlock_t g_threads_rwlock;
 int g_nthread;
 void (*dnet_connection_close_notify)(void *conn) = 0;
+static int g_n_inbound = 0;
 
 static void dnet_thread_work(struct dnet_thread *t) {
     char buf[0x100];
@@ -126,6 +129,7 @@ static void dnet_thread_work(struct dnet_thread *t) {
             *t1 = *t;
             // Accept a connection (the "accept" command waits for a connection with
             // no timeout limit...)
+			while (g_n_inbound >= MAX_N_INBOUND) sleep(1);
             t1->conn.socket = accept(t->conn.socket, (struct sockaddr*) &peeraddr, &peeraddr_len);
             if (t1->conn.socket < 0) { free(t1); mess = "cannot accept"; goto err; }
 			if (fcntl(t1->conn.socket, F_SETFD, FD_CLOEXEC) == -1) {
@@ -155,7 +159,9 @@ static void dnet_thread_work(struct dnet_thread *t) {
 				t1->to_remove = 1;
                 //pthread_mutex_unlock(&t->conn.mutex);
                 mess = "can't create new thread"; goto err;
-            }
+			} else {
+				g_n_inbound++;
+			}
         }
     } else {
         // Connect to a remote server
@@ -220,6 +226,7 @@ static void *dnet_thread_accepted(void *arg) {
         dnet_log_printf("dnet.%d: %s (%d), %s\n", t->nthread, mess, res, strerror(errno));
     }
     close(t->conn.socket);
+	g_n_inbound--;
     t->conn.socket = -1;
     //pthread_mutex_lock(&t->conn.mutex);
     t->to_remove = 1;
