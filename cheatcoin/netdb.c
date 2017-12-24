@@ -1,4 +1,4 @@
-/* база хостов, T13.714-T13.744 $DVS:time$ */
+/* база хостов, T13.714-T13.764 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +12,7 @@
 #include "log.h"
 #include "main.h"
 #include "block.h"
+#include "sync.h"
 
 #define MAX_SELECTED_HOSTS	64
 #define DATABASE			(g_cheatcoin_testnet ? "netdb-testnet.txt" : "netdb.txt")
@@ -127,6 +128,7 @@ static void reset_callback(struct ldus_rbtree *node) {
 }
 
 static void *monitor_thread(void *arg) {
+	while (!g_cheatcoin_sync_on) sleep(1);
 	for(;;) {
 		FILE *f = fopen("netdb.tmp", "w");
 		int n, i;

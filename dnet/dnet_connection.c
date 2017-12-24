@@ -8,7 +8,11 @@
 #include <sys/time.h>
 #if defined(_WIN32) || defined(_WIN64)
 #include <sys/socket.h>
+#if defined(_WIN64)
 #define poll WSAPoll
+#else
+#define poll(a,b,c) ((a)->revents = POLLOUT, 1)
+#endif
 #else
 #include <poll.h>
 #endif
