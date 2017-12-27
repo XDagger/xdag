@@ -17,12 +17,13 @@
 #include "log.h"
 #include "main.h"
 #include "sync.h"
+#include "pool.h"
 
 #define MAIN_CHAIN_PERIOD	(64 << 10)
 #define MAX_WAITING_MAIN	2
 #define DEF_TIME_LIMIT		0 /*(MAIN_CHAIN_PERIOD / 2)*/
-#define CHEATCOIN_TEST_ERA	0x16800000000ll
-#define CHEATCOIN_MAIN_ERA	0x16900000000ll
+#define CHEATCOIN_TEST_ERA	0x16900000000ll
+#define CHEATCOIN_MAIN_ERA	0x16940000000ll
 #define CHEATCOIN_ERA		cheatcoin_era
 #define MAIN_START_AMOUNT	(1ll << 42)
 #define MAIN_BIG_PERIOD_LOG	21
@@ -67,6 +68,11 @@ static uint64_t get_timestamp(void) {
 	struct timeval tp;
 	gettimeofday(&tp, 0);
 	return (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
+}
+
+/* возвращает номер текущего периода времени, период - это 64 секунды */
+cheatcoin_time_t cheatcoin_main_time(void) {
+	return MAIN_TIME(get_timestamp());
 }
 
 static inline int lessthen(struct ldus_rbtree *l, struct ldus_rbtree *r) {
@@ -461,28 +467,32 @@ begin:
 		cheatcoin_sign(defkey->key, hash, b[0].field[i].data, b[0].field[i + 1].data);
 	}
 	if (mining) {
-		cheatcoin_amount_t nonce, min_nonce;
-		void *ctx = malloc(cheatcoin_hash_ctx_size());
-		if (!ctx) return (-1);
+		int ntask = g_cheatcoin_pool_ntask + 1;
+		struct cheatcoin_pool_task *task = &g_cheatcoin_pool_task[ntask & 1];
 		cheatcoin_generate_random_array(b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].data, sizeof(cheatcoin_hash_t));
-		cheatcoin_prehash(b, sizeof(struct cheatcoin_block) - sizeof(uint64_t), ctx);
-		j = 0; do {
-			nonce = cheatcoin_finalhash(ctx, (uint64_t *)(b + 1) - 1, 64, hash);
-			if (!j || cheatcoin_cmphash(hash, min_hash) < 0) {
-				memcpy(min_hash, hash, sizeof(cheatcoin_hash_t));
-				min_nonce = nonce; j = 1;
-			}
+		task->main_time = MAIN_TIME(send_time);
+		cheatcoin_hash_init(task->ctx0);
+		cheatcoin_hash_update(task->ctx0, b, sizeof(struct cheatcoin_block) - 2 * sizeof(struct cheatcoin_field));
+		cheatcoin_hash_get_state(task->ctx0, task->task[0].data);
+		cheatcoin_hash_update(task->ctx0, b[0].field[CHEATCOIN_BLOCK_FIELDS - 2].data, sizeof(struct cheatcoin_field));
+		memcpy(task->ctx, task->ctx0, cheatcoin_hash_ctx_size());
+		cheatcoin_hash_update(task->ctx, b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].data, sizeof(struct cheatcoin_field) - sizeof(uint64_t));
+		memcpy(task->task[1].data, b[0].field[CHEATCOIN_BLOCK_FIELDS - 2].data, sizeof(struct cheatcoin_field));
+		memcpy(task->lastfield.data, b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].data, sizeof(struct cheatcoin_field));
+		memset(task->minhash.data, 0xff, sizeof(struct cheatcoin_field));
+		g_cheatcoin_pool_ntask = ntask;
+		while (get_timestamp() <= send_time) {
+			sleep(1);
 			pretop_new = pretop_block();
 			if (pretop != pretop_new && get_timestamp() < send_time) {
 				pretop = pretop_new;
 				cheatcoin_info("Mining: start from beginning because of pre-top block changed");
-				free(ctx);
 				goto begin;
 			}
-		} while (get_timestamp() <= send_time);
-		b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].amount = min_nonce;
-		free(ctx);
-	} else cheatcoin_hash(b, sizeof(struct cheatcoin_block), min_hash);
+		}
+		memcpy(b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].data, task->lastfield.data, sizeof(struct cheatcoin_field));
+	}
+	cheatcoin_hash(b, sizeof(struct cheatcoin_block), min_hash);
 	b[0].field[0].transport_header = 1;
 	log_block("Create", min_hash, b[0].field[0].time);
 	res = cheatcoin_add_block(b);
@@ -490,10 +500,6 @@ begin:
 	return res;
 }
 
-static void *maining_thread(void *arg) {
-	for(;;) cheatcoin_create_block(0, 0, 0, 0, get_timestamp() | (MAIN_CHAIN_PERIOD - 1));
-	return 0;
-}
 
 static int request_blocks(cheatcoin_time_t t, cheatcoin_time_t dt) {
 	int i, res;
@@ -532,21 +538,21 @@ static void *sync_thread(void *arg) {
 /* основной поток, работающий с блоками */
 static void *work_thread(void *arg) {
 	cheatcoin_time_t t = CHEATCOIN_ERA;
-	int nmaining = (uintptr_t)arg;
+	int n_mining_threads = (uintptr_t)arg;
 	pthread_t th;
 
 	/* загрузка блоков из локального хранилища */
 	cheatcoin_mess("Loading blocks from local storage...");
 	cheatcoin_load_blocks(t, get_timestamp(), &t, add_block_callback);
 
-	/* запуск потоков майнинга */
-	cheatcoin_mess("Starting %d maining threads...", nmaining);
-	while (nmaining--)
-		pthread_create(&th, 0, maining_thread, 0);
-
 	/* запуск потока синхронизации */
 	cheatcoin_mess("Starting sync thread...");
 	pthread_create(&th, 0, sync_thread, 0);
+	pthread_detach(th);
+
+	/* запуск потоков майнинга */
+	cheatcoin_mess("Starting mining thread...");
+	cheatcoin_mining_start(n_mining_threads);
 
 	/* периодическая генерация блоков и определение главного блока */
 	cheatcoin_mess("Entering main cycle...");
@@ -562,15 +568,18 @@ static void *work_thread(void *arg) {
 	return 0;
 }
 
-/* начало регулярной обработки блоков; n_maining_threads - число потоков для майнинга на CPU */
-int cheatcoin_blocks_start(int n_maining_threads) {
+/* начало регулярной обработки блоков; n_mining_threads - число потоков для майнинга на CPU */
+int cheatcoin_blocks_start(int n_mining_threads) {
 	pthread_mutexattr_t attr;
-	pthread_t t;
+	pthread_t th;
+	int res;
 	if (g_cheatcoin_testnet) cheatcoin_era = CHEATCOIN_TEST_ERA;
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&block_mutex, &attr);
-	return pthread_create(&t, 0, work_thread, (void *)(uintptr_t)n_maining_threads);
+	res = pthread_create(&t, 0, work_thread, (void *)(uintptr_t)n_mining_threads);
+	if (!res) pthread_detach(th);
+	return res;
 }
 
 /* для каждого своего блока вызывается callback */

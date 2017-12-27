@@ -20,8 +20,16 @@ static inline int cheatcoin_cmphash(cheatcoin_hash_t l, cheatcoin_hash_t r) {
 
 extern unsigned cheatcoin_hash_ctx_size(void);
 
-extern void cheatcoin_prehash(void *data, size_t size, void *ctxv);
+extern void cheatcoin_hash_init(void *ctxv);
 
-extern uint64_t cheatcoin_finalhash(void *ctxv, uint64_t *nonce, int attempts, cheatcoin_hash_t hash);
+extern void cheatcoin_hash_update(void *ctxv, void *data, size_t size);
+
+extern void cheatcoin_hash_final(void *ctxv, void *data, size_t size, cheatcoin_hash_t hash);
+
+extern uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, cheatcoin_hash_t hash);
+
+extern void cheatcoin_hash_get_state(void *ctxv, cheatcoin_hash_t state);
+
+extern void cheatcoin_hash_set_state(void *ctxv, cheatcoin_hash_t state, size_t size);
 
 #endif

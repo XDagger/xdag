@@ -58,8 +58,8 @@ struct cheatcoin_block {
 
 #define cheatcoin_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)
 
-/* начало регулярной обработки блоков; n_maining_threads - число потоков для майнинга на CPU */
-extern int cheatcoin_blocks_start(int n_maining_threads);
+/* начало регулярной обработки блоков; n_mining_threads - число потоков для майнинга на CPU */
+extern int cheatcoin_blocks_start(int n_mining_threads);
 
 /* проверить блок и включить его в базу данных, возвращает не 0 в случае ошибки */
 extern int cheatcoin_add_block(struct cheatcoin_block *b);
@@ -81,5 +81,8 @@ extern cheatcoin_amount_t cheatcoin_get_supply(uint64_t nmain);
 
 /* по хешу блока возвращает его позицию в хранилище и время */
 extern int64_t cheatcoin_get_block_pos(const cheatcoin_hash_t hash, cheatcoin_time_t *time);
+
+/* возвращает номер текущего периода времени, пеиод - это 64 секунды */
+extern cheatcoin_time_t cheatcoin_main_time(void);
 
 #endif

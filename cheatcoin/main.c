@@ -20,6 +20,7 @@
 #include "netdb.h"
 #include "main.h"
 #include "sync.h"
+#include "pool.h"
 
 #define CHEATCOIN_COMMAND_MAX	0x1000
 #define FIFO_IN					"fifo_cmd.dat"
@@ -160,7 +161,8 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			"  help        - print this help\n"
 		    "  keygen      - generate new private/public key pair and set it by default\n"
 		    "  level [N]   - print level of logging or set it to N (0 - nothing, ..., 9 - all)\n"
-		    "  net command - run transport layer command, try 'net help'\n"
+			"  mining [N]  - print number of mining threads or set it to N\n"
+			"  net command - run transport layer command, try 'net help'\n"
 		    "  stats       - print statistics for loaded and all known blocks\n"
 			"  terminate   - terminate both daemon and this program\n"
 			"  xfer S A    - transfer S our %ss to the address A\n"
@@ -175,6 +177,15 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 		if (!cmd) fprintf(out, "%d\n", cheatcoin_set_log_level(-1));
 		else if (sscanf(cmd, "%u", &level) != 1 || level > CHEATCOIN_TRACE) fprintf(out, "Illegal level.\n");
 		else cheatcoin_set_log_level(level);
+	} else if (!strcmp(cmd, "mining")) {
+		unsigned nthreads;
+		cmd = strtok_r(0, " \t\r\n", &lasts);
+		if (!cmd) fprintf(out, "%d mining threads running\n", g_cheatcoin_mining_threads);
+		else if (sscanf(cmd, "%u", &nthreads) != 1) fprintf(out, "Illegal number.\n");
+		else {
+			cheatcoin_mining_start(nthreads);
+			fprintf(out, "%d mining threads running\n", g_cheatcoin_mining_threads);
+		}
 	} else if (!strcmp(cmd, "net")) {
 		char netcmd[4096];
 		*netcmd = 0;
@@ -221,6 +232,8 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 		cheatcoin_traverse_our_blocks(&xfer, &xfer_callback);
 		fprintf(out, "Xfer: transferred %.9Lf %ss to the address %s, see log for details.\n",
 				amount2cheatcoins(xfer.done), coinname, cheatcoin_hash2address(xfer.fields[XFER_MAX_IN].hash));
+	} else {
+		fprintf(out, "Illegal command.\n");
 	}
 	return 0;
 }
@@ -279,9 +292,10 @@ static void *terminal_thread(void *arg) {
 }
 
 int main(int argc, char **argv) {
-	const char *addrports[256], *bindto = 0, *pubaddr = 0;
+	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0;
 	char *ptr;
-	int transport_flags = 0, n_addrports = 0, n_maining_threads = 0, i;
+	int transport_flags = 0, n_addrports = 0, n_maining_threads = 0, is_pool = 0, i;
+	double pool_fee = 0;
 	pthread_t th;
 #if !defined(_WIN32) && !defined(_WIN64)
 	signal(SIGPIPE, SIG_IGN);
@@ -305,14 +319,15 @@ int main(int argc, char **argv) {
 			help:
 				printf("Usage: %s flags\n"
 					"Flags:\n"
-					"  -c ip:port  - address of another cheatcoin full node to connect\n"
-					"  -d          - run as daemon (default is interactive mode)\n"
-					"  -h          - print this help\n"
-				    "  -i          - run as interactive terminal for daemon running in this folder\n"
-				    "  -m N        - use N CPU maining threads (default is 0)\n"
-				    "  -p ip:port  - public address of this node\n"
-				    "  -s ip:port  - address of this node to bind to\n"
-					"  -t          - connect to test net (default is main net)\n"
+					"  -c ip:port     - address of another cheatcoin full node to connect\n"
+					"  -d             - run as daemon (default is interactive mode)\n"
+					"  -h             - print this help\n"
+					"  -i             - run as interactive terminal for daemon running in this folder\n"
+					"  -m N           - use N CPU maining threads (default is 0)\n"
+					"  -p ip:port     - public address of this node\n"
+					"  -P ip:port:N:M - run the pool, bind to ip:port, fee N%%, reward for winner M%%\n"
+					"  -s ip:port     - address of this node to bind to\n"
+					"  -t             - connect to test net (default is main net)\n"
 				, argv[0]);
 				return 0;
 		    case 'i':
@@ -325,7 +340,11 @@ int main(int argc, char **argv) {
 			    if (++i < argc)
 					pubaddr = argv[i];
 			    break;
-		    case 's':
+			case 'P':
+				if (++i < argc)
+					is_pool = 1, pool_arg = argv[i];
+				break;
+			case 's':
 				if (++i < argc)
 					bindto = argv[i];
 				break;
@@ -360,7 +379,9 @@ int main(int argc, char **argv) {
 	cheatcoin_mess("Initializing addresses...");
 	if (cheatcoin_address_init()) return -1;
 	cheatcoin_mess("Starting blocks engine...");
-	if (cheatcoin_blocks_start(n_maining_threads)) return -1;
+	if (cheatcoin_blocks_start()) return -1;
+	cheatcoin_mess("Starting pool engine...");
+	if (cheatcoin_pool_start(g_cheatcoin_pool, n_mining_threads, pool_fee / 100)) return -1;
 	cheatcoin_mess("Starting terminal server...");
 	if (pthread_create(&th, 0, &terminal_thread, 0)) return -1;
 
