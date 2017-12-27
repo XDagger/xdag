@@ -529,7 +529,6 @@ static int request_blocks(cheatcoin_time_t t, cheatcoin_time_t dt) {
 /* длинная процедура синхронизации */
 static void *sync_thread(void *arg) {
 	cheatcoin_time_t t = 0, st;
-	g_cheatcoin_sync_on = 1;
 	for (;;) {
 		st = get_timestamp();
 		if (st - t >= MAIN_CHAIN_PERIOD) t = st, request_blocks(0, 1ll << 48);
@@ -549,13 +548,18 @@ static void *work_thread(void *arg) {
 	cheatcoin_load_blocks(t, get_timestamp(), &t, add_block_callback);
 
 	/* запуск потока синхронизации */
-	cheatcoin_mess("Starting sync thread...");
-	pthread_create(&th, 0, sync_thread, 0);
-	pthread_detach(th);
+	g_cheatcoin_sync_on = 1;
+	if (n_mining_threads >= 0) {
+		cheatcoin_mess("Starting sync thread...");
+		pthread_create(&th, 0, sync_thread, 0);
+		pthread_detach(th);
+	}
 
 	/* запуск потоков майнинга */
 	cheatcoin_mess("Starting mining thread...");
 	cheatcoin_mining_start(n_mining_threads);
+
+	if (n_mining_threads < 0) return 0;
 
 	/* периодическая генерация блоков и определение главного блока */
 	cheatcoin_mess("Entering main cycle...");
@@ -617,4 +621,14 @@ int64_t cheatcoin_get_block_pos(const cheatcoin_hash_t hash, cheatcoin_time_t *t
 	if (!bi) return -1;
 	*t = bi->time;
 	return bi->storage_pos;
+}
+
+/* по хешу блока возвращает номер ключа или -1, если блок не наш */
+int cheatcoin_get_key(cheatcoin_hash_t hash) {
+	struct block_internal *bi;
+	pthread_mutex_lock(&block_mutex);
+	bi = block_by_hash(hash);
+	pthread_mutex_unlock(&block_mutex);
+	if (!bi || !(bi->flags & BI_OURS)) return -1;
+	return bi->n_our_key;
 }

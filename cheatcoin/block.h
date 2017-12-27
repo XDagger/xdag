@@ -85,4 +85,7 @@ extern int64_t cheatcoin_get_block_pos(const cheatcoin_hash_t hash, cheatcoin_ti
 /* возвращает номер текущего периода времени, пеиод - это 64 секунды */
 extern cheatcoin_time_t cheatcoin_main_time(void);
 
+/* по хешу блока возвращает номер ключа или -1, если блок не наш */
+extern int cheatcoin_get_key(cheatcoin_hash_t hash);
+
 #endif

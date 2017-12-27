@@ -42,7 +42,7 @@ struct xfer_callback_data {
 	int nfields, nkeys, outsig;
 };
 
-int g_cheatcoin_testnet = 0;
+int g_cheatcoin_testnet = 0, g_is_miner = 0;
 struct cheatcoin_stats g_cheatcoin_stats;
 struct cheatcoin_ext_stats g_cheatcoin_extstats;
 
@@ -179,12 +179,12 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 		else if (sscanf(cmd, "%u", &level) != 1 || level > CHEATCOIN_TRACE) fprintf(out, "Illegal level.\n");
 		else cheatcoin_set_log_level(level);
 	} else if (!strcmp(cmd, "mining")) {
-		unsigned nthreads;
+		int nthreads;
 		cmd = strtok_r(0, " \t\r\n", &lasts);
 		if (!cmd) fprintf(out, "%d mining threads running\n", g_cheatcoin_mining_threads);
-		else if (sscanf(cmd, "%u", &nthreads) != 1) fprintf(out, "Illegal number.\n");
+		else if (sscanf(cmd, "%d", &nthreads) != 1 || nthreads < 0) fprintf(out, "Illegal number.\n");
 		else {
-			cheatcoin_mining_start(nthreads);
+			cheatcoin_mining_start(g_is_miner ? -nthreads : nthreads);
 			fprintf(out, "%d mining threads running\n", g_cheatcoin_mining_threads);
 		}
 	} else if (!strcmp(cmd, "net")) {
@@ -200,10 +200,11 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			if (!cmd) fprintf(out, "Pool is disabled.\n");
 			else fprintf(out, "Pool config: %s.\n", cmd);
 		} else {
-			cheatcoin_pool_set_config()
+			cheatcoin_pool_set_config(cmd);
 		}
 	} else if (!strcmp(cmd, "stats")) {
-		fprintf(out, "Statistics for ours and maximum known parameters:\n"
+		if (g_is_miner) fprintf("Network statistics is not available for miner.\n");
+		else fprintf(out, "Statistics for ours and maximum known parameters:\n"
 			"            hosts: %u of %u\n"
 			"           blocks: %llu of %llu\n"
 			"      main blocks: %llu of %llu\n"
@@ -233,7 +234,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 		cmd = strtok_r(0, " \t\r\n", &lasts);
 		if (!cmd) { fprintf(out, "Xfer: amount not given.\n"); return 1; }
 		xfer.remains = cheatcoins2amount(cmd);
-		if (!xfer.remains) { fprintf(out, "Xfer: nothing to transfer.\n"); return 1; }
+		if (!xfer.remains) { fprintf(	out, "Xfer: nothing to transfer.\n"); return 1; }
 		if (xfer.remains > cheatcoin_get_balance(0)) { fprintf(out, "Xfer: balance too small.\n"); return 1; }
 		cmd = strtok_r(0, " \t\r\n", &lasts);
 		if (!cmd) { fprintf(out, "Xfer: destination address not given.\n"); return 1; }
@@ -305,7 +306,7 @@ static void *terminal_thread(void *arg) {
 int main(int argc, char **argv) {
 	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0;
 	char *ptr;
-	int transport_flags = 0, n_addrports = 0, n_maining_threads = 0, is_pool = 0, i;
+	int transport_flags = 0, n_addrports = 0, n_mining_threads = 0, is_pool = 0, is_miner = 0, i;
 	double pool_fee = 0;
 	pthread_t th;
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -328,13 +329,14 @@ int main(int argc, char **argv) {
 				break;
 			case 'h':
 			help:
-				printf("Usage: %s flags\n"
+				printf("Usage: %s flags [pool_ip:port]\n"
+					"If pool_ip:port argument is given, then the node operates as a miner.\n"
 					"Flags:\n"
 					"  -c ip:port     - address of another cheatcoin full node to connect\n"
 					"  -d             - run as daemon (default is interactive mode)\n"
 					"  -h             - print this help\n"
 					"  -i             - run as interactive terminal for daemon running in this folder\n"
-					"  -m N           - use N CPU maining threads (default is 0)\n"
+					"  -m N           - use N CPU mining threads (default is 0)\n"
 					"  -p ip:port     - public address of this node\n"
 				    "  -P ip:port:CFG - run the pool, bind to ip:port, CFG is maxminers:fee:reward:direct\n"
 				    "                   maxminers - maximum allowed number of miners,\n"
@@ -368,8 +370,16 @@ int main(int argc, char **argv) {
 				break;
 			default:
 				goto help;
+		} else if (strchr(argv[i], ':')) {
+			is_miner = 1;
+			pool_arg = argv[i];
 		}
 	}
+	if (is_miner && (is_pool || pubaddr || bindto || n_addrports)) {
+		printf("Miner can't be a pool or have directly connected to the cheatcoin network.\n");
+		return -1;
+	}
+	g_is_miner = is_miner;
 	if (pubaddr && !bindto) {
 		char str[64], *p = strchr(pubaddr, ':');
 		if (p) { sprintf(str, "0.0.0.0%s", p); bindto = strdup(str); }
@@ -385,8 +395,10 @@ int main(int argc, char **argv) {
 	if (cheatcoin_transport_start(transport_flags, bindto, n_addrports, addrports)) return -1;
 	cheatcoin_mess("Initializing log system...");
 	if (cheatcoin_log_init()) return -1;
-	cheatcoin_mess("Reading hosts database...");
-	if (cheatcoin_netdb_init(pubaddr, n_addrports, addrports)) return -1;
+	if (!is_miner) {
+		cheatcoin_mess("Reading hosts database...");
+		if (cheatcoin_netdb_init(pubaddr, n_addrports, addrports)) return -1;
+	}
 	cheatcoin_mess("Initializing cryptography...");
 	if (cheatcoin_crypt_init()) return -1;
 	cheatcoin_mess("Reading wallet...");
@@ -394,9 +406,9 @@ int main(int argc, char **argv) {
 	cheatcoin_mess("Initializing addresses...");
 	if (cheatcoin_address_init()) return -1;
 	cheatcoin_mess("Starting blocks engine...");
-	if (cheatcoin_blocks_start()) return -1;
+	if (cheatcoin_blocks_start(is_miner ? -n_mining_threads : n_mining_threads)) return -1;
 	cheatcoin_mess("Starting pool engine...");
-	if (cheatcoin_pool_start(g_cheatcoin_pool, n_mining_threads, pool_fee / 100)) return -1;
+	if (cheatcoin_pool_start(is_pool, pool_arg)) return -1;
 	cheatcoin_mess("Starting terminal server...");
 	if (pthread_create(&th, 0, &terminal_thread, 0)) return -1;
 
