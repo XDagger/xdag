@@ -163,6 +163,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 		    "  level [N]   - print level of logging or set it to N (0 - nothing, ..., 9 - all)\n"
 			"  mining [N]  - print number of mining threads or set it to N\n"
 			"  net command - run transport layer command, try 'net help'\n"
+		    "  pool [CFG]  - print or set pool config; CFG is maxminers:fee:reward:direct\n"
 		    "  stats       - print statistics for loaded and all known blocks\n"
 			"  terminate   - terminate both daemon and this program\n"
 			"  xfer S A    - transfer S our %ss to the address A\n"
@@ -191,6 +192,16 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 		*netcmd = 0;
 		while ((cmd = strtok_r(0, " \t\r\n", &lasts))) { strcat(netcmd, cmd); strcat(netcmd, " "); }
 		cheatcoin_net_command(netcmd, out);
+	} else if (!strcmp(cmd, "pool")) {
+		cmd = strtok_r(0, " \t\r\n", &lasts);
+		if (!cmd) {
+			char buf[0x100];
+			cmd = cheatcoin_pool_get_config(buf);
+			if (!cmd) fprintf(out, "Pool is disabled.\n");
+			else fprintf(out, "Pool config: %s.\n", cmd);
+		} else {
+			cheatcoin_pool_set_config()
+		}
 	} else if (!strcmp(cmd, "stats")) {
 		fprintf(out, "Statistics for ours and maximum known parameters:\n"
 			"            hosts: %u of %u\n"
@@ -325,7 +336,11 @@ int main(int argc, char **argv) {
 					"  -i             - run as interactive terminal for daemon running in this folder\n"
 					"  -m N           - use N CPU maining threads (default is 0)\n"
 					"  -p ip:port     - public address of this node\n"
-					"  -P ip:port:N:M - run the pool, bind to ip:port, fee N%%, reward for winner M%%\n"
+				    "  -P ip:port:CFG - run the pool, bind to ip:port, CFG is maxminers:fee:reward:direct\n"
+				    "                   maxminers - maximum allowed number of miners,\n"
+				    "                   fee - pool fee in percent,\n"
+				    "                   reward - reward to miner who got a block in percent,\n"
+				    "                   direct - reward to miners participated in earned block in percent,\n"
 					"  -s ip:port     - address of this node to bind to\n"
 					"  -t             - connect to test net (default is main net)\n"
 				, argv[0]);

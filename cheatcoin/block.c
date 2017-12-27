@@ -496,7 +496,10 @@ begin:
 	b[0].field[0].transport_header = 1;
 	log_block("Create", min_hash, b[0].field[0].time);
 	res = cheatcoin_add_block(b);
-	if (res > 0) { cheatcoin_send_new_block(b); res = 0; }
+	if (res > 0) {
+		if (mining) memcpy(&g_mined_hashes[MAIN_TIME(send_time) & (CHEATCOIN_POOL_N_CONFIRMATIONS - 1)], min_hash, sizeof(cheatcoin_hash_t));
+		cheatcoin_send_new_block(b); res = 0;
+	}
 	return res;
 }
 
