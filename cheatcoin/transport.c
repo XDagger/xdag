@@ -10,6 +10,7 @@
 #include "netdb.h"
 #include "main.h"
 #include "sync.h"
+#include "pool.h"
 #include "version.h"
 #include "../dnet/dnet_main.h"
 
@@ -223,6 +224,7 @@ int cheatcoin_request_sums(cheatcoin_time_t start_time, cheatcoin_time_t end_tim
 /* разослать другим участникам сети новый блок */
 int cheatcoin_send_new_block(struct cheatcoin_block *b) {
 	dnet_send_cheatcoin_packet(b, (void *)(uintptr_t)NEW_BLOCK_TTL);
+	cheatcoin_send_block_via_pool(b);
 	return 0;
 }
 

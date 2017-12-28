@@ -29,6 +29,7 @@ extern int cheatcoin_set_log_level(int level);
 
 #define cheatcoin_fatal(...) cheatcoin_log(CHEATCOIN_FATAL  , __VA_ARGS__)
 #define cheatcoin_err(...)   cheatcoin_log(CHEATCOIN_ERROR  , __VA_ARGS__)
+#define cheatcoin_warn(...)  cheatcoin_log(CHEATCOIN_WARNING, __VA_ARGS__)
 #define cheatcoin_mess(...)  cheatcoin_log(CHEATCOIN_MESSAGE, __VA_ARGS__)
 #define cheatcoin_info(...)  cheatcoin_log(CHEATCOIN_INFO   , __VA_ARGS__)
 #ifndef NDEBUG

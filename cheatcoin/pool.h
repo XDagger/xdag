@@ -14,13 +14,20 @@ struct cheatcoin_pool_task {
 	void *ctx0, *ctx;
 };
 
+/* инициализация пула (pool_on = 1) или подключение майнера к пулу (pool_on = 0; pool_arg - параметры пула ip:port[:CFG] */
 extern int cheatcoin_pool_start(int pool_on, const char *pool_arg);
 
+/* изменяет число потоков майнинга */
 extern int cheatcoin_mining_start(int n_mining_threads);
 
+/* получает параметры пула в виде строки, 0 - если пул отключен */
 extern char *cheatcoin_pool_get_config(char *buf);
 
+/* устанавливает параметры пула */
 extern int cheatcoin_pool_set_config(const char *str);
+
+/* послать блок в сеть через пул */
+extern int cheatcoin_send_block_via_pool(struct cheatcoin_block *b);
 
 extern struct cheatcoin_pool_task g_cheatcoin_pool_task[2];
 extern uint64_t g_cheatcoin_pool_ntask;

@@ -36,6 +36,7 @@ static inline cheatcoin_diff_t cheatcoin_diff_div(cheatcoin_diff_t p, cheatcoin_
 #define cheatcoin_diff_to64(d)	(*(uint64_t*)&d.num[0])
 #define cheatcoin_mkdir(d)		mkdir(d)
 #define strdup(x)				_strdup(x)
+#define fcntl					ioctlsocket
 
 #else
 

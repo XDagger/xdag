@@ -59,13 +59,18 @@ static ssize_t dnet_conn_read(void *private_data, void *buf, size_t size) {
 static ssize_t dnet_conn_write(void *private_data, void *buf, size_t size) {
     struct dnet_connection *conn = (struct dnet_connection *)private_data;
     ssize_t res = 0, done;
+	if (conn->socket < 0) return -1l;
     while (size) {
 		struct pollfd fd;
 		fd.fd = conn->socket;
 		fd.events = POLLOUT;
 		fd.revents = 0;
-		if (poll(&fd, 1, 3000) != 1 || !(fd.revents & POLLOUT))
-			dnet_log_printf("poll failed for socket %d\n", conn->socket);
+		if (poll(&fd, 1, 16000) != 1 || fd.revents != POLLOUT) {
+			dnet_log_printf("dnet: poll failed for socket %d\n", conn->socket);
+			close(conn->socket);
+			conn->socket = -1;
+			return -1l;
+		}
 		done = write(conn->socket, buf, size);
         if (done < 0) break;
         res += done;

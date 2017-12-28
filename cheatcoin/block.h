@@ -58,11 +58,16 @@ struct cheatcoin_block {
 
 #define cheatcoin_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)
 
-/* начало регулярной обработки блоков; n_mining_threads - число потоков для майнинга на CPU */
+/* начало регулярной обработки блоков; n_mining_threads - число потоков для майнинга на CPU;
+ * для лёгкой ноды n_mining_threads < 0 и число потоков майнинга равно ~n_mining_threads
+ */
 extern int cheatcoin_blocks_start(int n_mining_threads);
 
 /* проверить блок и включить его в базу данных, возвращает не 0 в случае ошибки */
 extern int cheatcoin_add_block(struct cheatcoin_block *b);
+
+/* выдаёт первый наш блок, а если его нет - создаёт */
+extern int cheatcoin_get_out_block(cheatcoin_hash_t hash);
 
 /* для каждого своего блока вызывается callback */
 extern int cheatcoin_traverse_our_blocks(void *data, int (*callback)(void *data, cheatcoin_hash_t hash,
@@ -75,6 +80,9 @@ extern int cheatcoin_create_block(struct cheatcoin_field *fields, int ninput, in
 
 /* возвращает баланс адреса, или всех наших адресов, если hash == 0 */
 extern cheatcoin_amount_t cheatcoin_get_balance(cheatcoin_hash_t hash);
+
+/* устанавливает баланс адреса */
+extern cheatcoin_set_balance(cheatcoin_hash_t hash, cheatcoin_amount_t balance);
 
 /* по данному кол-ву главных блоков возвращает объем циркулирующих читкоинов */
 extern cheatcoin_amount_t cheatcoin_get_supply(uint64_t nmain);

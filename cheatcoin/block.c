@@ -63,6 +63,7 @@ static struct ldus_rbtree *root = 0;
 static struct block_internal * volatile top_main_chain = 0, * volatile pretop_main_chain = 0;
 static struct block_internal *ourfirst = 0, *ourlast = 0, *noref_first = 0, *noref_last = 0;
 static pthread_mutex_t block_mutex;
+static int g_light_mode = 0;
 
 static uint64_t get_timestamp(void) {
 	struct timeval tp;
@@ -273,7 +274,7 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 	bi.time = b->field[0].time;
 	if (bi.time > timestamp + MAIN_CHAIN_PERIOD / 4 || bi.time < CHEATCOIN_ERA
 			|| (limit && timestamp - bi.time > limit)) { i = 0; err = 2; goto end; }
-	check_new_main();
+	if (!g_light_mode) check_new_main();
 	for (i = 1; i < CHEATCOIN_BLOCK_FIELDS; ++i) switch((type = cheatcoin_type(b,i))) {
 		case CHEATCOIN_FIELD_NONCE:			break;
 		case CHEATCOIN_FIELD_IN:			inmask  |= 1 << i; break;
@@ -287,6 +288,7 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 			break;
 		default: err = 3; goto end;
 	}
+	if (g_light_mode) outmask = 0;
 	if (nsignout & 1) { i = nsignout; err = 4; goto end; }
 	if (nsignout) our_keys = cheatcoin_wallet_our_keys(&nourkeys);
 	for (i = 1; i < CHEATCOIN_BLOCK_FIELDS; ++i) if (1 << i & (signinmask | signoutmask)) {
@@ -478,6 +480,7 @@ begin:
 		memcpy(task->ctx, task->ctx0, cheatcoin_hash_ctx_size());
 		cheatcoin_hash_update(task->ctx, b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].data, sizeof(struct cheatcoin_field) - sizeof(uint64_t));
 		memcpy(task->task[1].data, b[0].field[CHEATCOIN_BLOCK_FIELDS - 2].data, sizeof(struct cheatcoin_field));
+		memcpy(task->nonce.data, b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].data, sizeof(struct cheatcoin_field));
 		memcpy(task->lastfield.data, b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].data, sizeof(struct cheatcoin_field));
 		memset(task->minhash.data, 0xff, sizeof(struct cheatcoin_field));
 		g_cheatcoin_pool_ntask = ntask;
@@ -540,7 +543,7 @@ static void *sync_thread(void *arg) {
 /* основной поток, работающий с блоками */
 static void *work_thread(void *arg) {
 	cheatcoin_time_t t = CHEATCOIN_ERA;
-	int n_mining_threads = (uintptr_t)arg;
+	int n_mining_threads = (int)(unsigned)(uintptr_t)arg;
 	pthread_t th;
 
 	/* загрузка блоков из локального хранилища */
@@ -581,12 +584,30 @@ int cheatcoin_blocks_start(int n_mining_threads) {
 	pthread_t th;
 	int res;
 	if (g_cheatcoin_testnet) cheatcoin_era = CHEATCOIN_TEST_ERA;
+	if (n_mining_threads < 0) g_light_mode = 0;
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&block_mutex, &attr);
-	res = pthread_create(&t, 0, work_thread, (void *)(uintptr_t)n_mining_threads);
+	res = pthread_create(&t, 0, work_thread, (void *)(uintptr_t)(unsigned)n_mining_threads);
 	if (!res) pthread_detach(th);
 	return res;
+}
+
+/* выдаёт первый наш блок, а если его нет - создаёт */
+int cheatcoin_get_out_block(cheatcoin_hash_t hash) {
+	struct block_internal *bi;
+	pthread_mutex_lock(&block_mutex);
+	bi = outfirst;
+	pthread_mutex_unlock(&block_mutex);
+	if (!bi) {
+		cheatcoin_create_block(0, 0, 0, 0, 0);
+		pthread_mutex_lock(&block_mutex);
+		bi = outfirst;
+		pthread_mutex_unlock(&block_mutex);
+		if (!bi) return -1;
+	}
+	memcpy(hash, bi->hash, sizeof(cheatcoin_hash_t));
+	return 0;
 }
 
 /* для каждого своего блока вызывается callback */
@@ -610,6 +631,21 @@ cheatcoin_amount_t cheatcoin_get_balance(cheatcoin_hash_t hash) {
 	pthread_mutex_unlock(&block_mutex);
 	if (!bi) return 0;
 	return bi->amount;
+}
+
+/* устанавливает баланс адреса */
+extern int cheatcoin_set_balance(cheatcoin_hash_t hash, cheatcoin_amount_t balance) {
+	struct block_internal *bi;
+	if (!hash) return -1;
+	pthread_mutex_lock(&block_mutex);
+	bi = block_by_hash(hash);
+	pthread_mutex_unlock(&block_mutex);
+	if (!bi) return -1;
+	if (bi->amount != balance) {
+		log_block("Amount", hash, balance);
+		bi->amount = balance;
+	}
+	return 0;
 }
 
 /* по хешу блока возвращает его позицию в хранилище и время */

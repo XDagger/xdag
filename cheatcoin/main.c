@@ -140,7 +140,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 	else if (!strcmp(cmd, "account")) {
 		struct account_callback_data d;
 		d.out = out;
-		d.count = 20;
+		d.count = (g_is_miner ? 1 : 20);
 		cmd = strtok_r(0, " \t\r\n", &lasts);
 		if (cmd) sscanf(cmd, "%d", &d.count);
 		cheatcoin_traverse_our_blocks(&d, &account_callback);
@@ -184,7 +184,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 		if (!cmd) fprintf(out, "%d mining threads running\n", g_cheatcoin_mining_threads);
 		else if (sscanf(cmd, "%d", &nthreads) != 1 || nthreads < 0) fprintf(out, "Illegal number.\n");
 		else {
-			cheatcoin_mining_start(g_is_miner ? -nthreads : nthreads);
+			cheatcoin_mining_start(g_is_miner ? ~nthreads : nthreads);
 			fprintf(out, "%d mining threads running\n", g_cheatcoin_mining_threads);
 		}
 	} else if (!strcmp(cmd, "net")) {
@@ -351,7 +351,7 @@ int main(int argc, char **argv) {
 			    return terminal();
 		    case 'm':
 				if (++i < argc)
-					sscanf(argv[i], "%d", &n_maining_threads);
+					sscanf(argv[i], "%d", &n_mining_threads);
 				break;
 			case 'p':
 			    if (++i < argc)
@@ -406,7 +406,7 @@ int main(int argc, char **argv) {
 	cheatcoin_mess("Initializing addresses...");
 	if (cheatcoin_address_init()) return -1;
 	cheatcoin_mess("Starting blocks engine...");
-	if (cheatcoin_blocks_start(is_miner ? -n_mining_threads : n_mining_threads)) return -1;
+	if (cheatcoin_blocks_start(is_miner ? ~n_mining_threads : n_mining_threads)) return -1;
 	cheatcoin_mess("Starting pool engine...");
 	if (cheatcoin_pool_start(is_pool, pool_arg)) return -1;
 	cheatcoin_mess("Starting terminal server...");
