@@ -1,4 +1,4 @@
-/* dnet: threads; T11.231-T13.764; $DVS:time$ */
+/* dnet: threads; T11.231-T13.775; $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -42,7 +42,7 @@ static void dnet_thread_work(struct dnet_thread *t) {
     struct sockaddr_in peeraddr;
     struct hostent *host;
     char *str, *lasts;
-	int res = 0, ip_to = 0, port_to = 0, crc_to = 0, proto = DNET_TCP;
+	int res = 0, ip_to = 0, port_to = 0, crc_to = 0, proto = DNET_TCP, reuseaddr = 1;
 
 	if (t->type == DNET_THREAD_FORWARD_FROM || t->type == DNET_THREAD_STREAM) {
 		port_to = t->st.port_to;
@@ -101,6 +101,7 @@ static void dnet_thread_work(struct dnet_thread *t) {
         // Set the "LINGER" timeout to zero, to close the listen socket
         // immediately at program termination.
         setsockopt(t->conn.socket, SOL_SOCKET, SO_LINGER, (char *)&linger_opt, sizeof(linger_opt));
+		setsockopt(t->conn.socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuseaddr, sizeof(int));
 
 		if (proto == DNET_UDP) {
 			if (t->type != DNET_THREAD_STREAM) {
@@ -129,10 +130,12 @@ static void dnet_thread_work(struct dnet_thread *t) {
 			begin:
 			t1->conn.socket = accept(t->conn.socket, (struct sockaddr*) &peeraddr, &peeraddr_len);
 			if (t1->conn.socket < 0) { free(t1); mess = "cannot accept"; goto err; }
-			if (g_n_inbound >= MAX_N_INBOUND) { close(t1->conn.socket); goto begin; }
+			setsockopt(t1->conn.socket, SOL_SOCKET, SO_LINGER, (char *)&linger_opt, sizeof(linger_opt));
+			setsockopt(t1->conn.socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuseaddr, sizeof(int));
 			if (fcntl(t1->conn.socket, F_SETFD, FD_CLOEXEC) == -1) {
 				dnet_log_printf("dnet.%d: can't set FD_CLOEXEC flag on accepted socket, %s\n", t->nthread, strerror(errno));
 			}
+			if (g_n_inbound >= MAX_N_INBOUND) { close(t1->conn.socket); goto begin; }
 			if (t->type == DNET_THREAD_FORWARD_FROM) {
 			   t1->type = DNET_THREAD_STREAM;
 			   t1->st.pkt_type = DNET_PKT_FORWARDED_TCP;

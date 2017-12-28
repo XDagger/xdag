@@ -1,4 +1,4 @@
-/* хеш-функция, T13.654-T13.761 $DVS:time$ */
+/* хеш-функция, T13.654-T13.775 $DVS:time$ */
 
 #ifndef CHEATCOIN_HASH_H
 #define CHEATCOIN_HASH_H

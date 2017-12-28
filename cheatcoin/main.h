@@ -1,4 +1,4 @@
-/* основные переменные, T13.714-T13.760 $DVS:time$ */
+/* основные переменные, T13.714-T13.775 $DVS:time$ */
 
 #ifndef CHEATCOIN_MAIN_H
 #define CHEATCOIN_MAIN_H
@@ -24,6 +24,8 @@ extern struct cheatcoin_ext_stats {
 	uint64_t nnoref;
 	uint32_t nwaitsync;
 } g_cheatcoin_extstats;
+
+extern void cheatcoin_log_xfer(cheatcoin_hash_t from, cheatcoin_hash_t to, cheatcoin_amount_t amount);
 
 /* 1 - программа работает в тестовой сети */
 extern int g_cheatcoin_testnet;

@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.760 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.775 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -107,6 +107,11 @@ static int make_block(struct xfer_callback_data *d) {
 
 #define Nfields(d) (2 + d->nfields + 3 * d->nkeys + 2 * d->outsig)
 
+void cheatcoin_log_xfer(cheatcoin_hash_t from, cheatcoin_hash_t to, cheatcoin_amount_t amount) {
+	cheatcoin_mess("Xfer  : from %s to %s xfer %.9Lf %ss",
+			cheatcoin_hash2address(from), cheatcoin_hash2address(to), amount2cheatcoins(amount), coinname);
+}
+
 static int xfer_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t amount, int n_our_key) {
 	struct xfer_callback_data *d = (struct xfer_callback_data *)data;
 	cheatcoin_amount_t todo = d->remains;
@@ -124,8 +129,7 @@ static int xfer_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t a
 	memcpy(d->fields + d->nfields, hash, sizeof(cheatcoin_hashlow_t));
 	d->fields[d->nfields++].amount = todo;
 	d->todo += todo, d->remains -= todo;
-	cheatcoin_mess("Xfer  : from %s to %s xfer %.9Lf %ss",
-			cheatcoin_hash2address(hash), cheatcoin_hash2address(d->fields[XFER_MAX_IN].hash), amount2cheatcoins(todo), coinname);
+	cheatcoin_log_xfer(hash, d->fields[XFER_MAX_IN].hash, todo);
 	if (!d->remains || Nfields(d) == CHEATCOIN_BLOCK_FIELDS) {
 		if (make_block(d)) return -1;
 		if (!d->remains) return 1;

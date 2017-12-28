@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.000 $DVS:time$ */
+/* пул и майнер, T13.744-T13.776 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,6 +20,7 @@
 #include "../dus/programs/dar/source/include/crc.h"
 #include "address.h"
 #include "block.h"
+#include "main.h"
 #include "pool.h"
 #include "storage.h"
 #include "sync.h"
@@ -64,7 +65,7 @@ struct miner {
 struct cheatcoin_pool_task g_cheatcoin_pool_task[2];
 uint64_t g_cheatcoin_pool_ntask;
 int g_cheatcoin_mining_threads = 0;
-cheatcoin_hash_t g_cheatcoin_mined_hashes[N_CONFIRMATIONS];
+cheatcoin_hash_t g_cheatcoin_mined_hashes[N_CONFIRMATIONS], g_cheatcoin_mined_nonce[N_CONFIRMATIONS];
 
 /* 1 - программа работает как пул */
 static int g_cheatcoin_pool = 0, g_max_nminers = START_N_MINERS, g_nminers = 0, g_socket = -1,
@@ -101,10 +102,11 @@ static inline void set_share(struct miner *m, struct cheatcoin_pool_task *task, 
 
 static void *pool_main_thread(void *arg) {
 	struct cheatcoin_pool_task *task;
+	const char *mess;
 	struct miner *m;
 	struct pollfd *p;
 	uint64_t ntask;
-	int i, todo, nminers, done;
+	int i, todo, nminers, done, j;
 	for(;;) {
 		nminers = g_nminers;
 		if (!poll(g_fds, nminers, 1000)) continue;
@@ -113,25 +115,25 @@ static void *pool_main_thread(void *arg) {
 			p = g_fds + i;
 			if (m->state & (MINER_ARCHIVE | MINER_FREE)) continue;
 			if (p->revents & POLLNVAL) continue;
-			if (p->revents & (POLLHUP | POLLERR)) {
-				done = 1;
+			if (p->revents & POLLHUP) {
+				done = 1; mess = "socket hangup";
+			disconnect:
+				m->state = MINER_ARCHIVE;
+			disconnect_free:
 				close(p->fd);
-				if (m->block) free(m->block);
 				p->fd = -1;
-				m->state |= MINER_ARCHIVE;
+				if (m->block) { free(m->block); m->block = 0; }
+				j = m->ip;
+				cheatcoin_info("Pool  : miner %d disconnected from %u.%u.%u.%u:%u by %s", i,
+					j & 0xff, j >> 8 & 0xff, j >> 16 & 0xff, j >> 24 & 0xff, ntohs(m->port), mess);
 				continue;
 			}
+			if (p->revents & POLLERR) { done = 1; mess = "socket error"; goto disconnect; }
 			if (p->revents & POLLIN) {
 				done = 1;
 				todo = sizeof(struct cheatcoin_field) - m->data_size;
 				todo = read(p->fd, (uint8_t *)m->data + m->data_size, todo);
-				if (todo <= 0) {
-					close(p->fd);
-					if (m->block) free(m->block);
-					p->fd = -1;
-					m->state |= MINER_ARCHIVE;
-					continue;
-				}
+				if (todo <= 0) { mess = "read error"; goto disconnect; }
 				m->data_size += todo;
 				if (m->data_size == sizeof(struct cheatcoin_field)) {
 					m->data_size = 0;
@@ -142,10 +144,7 @@ static void *pool_main_thread(void *arg) {
 						memcpy(m->block->field, m->data, sizeof(struct cheatcoin_field));
 						m->block_size++;
 					} else if (m->nfield_in == 1) {
-						close(p->fd);
-						if (m->block) free(m->block);
-						p->fd = -1;
-						m->state |= MINER_FREE;
+						mess = "protocol mismatch"; m->state = MINER_FREE; goto disconnect_free;
 					} else if (m->block_size) {
 						memcpy(m->block->field + m->block_size, m->data, sizeof(struct cheatcoin_field));
 						m->block_size++;
@@ -192,12 +191,7 @@ static void *pool_main_thread(void *arg) {
 					for (j = 0; j < nfld; ++j)
 						dfslib_encrypt_array(g_crypt, (uint32_t *)(data + j), DATA_SIZE, m->nfield_out++);
 					todo = write(p->fd, data, nfld * sizeof(struct cheatcoin_field));
-					if (todo != nfld * sizeof(struct cheatcoin_field)) {
-						close(p->fd);
-						if (m->block) free(m->block);
-						p->fd = -1;
-						m->state |= MINER_ARCHIVE;
-					}
+					if (todo != nfld * sizeof(struct cheatcoin_field)) { mess = "write error"; goto disconnect; }
 				}
 			}
 		}
@@ -209,7 +203,7 @@ static void *pool_main_thread(void *arg) {
 static int pay_miners(cheatcoin_time_t t) {
 	struct cheatcoin_field fields[12];
 	struct cheatcoin_block buf, *b;
-	uint64_t *h;
+	uint64_t *h, *nonce;
 	cheatcoin_amount_t balance, pay, reward = 0, direct = 0;
 	struct miner *m;
 	int64_t pos;
@@ -219,6 +213,7 @@ static int pay_miners(cheatcoin_time_t t) {
 	if (!nminers) return -1;
 	n = t & (N_CONFIRMATIONS - 1);
 	h = g_cheatcoin_mined_hashes[n];
+	nonce = g_cheatcoin_mined_nonce[n];
 	balance = cheatcoin_get_balance(h);
 	if (!balance) return -2;
 	pay = balance - g_pool_fee * balance;
@@ -250,7 +245,7 @@ static int pay_miners(cheatcoin_time_t t) {
 		prev_diff[i] += diff[i];
 		sum += diff[i];
 		prev_sum += prev_diff[i];
-		if (reward_ind < 0 && !memcmp(h, m->id.data, sizeof(cheatcoin_hashlow_t))) reward_ind = i;
+		if (reward_ind < 0 && !memcmp(nonce, m->id.data, sizeof(cheatcoin_hashlow_t))) reward_ind = i;
 	}
 	if (!prev_sum) return -9;
 	if (sum > 0) {
@@ -269,6 +264,7 @@ static int pay_miners(cheatcoin_time_t t) {
 		memcpy(fields[nfld].data, m->id.data, sizeof(cheatcoin_hashlow_t));
 		fields[nfld].amount = topay;
 		fields[0].amount += topay;
+		cheatcoin_log_xfer(fields[0].data, fields[nfld].data, topay);
 		if (++nfld == nfields) {
 			cheatcoin_create_block(fields, 1, nfld - 1, 0, 0);
 			nfld = 1;
@@ -365,8 +361,8 @@ static void *pool_net_thread(void *arg) {
 	struct sockaddr_in peeraddr;
 	struct hostent *host;
 	char *lasts;
-	int res = 0, sock, fd, rcvbufsize = 1024, reuseaddr = 1, i;
-	unsigned long nonblock = 1;
+	int res = 0, sock, fd, rcvbufsize = 1024, reuseaddr = 1, i, j;
+//	unsigned long nonblock = 1;
 	struct linger linger_opt = { 1, 0 }; // Linger active, timeout 0
 	socklen_t peeraddr_len = sizeof(peeraddr);
 	cheatcoin_time_t t;
@@ -424,7 +420,7 @@ static void *pool_net_thread(void *arg) {
 		fd = accept(sock, (struct sockaddr*) &peeraddr, &peeraddr_len);
 		if (fd < 0) { mess = "cannot accept"; goto err; }
 		setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char *)&rcvbufsize, sizeof(int));
-		ioctl(fd, FIONBIO, (char*)&nonblock);
+//		ioctl(fd, FIONBIO, (char*)&nonblock);
 
 		t = cheatcoin_main_time();
 		for (i = 0; i < g_nminers; ++i) {
@@ -441,9 +437,11 @@ static void *pool_net_thread(void *arg) {
 			p->events = POLLIN | POLLOUT;
 			p->revents = 0;
 			memset(m, 0, sizeof(struct miner));
-			m->ip = peeraddr.sin_addr.s_addr;
+			j = m->ip = peeraddr.sin_addr.s_addr;
 			m->port = peeraddr.sin_port;
 			if (i == g_nminers) g_nminers++;
+			cheatcoin_info("Pool  : miner %d connected from %u.%u.%u.%u:%u", i,
+					j & 0xff, j >> 8 & 0xff, j >> 16 & 0xff, j >> 24 & 0xff, ntohs(m->port));
 		}
 	}
 
@@ -513,12 +511,14 @@ static void *miner_net_thread(void *arg) {
 	int64_t pos;
 	struct linger linger_opt = { 1, 0 }; // Linger active, timeout 0
 	cheatcoin_time_t t;
+	struct miner *m = &g_local_miner;
 	time_t t00, t0, tt;
 
 begin:
 	ndata = 0;
 	maxndata = sizeof(struct cheatcoin_field);
 	t0 = t00 = 0;
+	m->nfield_in = m->nfield_out = 0;
 
 	if (cheatcoin_get_our_block(hash)) { mess = "can't create a block"; goto err; }
 	pos = cheatcoin_get_block_pos(hash, &t);
@@ -546,7 +546,7 @@ begin:
 	if (!strcmp(s, "any")) {
 		peeraddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	} else {
-		host = gethostbyname(str);
+		host = gethostbyname(s);
 		if (!host || !host->h_addr_list[0]) { pthread_mutex_unlock(&g_pool_mutex); mess = "cannot resolve host ", mess1 = s; res = h_errno; goto err; }
 		// Write resolved IP address of a server to the address structure
 		memmove(&peeraddr.sin_addr.s_addr, host->h_addr_list[0], 4);
@@ -555,7 +555,7 @@ begin:
 	// Resolve port
 	s = strtok_r(0, " \t\r\n:", &lasts);
 	if (!s) { pthread_mutex_unlock(&g_pool_mutex); mess = "port is not given"; goto err; }
-	peeraddr.sin_port = htons(atoi(str));
+	peeraddr.sin_port = htons(atoi(s));
 
 	// Set the "LINGER" timeout to zero, to close the listen socket
 	// immediately at program termination.
@@ -576,14 +576,17 @@ begin:
 		tt = time(0);
 		p.events = POLLIN | (tt - t0 >= SEND_PERIOD && tt - t00 <= 64 ? POLLOUT : 0);
 		if (!poll(&p, 1, 0)) { pthread_mutex_unlock(&g_pool_mutex); sleep(1); continue; }
-		if (p.revents & (POLLHUP | POLLERR)) { pthread_mutex_unlock(&g_pool_mutex); mess = "error on socket"; goto err; }
+		if (p.revents & POLLHUP) { pthread_mutex_unlock(&g_pool_mutex); mess = "socket hangup"; goto err; }
+		if (p.revents & POLLERR) { pthread_mutex_unlock(&g_pool_mutex); mess = "socket error"; goto err; }
 		if (p.revents & POLLIN) {
 			res = read(g_socket, (uint8_t *)data + ndata, maxndata - ndata);
-			if (res <= 0) { pthread_mutex_unlock(&g_pool_mutex); mess = "read error on socket"; goto err; }
+			if (res < 0) { pthread_mutex_unlock(&g_pool_mutex); mess = "read error on socket"; goto err; }
 			ndata += res;
 			if (ndata == maxndata) {
-				if (!memcpy(data[ndata / sizeof(struct cheatcoin_field) - 1].data, hash, sizeof(cheatcoin_hashlow_t))) {
-					cheatcoin_set_balance(hash, data[ndata / sizeof(struct cheatcoin_field) - 1].amount);
+				struct cheatcoin_field *last = data + (ndata / sizeof(struct cheatcoin_field) - 1);
+				dfslib_uncrypt_array(g_crypt, (uint32_t *)last->data, DATA_SIZE, m->nfield_in++);
+				if (!memcmp(last->data, hash, sizeof(cheatcoin_hashlow_t))) {
+					cheatcoin_set_balance(hash, last->amount);
 					ndata = 0;
 					maxndata = sizeof(struct cheatcoin_field);
 				} else if (maxndata == 2 * sizeof(struct cheatcoin_field)){
@@ -597,17 +600,19 @@ begin:
 					cheatcoin_generate_random_array(task->nonce.data, sizeof(cheatcoin_hash_t));
 					memcpy(task->nonce.data, hash, sizeof(cheatcoin_hashlow_t));
 					memcpy(task->lastfield.data, task->nonce.data, sizeof(cheatcoin_hash_t));
-					memset(task->minhash.data, 0xff, sizeof(cheatcoin_hash_t));
+					cheatcoin_hash_final(task->ctx, &task->nonce.amount, sizeof(uint64_t), task->minhash.data);
 					g_cheatcoin_pool_ntask = ntask;
 					t00 = time(0);
 					cheatcoin_info("Task  : t=%llx N=%llu", task->main_time << 16 | 0xffff, ntask);
+					ndata = 0;
+					maxndata = sizeof(struct cheatcoin_field);
 				} else {
 					maxndata = 2 * sizeof(struct cheatcoin_field);
 				}
 			}
 		}
 		if (p.revents & POLLOUT) {
-			uint64_t ntask = g_cheatcoin_pool_ntask + 1;
+			uint64_t ntask = g_cheatcoin_pool_ntask;
 			struct cheatcoin_pool_task *task = &g_cheatcoin_pool_task[ntask & 1];
 			uint64_t *h = task->minhash.data;
 			t0 = time(0);
@@ -622,7 +627,7 @@ begin:
 err:
 	cheatcoin_err("Miner : %s %s (error %d)", mess, mess1, res);
 	pthread_mutex_lock(&g_pool_mutex);
-	if (g_socket != INVALID_SOCKET) close(g_socket), g_socket = INVALID_SOCKET;
+	if (g_socket != INVALID_SOCKET) { close(g_socket); g_socket = INVALID_SOCKET; }
 	pthread_mutex_unlock(&g_pool_mutex);
 	sleep(5);
 	goto begin;
@@ -724,7 +729,8 @@ int cheatcoin_pool_start(int pool_on, const char *pool_arg) {
 		return 0;
 	}
 	g_miners = malloc(N_MINERS * sizeof(struct miner));
-	if (!g_miners) return -1;
+	g_fds = malloc(N_MINERS * sizeof(struct pollfd));
+	if (!g_miners || !g_fds) return -1;
 	res = pthread_create(&th, 0, pool_net_thread, (void *)pool_arg);
 	if (res) return -1;
 	pthread_detach(th);

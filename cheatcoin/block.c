@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.764 $DVS:time$ */
+/* работа с блоками, T13.654-T13.776 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -486,7 +486,7 @@ begin:
 		memcpy(task->task[1].data, b[0].field[CHEATCOIN_BLOCK_FIELDS - 2].data, sizeof(struct cheatcoin_field));
 		memcpy(task->nonce.data, b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].data, sizeof(struct cheatcoin_field));
 		memcpy(task->lastfield.data, b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].data, sizeof(struct cheatcoin_field));
-		memset(task->minhash.data, 0xff, sizeof(struct cheatcoin_field));
+		cheatcoin_hash_final(task->ctx, &task->nonce.amount, sizeof(uint64_t), task->minhash.data);
 		g_cheatcoin_pool_ntask = ntask;
 		while (get_timestamp() <= send_time) {
 			sleep(1);
@@ -504,8 +504,12 @@ begin:
 	log_block("Create", min_hash, b[0].field[0].time);
 	res = cheatcoin_add_block(b);
 	if (res > 0) {
-		if (mining) memcpy(g_cheatcoin_mined_hashes[MAIN_TIME(send_time) & (CHEATCOIN_POOL_N_CONFIRMATIONS - 1)],
-				min_hash, sizeof(cheatcoin_hash_t));
+		if (mining) {
+			memcpy(g_cheatcoin_mined_hashes[MAIN_TIME(send_time) & (CHEATCOIN_POOL_N_CONFIRMATIONS - 1)],
+					min_hash, sizeof(cheatcoin_hash_t));
+			memcpy(g_cheatcoin_mined_nonce[MAIN_TIME(send_time) & (CHEATCOIN_POOL_N_CONFIRMATIONS - 1)],
+					b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].data, sizeof(cheatcoin_hash_t));
+		}
 		cheatcoin_send_new_block(b); res = 0;
 	}
 	return res;
@@ -589,7 +593,7 @@ int cheatcoin_blocks_start(int n_mining_threads) {
 	pthread_t th;
 	int res;
 	if (g_cheatcoin_testnet) cheatcoin_era = CHEATCOIN_TEST_ERA;
-	if (n_mining_threads < 0) g_light_mode = 0;
+	if (n_mining_threads < 0) g_light_mode = 1;
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&block_mutex, &attr);
@@ -647,7 +651,18 @@ extern int cheatcoin_set_balance(cheatcoin_hash_t hash, cheatcoin_amount_t balan
 	pthread_mutex_unlock(&block_mutex);
 	if (!bi) return -1;
 	if (bi->amount != balance) {
-		log_block("Amount", hash, balance);
+		cheatcoin_hash_t hash0;
+		cheatcoin_amount_t diff;
+		memset(hash0, 0, sizeof(cheatcoin_hash_t));
+		if (balance > bi->amount) {
+			diff = balance - bi->amount;
+			cheatcoin_log_xfer(hash0, hash, diff);
+			if (bi->flags & BI_OURS) g_balance += diff;
+		} else {
+			diff = bi->amount - balance;
+			cheatcoin_log_xfer(hash, hash0, diff);
+			if (bi->flags & BI_OURS) g_balance -= diff;
+		}
 		bi->amount = balance;
 	}
 	return 0;

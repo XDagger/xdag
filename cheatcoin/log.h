@@ -1,4 +1,4 @@
-/* логирование, T13.670-T13.759 $DVS:time$ */
+/* логирование, T13.670-T13.774 $DVS:time$ */
 
 #ifndef CHEATCOIN_LOG_H
 #define CHEATCOIN_LOG_H

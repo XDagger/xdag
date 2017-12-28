@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.000 $DVS:time$ */
+/* пул и майнер, T13.744-T13.776 $DVS:time$ */
 
 #ifndef CHEATCOIN_POOL_H
 #define CHEATCOIN_POOL_H
@@ -35,7 +35,8 @@ extern int cheatcoin_print_miners(FILE *out);
 
 extern struct cheatcoin_pool_task g_cheatcoin_pool_task[2];
 extern uint64_t g_cheatcoin_pool_ntask;
-extern cheatcoin_hash_t g_cheatcoin_mined_hashes[CHEATCOIN_POOL_N_CONFIRMATIONS];
+extern cheatcoin_hash_t g_cheatcoin_mined_hashes[CHEATCOIN_POOL_N_CONFIRMATIONS],
+						g_cheatcoin_mined_nonce[CHEATCOIN_POOL_N_CONFIRMATIONS];
 /* число собственных потоков майнинга */
 extern int g_cheatcoin_mining_threads;
 
