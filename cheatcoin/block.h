@@ -67,7 +67,7 @@ extern int cheatcoin_blocks_start(int n_mining_threads);
 extern int cheatcoin_add_block(struct cheatcoin_block *b);
 
 /* выдаёт первый наш блок, а если его нет - создаёт */
-extern int cheatcoin_get_out_block(cheatcoin_hash_t hash);
+extern int cheatcoin_get_our_block(cheatcoin_hash_t hash);
 
 /* для каждого своего блока вызывается callback */
 extern int cheatcoin_traverse_our_blocks(void *data, int (*callback)(void *data, cheatcoin_hash_t hash,
@@ -92,6 +92,9 @@ extern int64_t cheatcoin_get_block_pos(const cheatcoin_hash_t hash, cheatcoin_ti
 
 /* возвращает номер текущего периода времени, пеиод - это 64 секунды */
 extern cheatcoin_time_t cheatcoin_main_time(void);
+
+/* возвращает номер периода времени, соответствующего старту сети */
+extern cheatcoin_time_t cheatcoin_start_main_time(void);
 
 /* по хешу блока возвращает номер ключа или -1, если блок не наш */
 extern int cheatcoin_get_key(cheatcoin_hash_t hash);

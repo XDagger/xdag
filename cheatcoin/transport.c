@@ -82,6 +82,8 @@ static int block_arrive_callback(void *packet, void *connection) {
 	    case CHEATCOIN_FIELD_NONCE:
 			{
 			struct cheatcoin_stats *s = (struct cheatcoin_stats *)&b->field[2], *g = &g_cheatcoin_stats;
+			cheatcoin_time_t t0 = cheatcoin_start_main_time(), t = cheatcoin_main_time();
+			if (t < t0 || s->total_nmain > t - t0 + 2) return -1;
 			if (cheatcoin_diff_gt(s->max_difficulty, g->max_difficulty)) g->max_difficulty = s->max_difficulty;
 			if (s->total_nblocks  > g->total_nblocks)  g->total_nblocks  = s->total_nblocks;
 			if (s->total_nmain    > g->total_nmain)    g->total_nmain    = s->total_nmain;

@@ -161,6 +161,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			"  help        - print this help\n"
 		    "  keygen      - generate new private/public key pair and set it by default\n"
 		    "  level [N]   - print level of logging or set it to N (0 - nothing, ..., 9 - all)\n"
+			"  miners      - for pool, print list of recent connected miners\n"
 			"  mining [N]  - print number of mining threads or set it to N\n"
 			"  net command - run transport layer command, try 'net help'\n"
 		    "  pool [CFG]  - print or set pool config; CFG is maxminers:fee:reward:direct\n"
@@ -178,6 +179,8 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 		if (!cmd) fprintf(out, "%d\n", cheatcoin_set_log_level(-1));
 		else if (sscanf(cmd, "%u", &level) != 1 || level > CHEATCOIN_TRACE) fprintf(out, "Illegal level.\n");
 		else cheatcoin_set_log_level(level);
+	} else if (!strcmp(cmd, "miners")) {
+		cheatcoin_print_miners(out);
 	} else if (!strcmp(cmd, "mining")) {
 		int nthreads;
 		cmd = strtok_r(0, " \t\r\n", &lasts);

@@ -3,6 +3,7 @@
 #ifndef CHEATCOIN_POOL_H
 #define CHEATCOIN_POOL_H
 
+#include <stdio.h>
 #include "block.h"
 #include "hash.h"
 
@@ -28,6 +29,9 @@ extern int cheatcoin_pool_set_config(const char *str);
 
 /* послать блок в сеть через пул */
 extern int cheatcoin_send_block_via_pool(struct cheatcoin_block *b);
+
+/* вывести в файл список майнеров */
+extern int cheatcoin_print_miners(FILE *out);
 
 extern struct cheatcoin_pool_task g_cheatcoin_pool_task[2];
 extern uint64_t g_cheatcoin_pool_ntask;

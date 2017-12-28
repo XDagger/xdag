@@ -1,5 +1,6 @@
 /* пул и майнер, T13.744-T13.000 $DVS:time$ */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -17,6 +18,7 @@
 #include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_string.h"
 #include "../dus/programs/dar/source/include/crc.h"
+#include "address.h"
 #include "block.h"
 #include "pool.h"
 #include "storage.h"
@@ -52,6 +54,8 @@ struct miner {
 	uint64_t nfield_out;
 	uint64_t ntask;
 	struct cheatcoin_block *block;
+	uint32_t ip;
+	uint16_t port;
 	uint16_t state;
 	uint8_t data_size;
 	uint8_t block_size;
@@ -212,8 +216,8 @@ static int pay_miners(cheatcoin_time_t t) {
 	int i, n, nminers, reward_ind = -1, key, defkey, nfields, nfld;
 	double *diff, *prev_diff, sum, prev_sum, topay;
 	nminers = g_nminers;
-	if (!g_miners) return -1;
-	n = (t + 1) & (N_CONFIRMATIONS - 1);
+	if (!nminers) return -1;
+	n = t & (N_CONFIRMATIONS - 1);
 	h = g_cheatcoin_mined_hashes[n];
 	balance = cheatcoin_get_balance(h);
 	if (!balance) return -2;
@@ -288,12 +292,12 @@ static void *pool_block_thread(void *arg) {
 		task = &g_cheatcoin_pool_task[ntask & 1];
 		t = task->main_time;
 		if (t > t0) {
-			uint64_t *h = g_cheatcoin_mined_hashes[(t + 1) & (N_CONFIRMATIONS - 1)];
+			uint64_t *h = g_cheatcoin_mined_hashes[(t - N_CONFIRMATIONS + 1) & (N_CONFIRMATIONS - 1)];
 			done = 1;
 			t0 = t;
-			res = pay_miners(t);
+			res = pay_miners(t - N_CONFIRMATIONS + 1);
 			cheatcoin_info("%s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
-				h[3], h[2], h[1], h[0], t << 16 | 0xffff, res);
+				h[3], h[2], h[1], h[0], (t - N_CONFIRMATIONS + 1) << 16 | 0xffff, res);
 		}
 		pthread_mutex_lock(&g_pool_mutex);
 		if (g_firstb) {
@@ -324,7 +328,7 @@ int cheatcoin_pool_set_config(const char *str) {
 	if (!g_cheatcoin_pool) return -1;
 	strcpy(buf, str);
 
-	str = strtok_r(0, " \t\r\n:", &lasts);
+	str = strtok_r(buf, " \t\r\n:", &lasts);
 	if (str) {
 		int open_max = sysconf(_SC_OPEN_MAX);
 		sscanf(str, "%d", &g_max_nminers);
@@ -333,7 +337,7 @@ int cheatcoin_pool_set_config(const char *str) {
 		else if (g_max_nminers > open_max - 64) g_max_nminers = open_max - 64;
 	}
 
-	str = strtok_r(buf, " \t\r\n:", &lasts);
+	str = strtok_r(0, " \t\r\n:", &lasts);
 	if (str) sscanf(str, "%lf", &g_pool_fee);
 	g_pool_fee /= 100;
 	if (g_pool_fee < 0) g_pool_fee = 0;
@@ -437,6 +441,8 @@ static void *pool_net_thread(void *arg) {
 			p->events = POLLIN | POLLOUT;
 			p->revents = 0;
 			memset(m, 0, sizeof(struct miner));
+			m->ip = peeraddr.sin_addr.s_addr;
+			m->port = peeraddr.sin_port;
 			if (i == g_nminers) g_nminers++;
 		}
 	}
@@ -514,7 +520,7 @@ begin:
 	maxndata = sizeof(struct cheatcoin_field);
 	t0 = t00 = 0;
 
-	if (cheatcoin_get_out_block(hash)) { mess = "can't create a block"; goto err; }
+	if (cheatcoin_get_our_block(hash)) { mess = "can't create a block"; goto err; }
 	pos = cheatcoin_get_block_pos(hash, &t);
 	if (pos < 0) { mess = "can't find the block"; goto err; }
 	blk = cheatcoin_storage_load(t, pos, &b);
@@ -694,6 +700,8 @@ int cheatcoin_mining_start(int n_mining_threads) {
 		pthread_detach(th);
 		g_cheatcoin_mining_threads++;
 	}
+	cheatcoin_get_our_block(g_local_miner.id.data);
+	g_local_miner.state = (g_cheatcoin_mining_threads ? 0 : MINER_ARCHIVE);
 	return 0;
 }
 
@@ -710,14 +718,14 @@ int cheatcoin_pool_start(int pool_on, const char *pool_arg) {
 	if (crypt_start()) return -1;
 	memset(&g_local_miner, 0, sizeof(struct miner));
 	if (!pool_on) {
-		res = pthread_create(&th, 0, miner_net_thread, 0);
+		res = pthread_create(&th, 0, miner_net_thread, (void *)pool_arg);
 		if (res) return -1;
 		pthread_detach(th);
 		return 0;
 	}
 	g_miners = malloc(N_MINERS * sizeof(struct miner));
 	if (!g_miners) return -1;
-	res = pthread_create(&th, 0, pool_net_thread, 0);
+	res = pthread_create(&th, 0, pool_net_thread, (void *)pool_arg);
 	if (res) return -1;
 	pthread_detach(th);
 	res = pthread_create(&th, 0, pool_main_thread, 0);
@@ -727,4 +735,32 @@ int cheatcoin_pool_start(int pool_on, const char *pool_arg) {
 	if (res) return -1;
 	pthread_detach(th);
 	return 0;
+}
+
+static int print_miner(FILE *out, int n, struct miner *m) {
+	double sum = m->prev_diff;
+	char buf[32], buf2[64];
+	uint32_t i = m->ip;
+	int j;
+	for (j = 0; j < N_CONFIRMATIONS; ++j) sum += m->maxdiff[j];
+	sprintf(buf, "%u.%u.%u.%u:%u", i & 0xff, i >> 8 & 0xff, i >> 16 & 0xff, i >> 24 & 0xff, ntohs(m->port));
+	sprintf(buf2, "%llu/%llu", (unsigned long long)m->nfield_in * sizeof(struct cheatcoin_field),
+			(unsigned long long)m->nfield_out * sizeof(struct cheatcoin_field));
+	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", n, cheatcoin_hash2address(m->id.data),
+		(m->state & MINER_FREE ? "free   " : (m->state & MINER_ARCHIVE ? "archive" : "active ")), buf, buf2, sum);
+	return m->state & (MINER_FREE | MINER_ARCHIVE) ? 0 : 1;
+}
+
+int cheatcoin_print_miners(FILE *out) {
+	int i, res;
+	fprintf(out, "List of miners:\n"
+" NN  Address for payment to            Status   IP and port            in/out bytes      nopaid shares\n"
+"------------------------------------------------------------------------------------------------------\n");
+	res = print_miner(out, -1, &g_local_miner);
+	for (i = 0; i < g_nminers; ++i)
+		res += print_miner(out, i, g_miners + i);
+	fprintf(out,
+"------------------------------------------------------------------------------------------------------\n"
+		"Total %d active miners.\n", res);
+	return res;
 }

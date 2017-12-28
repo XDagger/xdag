@@ -76,6 +76,10 @@ cheatcoin_time_t cheatcoin_main_time(void) {
 	return MAIN_TIME(get_timestamp());
 }
 
+cheatcoin_time_t cheatcoin_start_main_time(void) {
+	return MAIN_TIME(CHEATCOIN_ERA);
+}
+
 static inline int lessthen(struct ldus_rbtree *l, struct ldus_rbtree *r) {
 	return memcmp(l + 1, r + 1, 24) < 0;
 }
@@ -595,7 +599,7 @@ int cheatcoin_blocks_start(int n_mining_threads) {
 }
 
 /* выдаёт первый наш блок, а если его нет - создаёт */
-int cheatcoin_get_out_block(cheatcoin_hash_t hash) {
+int cheatcoin_get_our_block(cheatcoin_hash_t hash) {
 	struct block_internal *bi;
 	pthread_mutex_lock(&block_mutex);
 	bi = ourfirst;

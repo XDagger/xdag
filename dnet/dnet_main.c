@@ -112,7 +112,9 @@ int main(int argc, char **argv) {
 
     for (i = 1; i < argc + 2; ++i) {
 		if (i == 1) {
+#if !defined(_WIN32) && !defined(_WIN64)
 			if (i < argc && !strcmp(argv[i], "-d")) is_daemon = 1;
+#endif
 			printf("%s %s%s.\n", argv[0], DNET_VERSION, (is_daemon ? ", running as daemon" : ""));
 			if ((err = dnet_crypt_init(DNET_VERSION))) {
 				err *= 10;
