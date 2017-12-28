@@ -384,14 +384,14 @@ static void *pool_net_thread(void *arg) {
 	strcpy(buf, str);
 	str = strtok_r(buf, " \t\r\n:", &lasts);
 	if (!str) { mess = "host is not given"; goto err; }
-	if (!strcmp(str, "any")) {
+//	if (!strcmp(str, "any")) {
 		peeraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	} else {
-		host = gethostbyname(str);
-		if (!host || !host->h_addr_list[0]) { mess = "cannot resolve host ", mess1 = str; res = h_errno; goto err; }
-		// Write resolved IP address of a server to the address structure
-		memmove(&peeraddr.sin_addr.s_addr, host->h_addr_list[0], 4);
-	}
+//	} else {
+//		host = gethostbyname(str);
+//		if (!host || !host->h_addr_list[0]) { mess = "cannot resolve host ", mess1 = str; res = h_errno; goto err; }
+//		// Write resolved IP address of a server to the address structure
+//		memmove(&peeraddr.sin_addr.s_addr, host->h_addr_list[0], 4);
+//	}
 
 	// Resolve port
 	str = strtok_r(0, " \t\r\n:", &lasts);
