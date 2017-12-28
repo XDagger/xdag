@@ -650,10 +650,11 @@ static void *mining_thread(void *arg) {
 		task = &g_cheatcoin_pool_task[ntask & 1];
 		if (!ntask) { sleep(1); continue; }
 		if (ntask != oldntask) {
+			oldntask = ntask;
 			memcpy(last.data, task->nonce.data, sizeof(cheatcoin_hash_t));
 			nonce = last.amount + nthread;
-		} else nonce += g_cheatcoin_mining_threads;
-		last.amount = cheatcoin_hash_final_multi(task->ctx, &nonce, 256, hash);
+		}
+		last.amount = cheatcoin_hash_final_multi(task->ctx, &nonce, 256, g_cheatcoin_mining_threads, hash);
 		set_share(&g_local_miner, task, last.data, hash);
 	}
 	return 0;

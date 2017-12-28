@@ -26,7 +26,7 @@ extern void cheatcoin_hash_update(void *ctxv, void *data, size_t size);
 
 extern void cheatcoin_hash_final(void *ctxv, void *data, size_t size, cheatcoin_hash_t hash);
 
-extern uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, cheatcoin_hash_t hash);
+extern uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, int step, cheatcoin_hash_t hash);
 
 extern void cheatcoin_hash_get_state(void *ctxv, cheatcoin_hash_t state);
 

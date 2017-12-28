@@ -38,7 +38,7 @@ void cheatcoin_hash_final(void *ctxv, void *data, size_t size, cheatcoin_hash_t 
 	sha256_final(&ctx, (uint8_t *)hash);
 }
 
-uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, cheatcoin_hash_t hash) {
+uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, int step, cheatcoin_hash_t hash) {
 	SHA256_CTX ctx;
 	cheatcoin_hash_t hash0;
 	uint64_t min_nonce = 0;
@@ -54,7 +54,7 @@ uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, c
 			memcpy(hash, hash0, sizeof(cheatcoin_hash_t));
 			min_nonce = *nonce;
 		}
-		++*nonce;
+		*nonce += step;
 	}
 	return min_nonce;
 }
