@@ -23,7 +23,8 @@ extern int system_init(void);
 #define strdup(x) _strdup(x)
 #else
 #define pthread_invalid -1
-#define system_init() 0
+#define system_init()	0
+#define INVALID_SOCKET	-1
 #endif
 
 #endif

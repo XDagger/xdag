@@ -82,7 +82,7 @@ extern int cheatcoin_create_block(struct cheatcoin_field *fields, int ninput, in
 extern cheatcoin_amount_t cheatcoin_get_balance(cheatcoin_hash_t hash);
 
 /* устанавливает баланс адреса */
-extern cheatcoin_set_balance(cheatcoin_hash_t hash, cheatcoin_amount_t balance);
+extern int cheatcoin_set_balance(cheatcoin_hash_t hash, cheatcoin_amount_t balance);
 
 /* по данному кол-ву главных блоков возвращает объем циркулирующих читкоинов */
 extern cheatcoin_amount_t cheatcoin_get_supply(uint64_t nmain);

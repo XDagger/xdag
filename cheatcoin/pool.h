@@ -31,7 +31,7 @@ extern int cheatcoin_send_block_via_pool(struct cheatcoin_block *b);
 
 extern struct cheatcoin_pool_task g_cheatcoin_pool_task[2];
 extern uint64_t g_cheatcoin_pool_ntask;
-extern cheatcoin_hash_t g_mined_hashes[N_CONFIRMATIONS];
+extern cheatcoin_hash_t g_cheatcoin_mined_hashes[CHEATCOIN_POOL_N_CONFIRMATIONS];
 /* число собственных потоков майнинга */
 extern int g_cheatcoin_mining_threads;
 

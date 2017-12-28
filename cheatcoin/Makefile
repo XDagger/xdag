@@ -14,6 +14,7 @@ sources = \
 	log.c						\
 	main.c						\
 	netdb.c						\
+	pool.c						\
 	sha256.c					\
 	storage.c					\
 	sync.c						\
@@ -45,6 +46,7 @@ headers = \
 	log.h							\
 	main.h							\
 	netdb.h							\
+	pool.h							\
 	sha256.h						\
 	storage.h						\
 	sync.h							\

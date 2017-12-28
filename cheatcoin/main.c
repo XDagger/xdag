@@ -203,7 +203,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			cheatcoin_pool_set_config(cmd);
 		}
 	} else if (!strcmp(cmd, "stats")) {
-		if (g_is_miner) fprintf("Network statistics is not available for miner.\n");
+		if (g_is_miner) fprintf(out, "Network statistics is not available for miner.\n");
 		else fprintf(out, "Statistics for ours and maximum known parameters:\n"
 			"            hosts: %u of %u\n"
 			"           blocks: %llu of %llu\n"
@@ -307,7 +307,6 @@ int main(int argc, char **argv) {
 	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0;
 	char *ptr;
 	int transport_flags = 0, n_addrports = 0, n_mining_threads = 0, is_pool = 0, is_miner = 0, i;
-	double pool_fee = 0;
 	pthread_t th;
 #if !defined(_WIN32) && !defined(_WIN64)
 	signal(SIGPIPE, SIG_IGN);

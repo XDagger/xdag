@@ -500,7 +500,8 @@ begin:
 	log_block("Create", min_hash, b[0].field[0].time);
 	res = cheatcoin_add_block(b);
 	if (res > 0) {
-		if (mining) memcpy(&g_mined_hashes[MAIN_TIME(send_time) & (CHEATCOIN_POOL_N_CONFIRMATIONS - 1)], min_hash, sizeof(cheatcoin_hash_t));
+		if (mining) memcpy(g_cheatcoin_mined_hashes[MAIN_TIME(send_time) & (CHEATCOIN_POOL_N_CONFIRMATIONS - 1)],
+				min_hash, sizeof(cheatcoin_hash_t));
 		cheatcoin_send_new_block(b); res = 0;
 	}
 	return res;
@@ -588,7 +589,7 @@ int cheatcoin_blocks_start(int n_mining_threads) {
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&block_mutex, &attr);
-	res = pthread_create(&t, 0, work_thread, (void *)(uintptr_t)(unsigned)n_mining_threads);
+	res = pthread_create(&th, 0, work_thread, (void *)(uintptr_t)(unsigned)n_mining_threads);
 	if (!res) pthread_detach(th);
 	return res;
 }
@@ -597,12 +598,12 @@ int cheatcoin_blocks_start(int n_mining_threads) {
 int cheatcoin_get_out_block(cheatcoin_hash_t hash) {
 	struct block_internal *bi;
 	pthread_mutex_lock(&block_mutex);
-	bi = outfirst;
+	bi = ourfirst;
 	pthread_mutex_unlock(&block_mutex);
 	if (!bi) {
 		cheatcoin_create_block(0, 0, 0, 0, 0);
 		pthread_mutex_lock(&block_mutex);
-		bi = outfirst;
+		bi = ourfirst;
 		pthread_mutex_unlock(&block_mutex);
 		if (!bi) return -1;
 	}

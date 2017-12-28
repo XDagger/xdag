@@ -27,9 +27,6 @@
 #define LOG_PERIOD          300
 #define GC_PERIOD           300
 #define UPDATE_PERIOD	    DNET_UPDATE_PERIOD
-#if !defined(_WIN32) && !defined(_WIN64)
-#define INVALID_SOCKET		-1
-#endif
 
 #define MAX_N_INBOUND		20
 

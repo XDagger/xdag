@@ -23,12 +23,12 @@ void cheatcoin_hash_init(void *ctxv) {
 	sha256_init(ctx);
 }
 
-void cheatcoin_hash_update(void *data, size_t size, void *ctxv) {
+void cheatcoin_hash_update(void *ctxv, void *data, size_t size) {
 	SHA256_CTX *ctx = (SHA256_CTX *)ctxv;
 	sha256_update(ctx, data, size);
 }
 
-void cheatcoin_hash_final(void *data, size_t size, void *ctxv, cheatcoin_hash_t hash) {
+void cheatcoin_hash_final(void *ctxv, void *data, size_t size, cheatcoin_hash_t hash) {
 	SHA256_CTX ctx;
 	memcpy(&ctx, ctxv, sizeof(ctx));
 	sha256_update(&ctx, (uint8_t *)data, size);
