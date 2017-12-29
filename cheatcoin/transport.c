@@ -1,4 +1,4 @@
-/* транспорт, T13.654-T13.775 $DVS:time$ */
+/* транспорт, T13.654-T13.778 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -166,7 +166,9 @@ int cheatcoin_transport_start(int flags, const char *bindto, int npairs, const c
 	int argc = 0, i, res;
 	if (!argv) return -1;
 	argv[argc++] = "dnet";
+#if !defined(_WIN32) && !defined(_WIN64)
 	if (flags & CHEATCOIN_DAEMON) { argv[argc++] = "-d"; }
+#endif
 	if (bindto) { argv[argc++] = "-s"; argv[argc++] = bindto; }
 	for (i = 0; i < npairs; ++i) argv[argc++] = addr_port_pairs[i];
 	argv[argc] = 0;

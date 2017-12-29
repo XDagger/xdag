@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.776 $DVS:time$ */
+/* пул и майнер, T13.744-T13.778 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,7 +6,6 @@
 #include <math.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <poll.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -14,6 +13,15 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
+#define poll WSAPoll
+#else
+#define poll(a,b,c) ((a)->revents = (a)->events, (b))
+#endif
+#else
+#include <poll.h>
+#endif
 #include "system.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_string.h"
@@ -359,7 +367,7 @@ static void *pool_net_thread(void *arg) {
 	char buf[0x100];
 	const char *mess, *mess1 = "";
 	struct sockaddr_in peeraddr;
-	struct hostent *host;
+//	struct hostent *host;
 	char *lasts;
 	int res = 0, sock, fd, rcvbufsize = 1024, reuseaddr = 1, i, j;
 //	unsigned long nonblock = 1;

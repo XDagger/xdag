@@ -1,4 +1,4 @@
-/* dnet: connections; T11.253-T13.775; $DVS:time$ */
+/* dnet: connections; T11.253-T13.778; $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +11,7 @@
 #if defined(_WIN64)
 #define poll WSAPoll
 #else
-#define poll(a,b,c) ((a)->revents = POLLOUT, 1)
+#define poll(a,b,c) ((a)->revents = (a)->events, (b))
 #endif
 #else
 #include <poll.h>

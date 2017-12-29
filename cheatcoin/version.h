@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.776" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.778" /* $DVS:time$ */
 
 /* история
+
+T13.778 внесены изменения для windows
 
 T13.776 сделаны пул и майнер с функцией перевода денег (лёгкая нода)
 
