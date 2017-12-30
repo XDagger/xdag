@@ -1,9 +1,9 @@
 The cheatcoin cryptocurrency
 ============================
 
-Official site: http://cheatcoin.atwebpages.com
-Test net is running.
-The launch of the main net is scheduled for January 5, 2018 at 22:45 GMT. 
+- Official site: http://cheatcoin.atwebpages.com
+- Test net is running.
+- The launch of the main net is scheduled for January 5, 2018 at 22:45 GMT. 
 
 
 Principles:
@@ -48,8 +48,8 @@ Install and run (Linux):
 
 - See your balance:
 
-	cheatcoin> balance
-	[balance]
+        cheatcoin> balance
+        [balance]
 
 - See your address:
 
