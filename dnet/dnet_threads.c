@@ -1,4 +1,4 @@
-/* dnet: threads; T11.231-T13.775; $DVS:time$ */
+/* dnet: threads; T11.231-T13.781; $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -28,13 +28,18 @@
 #define GC_PERIOD           300
 #define UPDATE_PERIOD	    DNET_UPDATE_PERIOD
 
+#ifdef CHEATCOIN
 #define MAX_N_INBOUND		20
+#else
+#define MAX_N_INBOUND		CONNECTIONS_MAX
+#endif
 
 struct list *g_threads;
 pthread_rwlock_t g_threads_rwlock;
 int g_nthread;
 void (*dnet_connection_close_notify)(void *conn) = 0;
 static int g_n_inbound = 0;
+int g_conn_limit = MAX_N_INBOUND;
 
 static void dnet_thread_work(struct dnet_thread *t) {
     char buf[0x100];
@@ -135,7 +140,7 @@ static void dnet_thread_work(struct dnet_thread *t) {
 			if (fcntl(t1->conn.socket, F_SETFD, FD_CLOEXEC) == -1) {
 				dnet_log_printf("dnet.%d: can't set FD_CLOEXEC flag on accepted socket, %s\n", t->nthread, strerror(errno));
 			}
-			if (g_n_inbound >= MAX_N_INBOUND) { close(t1->conn.socket); goto begin; }
+			if (g_n_inbound >= g_conn_limit) { close(t1->conn.socket); goto begin; }
 			if (t->type == DNET_THREAD_FORWARD_FROM) {
 			   t1->type = DNET_THREAD_STREAM;
 			   t1->st.pkt_type = DNET_PKT_FORWARDED_TCP;

@@ -1,4 +1,4 @@
-/* dnet: commands; T11.261-T13.748; $DVS:time$ */
+/* dnet: commands; T11.261-T13.781; $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -84,6 +84,11 @@ begin:
 			}
 			if (res) dnet_printf(out, "dnet: can't connect (error %X)\n", res);
 		}
+	} else if (!strcmp(cmd, "connlimit")) {
+		char *str = strtok_r(0, " \t\r\n", &lasts);
+		if (!str) dnet_printf(out, "Connection limit: %d\n", g_conn_limit);
+		else if (sscanf(str, "%d", &g_conn_limit) != 1)
+			dnet_printf(out, "dnet: illegal parameter of the connlimit command\n");
 	} else if (!strcmp(cmd, "copy")) {
 		char *from, *to;
 		int err = 0;
@@ -104,6 +109,7 @@ begin:
 		if (!dnet_limited_version) dnet_printf(out,
 			"  conn                          - list connections\n"
 		    "  connect ip:port               - connect to this host\n"
+			"  connlimit [<N>]               - print of set the inbound connection limit\n"
 		);
 		dnet_printf(out,
 #ifndef CHEATCOIN

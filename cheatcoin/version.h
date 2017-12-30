@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.778" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.781" /* $DVS:time$ */
 
 /* история
+
+T13.781 устранена утечка памяти, добавлена команда net connlimit
 
 T13.778 внесены изменения для windows
 

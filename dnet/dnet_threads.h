@@ -1,4 +1,4 @@
-/* dnet: threads; T11.231-T13.063; $DVS:time$ */
+/* dnet: threads; T11.231-T13.781; $DVS:time$ */
 
 #ifndef DNET_THREADS_H_INCLUDED
 #define DNET_THREADS_H_INCLUDED
@@ -40,5 +40,8 @@ struct dnet_thread {
 extern int dnet_thread_create(struct dnet_thread *t);
 extern int dnet_traverse_threads(int (*callback)(struct dnet_thread *t, void *data), void *data);
 extern int dnet_threads_init(void);
+
+/* maximum allowed number of connections */
+extern int g_conn_limit;
 
 #endif

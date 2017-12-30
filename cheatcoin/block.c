@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.776 $DVS:time$ */
+/* работа с блоками, T13.654-T13.781 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -301,8 +301,10 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 		if (1 << i & signoutmask && !(bi.flags & BI_OURS) && (nkey = valid_signature(b, i, nourkeys, our_keys)) >= 0)
 			bi.flags |= BI_OURS, bi.n_our_key = nkey;
 	}
-	for (i = j = 0; i < nkeys; ++i) if (1 << i & verified_keys_mask)
+	for (i = j = 0; i < nkeys; ++i) if (1 << i & verified_keys_mask) {
+		if (i != j) cheatcoin_free_key(public_keys[j].key);
 		memcpy(public_keys + j++, public_keys + i, sizeof(struct cheatcoin_public_key));
+	}
 	nkeys = j;
 	bi.difficulty = diff0 = hash_difficulty(bi.hash);
 	sum_out += b->field[0].amount;
@@ -382,16 +384,16 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 	g_cheatcoin_extstats.hashrate_total[i] = cheatcoin_diff_add(g_cheatcoin_extstats.hashrate_total[i], diff0);
 	if (bi.flags & BI_OURS)
 		g_cheatcoin_extstats.hashrate_ours[i] = cheatcoin_diff_add(g_cheatcoin_extstats.hashrate_ours[i], diff0);
-	return 1;
+	err = -1;
 end:
-	{
+	for (j = 0; j < nkeys; ++j) cheatcoin_free_key(public_keys[j].key);
+	if (err > 0) {
 		char buf[32];
 		err |= i << 4;
 		sprintf(buf, "Err %2x", err & 0xff);
 		log_block(buf, bi.hash, bi.time);
-		err = -err;
 	}
-	return err;
+	return -err;
 }
 
 static void *add_block_callback(void *block, void *data) {
