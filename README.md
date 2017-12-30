@@ -2,6 +2,8 @@ The cheatcoin cryptocurrency
 ============================
 
 Official site: http://cheatcoin.atwebpages.com
+Test net is running.
+The launch of the main net is scheduled for January 5, 2018 at 22:45 GMT. 
 
 
 Principles:
@@ -19,9 +21,9 @@ Install and run (Linux):
 
 - Install dependencies:
 
-		$ sudo dnf install gcc openssl-devel
+		$ sudo dnf install git gcc openssl-devel
 		or
-		$ sudo apt-get install gcc libssl-dev
+		$ sudo apt-get install git gcc libssl-dev
 
 - Clone from the git repository:
 
@@ -32,9 +34,10 @@ Install and run (Linux):
         $ cd cheatcoin/cheatcoin
         $ make
 
-- Run, for example, with 2 CPU mining threads, attached to testnet, in daemon mode:
+- Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool 52.5.32.68:13654
+  (for testnet the -t flag is also to be added):
 
-        $ ./cheatcoin -t -m 2 -d
+        $ ./cheatcoin -m 2 -d 52.5.32.68:13654
         Enter random characters: [enter]
 
 - Run terminal connected to the daemon in the same folder:
@@ -43,10 +46,15 @@ Install and run (Linux):
         cheatcoin> help
         [see help]
 
-- See list of your addresses:
+- See your balance:
+
+	cheatcoin> balance
+	[balance]
+
+- See your address:
 
         cheatcoin> account
-        [addresses and amounts]
+        [address]
 
 - Transfer funds to another address:
 
