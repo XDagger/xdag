@@ -90,19 +90,19 @@ static struct host *random_host(int mask) {
 	return (struct host *)p;
 }
 
-static struct host *ipport2host(const char *ipport, int flags) {
-	static struct host h; unsigned ip[5];
-	if (sscanf(ipport, "%u.%u.%u.%u:%u", ip, ip + 1, ip + 2, ip + 3, ip + 4) != 5 || (ip[0] | ip[1] | ip[2] | ip[3]) & ~0xff || ip[4] & ~0xffff) return 0;
-	h.ip = ip[0] | ip[1] << 8 | ip[2] << 16 | ip[3] << 24;
-	h.port = ip[4];
-	h.flags = flags;
-	return &h;
+static struct host *ipport2host(struct host *h, const char *ipport, int flags) {
+	unsigned ip[5];
+	if (sscanf(ipport, "%u.%u.%u.%u:%u", ip, ip + 1, ip + 2, ip + 3, ip + 4) != 5
+			|| (ip[0] | ip[1] | ip[2] | ip[3]) & ~0xff || ip[4] & ~0xffff) return 0;
+	h->ip = ip[0] | ip[1] << 8 | ip[2] << 16 | ip[3] << 24;
+	h->port = ip[4];
+	h->flags = flags;
+	return h;
 }
 
-static struct host *find_add_ipport(const char *ipport, int flags) {
-	struct host *h;
+static struct host *find_add_ipport(struct host *h, const char *ipport, int flags) {
 	if (!ipport) return 0;
-	h = ipport2host(ipport, flags);
+	h = ipport2host(h, ipport, flags);
 	if (!h) return 0;
 	return find_add_host(h);
 }
@@ -110,7 +110,7 @@ static struct host *find_add_ipport(const char *ipport, int flags) {
 static int read_database(const char *fname, int flags) {
 	uint32_t ips[MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP];
 	uint8_t ips_count[MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP];
-	struct host *h;
+	struct host h0, *h;
 	char str[64], *p;
 	FILE *f = fopen(fname, "r");
 	int n = 0, n_ips = 0, n_blocked = 0, i;
@@ -118,17 +118,18 @@ static int read_database(const char *fname, int flags) {
 	while(fscanf(f, "%s", str) == 1) {
 		p = strchr(str, ':');
 		if (!p || !p[1]) continue;
-		h = find_add_ipport(str, flags);
-		if (!h) continue;
-		cheatcoin_debug("Netdb : host=%lx, flags=%x, read '%s'", (long)h, h->flags, str);
-		if (flags & HOST_CONNECTED) {
-			if (n_selected_hosts < MAX_SELECTED_HOSTS / 2) selected_hosts[n_selected_hosts++] = h;
-			for (i = 0; i < n_ips && ips[i] != h->ip; ++i);
-			if (i == n_ips && i < MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP) ips[i] = h->ip, ips_count[i] = 1, n_ips++;
+		h0.flags = 0;
+		h = find_add_ipport(&h0, str, flags);
+		if (h->flags & HOST_CONNECTED && h0.flags & HOST_CONNECTED) {
+			for (i = 0; i < n_ips && ips[i] != h0.ip; ++i);
+			if (i == n_ips && i < MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP) ips[i] = h0.ip, ips_count[i] = 1, n_ips++;
 			else if (i < n_ips && ips_count[i] < MAX_ALLOWED_FROM_IP
 					&& ++ips_count[i] == MAX_ALLOWED_FROM_IP && n_blocked < MAX_BLOCKED_IPS)
 				g_cheatcoin_blocked_ips[n_blocked++] = ips[i];
 		}
+		if (!h) continue;
+		cheatcoin_debug("Netdb : host=%lx, flags=%x, read '%s'", (long)h, h->flags, str);
+		if (flags & HOST_CONNECTED && n_selected_hosts < MAX_SELECTED_HOSTS / 2) selected_hosts[n_selected_hosts++] = h;
 		n++;
 	}
 	fclose(f);
@@ -179,13 +180,14 @@ static void *monitor_thread(void *arg) {
 
 /* инициализировать базу хостов; our_host - внешний адрес нашего хоста (ip:port), addr_port_pairs - адреса других npairs хостов в том же формате */
 int cheatcoin_netdb_init(const char *our_host_str, int npairs, const char **addr_port_pairs) {
+	struct host h;
 	pthread_t t;
 	int i;
 	g_cheatcoin_blocked_ips = malloc(MAX_BLOCKED_IPS * sizeof(uint32_t));
 	if (!g_cheatcoin_blocked_ips) return -1;
 	if (read_database(DATABASE, HOST_INDB) < 0) { cheatcoin_fatal("Can't find file '%s'\n", DATABASE); return -1; }
-	our_host = find_add_ipport(our_host_str, HOST_OUR | HOST_SET);
-	for (i = 0; i < npairs; ++i) find_add_ipport(addr_port_pairs[i], 0);
+	our_host = find_add_ipport(&h, our_host_str, HOST_OUR | HOST_SET);
+	for (i = 0; i < npairs; ++i) find_add_ipport(&h, addr_port_pairs[i], 0);
 	if (pthread_create(&t, 0, monitor_thread, 0)) { cheatcoin_fatal("Can't start netdb thread\n"); return -1; }
 	return 0;
 }

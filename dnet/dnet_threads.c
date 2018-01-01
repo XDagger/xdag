@@ -136,7 +136,7 @@ static void dnet_thread_work(struct dnet_thread *t) {
 			if (fcntl(t1->conn.socket, F_SETFD, FD_CLOEXEC) == -1) {
 				dnet_log_printf("dnet.%d: can't set FD_CLOEXEC flag on accepted socket, %s\n", t->nthread, strerror(errno));
 			}
-			if (g_n_inbound >= g_conn_limit || (*dnet_connection_open_check
+			if (g_n_inbound >= g_conn_limit || (dnet_connection_open_check
 					&& (*dnet_connection_open_check)(&t1->conn, peeraddr.sin_addr.s_addr, ntohs(peeraddr.sin_port))))
 				{ close(t1->conn.socket); goto begin; }
 			if (t->type == DNET_THREAD_FORWARD_FROM) {
