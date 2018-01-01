@@ -1,4 +1,4 @@
-/* транспорт, T13.654-T13.778 $DVS:time$ */
+/* транспорт, T13.654-T13.785 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -152,6 +152,13 @@ static int block_arrive_callback(void *packet, void *connection) {
 	return res;
 }
 
+static int conn_open_check(void *conn, uint32_t ip, uint16_t port) {
+	int i;
+	for (i = 0; i < g_cheatcoin_n_blocked_ips; ++i)
+		if (ip == g_cheatcoin_blocked_ips[i]) return -1;
+	return 0;
+}
+
 static void conn_close_notify(void *conn) {
 	conn_add_rm(conn, -1);
 	if (reply_connection == conn) reply_connection = 0;
@@ -173,6 +180,7 @@ int cheatcoin_transport_start(int flags, const char *bindto, int npairs, const c
 	for (i = 0; i < npairs; ++i) argv[argc++] = addr_port_pairs[i];
 	argv[argc] = 0;
 	dnet_set_cheatcoin_callback(block_arrive_callback);
+	dnet_connection_open_check = &conn_open_check;
 	dnet_connection_close_notify = &conn_close_notify;
 	connections = (void **)malloc(N_CONNS * sizeof(void *));
 	if (!connections) return -1;

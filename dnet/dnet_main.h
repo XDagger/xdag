@@ -1,4 +1,4 @@
-/* dnet: external interface; T13.011-T13.745; $DVS:time$ */
+/* dnet: external interface; T13.011-T13.785; $DVS:time$ */
 
 #ifndef DNET_MAIN_H_INCLUDED
 #define DNET_MAIN_H_INCLUDED
@@ -24,6 +24,9 @@ extern void *dnet_send_cheatcoin_packet(void *block, void *connection_to);
 extern int dnet_execute_command(const char *cmd, void *fileout);
 
 extern int dnet_set_self_version(const char *version);
+
+/* возвращает не 0, если данное входящее соединение не разрешается открывать */
+extern int (*dnet_connection_open_check)(void *conn, uint32_t ip, uint16_t port);
 
 extern void (*dnet_connection_close_notify)(void *conn);
 

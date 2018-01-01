@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.775 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.785 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -331,7 +331,9 @@ int main(int argc, char **argv) {
 					addrports[n_addrports++] = argv[i];
 				break;
 			case 'd':
+#if !defined(_WIN32) && !defined(_WIN64)
 				transport_flags |= CHEATCOIN_DAEMON;
+#endif
 				break;
 			case 'h':
 			help:

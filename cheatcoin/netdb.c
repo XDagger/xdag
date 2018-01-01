@@ -1,4 +1,4 @@
-/* база хостов, T13.714-T13.764 $DVS:time$ */
+/* база хостов, T13.714-T13.785 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +15,8 @@
 #include "sync.h"
 
 #define MAX_SELECTED_HOSTS	64
+#define MAX_BLOCKED_IPS		64
+#define MAX_ALLOWED_FROM_IP	4
 #define DATABASE			(g_cheatcoin_testnet ? "netdb-testnet.txt" : "netdb.txt")
 
 enum host_flags {
@@ -43,6 +45,8 @@ static struct ldus_rbtree *root = 0;
 static pthread_mutex_t host_mutex = PTHREAD_MUTEX_INITIALIZER;
 static struct host *selected_hosts[MAX_SELECTED_HOSTS], *our_host;
 static unsigned n_selected_hosts = 0;
+uint32_t *g_cheatcoin_blocked_ips;
+int g_cheatcoin_n_blocked_ips = 0;
 
 static struct host *find_add_host(struct host *h) {
 	struct host *h0;
@@ -104,10 +108,12 @@ static struct host *find_add_ipport(const char *ipport, int flags) {
 }
 
 static int read_database(const char *fname, int flags) {
+	uint32_t ips[MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP];
+	uint8_t ips_count[MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP];
 	struct host *h;
 	char str[64], *p;
 	FILE *f = fopen(fname, "r");
-	int n = 0;
+	int n = 0, n_ips = 0, n_blocked = 0, i;
 	if (!f) return -1;
 	while(fscanf(f, "%s", str) == 1) {
 		p = strchr(str, ':');
@@ -115,10 +121,18 @@ static int read_database(const char *fname, int flags) {
 		h = find_add_ipport(str, flags);
 		if (!h) continue;
 		cheatcoin_debug("Netdb : host=%lx, flags=%x, read '%s'", (long)h, h->flags, str);
-		if (flags & HOST_CONNECTED && n_selected_hosts < MAX_SELECTED_HOSTS / 2) selected_hosts[n_selected_hosts++] = h;
+		if (flags & HOST_CONNECTED) {
+			if (n_selected_hosts < MAX_SELECTED_HOSTS / 2) selected_hosts[n_selected_hosts++] = h;
+			for (i = 0; i < n_ips && ips[i] != h->ip; ++i);
+			if (i == n_ips && i < MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP) ips[i] = h->ip, ips_count[i] = 1, n_ips++;
+			else if (i < n_ips && ips_count[i] < MAX_ALLOWED_FROM_IP
+					&& ++ips_count[i] == MAX_ALLOWED_FROM_IP && n_blocked < MAX_BLOCKED_IPS)
+				g_cheatcoin_blocked_ips[n_blocked++] = ips[i];
+		}
 		n++;
 	}
 	fclose(f);
+	if (flags & HOST_CONNECTED) g_cheatcoin_n_blocked_ips = n_blocked;
 	return n;
 }
 
@@ -167,6 +181,8 @@ static void *monitor_thread(void *arg) {
 int cheatcoin_netdb_init(const char *our_host_str, int npairs, const char **addr_port_pairs) {
 	pthread_t t;
 	int i;
+	g_cheatcoin_blocked_ips = malloc(MAX_BLOCKED_IPS * sizeof(uint32_t));
+	if (!g_cheatcoin_blocked_ips) return -1;
 	if (read_database(DATABASE, HOST_INDB) < 0) { cheatcoin_fatal("Can't find file '%s'\n", DATABASE); return -1; }
 	our_host = find_add_ipport(our_host_str, HOST_OUR | HOST_SET);
 	for (i = 0; i < npairs; ++i) find_add_ipport(addr_port_pairs[i], 0);

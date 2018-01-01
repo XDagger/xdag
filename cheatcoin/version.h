@@ -3,9 +3,12 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.781" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.785" /* $DVS:time$ */
 
 /* история
+
+T13.785 сделана блокировка входящих соединений от хостов, от которых уже есть >= 4
+	соединения
 
 T13.781 устранена утечка памяти, добавлена команда net connlimit
 

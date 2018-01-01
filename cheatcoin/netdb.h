@@ -1,7 +1,9 @@
-/* база хостов, T13.714-T13.726 $DVS:time$ */
+/* база хостов, T13.714-T13.785 $DVS:time$ */
 
 #ifndef CHEATCOIN_NETDB_H
 #define CHEATCOIN_NETDB_H
+
+#include <stdint.h>
 
 /* инициализировать базу хостов; our_host_str - внешний адрес нашего хоста (ip:port),
  * addr_port_pairs - адреса других npairs хостов в том же формате */
@@ -15,5 +17,9 @@ extern unsigned cheatcoin_netdb_receive(const uint8_t *data, unsigned len);
 
 /* завершает работу с базой хостов */
 extern void cheatcoin_netdb_finish(void);
+
+/* заблокированные ip для входящих соединений и их число */
+extern uint32_t *g_cheatcoin_blocked_ips;
+extern int g_cheatcoin_n_blocked_ips;
 
 #endif
