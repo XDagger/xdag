@@ -120,7 +120,7 @@ static int read_database(const char *fname, int flags) {
 		if (!p || !p[1]) continue;
 		h0.flags = 0;
 		h = find_add_ipport(&h0, str, flags);
-		if (h->flags & HOST_CONNECTED && h0.flags & HOST_CONNECTED) {
+		if (flags & HOST_CONNECTED && h0.flags & HOST_CONNECTED) {
 			for (i = 0; i < n_ips && ips[i] != h0.ip; ++i);
 			if (i == n_ips && i < MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP) ips[i] = h0.ip, ips_count[i] = 1, n_ips++;
 			else if (i < n_ips && ips_count[i] < MAX_ALLOWED_FROM_IP
