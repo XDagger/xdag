@@ -1,4 +1,4 @@
-/* dnet: threads; T11.231-T13.788; $DVS:time$ */
+/* dnet: threads; T11.231-T13.789; $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -169,7 +169,7 @@ static void dnet_thread_work(struct dnet_thread *t) {
     } else {
         // Connect to a remote server
         res = connect(t->conn.socket, (struct sockaddr*) &peeraddr, sizeof(peeraddr));
-        if (res) { mess = "cannot connect"; goto err; }
+		if (res) { mess = "cannot connect"; goto err; }
 
 		if (t->type == DNET_THREAD_STREAM) {
 			t->st.ip_to = ip_to;
@@ -187,7 +187,10 @@ err:
 #ifdef QDNET
     if (strcmp(mess, "cannot connect") && strcmp(mess, "connection error"))
 #endif
-        dnet_log_printf("dnet.%d: %s%s (%d), %s\n", t->nthread, mess, mess1, res, strerror(errno));
+		dnet_log_printf("dnet.%d: %s%s (%d), %s\n", t->nthread, mess, mess1, res, strerror(errno));
+#ifdef CHEATCOIN
+	t->to_remove = 1;
+#endif
 }
 
 static void *dnet_thread_client_server(void *arg) {

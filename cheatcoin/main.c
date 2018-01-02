@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.788 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.789 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -359,7 +359,7 @@ int main(int argc, char **argv) {
 	while ((ptr = strchr(coinname, '/')) || (ptr = strchr(coinname, '\\'))) coinname = ptr + 1;
 	if ((ptr = strchr(coinname, '.'))) *ptr = 0;
 	for (ptr = coinname; *ptr; ptr++) *ptr = tolower((unsigned char)*ptr);
-	printf("%s full node client/server, version %s.\n", coinname, CHEATCOIN_VERSION);
+	printf("%s client/server, version %s.\n", coinname, CHEATCOIN_VERSION);
 	if (argc <= 1) goto help;
 	for (i = 1; i < argc; ++i) {
 		if (argv[i][0] == '-' && argv[i][1] && !argv[i][2]) switch(argv[i][1]) {
