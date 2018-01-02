@@ -606,6 +606,7 @@ begin:
 			memset(&g_cheatcoin_stats, 0, sizeof(g_cheatcoin_stats));
 			memset(&g_cheatcoin_extstats, 0, sizeof(g_cheatcoin_extstats));
 			pthread_mutex_unlock(&block_mutex);
+			conn_time = sync_time = 0;
 			goto begin;
 		} else if (t - (g_cheatcoin_last_received << 10) > 3 * MAIN_CHAIN_PERIOD) {
 			g_cheatcoin_state = (g_light_mode ? (g_cheatcoin_testnet ? CHEATCOIN_STATE_TTST : CHEATCOIN_STATE_TRYP)
@@ -740,7 +741,7 @@ int cheatcoin_get_key(cheatcoin_hash_t hash) {
 int cheatcoin_blocks_reset(void) {
 	pthread_mutex_lock(&block_mutex);
 	if (g_cheatcoin_state != CHEATCOIN_STATE_REST) {
-		cheatcoin_crit("Storage corrupted. Resetting blocks engine.");
+		cheatcoin_crit("The local storage is corrupted. Resetting blocks engine.");
 		g_cheatcoin_state = CHEATCOIN_STATE_REST;
 	}
 	pthread_mutex_unlock(&block_mutex);

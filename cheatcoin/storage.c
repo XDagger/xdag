@@ -1,4 +1,4 @@
-/* локальное хранилище, T13.663-T13.788 $DVS:time$ */
+/* локальное хранилище, T13.663-T13.789 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -127,11 +127,9 @@ struct cheatcoin_block *cheatcoin_storage_load(cheatcoin_hash_t hash, cheatcoin_
 	pthread_mutex_unlock(&storage_mutex);
 	if (buf) {
 		cheatcoin_hash(buf, sizeof(struct cheatcoin_block), hash0);
-		if (memcmp(hash, hash0, sizeof(cheatcoin_hashlow_t))) {
-			cheatcoin_blocks_reset();
-			buf = 0;
-		}
+		if (memcmp(hash, hash0, sizeof(cheatcoin_hashlow_t))) buf = 0;
 	}
+	if (!buf) cheatcoin_blocks_reset();
 	return buf;
 }
 

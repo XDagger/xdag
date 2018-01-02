@@ -1,7 +1,7 @@
-/* состояние программы, T13.788-T13.788; $DVS:time$ */
+/* состояние программы, T13.788-T13.789; $DVS:time$ */
 
 cheatcoin_state(INIT, "Initializing.")
-cheatcoin_state(REST, "Storage is corrupted. Resetting block engine.")
+cheatcoin_state(REST, "The local storage is corrupted. Resetting blocks engine.")
 cheatcoin_state(LOAD, "Loading blocks from the local storage.")
 cheatcoin_state(WTST, "Trying to connect to the test network.")
 cheatcoin_state(WAIT, "Trying to connect to the main network.")
