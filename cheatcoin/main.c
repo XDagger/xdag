@@ -290,9 +290,9 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 static int terminal(void) {
 #if !defined(_WIN32) && !defined(_WIN64)
 	char cmd[CHEATCOIN_COMMAND_MAX], cmd2[CHEATCOIN_COMMAND_MAX], *ptr, *lasts;
-	int fd, ispwd = 0;
-	int c = 0;
+	int fd;
 	while(1) {
+		int ispwd = 0, c = 0;
 		printf("%s> ", coinname); fflush(stdout);
 		fgets(cmd, CHEATCOIN_COMMAND_MAX, stdin);
 		strcpy(cmd2, cmd);

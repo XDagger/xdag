@@ -1,4 +1,4 @@
-/* dnet: main file; T11.231-T13.775; $DVS:time$ */
+/* dnet: main file; T11.231-T13.789; $DVS:time$ */
 
 #include <stdio.h>
 #include <string.h>
@@ -117,9 +117,14 @@ int main(int argc, char **argv) {
 #endif
 			printf("%s %s%s.\n", argv[0], DNET_VERSION, (is_daemon ? ", running as daemon" : ""));
 			if ((err = dnet_crypt_init(DNET_VERSION))) {
+#ifdef CHEATCOIN
+				sleep(3); printf("Password incorrect.\n");
+				return err;
+#else
 				err *= 10;
 				if (err < 0) mess = "private and public keys do not match, running in blind mode";
 				goto end;
+#endif
 			}
 		work:
 			if (is_daemon) daemonize();

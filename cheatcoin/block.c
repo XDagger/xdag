@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.788 $DVS:time$ */
+/* работа с блоками, T13.654-T13.789 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -585,9 +585,12 @@ begin:
 	/* периодическая генерация блоков и определение главного блока */
 	cheatcoin_mess("Entering main cycle...");
 	for (;;) {
+		unsigned nblk;
 		t = get_timestamp();
-		if (!g_light_mode && g_cheatcoin_extstats.nnoref > CHEATCOIN_BLOCK_FIELDS - 5 && !(rand() % MAKE_BLOCK_PERIOD))
-			cheatcoin_create_block(0, 0, 0, 0, 0);
+		if (!g_light_mode && (nblk = (unsigned)g_cheatcoin_extstats.nnoref / (CHEATCOIN_BLOCK_FIELDS - 5))) {
+			nblk = nblk / 61 + (nblk % 61 > rand() % 61);
+			while (nblk--) cheatcoin_create_block(0, 0, 0, 0, 0);
+		}
 		pthread_mutex_lock(&block_mutex);
 		if (g_cheatcoin_state == CHEATCOIN_STATE_REST) {
 			g_cheatcoin_sync_on = 0;
@@ -610,20 +613,19 @@ begin:
 			conn_time = sync_time = 0;
 		} else {
 			if (!conn_time) conn_time = t;
-			if (g_light_mode || t - conn_time >= 3 * MAIN_CHAIN_PERIOD) {
-				if (!g_light_mode && !memcmp(&g_cheatcoin_stats.difficulty,
-						&g_cheatcoin_stats.max_difficulty, sizeof(cheatcoin_diff_t))) sync_time = t;
-				if (t - (g_cheatcoin_xfer_last << 10) <= (g_light_mode ? 3 : 2) * MAIN_CHAIN_PERIOD)
-					g_cheatcoin_state = CHEATCOIN_STATE_XFER;
-				else if (g_light_mode) {
-					g_cheatcoin_state = (g_cheatcoin_mining_threads > 0 ?
-							  (g_cheatcoin_testnet ? CHEATCOIN_STATE_MTST : CHEATCOIN_STATE_MINE)
-							: (g_cheatcoin_testnet ? CHEATCOIN_STATE_PTST : CHEATCOIN_STATE_POOL));
-				} else if (t - sync_time > 2 * MAIN_CHAIN_PERIOD)
-					g_cheatcoin_state = (g_cheatcoin_testnet ? CHEATCOIN_STATE_CTST : CHEATCOIN_STATE_CONN);
-				else
-					g_cheatcoin_state = (g_cheatcoin_testnet ? CHEATCOIN_STATE_STST : CHEATCOIN_STATE_SYNC);
-			}
+			if (!g_light_mode && t - conn_time >= 2 * MAIN_CHAIN_PERIOD
+					&& !memcmp(&g_cheatcoin_stats.difficulty, &g_cheatcoin_stats.max_difficulty, sizeof(cheatcoin_diff_t)))
+				sync_time = t;
+			if (t - (g_cheatcoin_xfer_last << 10) <= (g_light_mode ? 4 : 3) * MAIN_CHAIN_PERIOD)
+				g_cheatcoin_state = CHEATCOIN_STATE_XFER;
+			else if (g_light_mode) {
+				g_cheatcoin_state = (g_cheatcoin_mining_threads > 0 ?
+						  (g_cheatcoin_testnet ? CHEATCOIN_STATE_MTST : CHEATCOIN_STATE_MINE)
+						: (g_cheatcoin_testnet ? CHEATCOIN_STATE_PTST : CHEATCOIN_STATE_POOL));
+			} else if (t - sync_time > 2 * MAIN_CHAIN_PERIOD)
+				g_cheatcoin_state = (g_cheatcoin_testnet ? CHEATCOIN_STATE_CTST : CHEATCOIN_STATE_CONN);
+			else
+				g_cheatcoin_state = (g_cheatcoin_testnet ? CHEATCOIN_STATE_STST : CHEATCOIN_STATE_SYNC);
 		}
 		if (!g_light_mode) check_new_main();
 		pthread_mutex_unlock(&block_mutex);

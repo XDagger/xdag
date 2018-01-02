@@ -227,6 +227,7 @@ int dnet_crypt_init(const char *version) {
     if (!g_dnet_keys) return 1;
     keys = g_dnet_keys;
     dfslib_random_init();
+	if (crc_init()) return 2;
 	f = fopen(KEYFILE, "rb");
     if (f) {
         if (fread(keys, sizeof(struct dnet_keys), 1, f) != 1) fclose(f), f = 0;
@@ -247,7 +248,7 @@ int dnet_crypt_init(const char *version) {
         char buf[256];
         struct dfslib_string str;
 		f = fopen(KEYFILE, "wb");
-		if (!f) return 2;
+		if (!f) return 3;
 #ifndef QDNET
         if (dnet_limited_version)
 #endif
@@ -277,10 +278,10 @@ int dnet_crypt_init(const char *version) {
 			printf("Type password again: "); fflush(stdout);
 			getpwd(&str1, pwd1, 256);
 			if (str.len != str1.len || memcmp(str.utf8, str1.utf8, str.len)) {
-				printf("Passwords differ.\n"); return 3;
+				printf("Passwords differ.\n"); return 4;
 			}
 			if (str.len) set_user_crypt(&str);
-			printf("Enter any symbols for random generation: "); fflush(stdout);
+			printf("Type any symbols for random numbers generation: "); fflush(stdout);
 			fgets(buf, 256, stdin);
 #endif
 		}
@@ -298,12 +299,11 @@ int dnet_crypt_init(const char *version) {
 		printf("OK.\n"); fflush(stdout);
 		if (g_dnet_user_crypt) for (i = 0; i < (sizeof(struct dnet_keys) >> 9); ++i)
 			dfslib_encrypt_sector(g_dnet_user_crypt, (uint32_t *)keys + 128 * i, ~(uint64_t)i);
-		if (fwrite(keys, sizeof(struct dnet_keys), 1, f) != 1) return 4;
+		if (fwrite(keys, sizeof(struct dnet_keys), 1, f) != 1) return 5;
 		if (g_dnet_user_crypt) for (i = 0; i < (sizeof(struct dnet_keys) >> 9); ++i)
 			dfslib_uncrypt_sector(g_dnet_user_crypt, (uint32_t *)keys + 128 * i, ~(uint64_t)i);
 	}
     fclose(f);
-	if (crc_init()) return 5;
 	if (!(host = dnet_add_host(&g_dnet_keys->pub, 0, 127 << 24 | 1, 0, DNET_ROUTE_LOCAL))) return 6;
 	version = strchr(version, '-');
 	if (version) dnet_set_host_version(host, version + 1);
