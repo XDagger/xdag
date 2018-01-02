@@ -588,7 +588,7 @@ begin:
 		unsigned nblk;
 		t = get_timestamp();
 		if (!g_light_mode && (nblk = (unsigned)g_cheatcoin_extstats.nnoref / (CHEATCOIN_BLOCK_FIELDS - 5))) {
-			nblk = nblk / 61 + (nblk % 61 > rand() % 61);
+			nblk = nblk / 61 + (nblk % 61 > (unsigned)rand() % 61);
 			while (nblk--) cheatcoin_create_block(0, 0, 0, 0, 0);
 		}
 		pthread_mutex_lock(&block_mutex);

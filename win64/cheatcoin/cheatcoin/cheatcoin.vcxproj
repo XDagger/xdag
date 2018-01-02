@@ -60,6 +60,7 @@
     <ClInclude Include="..\..\..\cheatcoin\netdb.h" />
     <ClInclude Include="..\..\..\cheatcoin\pool.h" />
     <ClInclude Include="..\..\..\cheatcoin\sha256.h" />
+    <ClInclude Include="..\..\..\cheatcoin\state.h" />
     <ClInclude Include="..\..\..\cheatcoin\storage.h" />
     <ClInclude Include="..\..\..\cheatcoin\sync.h" />
     <ClInclude Include="..\..\..\cheatcoin\system.h" />

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h> // portable: uint64_t   MSVC: __int64 
 #include <sys/time.h>
+#include <termios.h>
 
 int gettimeofday(struct timeval * tp, struct timezone * tzp)
 {
@@ -41,4 +42,30 @@ FILE *__iob_func(void) {
 int system_init(void) {
 	WSADATA wsaData;
 	return WSAStartup(MAKEWORD(2,2),&wsaData);
+}
+
+int tcgetattr(int fd, struct termios *tio) {
+	HANDLE hStdin;
+	if (fd) return -1;
+	hStdin = GetStdHandle(STD_INPUT_HANDLE);
+	GetConsoleMode(hStdin, &tio->mode);
+	tio->c_lflag = (tio->mode & ENABLE_ECHO_INPUT ? ECHO : 0);
+	return 0;
+}
+
+int tcsetattr(int fd, int flags, struct termios *tio) {
+	HANDLE hStdin;
+	if (fd || flags) return -1;
+	hStdin = GetStdHandle(STD_INPUT_HANDLE);
+	tio->mode = (tio->mode & ~ENABLE_ECHO_INPUT) | (tio->c_lflag & ECHO ? ENABLE_ECHO_INPUT : 0);
+	SetConsoleMode(hStdin, tio->mode);
+	return 0;
+}
+
+int inet_aton(const char *cp, struct in_addr *inp) {
+	int a, b, c, d;
+	if (sscanf(cp, "%d.%d.%d.%d", &a, &b, &c, &d) != 4) return 0;
+	if ((a | b | c | d) & ~0xFF) return 0;
+	inp->s_addr = a | b << 8 | c << 16 | d << 24;
+	return 1;
 }
