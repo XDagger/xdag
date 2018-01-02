@@ -1,4 +1,4 @@
-/* локальное хранилище, T13.663-T13.726 $DVS:time$ */
+/* локальное хранилище, T13.663-T13.788 $DVS:time$ */
 
 #ifndef CHEATCOIN_STORAGE_H
 #define CHEATCOIN_STORAGE_H
@@ -14,7 +14,8 @@ struct cheatcoin_storage_sum {
 extern int64_t cheatcoin_storage_save(const struct cheatcoin_block *b);
 
 /* прочитать из локального хранилища блок с данным номером; записать его в буфер или возвратить постоянную ссылку, 0 при ошибке */
-extern struct cheatcoin_block *cheatcoin_storage_load(cheatcoin_time_t time, uint64_t pos, struct cheatcoin_block *buf);
+extern struct cheatcoin_block *cheatcoin_storage_load(cheatcoin_hash_t hash, cheatcoin_time_t time, uint64_t pos,
+		struct cheatcoin_block *buf);
 
 /* вызвать callback для всех блоков из хранилища, попадающих с данный временной интервал; возвращает число блоков */
 extern uint64_t cheatcoin_load_blocks(cheatcoin_time_t start_time, cheatcoin_time_t end_time, void *data,

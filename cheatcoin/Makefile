@@ -1,4 +1,4 @@
-# cheatcoin: Makefile; T13.656-T13.738; $DVS:time$
+# cheatcoin: Makefile; T13.656-T13.788; $DVS:time$
 
 dnet	 = ../dnet
 dfstools = ../dus/programs/dfstools/source
@@ -48,6 +48,7 @@ headers = \
 	netdb.h							\
 	pool.h							\
 	sha256.h						\
+	state.h							\
 	storage.h						\
 	sync.h							\
 	transport.h						\

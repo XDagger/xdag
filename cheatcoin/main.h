@@ -1,9 +1,16 @@
-/* основные переменные, T13.714-T13.775 $DVS:time$ */
+/* основные переменные, T13.714-T13.788 $DVS:time$ */
 
 #ifndef CHEATCOIN_MAIN_H
 #define CHEATCOIN_MAIN_H
 
+#include <time.h>
 #include "block.h"
+
+enum cheatcoin_states {
+#define cheatcoin_state(n,s) CHEATCOIN_STATE_##n ,
+#include "state.h"
+#undef cheatcoin_state
+};
 
 /* максимальный период времени, за который запрашиваются блоки, а не их суммы */
 #define REQUEST_BLOCKS_MAX_TIME	(1 << 20)
@@ -27,10 +34,16 @@ extern struct cheatcoin_ext_stats {
 
 extern void cheatcoin_log_xfer(cheatcoin_hash_t from, cheatcoin_hash_t to, cheatcoin_amount_t amount);
 
+/* состояние программы */
+extern int g_cheatcoin_state;
+
 /* 1 - программа работает в тестовой сети */
 extern int g_cheatcoin_testnet;
 
 /* имя монеты */
 extern char *g_coinname;
+
+/* время последнего перевода */
+extern time_t g_cheatcoin_xfer_last;
 
 #endif

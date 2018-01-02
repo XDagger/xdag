@@ -1,4 +1,4 @@
-/* dnet: threads; T11.231-T13.785; $DVS:time$ */
+/* dnet: threads; T11.231-T13.788; $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -68,15 +68,14 @@ static void dnet_thread_work(struct dnet_thread *t) {
     str = strtok_r(buf, " \t\r\n:", &lasts);
     if (!str) { mess = "host is not given"; goto err; }
 	if (!strcmp(str, "any")) {
-		t->conn.ipaddr = INADDR_ANY;
 		peeraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	} else {
+	} else if (!inet_aton(str, &peeraddr.sin_addr)) {
 		host = gethostbyname(str);
 		if (!host || !host->h_addr_list[0]) { mess = "cannot resolve host ", mess1 = str; res = h_errno; goto err; }
 		// Write resolved IP address of a server to the address structure
 		memmove(&peeraddr.sin_addr.s_addr, host->h_addr_list[0], 4);
-		t->conn.ipaddr = ntohl(peeraddr.sin_addr.s_addr);
 	}
+	t->conn.ipaddr = ntohl(peeraddr.sin_addr.s_addr);
 
     // Resolve port
     str = strtok_r(0, " \t\r\n:", &lasts);

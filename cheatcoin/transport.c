@@ -1,4 +1,4 @@
-/* транспорт, T13.654-T13.785 $DVS:time$ */
+/* транспорт, T13.654-T13.788 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +18,7 @@
 #define REQUEST_WAIT	64
 #define N_CONNS			4096
 
+time_t g_cheatcoin_last_received = 0;
 static void *reply_data;
 static void *(*reply_callback)(void *block, void *data) = 0;
 static void *reply_connection;
@@ -88,6 +89,7 @@ static int block_arrive_callback(void *packet, void *connection) {
 			if (s->total_nblocks  > g->total_nblocks)  g->total_nblocks  = s->total_nblocks;
 			if (s->total_nmain    > g->total_nmain)    g->total_nmain    = s->total_nmain;
 			if (s->total_nhosts   > g->total_nhosts)   g->total_nhosts   = s->total_nhosts;
+			g_cheatcoin_last_received = time(0);
 			cheatcoin_netdb_receive((uint8_t *)&b->field[2] + sizeof(struct cheatcoin_stats),
 					(cheatcoin_type(b, 1) == CHEATCOIN_MESSAGE_SUMS_REPLY ? 6 : 14) * sizeof(struct cheatcoin_field)
 					- sizeof(struct cheatcoin_stats));
@@ -137,7 +139,7 @@ static int block_arrive_callback(void *packet, void *connection) {
 						struct cheatcoin_block buf, *blk;
 						cheatcoin_time_t t;
 						int64_t pos = cheatcoin_get_block_pos(b->field[1].hash, &t);
-						if (pos >= 0 && (blk = cheatcoin_storage_load(t, pos, &buf)))
+						if (pos >= 0 && (blk = cheatcoin_storage_load(b->field[1].hash, t, pos, &buf)))
 							dnet_send_cheatcoin_packet(blk, connection);
 					}
 					break;
@@ -263,4 +265,9 @@ int cheatcoin_request_block(cheatcoin_hash_t hash, void *conn) {
 	if ((uintptr_t)conn & ~0xffl && !((uintptr_t)conn & 1) && conn_add_rm(conn, 0) < 0) conn = (void *)(uintptr_t)1l;
 	dnet_send_cheatcoin_packet(&b, conn);
 	return 0;
+}
+
+/* см. dnet_user_crypt_action */
+int cheatcoin_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action) {
+	return dnet_user_crypt_action(data, data_id, size, action);
 }

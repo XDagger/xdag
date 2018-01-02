@@ -1,9 +1,10 @@
-/* dnet: crypt; T11.231-T13.669; $DVS:time$ */
+/* dnet: crypt; T11.231-T13.788; $DVS:time$ */
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <termios.h>
 #include "system.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_random.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
@@ -33,6 +34,7 @@ struct dnet_keys {
 };
 
 struct dnet_keys *g_dnet_keys;
+static struct dfslib_crypt *g_dnet_user_crypt = 0;
 
 struct dnet_session {
     struct dnet_key key;
@@ -50,6 +52,21 @@ struct dnet_session {
 
 int dnet_limited_version = 0;
 static int g_keylen = 0;
+
+static void getpwd(struct dfslib_string *str, char *buf, int len) {
+	struct termios t[1];
+	tcgetattr(0, t);
+	t->c_lflag &= ~ECHO;
+	tcsetattr(0, TCSANOW, t);
+	fgets(buf, len, stdin);
+	t->c_lflag |= ECHO;
+	tcsetattr(0, TCSANOW, t);
+	printf("\n");
+	len = strlen(buf);
+	if (len && buf[len - 1] == '\n') --len;
+	dfslib_utf8_string(str, buf, len);
+}
+
 
 static void dnet_make_key(dfsrsa_t *key, int keylen) {
 	unsigned i;
@@ -129,10 +146,83 @@ static int dnet_test_keys(void) {
     return 0;
 }
 
+static int set_user_crypt(struct dfslib_string *pwd) {
+	uint32_t sector0[128];
+	int i;
+	g_dnet_user_crypt = malloc(sizeof(struct dfslib_crypt));
+	if (!g_dnet_user_crypt) return -1;
+	memset(g_dnet_user_crypt->pwd, 0, sizeof(g_dnet_user_crypt->pwd));
+	dfslib_crypt_set_password(g_dnet_user_crypt, pwd);
+	for (i = 0; i < 128; ++i) sector0[i] = 0x4ab29f51u + i * 0xc3807e6du;
+	for (i = 0; i < 128; ++i) {
+		dfslib_crypt_set_sector0(g_dnet_user_crypt, sector0);
+		dfslib_encrypt_sector(g_dnet_user_crypt, sector0, 0x3e9c1d624a8b570full + i * 0x9d2e61fc538704abull);
+	}
+	return 0;
+}
+
+/* выполнить действие с паролем пользователя:
+ * 1 - закодировать данные (data_id - порядковый номер данных, size - размер данных, измеряется в 32-битных словах)
+ * 2 - декодировать -//-
+ * 3 - ввести пароль и проверить его, возвращает 0 при успехе
+ * 4 - ввести пароль и записать его отпечаток в массив data длины 16 байт
+ * 5 - проверить, что отпечаток в массиве data соответствует паролю
+ */
+int dnet_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action) {
+	if (action != 4 && !g_dnet_user_crypt) return 0;
+	switch (action) {
+		case 1:
+			dfslib_encrypt_array(g_dnet_user_crypt, data, size, data_id);
+			break;
+		case 2:
+			dfslib_uncrypt_array(g_dnet_user_crypt, data, size, data_id);
+			break;
+		case 3:
+			{
+				struct dfslib_crypt *crypt = malloc(sizeof(struct dfslib_crypt));
+				struct dfslib_string str;
+				char pwd[256];
+				int res;
+				if (!crypt) return -1;
+				printf("Password: "); fflush(stdout);
+				memset(pwd, 0, 256);
+				memset(&str, 0, sizeof(struct dfslib_string));
+				getpwd(&str, pwd, 256);
+				memset(crypt->pwd, 0, sizeof(crypt->pwd));
+				crypt->ispwd = 0;
+				dfslib_crypt_set_password(crypt, &str);
+				res = (g_dnet_user_crypt->ispwd == crypt->ispwd
+						&& !memcmp(g_dnet_user_crypt->pwd, crypt->pwd, sizeof(crypt->pwd)));
+				free(crypt);
+				return res ? 0 : -1;
+			}
+		case 4:
+			{
+				struct dfslib_crypt *crypt = malloc(sizeof(struct dfslib_crypt));
+				struct dfslib_string str;
+				char pwd[256];
+				printf("Password: "); fflush(stdout);
+				memset(pwd, 0, 256);
+				memset(&str, 0, sizeof(struct dfslib_string));
+				getpwd(&str, pwd, 256);
+				memset(crypt->pwd, 0, sizeof(crypt->pwd));
+				dfslib_crypt_set_password(crypt, &str);
+				memcpy(data, crypt->pwd, sizeof(crypt->pwd));
+				free(crypt);
+				return 0;
+			}
+		case 5:
+			return memcmp(g_dnet_user_crypt->pwd, data, sizeof(g_dnet_user_crypt->pwd)) ? -1 : 0;
+		default: return -1;
+	}
+	return 0;
+}
+
 int dnet_crypt_init(const char *version) {
     FILE *f;
     struct dnet_keys *keys;
     struct dnet_host *host;
+	int i;
     g_dnet_keys = malloc(sizeof(struct dnet_keys));
     if (!g_dnet_keys) return 1;
     keys = g_dnet_keys;
@@ -140,7 +230,18 @@ int dnet_crypt_init(const char *version) {
 	f = fopen(KEYFILE, "rb");
     if (f) {
         if (fread(keys, sizeof(struct dnet_keys), 1, f) != 1) fclose(f), f = 0;
-		else g_keylen = dnet_detect_keylen(keys->pub.key, DNET_KEYLEN);
+		else {
+			if (dnet_test_keys()) {
+				struct dfslib_string str;
+				char pwd[256];
+				printf("Password: "); fflush(stdout);
+				getpwd(&str, pwd, 256);
+				set_user_crypt(&str);
+				if (g_dnet_user_crypt) for (i = 0; i < (sizeof(struct dnet_keys) >> 9); ++i)
+					dfslib_uncrypt_sector(g_dnet_user_crypt, (uint32_t *)keys + 128 * i, ~(uint64_t)i);
+			}
+			g_keylen = dnet_detect_keylen(keys->pub.key, DNET_KEYLEN);
+		}
     }
     if (!f) {
         char buf[256];
@@ -169,7 +270,17 @@ int dnet_crypt_init(const char *version) {
 			for (; len < 255; len++) buf[len] %= (0x80 - ' '), buf[len] += ' ';
 #ifndef QDNET
         } else {
-			printf("Enter random phrase: "); fflush(stdout);
+			struct dfslib_string str, str1;
+			char pwd[256], pwd1[256];
+			printf("Set password (Enter if none): "); fflush(stdout);
+			getpwd(&str, pwd, 256);
+			printf("Type password again: "); fflush(stdout);
+			getpwd(&str1, pwd1, 256);
+			if (str.len != str1.len || memcmp(str.utf8, str1.utf8, str.len)) {
+				printf("Passwords differ.\n"); return 3;
+			}
+			if (str.len) set_user_crypt(&str);
+			printf("Enter any symbols for random generation: "); fflush(stdout);
 			fgets(buf, 256, stdin);
 #endif
 		}
@@ -185,11 +296,15 @@ int dnet_crypt_init(const char *version) {
 		dnet_make_key(keys->priv.key, g_keylen);
 		dnet_make_key(keys->pub.key, g_keylen);
 		printf("OK.\n"); fflush(stdout);
-		if (fwrite(keys, sizeof(struct dnet_keys), 1, f) != 1) return 3;
-    }
+		if (g_dnet_user_crypt) for (i = 0; i < (sizeof(struct dnet_keys) >> 9); ++i)
+			dfslib_encrypt_sector(g_dnet_user_crypt, (uint32_t *)keys + 128 * i, ~(uint64_t)i);
+		if (fwrite(keys, sizeof(struct dnet_keys), 1, f) != 1) return 4;
+		if (g_dnet_user_crypt) for (i = 0; i < (sizeof(struct dnet_keys) >> 9); ++i)
+			dfslib_uncrypt_sector(g_dnet_user_crypt, (uint32_t *)keys + 128 * i, ~(uint64_t)i);
+	}
     fclose(f);
-    if (crc_init()) return 4;
-	if (!(host = dnet_add_host(&g_dnet_keys->pub, 0, 127 << 24 | 1, 0, DNET_ROUTE_LOCAL))) return 5;
+	if (crc_init()) return 5;
+	if (!(host = dnet_add_host(&g_dnet_keys->pub, 0, 127 << 24 | 1, 0, DNET_ROUTE_LOCAL))) return 6;
 	version = strchr(version, '-');
 	if (version) dnet_set_host_version(host, version + 1);
     return -dnet_test_keys();

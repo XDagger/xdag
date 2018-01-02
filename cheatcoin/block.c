@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.781 $DVS:time$ */
+/* работа с блоками, T13.654-T13.788 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -127,7 +127,7 @@ static uint64_t apply_block(struct block_internal *bi) {
 		if (bi->amount + ref_amount >= bi->amount)
 			accept_amount(bi, ref_amount);
 	}
-	b = cheatcoin_storage_load(bi->time, bi->storage_pos, &buf);
+	b = cheatcoin_storage_load(bi->hash, bi->time, bi->storage_pos, &buf);
 	if (!b) return 0;
 	for (i = n = 0; i < CHEATCOIN_BLOCK_FIELDS; ++i) {
 		if (cheatcoin_type(b, i) == CHEATCOIN_FIELD_IN || cheatcoin_type(b, i) == CHEATCOIN_FIELD_OUT)
@@ -157,7 +157,7 @@ static uint64_t apply_block(struct block_internal *bi) {
 static uint64_t unapply_block(struct block_internal *bi) {
 	struct cheatcoin_block buf, *b = 0;
 	int i, n;
-	if (bi->flags & BI_APPLIED && (b = cheatcoin_storage_load(bi->time, bi->storage_pos, &buf))) {
+	if (bi->flags & BI_APPLIED && (b = cheatcoin_storage_load(bi->hash, bi->time, bi->storage_pos, &buf))) {
 		cheatcoin_amount_t sum = b->field[0].amount;
 		for (i = n = 0; i < CHEATCOIN_BLOCK_FIELDS; ++i) {
 			if (cheatcoin_type(b, i) == CHEATCOIN_FIELD_IN)
@@ -314,7 +314,7 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 		if (bi.nlinks >= MAX_LINKS) { err = 7; goto end; }
 		if (1 << i & inmask) {
 			if (b->field[i].amount) {
-				struct cheatcoin_block buf, *bref = cheatcoin_storage_load(ref->time, ref->storage_pos, &buf);
+				struct cheatcoin_block buf, *bref = cheatcoin_storage_load(ref->hash, ref->time, ref->storage_pos, &buf);
 				if (!bref) { err = 8; goto end; }
 				for (j = k = 0; j < CHEATCOIN_BLOCK_FIELDS; ++j)
 					if (cheatcoin_type(bref, j) == CHEATCOIN_FIELD_SIGN_OUT && (++k & 1)
@@ -520,6 +520,7 @@ begin:
 
 static int request_blocks(cheatcoin_time_t t, cheatcoin_time_t dt) {
 	int i, res;
+	if (!g_cheatcoin_sync_on) return -1;
 	if (dt <= REQUEST_BLOCKS_MAX_TIME) {
 		cheatcoin_time_t t0 = time_limit;
 		for (i = 0; cheatcoin_info("QueryB: t=%llx dt=%llx", t, dt),
@@ -551,38 +552,80 @@ static void *sync_thread(void *arg) {
 	return 0;
 }
 
+static void reset_callback(struct ldus_rbtree *node) {
+	free(node);
+}
+
 /* основной поток, работающий с блоками */
 static void *work_thread(void *arg) {
-	cheatcoin_time_t t = CHEATCOIN_ERA;
-	int n_mining_threads = (int)(unsigned)(uintptr_t)arg;
+	cheatcoin_time_t t = CHEATCOIN_ERA, conn_time = 0, sync_time = 0;
+	int n_mining_threads = (int)(unsigned)(uintptr_t)arg, sync_thread_running = 0;
 	pthread_t th;
 
+begin:
 	/* загрузка блоков из локального хранилища */
+	g_cheatcoin_state = CHEATCOIN_STATE_LOAD;
 	cheatcoin_mess("Loading blocks from local storage...");
 	cheatcoin_load_blocks(t, get_timestamp(), &t, add_block_callback);
 
 	/* запуск потока синхронизации */
 	g_cheatcoin_sync_on = 1;
-	if (n_mining_threads >= 0) {
+	if (!g_light_mode && !sync_thread_running) {
 		cheatcoin_mess("Starting sync thread...");
-		pthread_create(&th, 0, sync_thread, 0);
-		pthread_detach(th);
+		if (!pthread_create(&th, 0, sync_thread, 0)) {
+			sync_thread_running = 1;
+			pthread_detach(th);
+		}
 	}
 
 	/* запуск потоков майнинга */
-	cheatcoin_mess("Starting mining thread...");
+	cheatcoin_mess("Starting mining threads...");
 	cheatcoin_mining_start(n_mining_threads);
-
-	if (n_mining_threads < 0) return 0;
 
 	/* периодическая генерация блоков и определение главного блока */
 	cheatcoin_mess("Entering main cycle...");
 	for (;;) {
 		t = get_timestamp();
-		if (g_cheatcoin_extstats.nnoref > CHEATCOIN_BLOCK_FIELDS - 5 && !(rand() % MAKE_BLOCK_PERIOD))
+		if (!g_light_mode && g_cheatcoin_extstats.nnoref > CHEATCOIN_BLOCK_FIELDS - 5 && !(rand() % MAKE_BLOCK_PERIOD))
 			cheatcoin_create_block(0, 0, 0, 0, 0);
 		pthread_mutex_lock(&block_mutex);
-		check_new_main();
+		if (g_cheatcoin_state == CHEATCOIN_STATE_REST) {
+			g_cheatcoin_sync_on = 0;
+			pthread_mutex_unlock(&block_mutex);
+			cheatcoin_mining_start(g_light_mode ? ~0 : 0);
+			while (get_timestamp() - t < MAIN_CHAIN_PERIOD + (3 << 10)) sleep(1);
+			pthread_mutex_lock(&block_mutex);
+			ldus_rbtree_walk_up(root, reset_callback);
+			root = 0;
+			g_balance = 0;
+			top_main_chain = pretop_main_chain = 0;
+			ourfirst = ourlast = noref_first = noref_last = 0;
+			memset(&g_cheatcoin_stats, 0, sizeof(g_cheatcoin_stats));
+			memset(&g_cheatcoin_extstats, 0, sizeof(g_cheatcoin_extstats));
+			pthread_mutex_unlock(&block_mutex);
+			goto begin;
+		} else if (t - (g_cheatcoin_last_received << 10) > 3 * MAIN_CHAIN_PERIOD) {
+			g_cheatcoin_state = (g_light_mode ? (g_cheatcoin_testnet ? CHEATCOIN_STATE_TTST : CHEATCOIN_STATE_TRYP)
+					: (g_cheatcoin_testnet ? CHEATCOIN_STATE_WTST : CHEATCOIN_STATE_WAIT));
+			conn_time = sync_time = 0;
+		} else {
+			if (!conn_time) conn_time = t;
+			if (g_light_mode || t - conn_time >= 3 * MAIN_CHAIN_PERIOD) {
+				if (!g_light_mode && !memcmp(&g_cheatcoin_stats.difficulty,
+						&g_cheatcoin_stats.max_difficulty, sizeof(cheatcoin_diff_t))) sync_time = t;
+				if (t - (g_cheatcoin_xfer_last << 10) <= (g_light_mode ? 3 : 2) * MAIN_CHAIN_PERIOD)
+					g_cheatcoin_state = CHEATCOIN_STATE_XFER;
+				else if (g_light_mode) {
+					g_cheatcoin_state = (g_cheatcoin_mining_threads > 0 ?
+							  (g_cheatcoin_testnet ? CHEATCOIN_STATE_MTST : CHEATCOIN_STATE_MINE)
+							: (g_cheatcoin_testnet ? CHEATCOIN_STATE_PTST : CHEATCOIN_STATE_POOL));
+				} else if (t - sync_time > 2 * MAIN_CHAIN_PERIOD)
+					g_cheatcoin_state = (g_cheatcoin_testnet ? CHEATCOIN_STATE_CTST : CHEATCOIN_STATE_CONN);
+				else
+					g_cheatcoin_state = (g_cheatcoin_testnet ? CHEATCOIN_STATE_STST : CHEATCOIN_STATE_SYNC);
+			}
+		}
+		if (!g_light_mode) check_new_main();
 		pthread_mutex_unlock(&block_mutex);
 		while (get_timestamp() - t < 1024) sleep(1);
 	}
@@ -689,4 +732,15 @@ int cheatcoin_get_key(cheatcoin_hash_t hash) {
 	pthread_mutex_unlock(&block_mutex);
 	if (!bi || !(bi->flags & BI_OURS)) return -1;
 	return bi->n_our_key;
+}
+
+/* переинициализация системы обработки блоков */
+int cheatcoin_blocks_reset(void) {
+	pthread_mutex_lock(&block_mutex);
+	if (g_cheatcoin_state != CHEATCOIN_STATE_REST) {
+		cheatcoin_crit("Storage corrupted. Resetting blocks engine.");
+		g_cheatcoin_state = CHEATCOIN_STATE_REST;
+	}
+	pthread_mutex_unlock(&block_mutex);
+	return 0;
 }

@@ -1,4 +1,4 @@
-/* кошелёк, T13.681-T13.726 $DVS:time$ */
+/* кошелёк, T13.681-T13.788 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,6 +8,7 @@
 #include "wallet.h"
 #include "log.h"
 #include "main.h"
+#include "transport.h"
 
 #define WALLET_FILE (g_cheatcoin_testnet ? "wallet-testnet.dat" : "wallet.dat")
 
@@ -32,10 +33,13 @@ static int add_key(cheatcoin_hash_t priv) {
 		k->key = cheatcoin_private_to_key(k->priv, k->pub, &k->pub_bit);
 	} else {
 		FILE *f;
+		uint32_t priv32[sizeof(cheatcoin_hash_t)/sizeof(uint32_t)];
 		k->key = cheatcoin_create_key(k->priv, k->pub, &k->pub_bit);
 		f = fopen(WALLET_FILE, "ab");
 		if (!f) goto fail;
-		if (fwrite(k->priv, sizeof(cheatcoin_hash_t), 1, f) != 1) { fclose(f); goto fail; }
+		memcpy(priv32, k->priv, sizeof(cheatcoin_hash_t));
+		cheatcoin_user_crypt_action(priv32, nkeys, sizeof(cheatcoin_hash_t)/sizeof(uint32_t), 1);
+		if (fwrite(priv32, sizeof(cheatcoin_hash_t), 1, f) != 1) { fclose(f); goto fail; }
 		fclose(f);
 	}
 	if (!k->key) goto fail;
@@ -70,15 +74,20 @@ int cheatcoin_wallet_new_key(void) {
 
 /* инициализировать кошелёк */
 int cheatcoin_wallet_init(void) {
+	uint32_t priv32[sizeof(cheatcoin_hash_t)/sizeof(uint32_t)];
 	cheatcoin_hash_t priv;
 	FILE *f = fopen(WALLET_FILE, "rb");
+	int n;
 	if (!f) {
 		if (add_key(0)) return -1;
 		f = fopen(WALLET_FILE, "r");
 		if (!f) return -1;
-		fread(priv, sizeof(cheatcoin_hash_t), 1, f);
-	}
-	while (fread(priv, sizeof(cheatcoin_hash_t), 1, f) == 1) {
+		fread(priv32, sizeof(cheatcoin_hash_t), 1, f);
+		n = 1;
+	} else n = 0;
+	while (fread(priv32, sizeof(cheatcoin_hash_t), 1, f) == 1) {
+		cheatcoin_user_crypt_action(priv32, n++, sizeof(cheatcoin_hash_t)/sizeof(uint32_t), 2);
+		memcpy(priv, priv32, sizeof(cheatcoin_hash_t));
 		add_key(priv);
 	}
 	fclose(f);

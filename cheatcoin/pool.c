@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.778 $DVS:time$ */
+/* пул и майнер, T13.744-T13.788 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -234,7 +234,7 @@ static int pay_miners(cheatcoin_time_t t) {
 	nfields = (key == defkey ? 12 : 10);
 	pos = cheatcoin_get_block_pos(h, &t);
 	if (pos < 0) return -6;
-	b = cheatcoin_storage_load(t, pos, &buf);
+	b = cheatcoin_storage_load(h, t, pos, &buf);
 	if (!b) return -7;
 	diff = malloc(2 * nminers * sizeof(double));
 	if (!diff) return -8;
@@ -531,7 +531,7 @@ begin:
 	if (cheatcoin_get_our_block(hash)) { mess = "can't create a block"; goto err; }
 	pos = cheatcoin_get_block_pos(hash, &t);
 	if (pos < 0) { mess = "can't find the block"; goto err; }
-	blk = cheatcoin_storage_load(t, pos, &b);
+	blk = cheatcoin_storage_load(hash, t, pos, &b);
 	if (!blk) { mess = "can't load the block"; goto err; }
 	if (blk != &b) memcpy(&b, blk, sizeof(struct cheatcoin_block));
 
@@ -553,7 +553,7 @@ begin:
 	if (!s) { pthread_mutex_unlock(&g_pool_mutex); mess = "host is not given"; goto err; }
 	if (!strcmp(s, "any")) {
 		peeraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	} else {
+	} else if (!inet_aton(s, &peeraddr.sin_addr)) {
 		host = gethostbyname(s);
 		if (!host || !host->h_addr_list[0]) { pthread_mutex_unlock(&g_pool_mutex); mess = "cannot resolve host ", mess1 = s; res = h_errno; goto err; }
 		// Write resolved IP address of a server to the address structure
@@ -595,6 +595,7 @@ begin:
 				dfslib_uncrypt_array(g_crypt, (uint32_t *)last->data, DATA_SIZE, m->nfield_in++);
 				if (!memcmp(last->data, hash, sizeof(cheatcoin_hashlow_t))) {
 					cheatcoin_set_balance(hash, last->amount);
+					g_cheatcoin_last_received = tt;
 					ndata = 0;
 					maxndata = sizeof(struct cheatcoin_field);
 				} else if (maxndata == 2 * sizeof(struct cheatcoin_field)){

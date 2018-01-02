@@ -1,4 +1,4 @@
-/* локальное хранилище, T13.663-T13.748 $DVS:time$ */
+/* локальное хранилище, T13.663-T13.788 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +9,7 @@
 #include "storage.h"
 #include "log.h"
 #include "main.h"
+#include "hash.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #define SLASH "\\"
@@ -111,7 +112,9 @@ int64_t cheatcoin_storage_save(const struct cheatcoin_block *b) {
 }
 
 /* прочитать из локального хранилища блок с данным временем и номером; записать его в буфер или возвратить постоянную ссылку, 0 при ошибке */
-struct cheatcoin_block *cheatcoin_storage_load(cheatcoin_time_t time, uint64_t pos, struct cheatcoin_block *buf) {
+struct cheatcoin_block *cheatcoin_storage_load(cheatcoin_hash_t hash, cheatcoin_time_t time, uint64_t pos,
+		struct cheatcoin_block *buf) {
+	cheatcoin_hash_t hash0;
 	char path[256];
 	FILE *f;
 	sprintf(path, STORAGE_FILE, STORAGE_FILE_ARGS(time));
@@ -122,6 +125,13 @@ struct cheatcoin_block *cheatcoin_storage_load(cheatcoin_time_t time, uint64_t p
 		fclose(f);
 	} else buf = 0;
 	pthread_mutex_unlock(&storage_mutex);
+	if (buf) {
+		cheatcoin_hash(buf, sizeof(struct cheatcoin_block), hash0);
+		if (memcmp(hash, hash0, sizeof(cheatcoin_hashlow_t))) {
+			cheatcoin_blocks_reset();
+			buf = 0;
+		}
+	}
 	return buf;
 }
 

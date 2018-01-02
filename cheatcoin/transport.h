@@ -1,8 +1,9 @@
-/* транспорт, T13.654-T13.738 $DVS:time$ */
+/* транспорт, T13.654-T13.788 $DVS:time$ */
 
 #ifndef CHEATCOIN_TRANSPORT_H
 #define CHEATCOIN_TRANSPORT_H
 
+#include <time.h>
 #include "block.h"
 #include "storage.h"
 
@@ -37,5 +38,10 @@ extern int cheatcoin_net_command(const char *cmd, void *out);
 
 /* разослать пакет, conn - то же, что и в dnet_send_cheatcoin_packet */
 extern int cheatcoin_send_packet(struct cheatcoin_block *b, void *conn);
+
+/* см. dnet_user_crypt_action */
+extern int cheatcoin_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action);
+
+extern time_t g_cheatcoin_last_received;
 
 #endif

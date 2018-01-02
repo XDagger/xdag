@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.775 $DVS:time$ */
+/* работа с блоками, T13.654-T13.788 $DVS:time$ */
 
 #ifndef CHEATCOIN_BLOCK_H
 #define CHEATCOIN_BLOCK_H
@@ -98,5 +98,8 @@ extern cheatcoin_time_t cheatcoin_start_main_time(void);
 
 /* по хешу блока возвращает номер ключа или -1, если блок не наш */
 extern int cheatcoin_get_key(cheatcoin_hash_t hash);
+
+/* переинициализация системы обработки блоков */
+extern int cheatcoin_blocks_reset(void);
 
 #endif

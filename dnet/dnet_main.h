@@ -1,4 +1,4 @@
-/* dnet: external interface; T13.011-T13.785; $DVS:time$ */
+/* dnet: external interface; T13.011-T13.788; $DVS:time$ */
 
 #ifndef DNET_MAIN_H_INCLUDED
 #define DNET_MAIN_H_INCLUDED
@@ -29,6 +29,15 @@ extern int dnet_set_self_version(const char *version);
 extern int (*dnet_connection_open_check)(void *conn, uint32_t ip, uint16_t port);
 
 extern void (*dnet_connection_close_notify)(void *conn);
+
+/* выполнить действие с паролем пользователя:
+ * 1 - закодировать данные (data_id - порядковый номер данных, size - размер данных, измеряется в 32-битных словах)
+ * 2 - декодировать -//-
+ * 3 - ввести пароль и проверить его, возвращает 0 при успехе
+ * 4 - ввести пароль и записать его отпечаток в массив data длины 16 байт
+ * 5 - проверить, что отпечаток в массиве data соответствует паролю
+ */
+extern int dnet_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action);
 
 #ifdef __cplusplus
 }
