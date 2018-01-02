@@ -26,7 +26,7 @@
 #define EXCHANGE_PERIOD	    1800
 #define EXCHANGE_MAX_TIME	(3600 * 48)
 #define LOG_PERIOD          300
-#define GC_PERIOD           300
+#define GC_PERIOD           60
 #define UPDATE_PERIOD	    DNET_UPDATE_PERIOD
 
 struct list *g_threads;
@@ -188,9 +188,6 @@ err:
     if (strcmp(mess, "cannot connect") && strcmp(mess, "connection error"))
 #endif
 		dnet_log_printf("dnet.%d: %s%s (%d), %s\n", t->nthread, mess, mess1, res, strerror(errno));
-#ifdef CHEATCOIN
-	t->to_remove = 1;
-#endif
 }
 
 static void *dnet_thread_client_server(void *arg) {
@@ -209,12 +206,11 @@ static void *dnet_thread_client_server(void *arg) {
 			close(t->conn.socket); t->conn.socket = -1;
 		}
 #ifndef CHEATCOIN
-		if (t->to_remove) {
-			if (dnet_connection_close_notify) (*dnet_connection_close_notify)(&t->conn);
-			break;
-		}
+		if (t->to_remove) break;
 		sleep(5);
 #else
+		if (dnet_connection_close_notify) (*dnet_connection_close_notify)(&t->conn);
+		t->to_remove = 1;
 		break;
 #endif
     }
@@ -257,26 +253,22 @@ int dnet_traverse_threads(int (*callback)(struct dnet_thread *, void *), void *d
 
 static int dnet_garbage_collect(void) {
     struct list *l, *lnext;
-    pthread_rwlock_wrlock(&g_threads_rwlock);
+	int total = 0, collected = 0;
+	dnet_log_printf("dnet gc: start to collect\n");
+	pthread_rwlock_wrlock(&g_threads_rwlock);
     for (l = g_threads->next; l != g_threads; l = lnext) {
         struct dnet_thread *t = container_of(l, struct dnet_thread, threads);
         lnext = l->next;
+		total++;
 		if (t->to_remove == 2) {
-			int nthread = t->nthread;
 			list_remove(l);
-			pthread_rwlock_unlock(&g_threads_rwlock);
-			dnet_log_printf("dnet.%d: thread remove start\n", nthread);
 			dthread_mutex_destroy(&t->conn.mutex);
 			free(t);
-			dnet_log_printf("dnet.%d: thread remove end\n", nthread);
-			return 1;
-		}
+			collected++;
+		} else if (t->to_remove) t->to_remove = 2;
     }
-	for (l = g_threads->next; l != g_threads; l = l->next) {
-		struct dnet_thread *t = container_of(l, struct dnet_thread, threads);
-		if (t->to_remove) t->to_remove = 2;
-	}
 	pthread_rwlock_unlock(&g_threads_rwlock);
+	dnet_log_printf("dnet gc: %d threads total, %d collected\n", total, collected);
 	return 0;
 }
 
@@ -286,7 +278,7 @@ static void *dnet_thread_collector(void __attribute__((unused)) *arg) {
 		t = time(0);
 		if (t - gc_t >= GC_PERIOD) {
 			gc_t = t;
-			while (dnet_garbage_collect()) sleep(1);
+			dnet_garbage_collect();
 		}
 		sleep(GC_PERIOD / 10);
     }
