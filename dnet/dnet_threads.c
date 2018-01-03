@@ -1,4 +1,4 @@
-/* dnet: threads; T11.231-T13.789; $DVS:time$ */
+/* dnet: threads; T11.231-T13.790; $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -231,9 +231,12 @@ static void *dnet_thread_accepted(void *arg) {
 	g_n_inbound--;
     t->conn.socket = -1;
     //pthread_mutex_lock(&t->conn.mutex);
-    t->to_remove = 1;
+#ifdef CHEATCOIN
+	if (dnet_connection_close_notify) (*dnet_connection_close_notify)(&t->conn);
+#endif
+	t->to_remove = 1;
     //pthread_mutex_unlock(&t->conn.mutex);
-    return 0;
+	return 0;
 }
 
 int dnet_traverse_threads(int (*callback)(struct dnet_thread *, void *), void *data) {

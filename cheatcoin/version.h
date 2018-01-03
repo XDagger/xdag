@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.789" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.790" /* $DVS:time$ */
 
 /* история
+
+T13.790 исправлена утечка памяти и программа не должна падать
 
 T13.789 сделан пароль на кошелёк, добавлена команда state, сделана перезагрузка
 	системы обратотки блоков в случае порчи локального хранилища блоков
