@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.790" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.793" /* $DVS:time$ */
 
 /* история
+
+T13.793 исправлена ошибка с неправильным определением правильности пароля
 
 T13.790 исправлена утечка памяти и программа не должна падать
 

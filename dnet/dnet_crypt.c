@@ -1,4 +1,4 @@
-/* dnet: crypt; T11.231-T13.788; $DVS:time$ */
+/* dnet: crypt; T11.231-T13.793; $DVS:time$ */
 
 #include <stdio.h>
 #include <string.h>
@@ -136,13 +136,13 @@ static int dnet_test_keys(void) {
     uint32_t src[SECTOR_SIZE / 4], dest[SECTOR_SIZE / 4];
     dnet_random_sector(src);
     memcpy(dest, src, SECTOR_SIZE);
-    dfsrsa_crypt((dfsrsa_t *)dest, SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->priv.key, DNET_KEYLEN);
-    dfsrsa_crypt((dfsrsa_t *)dest, SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->pub.key, DNET_KEYLEN);
-    if (memcmp(dest, src, SECTOR_SIZE)) return 1;
+	if (dfsrsa_crypt((dfsrsa_t *)dest, SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->priv.key, DNET_KEYLEN)) return 1;
+	if (dfsrsa_crypt((dfsrsa_t *)dest, SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->pub.key, DNET_KEYLEN)) return 2;
+	if (memcmp(dest, src, SECTOR_SIZE)) return 3;
     memcpy(dest, src, SECTOR_SIZE);
-    dfsrsa_crypt((dfsrsa_t *)dest, SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->pub.key, DNET_KEYLEN);
-    dfsrsa_crypt((dfsrsa_t *)dest, SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->priv.key, DNET_KEYLEN);
-    if (memcmp(dest, src, SECTOR_SIZE)) return 2;
+	if (dfsrsa_crypt((dfsrsa_t *)dest, SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->pub.key, DNET_KEYLEN)) return 4;
+	if (dfsrsa_crypt((dfsrsa_t *)dest, SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->priv.key, DNET_KEYLEN)) return 5;
+	if (memcmp(dest, src, SECTOR_SIZE)) return 6;
     return 0;
 }
 
@@ -232,6 +232,7 @@ int dnet_crypt_init(const char *version) {
     if (f) {
         if (fread(keys, sizeof(struct dnet_keys), 1, f) != 1) fclose(f), f = 0;
 		else {
+			g_keylen = dnet_detect_keylen(keys->pub.key, DNET_KEYLEN);
 			if (dnet_test_keys()) {
 				struct dfslib_string str;
 				char pwd[256];
@@ -240,8 +241,9 @@ int dnet_crypt_init(const char *version) {
 				set_user_crypt(&str);
 				if (g_dnet_user_crypt) for (i = 0; i < (sizeof(struct dnet_keys) >> 9); ++i)
 					dfslib_uncrypt_sector(g_dnet_user_crypt, (uint32_t *)keys + 128 * i, ~(uint64_t)i);
+				g_keylen = 0;
+				g_keylen = dnet_detect_keylen(keys->pub.key, DNET_KEYLEN);
 			}
-			g_keylen = dnet_detect_keylen(keys->pub.key, DNET_KEYLEN);
 		}
     }
     if (!f) {

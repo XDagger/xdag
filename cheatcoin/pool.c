@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.788 $DVS:time$ */
+/* пул и майнер, T13.744-T13.793 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -243,6 +243,7 @@ static int pay_miners(cheatcoin_time_t t) {
 	g_local_miner.maxdiff[n] = 0;
 	prev_sum = g_local_miner.prev_diff;
 	g_local_miner.prev_diff = 0;
+	prev_sum += sum;
 	for (i = 0; i < nminers; ++i) {
 		m = g_miners + i;
 		if (m->state & MINER_FREE) continue;
