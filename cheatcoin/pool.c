@@ -781,7 +781,8 @@ static int print_miner(FILE *out, int n, struct miner *m) {
 	sprintf(buf2, "%llu/%llu", (unsigned long long)m->nfield_in * sizeof(struct cheatcoin_field),
 			(unsigned long long)m->nfield_out * sizeof(struct cheatcoin_field));
 	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", n, cheatcoin_hash2address(m->id.data),
-		(m->state & MINER_FREE ? "free   " : (m->state & MINER_ARCHIVE ? "archive" : "active ")), buf, buf2, sum);
+		(m->state & MINER_FREE ? "free   " : (m->state & MINER_ARCHIVE ? "archive" :
+		(m->state & MINER_ADDRESS ? "active " : "badaddr"))), buf, buf2, sum);
 	return m->state & (MINER_FREE | MINER_ARCHIVE) ? 0 : 1;
 }
 
