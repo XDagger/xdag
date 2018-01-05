@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.797 $DVS:time$ */
+/* пул и майнер, T13.744-T13.798 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -369,7 +369,7 @@ int cheatcoin_pool_set_config(const char *str) {
 	if (g_pool_direct < 0) g_pool_direct = 0;
 	if (g_pool_fee + g_pool_reward + g_pool_direct > 1) g_pool_direct = 1 - g_pool_fee - g_pool_reward;
 
-	str = strtok_r(buf, " \t\r\n:", &lasts);
+	str = strtok_r(0, " \t\r\n:", &lasts);
 	if (str) {
 		sscanf(str, "%d", &g_max_nminers_ip);
 		if (g_max_nminers_ip <= 0) g_max_nminers_ip = 1;

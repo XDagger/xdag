@@ -3,7 +3,7 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.797" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.798" /* $DVS:time$ */
 
 /* история
 
