@@ -158,7 +158,9 @@ static int conn_open_check(void *conn, uint32_t ip, uint16_t port) {
 	int i;
 	for (i = 0; i < g_cheatcoin_n_blocked_ips; ++i)
 		if (ip == g_cheatcoin_blocked_ips[i]) return -1;
-	return 0;
+	for (i = 0; i < g_cheatcoin_n_white_ips; ++i)
+		if (ip == g_cheatcoin_white_ips[i]) return 0;
+	return -1;
 }
 
 static void conn_close_notify(void *conn) {

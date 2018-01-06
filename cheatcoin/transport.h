@@ -4,6 +4,7 @@
 #define CHEATCOIN_TRANSPORT_H
 
 #include <time.h>
+#include <stdint.h>
 #include "block.h"
 #include "storage.h"
 

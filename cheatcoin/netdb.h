@@ -19,7 +19,7 @@ extern unsigned cheatcoin_netdb_receive(const uint8_t *data, unsigned len);
 extern void cheatcoin_netdb_finish(void);
 
 /* заблокированные ip для входящих соединений и их число */
-extern uint32_t *g_cheatcoin_blocked_ips;
-extern int g_cheatcoin_n_blocked_ips;
+extern uint32_t *g_cheatcoin_blocked_ips, *g_cheatcoin_white_ips;
+extern int g_cheatcoin_n_blocked_ips, g_cheatcoin_n_white_ips;
 
 #endif

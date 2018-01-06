@@ -175,7 +175,7 @@ static void *pool_main_thread(void *arg) {
 						cheatcoin_hash_t hash;
 						ntask = g_cheatcoin_pool_ntask;
 						task = &g_cheatcoin_pool_task[ntask & 1];
-						if (memcmp(m->id.data, m->data, sizeof(cheatcoin_hashlow_t))) {
+						if (!(m->state & MINER_ADDRESS) || memcmp(m->id.data, m->data, sizeof(cheatcoin_hashlow_t))) {
 							cheatcoin_time_t t;
 							memcpy(m->id.data, m->data, sizeof(struct cheatcoin_field));
 							int64_t pos = cheatcoin_get_block_pos(m->id.data, &t);

@@ -16,8 +16,10 @@
 
 #define MAX_SELECTED_HOSTS	64
 #define MAX_BLOCKED_IPS		64
+#define MAX_WHITE_IPS		64
 #define MAX_ALLOWED_FROM_IP	4
 #define DATABASE			(g_cheatcoin_testnet ? "netdb-testnet.txt" : "netdb.txt")
+#define DATABASEWHITE		(g_cheatcoin_testnet ? "netdb-white-testnet.txt" : "netdb-white.txt")
 
 enum host_flags {
 	HOST_OUR		= 1,
@@ -25,6 +27,7 @@ enum host_flags {
 	HOST_SET		= 4,
 	HOST_INDB		= 8,
 	HOST_NOT_ADD	= 0x10,
+	HOST_WHITE		= 0x20,
 };
 
 struct host {
@@ -45,8 +48,8 @@ static struct ldus_rbtree *root = 0;
 static pthread_mutex_t host_mutex = PTHREAD_MUTEX_INITIALIZER;
 static struct host *selected_hosts[MAX_SELECTED_HOSTS], *our_host;
 static unsigned n_selected_hosts = 0;
-uint32_t *g_cheatcoin_blocked_ips;
-int g_cheatcoin_n_blocked_ips = 0;
+uint32_t *g_cheatcoin_blocked_ips, *g_cheatcoin_white_ips;
+int g_cheatcoin_n_blocked_ips = 0, g_cheatcoin_n_white_ips = 0;
 
 static struct host *find_add_host(struct host *h) {
 	struct host *h0;
@@ -68,6 +71,9 @@ static struct host *find_add_host(struct host *h) {
 		}
 	}
 	pthread_mutex_unlock(&host_mutex);
+	if (h->flags & HOST_WHITE) {
+		if (g_cheatcoin_n_white_ips < MAX_WHITE_IPS) g_cheatcoin_white_ips[g_cheatcoin_n_white_ips++] = h0->ip;
+	}
 	return h0;
 }
 
@@ -146,7 +152,7 @@ static void *monitor_thread(void *arg) {
 	while (!g_cheatcoin_sync_on) sleep(1);
 	for(;;) {
 		FILE *f = fopen("netdb.tmp", "w");
-		int n, i;
+		int n, i, j;
 		time_t t = time(0);
 		if (!f) continue;
 		cheatcoin_net_command("conn", f);
@@ -164,10 +170,14 @@ static void *monitor_thread(void *arg) {
 			char str[64];
 			if (!h) continue;
 			if (n < MAX_SELECTED_HOSTS) {
-				sprintf(str, "connect %u.%u.%u.%u:%u", h->ip & 0xff, h->ip >> 8 & 0xff, h->ip >> 16 & 0xff, h->ip >> 24 & 0xff, h->port);
-				cheatcoin_debug("Netdb : host=%lx flags=%x query='%s'", (long)h, h->flags, str);
-				cheatcoin_net_command(str, (f ? f : stderr));
-				n++;
+				for (j = 0; j < g_cheatcoin_n_white_ips; ++j)
+					if (h->ip == g_cheatcoin_white_ips[j]) {
+						sprintf(str, "connect %u.%u.%u.%u:%u", h->ip & 0xff, h->ip >> 8 & 0xff, h->ip >> 16 & 0xff, h->ip >> 24 & 0xff, h->port);
+						cheatcoin_debug("Netdb : host=%lx flags=%x query='%s'", (long)h, h->flags, str);
+						cheatcoin_net_command(str, (f ? f : stderr));
+						n++;
+						break;
+					}
 			}
 			h->flags |= HOST_CONNECTED;
 			if (n_selected_hosts < MAX_SELECTED_HOSTS) selected_hosts[n_selected_hosts++] = h;
@@ -184,8 +194,10 @@ int cheatcoin_netdb_init(const char *our_host_str, int npairs, const char **addr
 	pthread_t t;
 	int i;
 	g_cheatcoin_blocked_ips = malloc(MAX_BLOCKED_IPS * sizeof(uint32_t));
-	if (!g_cheatcoin_blocked_ips) return -1;
+	g_cheatcoin_white_ips = malloc(MAX_WHITE_IPS * sizeof(uint32_t));
+	if (!g_cheatcoin_blocked_ips || !g_cheatcoin_white_ips) return -1;
 	if (read_database(DATABASE, HOST_INDB) < 0) { cheatcoin_fatal("Can't find file '%s'\n", DATABASE); return -1; }
+	read_database(DATABASEWHITE, HOST_WHITE);
 	our_host = find_add_ipport(&h, our_host_str, HOST_OUR | HOST_SET);
 	for (i = 0; i < npairs; ++i) find_add_ipport(&h, addr_port_pairs[i], 0);
 	if (pthread_create(&t, 0, monitor_thread, 0)) { cheatcoin_fatal("Can't start netdb thread\n"); return -1; }
