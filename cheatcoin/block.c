@@ -608,7 +608,7 @@ begin:
 			pthread_mutex_unlock(&block_mutex);
 			conn_time = sync_time = 0;
 			goto begin;
-		} else if (t - (g_cheatcoin_last_received << 10) > 3 * MAIN_CHAIN_PERIOD) {
+		} else if (t > (g_cheatcoin_last_received << 10) && t - (g_cheatcoin_last_received << 10) > 3 * MAIN_CHAIN_PERIOD) {
 			g_cheatcoin_state = (g_light_mode ? (g_cheatcoin_testnet ? CHEATCOIN_STATE_TTST : CHEATCOIN_STATE_TRYP)
 					: (g_cheatcoin_testnet ? CHEATCOIN_STATE_WTST : CHEATCOIN_STATE_WAIT));
 			conn_time = sync_time = 0;
