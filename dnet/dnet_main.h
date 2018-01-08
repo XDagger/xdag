@@ -1,4 +1,4 @@
-/* dnet: external interface; T13.011-T13.788; $DVS:time$ */
+/* dnet: external interface; T13.011-T13.794; $DVS:time$ */
 
 #ifndef DNET_MAIN_H_INCLUDED
 #define DNET_MAIN_H_INCLUDED
@@ -36,6 +36,8 @@ extern void (*dnet_connection_close_notify)(void *conn);
  * 3 - ввести пароль и проверить его, возвращает 0 при успехе
  * 4 - ввести пароль и записать его отпечаток в массив data длины 16 байт
  * 5 - проверить, что отпечаток в массиве data соответствует паролю
+ * 6 - setup callback function to input password, data is pointer to function 
+ *     int (*)(const char *prompt, char *buf, unsigned size);
  */
 extern int dnet_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action);
 

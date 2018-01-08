@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.798 $DVS:time$ */
+/* пул и майнер, T13.744-T13.805 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -480,6 +480,7 @@ err:
 
 static int send_to_pool(struct cheatcoin_field *fld, int nfld) {
 	struct cheatcoin_field f[CHEATCOIN_BLOCK_FIELDS];
+	cheatcoin_hash_t h;
 	struct miner *m = &g_local_miner;
 	int i, res, todo = nfld * sizeof(struct cheatcoin_field), done = 0;
 	if (g_socket < 0) {
@@ -489,6 +490,8 @@ static int send_to_pool(struct cheatcoin_field *fld, int nfld) {
 	memcpy(f, fld, todo);
 	if (nfld == CHEATCOIN_BLOCK_FIELDS) {
 		uint32_t crc;
+		f[0].transport_header = 0;
+		cheatcoin_hash(f, sizeof(struct cheatcoin_block), h);
 		f[0].transport_header = HEADER_WORD;
 		crc = crc_of_array((uint8_t *)f, sizeof(struct cheatcoin_block));
 		f[0].transport_header |= (uint64_t)crc << 32;
@@ -513,6 +516,10 @@ static int send_to_pool(struct cheatcoin_field *fld, int nfld) {
 		done += res, todo -= res;
 	}
 	pthread_mutex_unlock(&g_pool_mutex);
+	if (nfld == CHEATCOIN_BLOCK_FIELDS) {
+		cheatcoin_info("Sent  : %016llx%016llx%016llx%016llx t=%llx res=%d",
+			h[3], h[2], h[1], h[0], fld[0].time, 0);
+	}
 	return 0;
 }
 

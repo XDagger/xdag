@@ -1,4 +1,4 @@
-/* dnet: crypt; T11.231-T13.793; $DVS:time$ */
+/* dnet: crypt; T11.231-T13.795; $DVS:time$ */
 
 #include <stdio.h>
 #include <string.h>
@@ -53,20 +53,27 @@ struct dnet_session {
 int dnet_limited_version = 0;
 static int g_keylen = 0;
 
-static void getpwd(struct dfslib_string *str, char *buf, int len) {
+static int input_password(const char *prompt, char *buf, unsigned len) {
 	struct termios t[1];
-	tcgetattr(0, t);
-	t->c_lflag &= ~ECHO;
-	tcsetattr(0, TCSANOW, t);
+	int noecho = !!strstr(prompt, "assword");
+	printf("%s: ", prompt); fflush(stdout);
+	if (noecho) {
+		tcgetattr(0, t);
+		t->c_lflag &= ~ECHO;
+		tcsetattr(0, TCSANOW, t);
+	}
 	fgets(buf, len, stdin);
-	t->c_lflag |= ECHO;
-	tcsetattr(0, TCSANOW, t);
-	printf("\n");
+	if (noecho) {
+		t->c_lflag |= ECHO;
+		tcsetattr(0, TCSANOW, t);
+		printf("\n");
+	}
 	len = strlen(buf);
 	if (len && buf[len - 1] == '\n') --len;
-	dfslib_utf8_string(str, buf, len);
+	return 0;
 }
 
+static int(*g_input_password)(const char *prompt, char *buf, unsigned size) = &input_password;
 
 static void dnet_make_key(dfsrsa_t *key, int keylen) {
 	unsigned i;
@@ -167,9 +174,11 @@ static int set_user_crypt(struct dfslib_string *pwd) {
  * 3 - ввести пароль и проверить его, возвращает 0 при успехе
  * 4 - ввести пароль и записать его отпечаток в массив data длины 16 байт
  * 5 - проверить, что отпечаток в массиве data соответствует паролю
+ * 6 - setup callback function to input password, data is pointer to function 
+ *     int (*)(const char *prompt, char *buf, unsigned size);
  */
 int dnet_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action) {
-	if (action != 4 && !g_dnet_user_crypt) return 0;
+	if (action != 4 && action != 6 && !g_dnet_user_crypt) return 0;
 	switch (action) {
 		case 1:
 			dfslib_encrypt_array(g_dnet_user_crypt, data, size, data_id);
@@ -184,10 +193,10 @@ int dnet_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned 
 				char pwd[256];
 				int res;
 				if (!crypt) return -1;
-				printf("Password: "); fflush(stdout);
 				memset(pwd, 0, 256);
 				memset(&str, 0, sizeof(struct dfslib_string));
-				getpwd(&str, pwd, 256);
+				(*g_input_password)("Password", pwd, 256);
+				dfslib_utf8_string(&str, pwd, strlen(pwd));
 				memset(crypt->pwd, 0, sizeof(crypt->pwd));
 				crypt->ispwd = 0;
 				dfslib_crypt_set_password(crypt, &str);
@@ -201,10 +210,10 @@ int dnet_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned 
 				struct dfslib_crypt *crypt = malloc(sizeof(struct dfslib_crypt));
 				struct dfslib_string str;
 				char pwd[256];
-				printf("Password: "); fflush(stdout);
 				memset(pwd, 0, 256);
 				memset(&str, 0, sizeof(struct dfslib_string));
-				getpwd(&str, pwd, 256);
+				(*g_input_password)("Password", pwd, 256);
+				dfslib_utf8_string(&str, pwd, strlen(pwd));
 				memset(crypt->pwd, 0, sizeof(crypt->pwd));
 				dfslib_crypt_set_password(crypt, &str);
 				memcpy(data, crypt->pwd, sizeof(crypt->pwd));
@@ -213,6 +222,9 @@ int dnet_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned 
 			}
 		case 5:
 			return memcmp(g_dnet_user_crypt->pwd, data, sizeof(g_dnet_user_crypt->pwd)) ? -1 : 0;
+		case 6:
+			g_input_password = (int(*)(const char *, char *, unsigned))(void *)data;
+			return 0;
 		default: return -1;
 	}
 	return 0;
@@ -236,8 +248,8 @@ int dnet_crypt_init(const char *version) {
 			if (dnet_test_keys()) {
 				struct dfslib_string str;
 				char pwd[256];
-				printf("Password: "); fflush(stdout);
-				getpwd(&str, pwd, 256);
+				(*g_input_password)("Password", pwd, 256);
+				dfslib_utf8_string(&str, pwd, strlen(pwd));
 				set_user_crypt(&str);
 				if (g_dnet_user_crypt) for (i = 0; i < (sizeof(struct dnet_keys) >> 9); ++i)
 					dfslib_uncrypt_sector(g_dnet_user_crypt, (uint32_t *)keys + 128 * i, ~(uint64_t)i);
@@ -275,16 +287,15 @@ int dnet_crypt_init(const char *version) {
         } else {
 			struct dfslib_string str, str1;
 			char pwd[256], pwd1[256];
-			printf("Set password (Enter if none): "); fflush(stdout);
-			getpwd(&str, pwd, 256);
-			printf("Type password again: "); fflush(stdout);
-			getpwd(&str1, pwd1, 256);
+			(*g_input_password)("Set password", pwd, 256);
+			dfslib_utf8_string(&str, pwd, strlen(pwd));
+			(*g_input_password)("Re-type password", pwd1, 256);
+			dfslib_utf8_string(&str1, pwd1, strlen(pwd1));
 			if (str.len != str1.len || memcmp(str.utf8, str1.utf8, str.len)) {
 				printf("Passwords differ.\n"); return 4;
 			}
 			if (str.len) set_user_crypt(&str);
-			printf("Type any symbols for random numbers generation: "); fflush(stdout);
-			fgets(buf, 256, stdin);
+			(*g_input_password)("Type random keys", buf, 256);
 #endif
 		}
         dfslib_random_fill(keys->pub.key, DNET_KEYLEN * sizeof(dfsrsa_t), 0, dfslib_utf8_string(&str, buf, strlen(buf)));

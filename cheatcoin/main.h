@@ -1,4 +1,4 @@
-/* основные переменные, T13.714-T13.788 $DVS:time$ */
+/* основные переменные, T13.714-T13.797 $DVS:time$ */
 
 #ifndef CHEATCOIN_MAIN_H
 #define CHEATCOIN_MAIN_H
@@ -32,18 +32,36 @@ extern struct cheatcoin_ext_stats {
 	uint32_t nwaitsync;
 } g_cheatcoin_extstats;
 
-extern void cheatcoin_log_xfer(cheatcoin_hash_t from, cheatcoin_hash_t to, cheatcoin_amount_t amount);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* состояние программы */
-extern int g_cheatcoin_state;
+	extern void cheatcoin_log_xfer(cheatcoin_hash_t from, cheatcoin_hash_t to, cheatcoin_amount_t amount);
 
-/* 1 - программа работает в тестовой сети */
-extern int g_cheatcoin_testnet;
+	/* состояние программы */
+	extern int g_cheatcoin_state;
 
-/* имя монеты */
-extern char *g_coinname;
+	/* 1 - программа работает в тестовой сети */
+	extern int g_cheatcoin_testnet;
 
-/* время последнего перевода */
-extern time_t g_cheatcoin_xfer_last;
+	/* имя монеты */
+	extern char *g_coinname;
+
+	/* время последнего перевода */
+	extern time_t g_cheatcoin_xfer_last;
+
+	extern int cheatcoin_main(int argc, char **argv);
+
+	extern int cheatcoin_set_password_callback(int(*callback)(const char *prompt, char *buf, unsigned size));
+
+	extern int cheatcoin_show_state(cheatcoin_hash_t hash);
+
+	extern int (*g_cheatcoin_show_state)(const char *state, const char *balance, const char *address);
+
+	extern int cheatcoin_do_xfer(void *out, const char *amount, const char *address);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif

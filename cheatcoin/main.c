@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.789 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.805 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,11 +47,12 @@ int g_cheatcoin_testnet = 0, g_is_miner = 0;
 time_t g_cheatcoin_xfer_last = 0;
 struct cheatcoin_stats g_cheatcoin_stats;
 struct cheatcoin_ext_stats g_cheatcoin_extstats;
+int (*g_cheatcoin_show_state)(const char *state, const char *balance, const char *address) = 0;
 
 static long double amount2cheatcoins(cheatcoin_amount_t amount) {
 	long double res = 0, d = 1;
 	int i;
-	for (i = 0; amount && i < 64; ++i, amount >>= 1) {
+	for (i = 0; i < 32 || (amount && i < 64); ++i, amount >>= 1) {
 		if (amount & 1) res += d;
 		if (i < 32) res /= 2; else d *= 2;
 	}
@@ -142,6 +143,38 @@ static int xfer_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t a
 	return 0;
 }
 
+static const char *get_state(void) {
+	static const char *states[] = {
+#define cheatcoin_state(n,s) s ,
+#include "state.h"
+#undef cheatcoin_state
+	};
+	return states[g_cheatcoin_state];
+}
+
+int cheatcoin_do_xfer(void *outv, const char *amount, const char *address) {
+	struct xfer_callback_data xfer;
+	FILE *out = (FILE *)outv;
+#ifdef CHEATCOINWALLET
+	if (cheatcoin_user_crypt_action(0, 0, 0, 3)) {
+		sleep(3); return 1;
+	}
+#endif
+	memset(&xfer, 0, sizeof(xfer));
+	xfer.remains = cheatcoins2amount(amount);
+	if (!xfer.remains) { if (out) fprintf(out, "Xfer: nothing to transfer.\n"); return 1; }
+	if (xfer.remains > cheatcoin_get_balance(0)) { if (out) fprintf(out, "Xfer: balance too small.\n"); return 1; }
+	cheatcoin_address2hash(address, xfer.fields[XFER_MAX_IN].hash);
+	cheatcoin_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
+	xfer.outsig = 1;
+	g_cheatcoin_state = CHEATCOIN_STATE_XFER;
+	g_cheatcoin_xfer_last = time(0);
+	cheatcoin_traverse_our_blocks(&xfer, &xfer_callback);
+	if (out) fprintf(out, "Xfer: transferred %.9Lf %ss to the address %s, see log for details.\n",
+		amount2cheatcoins(xfer.done), coinname, cheatcoin_hash2address(xfer.fields[XFER_MAX_IN].hash));
+	return 0;
+}
+
 static int cheatcoin_command(char *cmd, FILE *out) {
 	uint32_t pwd[4];
 	char *lasts;
@@ -225,12 +258,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			cheatcoin_pool_set_config(cmd);
 		}
 	} else if (!strcmp(cmd, "state")) {
-		static const char *states[] = {
-#define cheatcoin_state(n,s) s ,
-#include "state.h"
-#undef cheatcoin_state
-		};
-		fprintf(out, "%s\n", states[g_cheatcoin_state]);
+		fprintf(out, "%s\n", get_state());
 	} else if (!strcmp(cmd, "stats")) {
 		if (g_is_miner) fprintf(out, "Network statistics is not available for miner.\n");
 		else fprintf(out, "Statistics for ours and maximum known parameters:\n"
@@ -258,29 +286,14 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 		cheatcoin_storage_finish();
 		return -1;
 	} else if (!strcmp(cmd, "xfer")) {
+		char *amount, *address;
+		amount = strtok_r(0, " \t\r\n", &lasts);
+		if (!amount) { fprintf(out, "Xfer: amount not given.\n"); return 1; }
+		address = strtok_r(0, " \t\r\n", &lasts);
+		if (!address) { fprintf(out, "Xfer: destination address not given.\n"); return 1; }
 		if (out == stdout ? cheatcoin_user_crypt_action(0, 0, 0, 3) : (ispwd ? cheatcoin_user_crypt_action(pwd, 0, 4, 5) : 1)) {
 			sleep(3); fprintf(out, "Password incorrect.\n");
-		} else if (g_cheatcoin_state < CHEATCOIN_STATE_PTST)
-			fprintf(out, "Not ready to do a transfer. Type 'state' command to see the reason.\n");
-		else {
-			struct xfer_callback_data xfer;
-			memset(&xfer, 0, sizeof(xfer));
-			cmd = strtok_r(0, " \t\r\n", &lasts);
-			if (!cmd) { fprintf(out, "Xfer: amount not given.\n"); return 1; }
-			xfer.remains = cheatcoins2amount(cmd);
-			if (!xfer.remains) { fprintf(	out, "Xfer: nothing to transfer.\n"); return 1; }
-			if (xfer.remains > cheatcoin_get_balance(0)) { fprintf(out, "Xfer: balance too small.\n"); return 1; }
-			cmd = strtok_r(0, " \t\r\n", &lasts);
-			if (!cmd) { fprintf(out, "Xfer: destination address not given.\n"); return 1; }
-			cheatcoin_address2hash(cmd, xfer.fields[XFER_MAX_IN].hash);
-			cheatcoin_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
-			xfer.outsig = 1;
-			g_cheatcoin_state = CHEATCOIN_STATE_XFER;
-			g_cheatcoin_xfer_last = time(0);
-			cheatcoin_traverse_our_blocks(&xfer, &xfer_callback);
-			fprintf(out, "Xfer: transferred %.9Lf %ss to the address %s, see log for details.\n",
-					amount2cheatcoins(xfer.done), coinname, cheatcoin_hash2address(xfer.fields[XFER_MAX_IN].hash));
-		}
+		} else cheatcoin_do_xfer(out, amount, address);
 	} else {
 		fprintf(out, "Illegal command.\n");
 	}
@@ -347,7 +360,11 @@ static void *terminal_thread(void *arg) {
 	return 0;
 }
 
+#ifdef CHEATCOINWALLET
+int cheatcoin_main(int argc, char **argv) {
+#else
 int main(int argc, char **argv) {
+#endif
 	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0;
 	char *ptr;
 	int transport_flags = 0, n_addrports = 0, n_mining_threads = 0, is_pool = 0, is_miner = 0, i;
@@ -359,7 +376,10 @@ int main(int argc, char **argv) {
 	while ((ptr = strchr(coinname, '/')) || (ptr = strchr(coinname, '\\'))) coinname = ptr + 1;
 	if ((ptr = strchr(coinname, '.'))) *ptr = 0;
 	for (ptr = coinname; *ptr; ptr++) *ptr = tolower((unsigned char)*ptr);
+#ifndef CHEATCOINWALLET
 	printf("%s client/server, version %s.\n", coinname, CHEATCOIN_VERSION);
+#endif
+	cheatcoin_show_state(0);
 	if (argc <= 1) goto help;
 	for (i = 1; i < argc; ++i) {
 		if (argv[i][0] == '-' && argv[i][1] && !argv[i][2]) switch(argv[i][1]) {
@@ -454,6 +474,7 @@ int main(int argc, char **argv) {
 	if (cheatcoin_blocks_start(is_miner ? ~n_mining_threads : n_mining_threads)) return -1;
 	cheatcoin_mess("Starting pool engine...");
 	if (cheatcoin_pool_start(is_pool, pool_arg)) return -1;
+#ifndef CHEATCOINWALLET
 	cheatcoin_mess("Starting terminal server...");
 	if (pthread_create(&th, 0, &terminal_thread, 0)) return -1;
 
@@ -467,6 +488,21 @@ int main(int argc, char **argv) {
 			if (cheatcoin_command(cmd, stdout) < 0) break;
 		}
 	}
-
+#endif
 	return 0;
+}
+
+int cheatcoin_set_password_callback(int (*callback)(const char *prompt, char *buf, unsigned size)) {
+	return cheatcoin_user_crypt_action((uint32_t *)(void *)callback, 0, 0, 6);
+}
+
+int cheatcoin_show_state(cheatcoin_hash_t hash) {
+	char balance[64], address[64], state[256];
+	if (!g_cheatcoin_show_state) return -1;
+	if (g_cheatcoin_state < CHEATCOIN_STATE_XFER) strcpy(balance, "Not ready");
+	else sprintf(balance, "%.9Lf", amount2cheatcoins(cheatcoin_get_balance(0)));
+	if (!hash) strcpy(address, "Not ready");
+	else strcpy(address, cheatcoin_hash2address(hash));
+	strcpy(state, get_state());
+	return (*g_cheatcoin_show_state)(state, balance, address);
 }
