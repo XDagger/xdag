@@ -1,4 +1,4 @@
-/* dnet: crypt; T11.231-T13.795; $DVS:time$ */
+/* dnet: crypt; T11.231-T13.806; $DVS:time$ */
 
 #include <stdio.h>
 #include <string.h>
@@ -69,7 +69,7 @@ static int input_password(const char *prompt, char *buf, unsigned len) {
 		printf("\n");
 	}
 	len = strlen(buf);
-	if (len && buf[len - 1] == '\n') --len;
+	if (len && buf[len - 1] == '\n') buf[len - 1] = 0;
 	return 0;
 }
 
