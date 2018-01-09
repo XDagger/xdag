@@ -1,4 +1,4 @@
-/* dnet: database; T11.231-T13.742; $DVS:time$ */
+/* dnet: database; T11.231-T13.808; $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -196,33 +196,7 @@ int dnet_trust_host(struct dnet_host *host) {
 }
 
 int dnet_untrust_host(struct dnet_host *host) {
-#ifndef CHEATCOIN
-	struct dnet_key key;
-	FILE *f;
-	int res = 10;
-	host->is_trusted = 0;
-	if (!(f = fopen(KEYS_FILE, "r+b"))) return 3;
-	while (fread(&key, sizeof(struct dnet_key), 1, f) == 1) {
-		if (!memcmp(&key, &host->key, sizeof(struct dnet_key))) {
-			long pos = ftell(f) - sizeof(struct dnet_key), endpos;
-			if (fseek(f, -(long)sizeof(struct dnet_key), SEEK_END) < 0) { res = 4; break; }
-			endpos = ftell(f);
-			if (endpos < 0) { res = 5; break; }
-			if (pos != endpos) {
-				if (fread(&key, sizeof(struct dnet_key), 1, f) != 1) { res = 6; break; }
-				if (fseek(f, pos, SEEK_SET) < 0) { res = 7; break; }
-				if (fwrite(&key, sizeof(struct dnet_key), 1, f) != 1) { res = 8; break; }
-			}
-			if (ftruncate(fileno(f), endpos)) res = 9;
-			else res = 0;
-			break;
-		}
-	}
-	fclose(f);
-	return res;
-#else
 	return -1;
-#endif
 }
 
 int dnet_set_host_name(struct dnet_host *host, const char *name, size_t len) {

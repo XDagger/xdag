@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.806" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.808" /* $DVS:time$ */
 
 /* история
+
+T13.808 удалён неиспользуемый код
 
 T13.806 исправлены ошибки: иногда транзакции не проходят, суммы меньше 1 читкоина
 	проходят некорректно; добавлен графический кошелёк для виндовз

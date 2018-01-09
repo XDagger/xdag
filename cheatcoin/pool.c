@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.805 $DVS:time$ */
+/* пул и майнер, T13.744-T13.806 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -177,8 +177,9 @@ static void *pool_main_thread(void *arg) {
 						task = &g_cheatcoin_pool_task[ntask & 1];
 						if (!(m->state & MINER_ADDRESS) || memcmp(m->id.data, m->data, sizeof(cheatcoin_hashlow_t))) {
 							cheatcoin_time_t t;
+							int64_t pos;
 							memcpy(m->id.data, m->data, sizeof(struct cheatcoin_field));
-							int64_t pos = cheatcoin_get_block_pos(m->id.data, &t);
+							pos = cheatcoin_get_block_pos(m->id.data, &t);
 							if (pos < 0) m->state &= ~MINER_ADDRESS;
 							else m->state |= MINER_ADDRESS;
 						} else memcpy(m->id.data, m->data, sizeof(struct cheatcoin_field));

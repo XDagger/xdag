@@ -1,4 +1,4 @@
-/* dnet: packets; T11.258-T13.714; $DVS:time$ */
+/* dnet: packets; T11.258-T13.808; $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -121,41 +121,8 @@ int dnet_cancel_command(struct dnet_output *output) {
     return 1;
 }
 
-#ifndef CHEATCOIN
-static void dnet_pkt_command_callback(struct dnet_output *out) {
-    struct dnet_packet *p = (struct dnet_packet *)out->data;
-    p->header.length = DNET_PKT_STREAM_MAX_LEN - out->len;
-	out->err |= dnet_send_stream_packet(&p->st, 0);
-	out->str = (char *)p->st.data;
-    out->len = DNET_PKT_STREAM_DATA_MAX;
-}
-
-static void *dnet_process_command_thread(void *arg) {
-	struct dnet_output out;
-	struct dnet_packet *p = (struct dnet_packet *)arg;
-	out.f = 0;
-	out.str = (char *)p->st.data;
-	out.len = DNET_PKT_STREAM_DATA_MAX;
-	out.callback = &dnet_pkt_command_callback;
-	out.data = p;
-	out.err = 0;
-	p->header.type = DNET_PKT_COMMAND_OUTPUT;
-	p->header.ttl = 16;
-	p->st.data[p->header.length - DNET_PKT_STREAM_MIN_LEN] = 0;
-	p->st.ack = p->st.seq + p->header.length - DNET_PKT_STREAM_MIN_LEN;
-	p->st.seq = 0;
-	{ uint32_t tmp = p->st.crc_from; p->st.crc_from = p->st.crc_to; p->st.crc_to = tmp; }
-	dnet_command((char *)p->st.data, &out);
-	free(p);
-	return 0;
-}
-#endif
-
 int dnet_process_packet(struct dnet_packet *p, struct dnet_connection *conn) {
     uint32_t crc = p->header.crc32;
-#ifndef CHEATCOIN
-	int res;
-#endif
 	p->header.crc32 = 0;
     if (crc_of_array((uint8_t *)p, p->header.length) != crc) return 1;
     switch(p->header.type) {
@@ -202,78 +169,6 @@ int dnet_process_packet(struct dnet_packet *p, struct dnet_connection *conn) {
 	case DNET_PKT_FORWARDED_TCP:
 	case DNET_PKT_FORWARDED_UDP:
 	case DNET_PKT_FILE_OP:
-#ifndef CHEATCOIN
-		if (p->header.length < DNET_PKT_STREAM_MIN_LEN || p->header.length > DNET_PKT_STREAM_MAX_LEN) return 0x13;
-	    {
-		struct dnet_host *host = dnet_get_self_host();
-		if (host->crc32 == p->st.crc_to) {
-			struct dnet_host *host_from = dnet_get_host_by_crc(p->st.crc_from);
-			if (!host_from) return 0x23;
-			if (!host_from->is_trusted) return 0x33;
-		    switch(p->header.type) {
-			case DNET_PKT_COMMAND:
-				if (!memcmp(&g_last_received_command_id, &p->st.id, sizeof(struct dnet_stream_id))) return 0x43;
-			    memcpy(&g_last_received_command_id, &p->st.id, sizeof(struct dnet_stream_id));
-				{
-					struct dnet_packet *p1 = malloc(sizeof(struct dnet_packet) + 1);
-					pthread_t t;
-					if (!p1) return 0x53;
-					memcpy(p1, p, p->header.length);
-					if (pthread_create(&t, 0, &dnet_process_command_thread, p1)) { free(p1); return 0x63; }
-#ifndef __LDuS__
-					pthread_detach(t);
-#endif
-				}
-			    break;
-			case DNET_PKT_COMMAND_OUTPUT:
-				{
-				struct dnet_output *o = 0;
-				if (g_last_sent_command) {
-					int i;
-					for (i = 0; i < SENT_COMMANDS_MAX; ++i) {
-						if (g_last_sent_command[i].valid && !memcmp(&g_last_sent_command[i].id, &p->st.id, sizeof(struct dnet_stream_id))) {
-							o = &g_last_sent_command[i].out;
-							break;
-						}
-					}
-			    }
-				if (o) {
-					int len = p->header.length - DNET_PKT_STREAM_MIN_LEN;
-					if (len) dnet_write(o, p->st.data, len);
-					else {
-#ifdef __LDuS__
-						if (o->f) {
-							pid_t pid;
-							if ((pid = ldus_atomic_cmpxchg(&o->f->pid, o->f->pid, 0)))
-							ldus_kill_task(pid, SIGCONT);
-						}
-#endif
-						dnet_cancel_command(o);
-					}
-				} else return 0x73;
-				}
-			    break;
-			case DNET_PKT_SHELL_INPUT:
-			case DNET_PKT_SHELL_OUTPUT:
-			case DNET_PKT_TUNNELED_MSG:
-			case DNET_PKT_FORWARDED_TCP:
-			case DNET_PKT_FORWARDED_UDP:
-				res = dnet_process_stream_packet(&p->st);
-			    if (res) res = res << 4 | 4;
-			    return res;
-			case DNET_PKT_FILE_OP:
-				res = dnet_process_file_packet(&p->st);
-				if (res) res = res << 4 | 5;
-				return res;
-			default:
-				return 6;
-		    }
-		} else if (p->header.ttl >= 2) {
-		    p->header.ttl--;
-			if (dnet_send_stream_packet(&p->st, conn)) return 7;
-		} else return 8;
-	    }
-#endif
 	    break;
 	case DNET_PKT_CHEATCOIN:
 		{

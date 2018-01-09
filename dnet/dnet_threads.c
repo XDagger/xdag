@@ -1,4 +1,4 @@
-/* dnet: threads; T11.231-T13.790; $DVS:time$ */
+/* dnet: threads; T11.231-T13.808; $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -205,14 +205,9 @@ static void *dnet_thread_client_server(void *arg) {
 		if (t->conn.socket >= 0) {
 			close(t->conn.socket); t->conn.socket = -1;
 		}
-#ifndef CHEATCOIN
-		if (t->to_remove) break;
-		sleep(5);
-#else
 		if (dnet_connection_close_notify) (*dnet_connection_close_notify)(&t->conn);
 		t->to_remove = 1;
 		break;
-#endif
     }
     return 0;
 }
