@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.808" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.811" /* $DVS:time$ */
 
 /* история
+
+T13.811 исправлена ошибка с появлением другого адреса в майнере, токен изменен на XDAG
 
 T13.808 удалён неиспользуемый код
 

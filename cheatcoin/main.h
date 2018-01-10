@@ -1,4 +1,4 @@
-/* основные переменные, T13.714-T13.797 $DVS:time$ */
+/* основные переменные, T13.714-T13.811 $DVS:time$ */
 
 #ifndef CHEATCOIN_MAIN_H
 #define CHEATCOIN_MAIN_H
@@ -44,8 +44,8 @@ extern "C" {
 	/* 1 - программа работает в тестовой сети */
 	extern int g_cheatcoin_testnet;
 
-	/* имя монеты */
-	extern char *g_coinname;
+	/* токен монеты и имя программы */
+	extern char *g_coinname, *g_progname;
 
 	/* время последнего перевода */
 	extern time_t g_cheatcoin_xfer_last;

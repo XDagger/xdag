@@ -1,4 +1,4 @@
-/* логирование, T13.670-T13.760 $DVS:time$ */
+/* логирование, T13.670-T13.811 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdint.h>
@@ -31,7 +31,7 @@ int cheatcoin_log(int level, const char *format, ...) {
 	localtime_r(&t, &tm);
 	strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
 	pthread_mutex_lock(&log_mutex);
-	sprintf(buf, CHEATCOIN_LOG_FILE, g_coinname);
+	sprintf(buf, CHEATCOIN_LOG_FILE, g_progname);
 	f = fopen(buf, "a");
 	if (!f) { done = -1; goto end; }
 	fprintf(f, "%s.%03d [%012llx:%.4s]  ", tbuf, (int)(tv.tv_usec / 1000), (long long)pthread_self_ptr(), lvl + 4 * level);
