@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.805 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.811 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,7 +27,7 @@
 #define FIFO_OUT				"fifo_res.dat"
 #define XFER_MAX_IN				11
 
-char *g_coinname;
+char *g_coinname, *g_progname;
 #define coinname				g_coinname
 
 struct account_callback_data {
@@ -99,7 +99,7 @@ static int make_block(struct xfer_callback_data *d) {
 	d->fields[d->nfields].amount = d->todo;
 	res = cheatcoin_create_block(d->fields, d->nfields, 1, 0, 0);
 	if (res) {
-		cheatcoin_err("FAILED: to %s xfer %.9Lf %ss, error %d",
+		cheatcoin_err("FAILED: to %s xfer %.9Lf %s, error %d",
 				cheatcoin_hash2address(d->fields[d->nfields].hash), amount2cheatcoins(d->todo), coinname, res);
 		return -1;
 	}
@@ -114,7 +114,7 @@ static int make_block(struct xfer_callback_data *d) {
 #define Nfields(d) (2 + d->nfields + 3 * d->nkeys + 2 * d->outsig)
 
 void cheatcoin_log_xfer(cheatcoin_hash_t from, cheatcoin_hash_t to, cheatcoin_amount_t amount) {
-	cheatcoin_mess("Xfer  : from %s to %s xfer %.9Lf %ss",
+	cheatcoin_mess("Xfer  : from %s to %s xfer %.9Lf %s",
 			cheatcoin_hash2address(from), cheatcoin_hash2address(to), amount2cheatcoins(amount), coinname);
 }
 
@@ -170,7 +170,7 @@ int cheatcoin_do_xfer(void *outv, const char *amount, const char *address) {
 	g_cheatcoin_state = CHEATCOIN_STATE_XFER;
 	g_cheatcoin_xfer_last = time(0);
 	cheatcoin_traverse_our_blocks(&xfer, &xfer_callback);
-	if (out) fprintf(out, "Xfer: transferred %.9Lf %ss to the address %s, see log for details.\n",
+	if (out) fprintf(out, "Xfer: transferred %.9Lf %s to the address %s, see log for details.\n",
 		amount2cheatcoins(xfer.done), coinname, cheatcoin_hash2address(xfer.fields[XFER_MAX_IN].hash));
 	return 0;
 }
@@ -202,7 +202,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 				cheatcoin_address2hash(cmd, hash);
 				balance = cheatcoin_get_balance(hash);
 			} else balance = cheatcoin_get_balance(0);
-			fprintf(out, "Balance: %.9Lf %ss\n", amount2cheatcoins(balance), coinname);
+			fprintf(out, "Balance: %.9Lf %s\n", amount2cheatcoins(balance), coinname);
 		}
 	} else if (!strcmp(cmd, "help")) {
 		fprintf(out, "Commands:\n"
@@ -219,7 +219,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			"  state       - print the program state\n"
 			"  stats       - print statistics for loaded and all known blocks\n"
 			"  terminate   - terminate both daemon and this program\n"
-			"  xfer S A    - transfer S our %ss to the address A\n"
+			"  xfer S A    - transfer S our %s to the address A\n"
 		, coinname);
 	} else if (!strcmp(cmd, "keygen")) {
 		int res = cheatcoin_wallet_new_key();
@@ -268,7 +268,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			"    orphan blocks: %llu\n"
 			" wait sync blocks: %u\n"
 			" chain difficulty: %llx%016llx of %llx%016llx\n"
-			"%9ss supply: %.9Lf of %.9Lf\n"
+			" %9s supply: %.9Lf of %.9Lf\n"
 			"hour hashrate MHs: %.2Lf of %.2Lf\n",
 			g_cheatcoin_stats.nhosts, g_cheatcoin_stats.total_nhosts,
 			(long long)g_cheatcoin_stats.nblocks, (long long)g_cheatcoin_stats.total_nblocks,
@@ -306,7 +306,7 @@ static int terminal(void) {
 	int fd;
 	while(1) {
 		int ispwd = 0, c = 0;
-		printf("%s> ", coinname); fflush(stdout);
+		printf("%s> ", g_progname); fflush(stdout);
 		fgets(cmd, CHEATCOIN_COMMAND_MAX, stdin);
 		strcpy(cmd2, cmd);
 		ptr = strtok_r(cmd2, " \t\r\n", &lasts);
@@ -372,12 +372,14 @@ int main(int argc, char **argv) {
 #if !defined(_WIN32) && !defined(_WIN64)
 	signal(SIGPIPE, SIG_IGN);
 #endif
-	coinname = strdup(argv[0]);
-	while ((ptr = strchr(coinname, '/')) || (ptr = strchr(coinname, '\\'))) coinname = ptr + 1;
-	if ((ptr = strchr(coinname, '.'))) *ptr = 0;
-	for (ptr = coinname; *ptr; ptr++) *ptr = tolower((unsigned char)*ptr);
+	g_progname = strdup(argv[0]);
+	while ((ptr = strchr(g_progname, '/')) || (ptr = strchr(g_progname, '\\'))) g_progname = ptr + 1;
+	if ((ptr = strchr(g_progname, '.'))) *ptr = 0;
+	for (ptr = g_progname; *ptr; ptr++) *ptr = tolower((unsigned char)*ptr);
+	coinname = strdup(g_progname);
+	for (ptr = coinname; *ptr; ptr++) *ptr = toupper((unsigned char)*ptr);
 #ifndef CHEATCOINWALLET
-	printf("%s client/server, version %s.\n", coinname, CHEATCOIN_VERSION);
+	printf("%s client/server, version %s.\n", g_progname, CHEATCOIN_VERSION);
 #endif
 	cheatcoin_show_state(0);
 	if (argc <= 1) goto help;
@@ -452,7 +454,7 @@ int main(int argc, char **argv) {
 	memset(&g_cheatcoin_stats, 0, sizeof(g_cheatcoin_stats));
 	memset(&g_cheatcoin_extstats, 0, sizeof(g_cheatcoin_extstats));
 
-	cheatcoin_mess("Starting %s, version %s", coinname, CHEATCOIN_VERSION);
+	cheatcoin_mess("Starting %s, version %s", g_progname, CHEATCOIN_VERSION);
 	cheatcoin_mess("Starting synchonization engine...");
 	if (cheatcoin_sync_init()) return -1;
 	cheatcoin_mess("Starting dnet transport...");
@@ -483,7 +485,7 @@ int main(int argc, char **argv) {
 		if (transport_flags & CHEATCOIN_DAEMON) sleep(100);
 		else {
 			char cmd[CHEATCOIN_COMMAND_MAX];
-			printf("%s> ", coinname); fflush(stdout);
+			printf("%s> ", g_progname); fflush(stdout);
 			fgets(cmd, CHEATCOIN_COMMAND_MAX, stdin);
 			if (cheatcoin_command(cmd, stdout) < 0) break;
 		}

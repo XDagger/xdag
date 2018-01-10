@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.806 $DVS:time$ */
+/* пул и майнер, T13.744-T13.811 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -548,6 +548,8 @@ static void *miner_net_thread(void *arg) {
 	cheatcoin_time_t t;
 	struct miner *m = &g_local_miner;
 	time_t t00, t0, tt;
+
+	while (!g_cheatcoin_sync_on) sleep(1);
 
 begin:
 	ndata = 0;

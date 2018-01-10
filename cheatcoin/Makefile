@@ -1,4 +1,4 @@
-# cheatcoin: Makefile; T13.656-T13.788; $DVS:time$
+# cheatcoin: Makefile; T13.656-T13.811; $DVS:time$
 
 dnet	 = ../dnet
 dfstools = ../dus/programs/dfstools/source
@@ -79,14 +79,14 @@ headers = \
 flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lm -Wall -Wmissing-prototypes -Wl,--export-dynamic
 
 
-all: cheatcoin
+all: xdag
 
-cheatcoin: $(sources) $(headers) Makefile
-	gcc -o cheatcoin $(sources) $(flags)
+xdag: $(sources) $(headers) Makefile
+	gcc -o xdag $(sources) $(flags)
 
 clean:
-	rm cheatcoin
+	rm xdag
 
-install: cheatcoin
-	sudo cp cheatcoin /usr/local/bin/cheatcoin
-	sudo cp cheatcoin /usr/local/sbin/cheatcoin
+install: xdag
+	sudo cp xdag /usr/local/bin/xdag
+	sudo cp xdag /usr/local/sbin/xdag
