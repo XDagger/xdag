@@ -13,6 +13,7 @@ sources = \
 	hash.c						\
 	log.c						\
 	main.c						\
+	memory.c					\
 	netdb.c						\
 	pool.c						\
 	sha256.c					\
@@ -45,6 +46,7 @@ headers = \
 	hash.h							\
 	log.h							\
 	main.h							\
+	memory.h						\
 	netdb.h							\
 	pool.h							\
 	sha256.h						\
