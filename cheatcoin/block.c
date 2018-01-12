@@ -633,7 +633,7 @@ begin:
 				g_cheatcoin_state = (g_cheatcoin_mining_threads > 0 ?
 						  (g_cheatcoin_testnet ? CHEATCOIN_STATE_MTST : CHEATCOIN_STATE_MINE)
 						: (g_cheatcoin_testnet ? CHEATCOIN_STATE_PTST : CHEATCOIN_STATE_POOL));
-			} else if (t - sync_time > 2 * MAIN_CHAIN_PERIOD)
+			} else if (t - sync_time > 8 * MAIN_CHAIN_PERIOD)
 				g_cheatcoin_state = (g_cheatcoin_testnet ? CHEATCOIN_STATE_CTST : CHEATCOIN_STATE_CONN);
 			else
 				g_cheatcoin_state = (g_cheatcoin_testnet ? CHEATCOIN_STATE_STST : CHEATCOIN_STATE_SYNC);
@@ -681,12 +681,12 @@ int cheatcoin_get_our_block(cheatcoin_hash_t hash) {
 
 /* для каждого своего блока вызывается callback */
 int cheatcoin_traverse_our_blocks(void *data, int (*callback)(void *data, cheatcoin_hash_t hash,
-		cheatcoin_amount_t amount, int n_our_key)) {
+		cheatcoin_amount_t amount, cheatcoin_time_t time, int n_our_key)) {
 	struct block_internal *bi;
 	int res = 0;
 	pthread_mutex_lock(&block_mutex);
 	for (bi = ourfirst; !res && bi; bi = bi->ournext)
-		res = (*callback)(data, bi->hash, bi->amount, bi->n_our_key);
+		res = (*callback)(data, bi->hash, bi->amount, bi->time, bi->n_our_key);
 	pthread_mutex_unlock(&block_mutex);
 	return res;
 }

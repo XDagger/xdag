@@ -44,6 +44,7 @@ struct xfer_callback_data {
 
 int g_cheatcoin_state = CHEATCOIN_STATE_INIT;
 int g_cheatcoin_testnet = 0, g_is_miner = 0;
+static int g_is_pool = 0;
 time_t g_cheatcoin_xfer_last = 0;
 struct cheatcoin_stats g_cheatcoin_stats;
 struct cheatcoin_ext_stats g_cheatcoin_extstats;
@@ -83,7 +84,7 @@ static cheatcoin_amount_t cheatcoins2amount(const char *str) {
 	return res;
 }
 
-static int account_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t amount, int n_our_key) {
+static int account_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t amount, cheatcoin_time_t time, int n_our_key) {
 	struct account_callback_data *d = (struct account_callback_data *)data;
 	if (!d->count--) return -1;
 	if (g_cheatcoin_state < CHEATCOIN_STATE_XFER)
@@ -118,11 +119,12 @@ void cheatcoin_log_xfer(cheatcoin_hash_t from, cheatcoin_hash_t to, cheatcoin_am
 			cheatcoin_hash2address(from), cheatcoin_hash2address(to), amount2cheatcoins(amount), coinname);
 }
 
-static int xfer_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t amount, int n_our_key) {
+static int xfer_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t amount, cheatcoin_time_t time, int n_our_key) {
 	struct xfer_callback_data *d = (struct xfer_callback_data *)data;
 	cheatcoin_amount_t todo = d->remains;
 	int i;
 	if (!amount) return -1;
+	if (g_is_pool && cheatcoin_main_time() < (time >> 10) + 2 * CHEATCOIN_POOL_N_CONFIRMATIONS) return 0;
 	for (i = 0; i < d->nkeys; ++i) if (n_our_key == d->keys[i]) break;
 	if (i == d->nkeys) d->keys[d->nkeys++] = n_our_key;
 	if (d->keys[XFER_MAX_IN] == n_our_key) d->outsig = 0;
@@ -447,6 +449,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	g_is_miner = is_miner;
+	g_is_pool = is_pool;
 	if (pubaddr && !bindto) {
 		char str[64], *p = strchr(pubaddr, ':');
 		if (p) { sprintf(str, "0.0.0.0%s", p); bindto = strdup(str); }
