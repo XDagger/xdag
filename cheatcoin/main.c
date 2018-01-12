@@ -45,6 +45,7 @@ struct xfer_callback_data {
 int g_cheatcoin_state = CHEATCOIN_STATE_INIT;
 int g_cheatcoin_testnet = 0, g_is_miner = 0;
 static int g_is_pool = 0;
+int g_cheatcoin_run = 0;
 time_t g_cheatcoin_xfer_last = 0;
 struct cheatcoin_stats g_cheatcoin_stats;
 struct cheatcoin_ext_stats g_cheatcoin_extstats;
@@ -217,7 +218,8 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			"  miners      - for pool, print list of recent connected miners\n"
 			"  mining [N]  - print number of mining threads or set it to N\n"
 			"  net command - run transport layer command, try 'net help'\n"
-		    "  pool [CFG]  - print or set pool config; CFG is maxminers:fee:reward:direct\n"
+		    "  pool [CFG]  - print or set pool config; CFG is miners:fee:reward:direct:maxip:fund\n"
+		    "  run         - run node after loading local blocks if option -r is used\n"
 			"  state       - print the program state\n"
 			"  stats       - print statistics for loaded and all known blocks\n"
 			"  terminate   - terminate both daemon and this program\n"
@@ -259,6 +261,8 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 		} else {
 			cheatcoin_pool_set_config(cmd);
 		}
+	} else if (!strcmp(cmd, "run")) {
+		g_cheatcoin_run = 1;
 	} else if (!strcmp(cmd, "state")) {
 		fprintf(out, "%s\n", get_state());
 	} else if (!strcmp(cmd, "stats")) {
@@ -383,6 +387,7 @@ int main(int argc, char **argv) {
 #ifndef CHEATCOINWALLET
 	printf("%s client/server, version %s.\n", g_progname, CHEATCOIN_VERSION);
 #endif
+	g_cheatcoin_run = 1;
 	cheatcoin_show_state(0);
 	if (argc <= 1) goto help;
 	for (i = 1; i < argc; ++i) {
@@ -407,11 +412,14 @@ int main(int argc, char **argv) {
 					"  -i             - run as interactive terminal for daemon running in this folder\n"
 					"  -m N           - use N CPU mining threads (default is 0)\n"
 					"  -p ip:port     - public address of this node\n"
-				    "  -P ip:port:CFG - run the pool, bind to ip:port, CFG is maxminers:fee:reward:direct\n"
-				    "                   maxminers - maximum allowed number of miners,\n"
-				    "                   fee - pool fee in percent,\n"
-				    "                   reward - reward to miner who got a block in percent,\n"
-				    "                   direct - reward to miners participated in earned block in percent,\n"
+				    "  -P ip:port:CFG - run the pool, bind to ip:port, CFG is miners:fee:reward:direct:maxip:fund\n"
+				    "                     miners - maximum allowed number of miners,\n"
+				    "                     fee - pool fee in percent,\n"
+				    "                     reward - reward to miner who got a block in percent,\n"
+				    "                     direct - reward to miners participated in earned block in percent,\n"
+				    "                     maxip - maximum allowed number of miners connected from single ip,\n"
+				    "                     fund - community fund fee in percent\n"
+				    "  -r             - load local blocks and wait for 'run' command to continue\n"
 					"  -s ip:port     - address of this node to bind to\n"
 					"  -t             - connect to test net (default is main net)\n"
 				, argv[0]);
@@ -430,6 +438,9 @@ int main(int argc, char **argv) {
 				if (++i < argc)
 					is_pool = 1, pool_arg = argv[i];
 				break;
+		    case 'r':
+			    g_cheatcoin_run = 0;
+			    break;
 			case 's':
 				if (++i < argc)
 					bindto = argv[i];

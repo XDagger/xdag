@@ -41,6 +41,9 @@ extern "C" {
 	/* состояние программы */
 	extern int g_cheatcoin_state;
 
+	/* дана ли команда run */
+	extern int g_cheatcoin_run;
+
 	/* 1 - программа работает в тестовой сети */
 	extern int g_cheatcoin_testnet;
 

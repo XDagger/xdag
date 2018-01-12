@@ -39,5 +39,7 @@ extern cheatcoin_hash_t g_cheatcoin_mined_hashes[CHEATCOIN_POOL_N_CONFIRMATIONS]
 						g_cheatcoin_mined_nonce[CHEATCOIN_POOL_N_CONFIRMATIONS];
 /* число собственных потоков майнинга */
 extern int g_cheatcoin_mining_threads;
+/* указатель на мьютекс, блокирующий оптимальную шару */
+extern void *g_ptr_share_mutex;
 
 #endif

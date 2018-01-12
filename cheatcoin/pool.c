@@ -46,6 +46,7 @@
 #define HEADER_WORD		0x3fca9e2bu
 #define DATA_SIZE		(sizeof(struct cheatcoin_field) / sizeof(uint32_t))
 #define SEND_PERIOD		10 /* период в секундах, с которым майнер посылает пулу результаты */
+#define FUND_ADDRESS	"FQglVQtb60vQv2DOWEUL7yh3smtj7g1s" /* адрес фонда сообщества */
 
 enum miner_state {
 	MINER_BLOCK		= 1,
@@ -80,18 +81,24 @@ cheatcoin_hash_t g_cheatcoin_mined_hashes[N_CONFIRMATIONS], g_cheatcoin_mined_no
 /* 1 - программа работает как пул */
 static int g_cheatcoin_pool = 0, g_max_nminers = START_N_MINERS, g_max_nminers_ip = START_N_MINERS_IP, g_nminers = 0, g_socket = -1,
 		g_stop_mining = 1, g_stop_general_mining = 1;
-static double g_pool_fee = 0, g_pool_reward = 0, g_pool_direct;
-static struct miner *g_miners, g_local_miner;
+static double g_pool_fee = 0, g_pool_reward = 0, g_pool_direct = 0, g_pool_fund = 0;
+static struct miner *g_miners, g_local_miner, g_fund_miner;
 static struct pollfd *g_fds;
 static struct dfslib_crypt *g_crypt;
 static struct cheatcoin_block *g_firstb = 0, *g_lastb = 0;
 static pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t g_share_mutex = PTHREAD_MUTEX_INITIALIZER;
+void *g_ptr_share_mutex = &g_share_mutex;
 
 static inline void set_share(struct miner *m, struct cheatcoin_pool_task *task, cheatcoin_hash_t last, cheatcoin_hash_t hash) {
 	cheatcoin_time_t t = task->main_time;
 	if (cheatcoin_cmphash(hash, task->minhash.data) < 0) {
-		memcpy(task->minhash.data, hash, sizeof(cheatcoin_hash_t));
-		memcpy(task->lastfield.data, last, sizeof(cheatcoin_hash_t));
+		pthread_mutex_lock(&g_share_mutex);
+		if (cheatcoin_cmphash(hash, task->minhash.data) < 0) {
+			memcpy(task->minhash.data, hash, sizeof(cheatcoin_hash_t));
+			memcpy(task->lastfield.data, last, sizeof(cheatcoin_hash_t));
+		}
+		pthread_mutex_unlock(&g_share_mutex);
 	}
 	if (m->main_time <= t) {
 		double diff = ((uint64_t *)hash)[2];
@@ -117,6 +124,9 @@ static void *pool_main_thread(void *arg) {
 	struct pollfd *p;
 	uint64_t ntask;
 	int i, todo, nminers, done, j;
+
+	while (!g_cheatcoin_sync_on) sleep(1);
+
 	for(;;) {
 		nminers = g_nminers;
 		if (!poll(g_fds, nminers, 1000)) continue;
@@ -221,7 +231,7 @@ static int pay_miners(cheatcoin_time_t t) {
 	struct cheatcoin_field fields[12];
 	struct cheatcoin_block buf, *b;
 	uint64_t *h, *nonce;
-	cheatcoin_amount_t balance, pay, reward = 0, direct = 0;
+	cheatcoin_amount_t balance, pay, reward = 0, direct = 0, fund = 0;
 	struct miner *m;
 	int64_t pos;
 	int i, n, nminers, reward_ind = -1, key, defkey, nfields, nfld;
@@ -237,6 +247,17 @@ static int pay_miners(cheatcoin_time_t t) {
 	if (!pay) return -3;
 	reward = balance * g_pool_reward;
 	pay -= reward;
+	if (g_pool_fund) {
+		if (!(g_fund_miner.state & MINER_ADDRESS)) {
+			cheatcoin_time_t t;
+			if (!cheatcoin_address2hash(FUND_ADDRESS, g_fund_miner.id.hash) && cheatcoin_get_block_pos(g_fund_miner.id.hash, &t) >= 0)
+				g_fund_miner.state |= MINER_ADDRESS;
+		}
+		if (g_fund_miner.state & MINER_ADDRESS) {
+			fund = balance * g_pool_fund;
+			pay -= fund;
+		}
+	}
 	key = cheatcoin_get_key(h);
 	if (key < 0) return -4;
 	if (!cheatcoin_wallet_default_key(&defkey)) return -5;
@@ -272,12 +293,18 @@ static int pay_miners(cheatcoin_time_t t) {
 	}
 	memcpy(fields[0].data, h, sizeof(cheatcoin_hashlow_t));
 	fields[0].amount = 0;
-	for (nfld = 1, i = 0; i < nminers; ++i) {
-		m = g_miners + i;
-		if (m->state & MINER_FREE || !(m->state & MINER_ADDRESS)) continue;
-		topay = pay * (prev_diff[i] / prev_sum);
-		if (sum > 0) topay += direct * (diff[i] / sum);
-		if (i == reward_ind) topay += reward;
+	for (nfld = 1, i = 0; i <= nminers; ++i) {
+		if (i < nminers) {
+			m = g_miners + i;
+			if (m->state & MINER_FREE || !(m->state & MINER_ADDRESS)) continue;
+			topay = pay * (prev_diff[i] / prev_sum);
+			if (sum > 0) topay += direct * (diff[i] / sum);
+			if (i == reward_ind) topay += reward;
+		} else {
+			m = &g_fund_miner;
+			if (!(m->state & MINER_ADDRESS)) continue;
+			topay = fund;
+		}
 		if (!topay) continue;
 		memcpy(fields[nfld].data, m->id.data, sizeof(cheatcoin_hashlow_t));
 		fields[nfld].amount = topay;
@@ -300,6 +327,9 @@ static void *pool_block_thread(void *arg) {
 	cheatcoin_time_t t0 = 0, t;
 	struct cheatcoin_block *b;
 	int done, res;
+
+	while (!g_cheatcoin_sync_on) sleep(1);
+
 	for(;;) {
 		done = 0;
 		ntask = g_cheatcoin_pool_ntask;
@@ -333,8 +363,8 @@ static void *pool_block_thread(void *arg) {
 
 char *cheatcoin_pool_get_config(char *buf) {
 	if (!g_cheatcoin_pool) return 0;
-	sprintf(buf, "%d:%.2lf:%.2lf:%.2lf:%d", g_max_nminers, g_pool_fee * 100, g_pool_reward * 100,
-		g_pool_direct * 100, g_max_nminers_ip);
+	sprintf(buf, "%d:%.2lf:%.2lf:%.2lf:%d:%.2lf", g_max_nminers, g_pool_fee * 100, g_pool_reward * 100,
+	    g_pool_direct * 100, g_max_nminers_ip, g_pool_fund * 100);
 	return buf;
 }
 
@@ -353,27 +383,41 @@ int cheatcoin_pool_set_config(const char *str) {
 	}
 
 	str = strtok_r(0, " \t\r\n:", &lasts);
-	if (str) sscanf(str, "%lf", &g_pool_fee);
-	g_pool_fee /= 100;
-	if (g_pool_fee < 0) g_pool_fee = 0;
-	if (g_pool_fee > 1) g_pool_fee = 1;
+	if (str) {
+		sscanf(str, "%lf", &g_pool_fee);
+		g_pool_fee /= 100;
+		if (g_pool_fee < 0) g_pool_fee = 0;
+		if (g_pool_fee > 1) g_pool_fee = 1;
+	}
 
 	str = strtok_r(0, " \t\r\n:", &lasts);
-	if (str) sscanf(str, "%lf", &g_pool_reward);
-	g_pool_reward /= 100;
-	if (g_pool_reward < 0) g_pool_reward = 0;
-	if (g_pool_fee + g_pool_reward > 1) g_pool_reward = 1 - g_pool_fee;
+	if (str) {
+		sscanf(str, "%lf", &g_pool_reward);
+		g_pool_reward /= 100;
+		if (g_pool_reward < 0) g_pool_reward = 0;
+		if (g_pool_fee + g_pool_reward > 1) g_pool_reward = 1 - g_pool_fee;
+	}
 
 	str = strtok_r(0, " \t\r\n:", &lasts);
-	if (str) sscanf(str, "%lf", &g_pool_direct);
-	g_pool_direct /= 100;
-	if (g_pool_direct < 0) g_pool_direct = 0;
-	if (g_pool_fee + g_pool_reward + g_pool_direct > 1) g_pool_direct = 1 - g_pool_fee - g_pool_reward;
+	if (str) {
+		sscanf(str, "%lf", &g_pool_direct);
+		g_pool_direct /= 100;
+		if (g_pool_direct < 0) g_pool_direct = 0;
+		if (g_pool_fee + g_pool_reward + g_pool_direct > 1) g_pool_direct = 1 - g_pool_fee - g_pool_reward;
+	}
 
 	str = strtok_r(0, " \t\r\n:", &lasts);
 	if (str) {
 		sscanf(str, "%d", &g_max_nminers_ip);
 		if (g_max_nminers_ip <= 0) g_max_nminers_ip = 1;
+	}
+
+	str = strtok_r(0, " \t\r\n:", &lasts);
+	if (str) {
+		sscanf(str, "%lf", &g_pool_fund);
+		g_pool_fund /= 100;
+		if (g_pool_fund < 0) g_pool_fund = 0;
+		if (g_pool_fee + g_pool_reward + g_pool_direct + g_pool_fund > 1) g_pool_fund = 1 - g_pool_fee - g_pool_reward - g_pool_direct;
 	}
 
 	return 0;
@@ -393,6 +437,8 @@ static void *pool_net_thread(void *arg) {
 	cheatcoin_time_t t;
 	struct miner *m;
 	struct pollfd *p;
+
+	while (!g_cheatcoin_sync_on) sleep(1);
 
 	// Create a socket
 	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -760,6 +806,7 @@ int cheatcoin_pool_start(int pool_on, const char *pool_arg) {
 	if (!pool_on && !pool_arg) return 0;
 	if (crypt_start()) return -1;
 	memset(&g_local_miner, 0, sizeof(struct miner));
+	memset(&g_fund_miner, 0, sizeof(struct miner));
 	if (!pool_on) {
 		res = pthread_create(&th, 0, miner_net_thread, (void *)pool_arg);
 		if (res) return -1;

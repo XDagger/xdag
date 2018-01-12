@@ -70,10 +70,10 @@ static struct host *find_add_host(struct host *h) {
 			}
 		}
 	}
-	pthread_mutex_unlock(&host_mutex);
 	if (h->flags & HOST_WHITE) {
 		if (g_cheatcoin_n_white_ips < MAX_WHITE_IPS) g_cheatcoin_white_ips[g_cheatcoin_n_white_ips++] = h0->ip;
 	}
+	pthread_mutex_unlock(&host_mutex);
 	return h0;
 }
 
@@ -183,6 +183,8 @@ static void *monitor_thread(void *arg) {
 			if (n_selected_hosts < MAX_SELECTED_HOSTS) selected_hosts[n_selected_hosts++] = h;
 		}
 		if (f) fclose(f);
+		g_cheatcoin_n_white_ips = 0;
+		read_database(DATABASEWHITE, HOST_WHITE);
 		while (time(0) - t < 67) sleep(1);
 	}
 	return 0;

@@ -1,8 +1,10 @@
 /* состояние программы, T13.788-T13.789; $DVS:time$ */
 
 cheatcoin_state(INIT, "Initializing.")
+cheatcoin_state(KEYS, "Generating keys...")
 cheatcoin_state(REST, "The local storage is corrupted. Resetting blocks engine.")
 cheatcoin_state(LOAD, "Loading blocks from the local storage.")
+cheatcoin_state(STOP, "Blocks loaded. Waiting for 'run' command.")
 cheatcoin_state(WTST, "Trying to connect to the test network.")
 cheatcoin_state(WAIT, "Trying to connect to the main network.")
 cheatcoin_state(TTST, "Trying to connect to the testnet pool.")

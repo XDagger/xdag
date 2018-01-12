@@ -507,7 +507,9 @@ begin:
 				goto begin;
 			}
 		}
+		pthread_mutex_lock((pthread_mutex_t *)g_ptr_share_mutex);
 		memcpy(b[0].field[CHEATCOIN_BLOCK_FIELDS - 1].data, task->lastfield.data, sizeof(struct cheatcoin_field));
+		pthread_mutex_unlock((pthread_mutex_t *)g_ptr_share_mutex);
 	}
 	cheatcoin_hash(b, sizeof(struct cheatcoin_block), min_hash);
 	b[0].field[0].transport_header = 1;
@@ -577,6 +579,12 @@ begin:
 	cheatcoin_mess("Loading blocks from local storage...");
 	cheatcoin_show_state(0);
 	cheatcoin_load_blocks(t, get_timestamp(), &t, add_block_callback);
+
+	/* ожидание команды run */
+	while (!g_cheatcoin_run) {
+		g_cheatcoin_state = CHEATCOIN_STATE_STOP;
+		sleep(1);
+	}
 
 	/* запуск потока синхронизации */
 	g_cheatcoin_sync_on = 1;
