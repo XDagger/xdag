@@ -1,4 +1,4 @@
-/* состояние программы, T13.788-T13.789; $DVS:time$ */
+/* состояние программы, T13.788-T13.816; $DVS:time$ */
 
 cheatcoin_state(INIT, "Initializing.")
 cheatcoin_state(KEYS, "Generating keys...")

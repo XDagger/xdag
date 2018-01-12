@@ -1,4 +1,4 @@
-/* основные переменные, T13.714-T13.811 $DVS:time$ */
+/* основные переменные, T13.714-T13.816 $DVS:time$ */
 
 #ifndef CHEATCOIN_MAIN_H
 #define CHEATCOIN_MAIN_H

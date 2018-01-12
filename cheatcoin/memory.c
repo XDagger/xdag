@@ -1,4 +1,4 @@
-/* работа с памятью, T13.816-T13.000 $DVS:time$ */
+/* работа с памятью, T13.816-T13.816 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -36,6 +36,9 @@ static void *g_mem;
 static pthread_mutex_t g_mem_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int xdag_mem_init(size_t size) {
+	size--;
+	size |= MEM_PORTION - 1;
+	size++;
 	g_fd = mkstemp("xdag-tmp-XXXXXX");
 	if (g_fd < 0) return -1;
 	g_mem = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, g_fd, 0);

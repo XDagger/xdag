@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.811 $DVS:time$ */
+/* пул и майнер, T13.744-T13.816 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>

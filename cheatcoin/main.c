@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.811 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.816 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +21,7 @@
 #include "main.h"
 #include "sync.h"
 #include "pool.h"
+#include "memory.h"
 
 #define CHEATCOIN_COMMAND_MAX	0x1000
 #define FIFO_IN					"fifo_cmd.dat"
@@ -290,6 +291,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 		cheatcoin_wallet_finish();
 		cheatcoin_netdb_finish();
 		cheatcoin_storage_finish();
+		xdag_mem_finish();
 		return -1;
 	} else if (!strcmp(cmd, "xfer")) {
 		char *amount, *address;

@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.805 $DVS:time$ */
+/* работа с блоками, T13.654-T13.816 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -18,6 +18,7 @@
 #include "main.h"
 #include "sync.h"
 #include "pool.h"
+#include "memory.h"
 
 #define MAIN_CHAIN_PERIOD	(64 << 10)
 #define MAX_WAITING_MAIN	2
@@ -337,7 +338,7 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 		bi.nlinks++;
 	}
 	if (bi.in_mask ? sum_in < sum_out : sum_out != b->field[0].amount) { err = 0xB; goto end; }
-	bsaved = malloc(sizeof(struct block_internal));
+	bsaved = xdag_malloc(sizeof(struct block_internal));
 	if (!bsaved) { err = 0xC; goto end; }
 	if (!(theader & (sizeof(struct block_internal) - 1))) bi.storage_pos = theader;
 	else bi.storage_pos = cheatcoin_storage_save(b);
@@ -662,6 +663,8 @@ int cheatcoin_blocks_start(int n_mining_threads) {
 	int res;
 	if (g_cheatcoin_testnet) cheatcoin_era = CHEATCOIN_TEST_ERA;
 	if (n_mining_threads < 0) g_light_mode = 1;
+	if (xdag_mem_init((((get_timestamp() - CHEATCOIN_ERA) >> 10) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal)))
+		return -1;
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&block_mutex, &attr);

@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.776 $DVS:time$ */
+/* пул и майнер, T13.744-T13.816 $DVS:time$ */
 
 #ifndef CHEATCOIN_POOL_H
 #define CHEATCOIN_POOL_H

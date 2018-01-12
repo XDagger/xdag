@@ -1,4 +1,4 @@
-/* работа с памятью, T13.816-T13.000 $DVS:time$ */
+/* работа с памятью, T13.816-T13.816 $DVS:time$ */
 
 #ifndef XDAG_MEMORY_H
 #define XDAG_MEMORY_H
