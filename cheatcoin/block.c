@@ -663,7 +663,7 @@ int cheatcoin_blocks_start(int n_mining_threads) {
 	int res;
 	if (g_cheatcoin_testnet) cheatcoin_era = CHEATCOIN_TEST_ERA;
 	if (n_mining_threads < 0) g_light_mode = 1;
-	if (xdag_mem_init((((get_timestamp() - CHEATCOIN_ERA) >> 10) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal)))
+	if (xdag_mem_init(g_light_mode ? 0 : (((get_timestamp() - CHEATCOIN_ERA) >> 10) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal)))
 		return -1;
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
