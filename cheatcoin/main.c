@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.818 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.819 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -267,7 +267,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 	} else if (!strcmp(cmd, "state")) {
 		fprintf(out, "%s\n", get_state());
 	} else if (!strcmp(cmd, "stats")) {
-		if (g_is_miner) fprintf(out, "Network statistics is not available for miner.\n");
+		if (g_is_miner) fprintf(out, "your hashrate MHs: %.2lf\n", g_cheatcoin_extstats.hashrate_s / (1024 * 1024));
 		else fprintf(out, "Statistics for ours and maximum known parameters:\n"
 			"            hosts: %u of %u\n"
 			"           blocks: %llu of %llu\n"

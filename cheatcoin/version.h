@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.818" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.819" /* $DVS:time$ */
 
 /* история
+
+T13.819 добавлен подсчёт собственного хешрейта майнера
 
 T13.818 обновление для пулов: 1) блоки вынесены в файл, отображаемый в память;
 	2) новый пул можно запускать параллельно с работающим старым, он будет 

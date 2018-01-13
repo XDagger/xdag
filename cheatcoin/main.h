@@ -1,4 +1,4 @@
-/* основные переменные, T13.714-T13.816 $DVS:time$ */
+/* основные переменные, T13.714-T13.819 $DVS:time$ */
 
 #ifndef CHEATCOIN_MAIN_H
 #define CHEATCOIN_MAIN_H
@@ -29,6 +29,8 @@ extern struct cheatcoin_ext_stats {
 	cheatcoin_diff_t hashrate_ours[HASHRATE_LAST_MAX_TIME];
 	cheatcoin_time_t hashrate_last_time;
 	uint64_t nnoref;
+	uint64_t nhashes;
+	double hashrate_s;
 	uint32_t nwaitsync;
 } g_cheatcoin_extstats;
 

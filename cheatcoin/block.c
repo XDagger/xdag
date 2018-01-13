@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.816 $DVS:time$ */
+/* работа с блоками, T13.654-T13.819 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -569,9 +569,10 @@ static void reset_callback(struct ldus_rbtree *node) {
 
 /* основной поток, работающий с блоками */
 static void *work_thread(void *arg) {
-	cheatcoin_time_t t = CHEATCOIN_ERA, conn_time = 0, sync_time = 0;
+	cheatcoin_time_t t = CHEATCOIN_ERA, conn_time = 0, sync_time = 0, t0;
 	int n_mining_threads = (int)(unsigned)(uintptr_t)arg, sync_thread_running = 0;
 	struct block_internal *ours;
+	uint64_t nhashes0 = 0, nhashes = 0;
 	pthread_t th;
 
 begin:
@@ -605,7 +606,11 @@ begin:
 	cheatcoin_mess("Entering main cycle...");
 	for (;;) {
 		unsigned nblk;
+		t0 = t;
 		t = get_timestamp();
+		nhashes0 = nhashes;
+		nhashes = g_cheatcoin_extstats.nhashes;
+		if (t > t0) g_cheatcoin_extstats.hashrate_s = ((double)(nhashes - nhashes0) * 1024) / (t - t0);
 		if (!g_light_mode && (nblk = (unsigned)g_cheatcoin_extstats.nnoref / (CHEATCOIN_BLOCK_FIELDS - 5))) {
 			nblk = nblk / 61 + (nblk % 61 > (unsigned)rand() % 61);
 			while (nblk--) cheatcoin_create_block(0, 0, 0, 0, 0);

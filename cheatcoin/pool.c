@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.816 $DVS:time$ */
+/* пул и майнер, T13.744-T13.819 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -750,6 +750,7 @@ static void *mining_thread(void *arg) {
 			nonce = last.amount + nthread;
 		}
 		last.amount = cheatcoin_hash_final_multi(task->ctx, &nonce, 256, g_cheatcoin_mining_threads, hash);
+		g_cheatcoin_extstats.nhashes += 256;
 		set_share(&g_local_miner, task, last.data, hash);
 	}
 	return 0;
