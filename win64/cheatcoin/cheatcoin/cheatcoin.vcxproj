@@ -25,6 +25,7 @@
     <ClCompile Include="..\..\..\cheatcoin\hash.c" />
     <ClCompile Include="..\..\..\cheatcoin\log.c" />
     <ClCompile Include="..\..\..\cheatcoin\main.c" />
+    <ClCompile Include="..\..\..\cheatcoin\memory.c" />
     <ClCompile Include="..\..\..\cheatcoin\netdb.c" />
     <ClCompile Include="..\..\..\cheatcoin\pool.c" />
     <ClCompile Include="..\..\..\cheatcoin\sha256.c" />
@@ -57,6 +58,7 @@
     <ClInclude Include="..\..\..\cheatcoin\hash.h" />
     <ClInclude Include="..\..\..\cheatcoin\log.h" />
     <ClInclude Include="..\..\..\cheatcoin\main.h" />
+    <ClInclude Include="..\..\..\cheatcoin\memory.h" />
     <ClInclude Include="..\..\..\cheatcoin\netdb.h" />
     <ClInclude Include="..\..\..\cheatcoin\pool.h" />
     <ClInclude Include="..\..\..\cheatcoin\sha256.h" />
