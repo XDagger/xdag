@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.816 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.818 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -126,7 +126,7 @@ static int xfer_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t a
 	cheatcoin_amount_t todo = d->remains;
 	int i;
 	if (!amount) return -1;
-	if (g_is_pool && cheatcoin_main_time() < (time >> 10) + 2 * CHEATCOIN_POOL_N_CONFIRMATIONS) return 0;
+	if (g_is_pool && cheatcoin_main_time() < (time >> 16) + 2 * CHEATCOIN_POOL_N_CONFIRMATIONS) return 0;
 	for (i = 0; i < d->nkeys; ++i) if (n_our_key == d->keys[i]) break;
 	if (i == d->nkeys) d->keys[d->nkeys++] = n_our_key;
 	if (d->keys[XFER_MAX_IN] == n_our_key) d->outsig = 0;
