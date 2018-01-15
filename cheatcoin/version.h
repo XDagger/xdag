@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.819" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.825" /* $DVS:time$ */
 
 /* история
+
+T13.825 добавлена опция -l, позволяющая выводить ненулевой баланс всех адресов в системе
 
 T13.819 добавлен подсчёт собственного хешрейта майнера
 

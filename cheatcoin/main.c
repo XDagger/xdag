@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.819 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.825 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -308,6 +308,55 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 	return 0;
 }
 
+struct out_balances_data {
+	struct cheatcoin_field *blocks;
+	unsigned nblocks, maxnblocks;
+};
+
+static void *out_balances_callback(void *block, void *data) {
+	struct out_balances_data *d = (struct out_balances_data *)data;
+	struct cheatcoin_block *b = (struct cheatcoin_block *)block;
+	struct cheatcoin_field f;
+	char str[128];
+	int fd, c, i = 0;
+	cheatcoin_hash(b, sizeof(struct cheatcoin_block), f.data);
+	sprintf(str, "balance %s", cheatcoin_hash2address(f.data));
+	fd = open(FIFO_IN, O_WRONLY);
+	if (fd < 0) return 0;
+	write(fd, str, strlen(str) + 1);
+	close(fd);
+	fd = open(FIFO_OUT, O_RDONLY);
+	if (fd < 0) return 0;
+	while (read(fd, &c, 1) == 1 && c) str[i++] = c;
+	close(fd);
+	str[i] = 0;
+	f.amount = cheatcoins2amount(str + 9);
+	if (!f.amount) return 0;
+	if (d->nblocks == d->maxnblocks) {
+		d->maxnblocks = (d->maxnblocks ? d->maxnblocks * 2 : 0x100000);
+		d->blocks = realloc(d->blocks, d->maxnblocks * sizeof(struct cheatcoin_field));
+	}
+	memcpy(d->blocks + d->nblocks, &f, sizeof(struct cheatcoin_field));
+	d->nblocks++;
+	return 0;
+}
+
+static int out_sort_callback(const void *l, const void *r) {
+	return strcmp(cheatcoin_hash2address(((struct cheatcoin_field *)l)->data),
+				  cheatcoin_hash2address(((struct cheatcoin_field *)r)->data));
+}
+
+static int out_balances(void) {
+	struct out_balances_data d;
+	unsigned i;
+	memset(&d, 0, sizeof(struct out_balances_data));
+	cheatcoin_load_blocks(cheatcoin_start_main_time() << 16, cheatcoin_main_time() << 16, &d, out_balances_callback);
+	qsort(d.blocks, d.nblocks, sizeof(struct cheatcoin_field), out_sort_callback);
+	for (i = 0; i < d.nblocks; ++i)
+		printf("%s  %20.9Lf\n", cheatcoin_hash2address(d.blocks[i].data), amount2cheatcoins(d.blocks[i].amount));
+	return 0;
+}
+
 static int terminal(void) {
 #if !defined(_WIN32) && !defined(_WIN64)
 	char cmd[CHEATCOIN_COMMAND_MAX], cmd2[CHEATCOIN_COMMAND_MAX], *ptr, *lasts;
@@ -412,6 +461,7 @@ int main(int argc, char **argv) {
 					"  -d             - run as daemon (default is interactive mode)\n"
 					"  -h             - print this help\n"
 					"  -i             - run as interactive terminal for daemon running in this folder\n"
+					"  -l             - output non zero balances of all accounts\n"
 					"  -m N           - use N CPU mining threads (default is 0)\n"
 					"  -p ip:port     - public address of this node\n"
 				    "  -P ip:port:CFG - run the pool, bind to ip:port, CFG is miners:fee:reward:direct:maxip:fund\n"
@@ -428,7 +478,9 @@ int main(int argc, char **argv) {
 				return 0;
 		    case 'i':
 			    return terminal();
-		    case 'm':
+			case 'l':
+				return out_balances();
+			case 'm':
 				if (++i < argc)
 					sscanf(argv[i], "%d", &n_mining_threads);
 				break;
