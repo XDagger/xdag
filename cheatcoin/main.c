@@ -325,7 +325,6 @@ static int out_balances_callback(void *data, cheatcoin_hash_t hash, cheatcoin_am
 	}
 	memcpy(d->blocks + d->nblocks, &f, sizeof(struct cheatcoin_field));
 	d->nblocks++;
-	if (!(d->nblocks % 10000)) printf("blocks: %u\n", d->nblocks);
 	return 0;
 }
 
@@ -335,15 +334,19 @@ static int out_sort_callback(const void *l, const void *r) {
 }
 
 static void *add_block_callback(void *block, void *data) {
+	unsigned *i = (unsigned *)data;
 	cheatcoin_add_block((struct cheatcoin_block *)block);
+	if (!(++*i % 10000)) printf("blocks: %u\n", *i);
 	return 0;
 }
 
 static int out_balances(void) {
 	struct out_balances_data d;
-	unsigned i;
+	unsigned i = 0;
+	cheatcoin_set_log_level(0);
+	xdag_mem_init((cheatcoin_main_time() - cheatcoin_start_main_time()) << 8);
 	memset(&d, 0, sizeof(struct out_balances_data));
-	cheatcoin_load_blocks(cheatcoin_start_main_time() << 16, cheatcoin_main_time() << 16, 0, add_block_callback);
+	cheatcoin_load_blocks(cheatcoin_start_main_time() << 16, cheatcoin_main_time() << 16, &i, add_block_callback);
 	cheatcoin_traverse_all_blocks(&d, out_balances_callback);
 	qsort(d.blocks, d.nblocks, sizeof(struct cheatcoin_field), out_sort_callback);
 	for (i = 0; i < d.nblocks; ++i)

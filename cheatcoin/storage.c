@@ -1,4 +1,4 @@
-/* локальное хранилище, T13.663-T13.789 $DVS:time$ */
+/* локальное хранилище, T13.663-T13.825 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -135,15 +135,22 @@ struct cheatcoin_block *cheatcoin_storage_load(cheatcoin_hash_t hash, cheatcoin_
 
 #define bufsize (0x100000 / sizeof(struct cheatcoin_block))
 
+static int sort_callback(const void *l, const void *r) {
+	struct cheatcoin_block **L = (struct cheatcoin_block **)l, **R = (struct cheatcoin_block **)r;
+	if ((*L)->field[0].time < (*R)->field[0].time) return -1;
+	if ((*L)->field[0].time > (*R)->field[0].time) return 1;
+	return 0;
+}
+
 /* вызвать callback для всех блоков из хранилища, попадающих с данный временной интервал; возвращает число блоков */
 uint64_t cheatcoin_load_blocks(cheatcoin_time_t start_time, cheatcoin_time_t end_time, void *data, void *(*callback)(void *, void *)) {
-	struct cheatcoin_block buf[bufsize];
+	struct cheatcoin_block buf[bufsize], *pbuf[bufsize];
 	struct cheatcoin_storage_sum s;
 	char path[256];
 	struct stat st;
 	FILE *f;
-	uint64_t sum = 0, pos = 0, mask;
-	int64_t i, j, todo;
+	uint64_t sum = 0, pos = 0, pos0, mask;
+	int64_t i, j, k, todo;
 	s.size = s.sum = 0;
 	while (start_time < end_time) {
 		sprintf(path, STORAGE_FILE, STORAGE_FILE_ARGS(start_time));
@@ -155,15 +162,20 @@ uint64_t cheatcoin_load_blocks(cheatcoin_time_t start_time, cheatcoin_time_t end
 			fclose(f);
 		} else todo = 0;
 		pthread_mutex_unlock(&storage_mutex);
-		for (i = 0; i < todo; ++i, pos += sizeof(struct cheatcoin_block)) {
-			s.size += sizeof(struct cheatcoin_block);
-			for (j = 0; j < sizeof(struct cheatcoin_block) / sizeof(uint64_t); ++j)
-				s.sum += ((uint64_t *)(buf + i))[j];
+		pos0 = pos;
+		for (i = k = 0; i < todo; ++i, pos += sizeof(struct cheatcoin_block)) {
 			if (buf[i].field[0].time >= start_time && buf[i].field[0].time < end_time) {
-				buf[i].field[0].transport_header = pos;
-				sum++;
-				if (callback(buf + i, data)) return sum;
+				s.size += sizeof(struct cheatcoin_block);
+				for (j = 0; j < sizeof(struct cheatcoin_block) / sizeof(uint64_t); ++j)
+					s.sum += ((uint64_t *)(buf + i))[j];
+				pbuf[k++] = buf + i;
 			}
+		}
+		if (k) qsort(pbuf, k, sizeof(struct cheatcoin_block *), sort_callback);
+		for (i = 0; i < k; ++i) {
+			pbuf[i]->field[0].transport_header = pos0 + ((uint8_t *)pbuf[i] - (uint8_t *)buf);
+			if (callback(pbuf[i], data)) return sum;
+			sum++;
 		}
 		if (todo != bufsize) {
 			if (f) {
