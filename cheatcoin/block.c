@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.819 $DVS:time$ */
+/* работа с блоками, T13.654-T13.825 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -46,7 +46,7 @@ struct block_internal {
 	struct ldus_rbtree node;
 	cheatcoin_hash_t hash;
 	cheatcoin_diff_t difficulty;
-	cheatcoin_amount_t amount;
+	cheatcoin_amount_t amount, linkamount[MAX_LINKS], fee;
 	cheatcoin_time_t time;
 	uint64_t storage_pos;
 	struct block_internal *ref, *link[MAX_LINKS];
@@ -116,9 +116,8 @@ static inline void accept_amount(struct block_internal *bi, cheatcoin_amount_t s
 }
 
 static uint64_t apply_block(struct block_internal *bi) {
-	struct cheatcoin_block buf, *b;
-	cheatcoin_amount_t sum_in, sum_out, link_amount[MAX_LINKS];
-	int i, n;
+	cheatcoin_amount_t sum_in, sum_out;
+	int i;
 	if (bi->flags & BI_MAIN_REF) return -1l;
 	bi->flags |= BI_MAIN_REF;
 	for (i = 0; i < bi->nlinks; ++i) {
@@ -128,43 +127,36 @@ static uint64_t apply_block(struct block_internal *bi) {
 		if (bi->amount + ref_amount >= bi->amount)
 			accept_amount(bi, ref_amount);
 	}
-	b = cheatcoin_storage_load(bi->hash, bi->time, bi->storage_pos, &buf);
-	if (!b) return 0;
-	for (i = n = 0; i < CHEATCOIN_BLOCK_FIELDS; ++i) {
-		if (cheatcoin_type(b, i) == CHEATCOIN_FIELD_IN || cheatcoin_type(b, i) == CHEATCOIN_FIELD_OUT)
-			link_amount[n++] = b->field[i].amount;
-	}
-	sum_in = 0, sum_out = b->field[0].amount;
+	sum_in = 0, sum_out = bi->fee;
 	for (i = 0; i < bi->nlinks; ++i) {
 		if (1 << i & bi->in_mask) {
-			if (bi->link[i]->amount < link_amount[i]) return 0;
-			if (sum_in + link_amount[i] < sum_in) return 0;
-			sum_in += link_amount[i];
+			if (bi->link[i]->amount < bi->linkamount[i]) return 0;
+			if (sum_in + bi->linkamount[i] < sum_in) return 0;
+			sum_in += bi->linkamount[i];
 		} else {
-			if (sum_out + link_amount[i] < sum_out) return 0;
-			sum_out += link_amount[i];
+			if (sum_out + bi->linkamount[i] < sum_out) return 0;
+			sum_out += bi->linkamount[i];
 		}
 	}
 	if (sum_in + bi->amount < sum_in || sum_in + bi->amount < sum_out) return 0;
 	for (i = 0; i < bi->nlinks; ++i) {
-		if (1 << i & bi->in_mask) accept_amount(bi->link[i], (cheatcoin_amount_t)0-link_amount[i]);
-		else accept_amount(bi->link[i], link_amount[i]);
+		if (1 << i & bi->in_mask) accept_amount(bi->link[i], (cheatcoin_amount_t)0 - bi->linkamount[i]);
+		else accept_amount(bi->link[i], bi->linkamount[i]);
 	}
 	accept_amount(bi, sum_in - sum_out);
 	bi->flags |= BI_APPLIED;
-	return b->field[0].amount;
+	return bi->fee;
 }
 
 static uint64_t unapply_block(struct block_internal *bi) {
-	struct cheatcoin_block buf, *b = 0;
-	int i, n;
-	if (bi->flags & BI_APPLIED && (b = cheatcoin_storage_load(bi->hash, bi->time, bi->storage_pos, &buf))) {
-		cheatcoin_amount_t sum = b->field[0].amount;
-		for (i = n = 0; i < CHEATCOIN_BLOCK_FIELDS; ++i) {
-			if (cheatcoin_type(b, i) == CHEATCOIN_FIELD_IN)
-				accept_amount(bi->link[n++],  b->field[i].amount), sum -= b->field[i].amount;
-			else if (cheatcoin_type(b, i) == CHEATCOIN_FIELD_OUT)
-				accept_amount(bi->link[n++], (cheatcoin_amount_t)0-b->field[i].amount), sum += b->field[i].amount;
+	int i;
+	if (bi->flags & BI_APPLIED) {
+		cheatcoin_amount_t sum = bi->fee;
+		for (i = 0; i < bi->nlinks; ++i) {
+			if (1 << i & bi->in_mask)
+				accept_amount(bi->link[i],  bi->linkamount[i]), sum -= bi->linkamount[i];
+			else
+				accept_amount(bi->link[i], (cheatcoin_amount_t)0 - bi->linkamount[i]), sum += bi->linkamount[i];
 		}
 		accept_amount(bi, sum);
 		bi->flags &= ~BI_APPLIED;
@@ -172,7 +164,7 @@ static uint64_t unapply_block(struct block_internal *bi) {
 	bi->flags &= ~BI_MAIN_REF;
 	for (i = 0; i < bi->nlinks; ++i)
 		if (bi->link[i]->ref == bi && bi->link[i]->flags & BI_MAIN_REF) accept_amount(bi, unapply_block(bi->link[i]));
-	return b ? (cheatcoin_amount_t)0-b->field[0].amount : 0;
+	return (cheatcoin_amount_t)0 - bi->fee;
 }
 
 /* по данному кол-ву главных блоков возвращает объем циркулирующих читкоинов */
@@ -309,6 +301,7 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 	nkeys = j;
 	bi.difficulty = diff0 = hash_difficulty(bi.hash);
 	sum_out += b->field[0].amount;
+	bi.fee = b->field[0].amount;
 	for (i = 1; i < CHEATCOIN_BLOCK_FIELDS; ++i) if (1 << i & (inmask | outmask)) {
 		if (!(ref = block_by_hash(b->field[i].hash))) { err = 5; goto end; }
 		if (ref->time >= bi.time) { err = 6; goto end; }
@@ -328,6 +321,7 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 		if (*psum + b->field[i].amount < *psum) { err = 0xA; goto end; }
 		*psum += b->field[i].amount;
 		bi.link[bi.nlinks] = ref;
+		bi.linkamount[bi.nlinks] = b->field[i].amount;
 		if (MAIN_TIME(ref->time) < MAIN_TIME(bi.time)) diff = cheatcoin_diff_add(diff0, ref->difficulty);
 		else {
 			diff = ref->difficulty;
@@ -547,7 +541,7 @@ static int request_blocks(cheatcoin_time_t t, cheatcoin_time_t dt) {
 		dt >>= 4;
 		cheatcoin_debug("Remote: [%s]", cheatcoin_log_array(rsums, 16 * sizeof(struct cheatcoin_storage_sum)));
 		for (i = 0; i < 16; ++i) if (lsums[i].size != rsums[i].size || lsums[i].sum != rsums[i].sum)
-			if (request_blocks(t + i * dt, dt)) return -1;
+			request_blocks(t + i * dt, dt);
 	}
 	return 0;
 }
@@ -705,6 +699,25 @@ int cheatcoin_traverse_our_blocks(void *data, int (*callback)(void *data, cheatc
 		res = (*callback)(data, bi->hash, bi->amount, bi->time, bi->n_our_key);
 	pthread_mutex_unlock(&block_mutex);
 	return res;
+}
+
+static int (*g_traverse_callback)(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t amount, cheatcoin_time_t time);
+static void *g_traverse_data;
+
+static void traverse_all_callback(struct ldus_rbtree *node) {
+	struct block_internal *bi = (struct block_internal *)node;
+	(*g_traverse_callback)(g_traverse_data, bi->hash, bi->amount, bi->time);
+}
+
+/* для каждого блока вызывается callback */
+int cheatcoin_traverse_all_blocks(void *data, int (*callback)(void *data, cheatcoin_hash_t hash,
+		cheatcoin_amount_t amount, cheatcoin_time_t time)) {
+	pthread_mutex_lock(&block_mutex);
+	g_traverse_callback = callback;
+	g_traverse_data = data;
+	ldus_rbtree_walk_right(root, traverse_all_callback);
+	pthread_mutex_unlock(&block_mutex);
+	return 0;
 }
 
 /* возвращает баланс адреса, или всех наших адресов, если hash == 0 */

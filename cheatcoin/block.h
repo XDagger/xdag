@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.815 $DVS:time$ */
+/* работа с блоками, T13.654-T13.825 $DVS:time$ */
 
 #ifndef CHEATCOIN_BLOCK_H
 #define CHEATCOIN_BLOCK_H
@@ -72,6 +72,10 @@ extern int cheatcoin_get_our_block(cheatcoin_hash_t hash);
 /* для каждого своего блока вызывается callback */
 extern int cheatcoin_traverse_our_blocks(void *data,
 		int (*callback)(void *, cheatcoin_hash_t, cheatcoin_amount_t, cheatcoin_time_t, int));
+
+/* для каждого блока вызывается callback */
+extern int cheatcoin_traverse_all_blocks(void *data, int (*callback)(void *data, cheatcoin_hash_t hash,
+		cheatcoin_amount_t amount, cheatcoin_time_t time));
 
 /* создать и опубликовать блок; в первых ninput полях fields содержатся адреса входов и соотв. кол-во читкоинов,
  * в следующих noutput полях - аналогично - выходы; fee - комиссия; send_time - время отправки блока; если оно больше текущего, то

@@ -313,24 +313,11 @@ struct out_balances_data {
 	unsigned nblocks, maxnblocks;
 };
 
-static void *out_balances_callback(void *block, void *data) {
+static int out_balances_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t amount, cheatcoin_time_t time) {
 	struct out_balances_data *d = (struct out_balances_data *)data;
-	struct cheatcoin_block *b = (struct cheatcoin_block *)block;
 	struct cheatcoin_field f;
-	char str[128];
-	int fd, c, i = 0;
-	cheatcoin_hash(b, sizeof(struct cheatcoin_block), f.data);
-	sprintf(str, "balance %s", cheatcoin_hash2address(f.data));
-	fd = open(FIFO_IN, O_WRONLY);
-	if (fd < 0) return 0;
-	write(fd, str, strlen(str) + 1);
-	close(fd);
-	fd = open(FIFO_OUT, O_RDONLY);
-	if (fd < 0) return 0;
-	while (read(fd, &c, 1) == 1 && c) str[i++] = c;
-	close(fd);
-	str[i] = 0;
-	f.amount = cheatcoins2amount(str + 9);
+	memcpy(f.hash, hash, sizeof(cheatcoin_hashlow_t));
+	f.amount = amount;
 	if (!f.amount) return 0;
 	if (d->nblocks == d->maxnblocks) {
 		d->maxnblocks = (d->maxnblocks ? d->maxnblocks * 2 : 0x100000);
@@ -338,6 +325,7 @@ static void *out_balances_callback(void *block, void *data) {
 	}
 	memcpy(d->blocks + d->nblocks, &f, sizeof(struct cheatcoin_field));
 	d->nblocks++;
+	if (!(d->nblocks % 10000)) printf("blocks: %u\n", d->nblocks);
 	return 0;
 }
 
@@ -346,11 +334,17 @@ static int out_sort_callback(const void *l, const void *r) {
 				  cheatcoin_hash2address(((struct cheatcoin_field *)r)->data));
 }
 
+static void *add_block_callback(void *block, void *data) {
+	cheatcoin_add_block((struct cheatcoin_block *)block);
+	return 0;
+}
+
 static int out_balances(void) {
 	struct out_balances_data d;
 	unsigned i;
 	memset(&d, 0, sizeof(struct out_balances_data));
-	cheatcoin_load_blocks(cheatcoin_start_main_time() << 16, cheatcoin_main_time() << 16, &d, out_balances_callback);
+	cheatcoin_load_blocks(cheatcoin_start_main_time() << 16, cheatcoin_main_time() << 16, 0, add_block_callback);
+	cheatcoin_traverse_all_blocks(&d, out_balances_callback);
 	qsort(d.blocks, d.nblocks, sizeof(struct cheatcoin_field), out_sort_callback);
 	for (i = 0; i < d.nblocks; ++i)
 		printf("%s  %20.9Lf\n", cheatcoin_hash2address(d.blocks[i].data), amount2cheatcoins(d.blocks[i].amount));
@@ -481,8 +475,10 @@ int main(int argc, char **argv) {
 			case 'l':
 				return out_balances();
 			case 'm':
-				if (++i < argc)
+				if (++i < argc) {
 					sscanf(argv[i], "%d", &n_mining_threads);
+					if (n_mining_threads < 0) n_mining_threads = 0;
+				}
 				break;
 			case 'p':
 			    if (++i < argc)
