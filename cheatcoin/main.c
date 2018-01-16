@@ -344,7 +344,7 @@ static int out_balances(void) {
 	struct out_balances_data d;
 	unsigned i = 0;
 	cheatcoin_set_log_level(0);
-	xdag_mem_init((cheatcoin_main_time() - cheatcoin_start_main_time()) * 256 * sizeof(struct block_internal));
+	xdag_mem_init((cheatcoin_main_time() - cheatcoin_start_main_time()) << 17);
 	cheatcoin_crypt_init(0);
 	memset(&d, 0, sizeof(struct out_balances_data));
 	cheatcoin_load_blocks(cheatcoin_start_main_time() << 16, cheatcoin_main_time() << 16, &i, add_block_callback);
