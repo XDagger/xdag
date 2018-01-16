@@ -345,7 +345,7 @@ static int out_balances(void) {
 	unsigned i = 0;
 	cheatcoin_set_log_level(0);
 	xdag_mem_init((cheatcoin_main_time() - cheatcoin_start_main_time()) << 8);
-	cheatcoin_crypt_init();
+	cheatcoin_crypt_init(0);
 	memset(&d, 0, sizeof(struct out_balances_data));
 	cheatcoin_load_blocks(cheatcoin_start_main_time() << 16, cheatcoin_main_time() << 16, &i, add_block_callback);
 	cheatcoin_traverse_all_blocks(&d, out_balances_callback);
@@ -535,7 +535,7 @@ int main(int argc, char **argv) {
 		if (cheatcoin_netdb_init(pubaddr, n_addrports, addrports)) return -1;
 	}
 	cheatcoin_mess("Initializing cryptography...");
-	if (cheatcoin_crypt_init()) return -1;
+	if (cheatcoin_crypt_init(1)) return -1;
 	cheatcoin_mess("Reading wallet...");
 	if (cheatcoin_wallet_init()) return -1;
 	cheatcoin_mess("Initializing addresses...");

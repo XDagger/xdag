@@ -1,4 +1,4 @@
-/* криптография, T13.654-T13.681 $DVS:time$ */
+/* криптография, T13.654-T13.826 $DVS:time$ */
 
 #ifndef CHEATCOIN_CRYPT_H
 #define CHEATCOIN_CRYPT_H
@@ -7,7 +7,7 @@
 #include "hash.h"
 
 /* инициализация системы шифрования */
-extern int cheatcoin_crypt_init(void);
+extern int cheatcoin_crypt_init(int withrandom);
 
 /* создать новую пару из закрытого и открытого ключа; возвращает указатель на его внутреннее представление, приватный ключ
  * сохраняет в массив privkey, публичный - в массив pubkey, чётность публичного ключа - в переменную pubkey_bit

@@ -1,4 +1,4 @@
-/* криптография (ECDSA), T13.654-T13.696 $DVS:time$ */
+/* криптография (ECDSA), T13.654-T13.826 $DVS:time$ */
 
 #include <string.h>
 #include <openssl/crypto.h>
@@ -17,11 +17,13 @@
 static EC_GROUP *group;
 
 /* инициализация системы шифрования */
-int cheatcoin_crypt_init(void) {
-	uint64_t buf[64];
-	cheatcoin_generate_random_array(buf, sizeof(buf));
-	cheatcoin_debug("Seed  : [%s]", cheatcoin_log_array(buf, sizeof(buf)));
-	RAND_seed(buf, sizeof(buf));
+int cheatcoin_crypt_init(int withrandom) {
+	if (withrandom) {
+		uint64_t buf[64];
+		cheatcoin_generate_random_array(buf, sizeof(buf));
+		cheatcoin_debug("Seed  : [%s]", cheatcoin_log_array(buf, sizeof(buf)));
+		RAND_seed(buf, sizeof(buf));
+	}
 	group = EC_GROUP_new_by_curve_name(NID_secp256k1);
 	if (!group) return -1;
 	return 0;
