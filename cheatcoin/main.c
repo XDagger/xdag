@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.825 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.826 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -345,6 +345,7 @@ static int out_balances(void) {
 	unsigned i = 0;
 	cheatcoin_set_log_level(0);
 	xdag_mem_init((cheatcoin_main_time() - cheatcoin_start_main_time()) << 8);
+	cheatcoin_crypt_init();
 	memset(&d, 0, sizeof(struct out_balances_data));
 	cheatcoin_load_blocks(cheatcoin_start_main_time() << 16, cheatcoin_main_time() << 16, &i, add_block_callback);
 	cheatcoin_traverse_all_blocks(&d, out_balances_callback);

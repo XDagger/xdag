@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.825 $DVS:time$ */
+/* работа с блоками, T13.654-T13.826 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -91,9 +91,9 @@ static struct block_internal *block_by_hash(const cheatcoin_hashlow_t hash) {
 	return (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
 }
 
-static void log_block(const char *mess, cheatcoin_hash_t h, cheatcoin_time_t t) {
-	cheatcoin_info("%s: %016llx%016llx%016llx%016llx t=%llx", mess,
-		((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t);
+static void log_block(const char *mess, cheatcoin_hash_t h, cheatcoin_time_t t, uint64_t pos) {
+	cheatcoin_info("%s: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess,
+		((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t, pos);
 }
 
 static inline void accept_amount(struct block_internal *bi, cheatcoin_amount_t sum) {
@@ -187,7 +187,7 @@ static void set_main(struct block_internal *m) {
 	if (g_cheatcoin_stats.nmain > g_cheatcoin_stats.total_nmain)
 		g_cheatcoin_stats.total_nmain = g_cheatcoin_stats.nmain;
 	accept_amount(m, apply_block(m));
-	log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time);
+	log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time, m->storage_pos);
 }
 
 static void unset_main(struct block_internal *m) {
@@ -198,7 +198,7 @@ static void unset_main(struct block_internal *m) {
 	m->flags &= ~BI_MAIN;
 	accept_amount(m, (cheatcoin_amount_t)0-amount);
 	accept_amount(m, unapply_block(m));
-	log_block("UNMAIN", m->hash, m->time);
+	log_block("UNMAIN", m->hash, m->time, m->storage_pos);
 }
 
 static void check_new_main(void) {
@@ -252,7 +252,7 @@ static int valid_signature(const struct cheatcoin_block *b, int signo_r, int nke
 #define set_pretop(b) if ((b) && MAIN_TIME((b)->time) < MAIN_TIME(timestamp) && \
 		(!pretop_main_chain || cheatcoin_diff_gt((b)->difficulty, pretop_main_chain->difficulty))) { \
 	pretop_main_chain = (b); \
-	log_block("Pretop", (b)->hash, (b)->time); \
+	log_block("Pretop", (b)->hash, (b)->time, (b)->storage_pos); \
 }
 
 /* основная функция; проверить и добавить в базу новый блок; возвращает: > 0 - добавлен, = 0  - уже есть, < 0 - ошибка */
@@ -334,7 +334,7 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 	if (bi.in_mask ? sum_in < sum_out : sum_out != b->field[0].amount) { err = 0xB; goto end; }
 	bsaved = xdag_malloc(sizeof(struct block_internal));
 	if (!bsaved) { err = 0xC; goto end; }
-	if (!(theader & (sizeof(struct block_internal) - 1))) bi.storage_pos = theader;
+	if (!(theader & (sizeof(struct cheatcoin_block) - 1))) bi.storage_pos = theader;
 	else bi.storage_pos = cheatcoin_storage_save(b);
 	memcpy(bsaved, &bi, sizeof(struct block_internal));
 	ldus_rbtree_insert(&root, &bsaved->node);
@@ -369,7 +369,7 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 	*(noref_last ? &noref_last->ref : &noref_first) = bsaved;
 	noref_last = bsaved;
 	g_cheatcoin_extstats.nnoref++;
-	log_block((bi.flags & BI_OURS ? "Good +" : "Good  "), bi.hash, bi.time);
+	log_block((bi.flags & BI_OURS ? "Good +" : "Good  "), bi.hash, bi.time, bi.storage_pos);
 	i = MAIN_TIME(bsaved->time) & (HASHRATE_LAST_MAX_TIME - 1);
 	if (MAIN_TIME(bsaved->time) > MAIN_TIME(g_cheatcoin_extstats.hashrate_last_time)) {
 		memset(g_cheatcoin_extstats.hashrate_total + i, 0, sizeof(cheatcoin_diff_t));
@@ -386,7 +386,7 @@ end:
 		char buf[32];
 		err |= i << 4;
 		sprintf(buf, "Err %2x", err & 0xff);
-		log_block(buf, bi.hash, bi.time);
+		log_block(buf, bi.hash, bi.time, theader);
 	}
 	return -err;
 }
@@ -454,7 +454,8 @@ begin:
 		}
 	} else {
 		if (res < CHEATCOIN_BLOCK_FIELDS && mining && pretop && pretop->time < send_time) {
-			log_block("Mintop", pretop->hash, pretop->time); setfld(CHEATCOIN_FIELD_OUT, pretop->hash, cheatcoin_hashlow_t); res++;
+			log_block("Mintop", pretop->hash, pretop->time, pretop->storage_pos);
+			setfld(CHEATCOIN_FIELD_OUT, pretop->hash, cheatcoin_hashlow_t); res++;
 		}
 		for (ref = noref_first; ref && res < CHEATCOIN_BLOCK_FIELDS; ref = ref->ref) if (ref->time < send_time) {
 			setfld(CHEATCOIN_FIELD_OUT, ref->hash, cheatcoin_hashlow_t); res++;
@@ -508,7 +509,7 @@ begin:
 	}
 	cheatcoin_hash(b, sizeof(struct cheatcoin_block), min_hash);
 	b[0].field[0].transport_header = 1;
-	log_block("Create", min_hash, b[0].field[0].time);
+	log_block("Create", min_hash, b[0].field[0].time, 1);
 	res = cheatcoin_add_block(b);
 	if (res > 0) {
 		if (mining) {
