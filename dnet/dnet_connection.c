@@ -1,4 +1,4 @@
-/* dnet: connections; T11.253-T13.778; $DVS:time$ */
+/* dnet: connections; T11.253-T13.830; $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <sys/socket.h>
 #if defined(_WIN32) || defined(_WIN64)
 #include <sys/socket.h>
 #if defined(_WIN64)
@@ -67,8 +68,7 @@ static ssize_t dnet_conn_write(void *private_data, void *buf, size_t size) {
 		fd.revents = 0;
 		if (poll(&fd, 1, 16000) != 1 || fd.revents != POLLOUT) {
 			dnet_log_printf("dnet: poll failed for socket %d\n", conn->socket);
-			close(conn->socket);
-			conn->socket = -1;
+			shutdown(conn->socket, SHUT_RDWR);
 			return -1l;
 		}
 		done = write(conn->socket, buf, size);

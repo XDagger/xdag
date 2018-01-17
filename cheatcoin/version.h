@@ -3,9 +3,12 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.826" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.830" /* $DVS:time$ */
 
 /* история
+
+T13.830 добавлена опция -v, задающая начальный уровень логирования; исправлена ошибка,
+	приводящая к падению с сигналом 6
 
 T13.826 добавлена опция -l, позволяющая выводить ненулевой баланс всех адресов в системе
 

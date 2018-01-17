@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.826 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.830 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -422,7 +422,7 @@ int main(int argc, char **argv) {
 #endif
 	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0;
 	char *ptr;
-	int transport_flags = 0, n_addrports = 0, n_mining_threads = 0, is_pool = 0, is_miner = 0, i;
+	int transport_flags = 0, n_addrports = 0, n_mining_threads = 0, is_pool = 0, is_miner = 0, i, level;
 	pthread_t th;
 #if !defined(_WIN32) && !defined(_WIN64)
 	signal(SIGPIPE, SIG_IGN);
@@ -472,6 +472,7 @@ int main(int argc, char **argv) {
 				    "  -r             - load local blocks and wait for 'run' command to continue\n"
 					"  -s ip:port     - address of this node to bind to\n"
 					"  -t             - connect to test net (default is main net)\n"
+					"  -v N           - set loglevel to N\n"
 				, argv[0]);
 				return 0;
 		    case 'i':
@@ -501,6 +502,11 @@ int main(int argc, char **argv) {
 				break;
 			case 't':
 				g_cheatcoin_testnet = 1;
+				break;
+			case 'v':
+				if (++i < argc && sscanf(argv[i], "%d", &level) == 1)
+					cheatcoin_set_log_level(level);
+				else { printf("Illevel use of option -v\n"); return -1; }
 				break;
 			default:
 				goto help;
