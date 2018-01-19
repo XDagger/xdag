@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.826 $DVS:time$ */
+/* работа с блоками, T13.654-T13.836 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -656,14 +656,16 @@ begin:
 	return 0;
 }
 
-/* начало регулярной обработки блоков; n_mining_threads - число потоков для майнинга на CPU */
-int cheatcoin_blocks_start(int n_mining_threads) {
+/* начало регулярной обработки блоков; n_mining_threads - число потоков для майнинга на CPU;
+ * для лёгкой ноды n_mining_threads < 0 и число потоков майнинга равно ~n_mining_threads;
+ * miner_address = 1 - явно задан адрес майнера */
+int cheatcoin_blocks_start(int n_mining_threads, int miner_address) {
 	pthread_mutexattr_t attr;
 	pthread_t th;
 	int res;
 	if (g_cheatcoin_testnet) cheatcoin_era = CHEATCOIN_TEST_ERA;
 	if (n_mining_threads < 0) g_light_mode = 1;
-	if (xdag_mem_init(g_light_mode ? 0 : (((get_timestamp() - CHEATCOIN_ERA) >> 10) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal)))
+	if (xdag_mem_init(g_light_mode && !miner_address ? 0 : (((get_timestamp() - CHEATCOIN_ERA) >> 10) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal)))
 		return -1;
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);

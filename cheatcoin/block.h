@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.825 $DVS:time$ */
+/* работа с блоками, T13.654-T13.836 $DVS:time$ */
 
 #ifndef CHEATCOIN_BLOCK_H
 #define CHEATCOIN_BLOCK_H
@@ -59,9 +59,9 @@ struct cheatcoin_block {
 #define cheatcoin_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)
 
 /* начало регулярной обработки блоков; n_mining_threads - число потоков для майнинга на CPU;
- * для лёгкой ноды n_mining_threads < 0 и число потоков майнинга равно ~n_mining_threads
- */
-extern int cheatcoin_blocks_start(int n_mining_threads);
+ * для лёгкой ноды n_mining_threads < 0 и число потоков майнинга равно ~n_mining_threads;
+ * miner_address = 1 - явно задан адрес майнера */
+extern int cheatcoin_blocks_start(int n_mining_threads, int miner_address);
 
 /* проверить блок и включить его в базу данных, возвращает не 0 в случае ошибки */
 extern int cheatcoin_add_block(struct cheatcoin_block *b);
