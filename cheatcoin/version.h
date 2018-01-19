@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.830" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.836" /* $DVS:time$ */
 
 /* история
+
+T13.836 добавлена опция -a, позволяющая явно задавать адрес, используемый в майнере
 
 T13.830 добавлена опция -v, задающая начальный уровень логирования; исправлена ошибка,
 	приводящая к падению с сигналом 6

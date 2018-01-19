@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.830 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.836 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -420,7 +420,7 @@ int cheatcoin_main(int argc, char **argv) {
 #else
 int main(int argc, char **argv) {
 #endif
-	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0;
+	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
 	char *ptr;
 	int transport_flags = 0, n_addrports = 0, n_mining_threads = 0, is_pool = 0, is_miner = 0, i, level;
 	pthread_t th;
@@ -441,6 +441,9 @@ int main(int argc, char **argv) {
 	if (argc <= 1) goto help;
 	for (i = 1; i < argc; ++i) {
 		if (argv[i][0] == '-' && argv[i][1] && !argv[i][2]) switch(argv[i][1]) {
+			case 'a':
+				if (++i < argc) miner_address = argv[i];
+				break;
 			case 'c':
 				if (++i < argc && n_addrports < 256)
 					addrports[n_addrports++] = argv[i];
@@ -455,6 +458,7 @@ int main(int argc, char **argv) {
 				printf("Usage: %s flags [pool_ip:port]\n"
 					"If pool_ip:port argument is given, then the node operates as a miner.\n"
 					"Flags:\n"
+					"  -a address     - specify your address to use in the miner\n"
 					"  -c ip:port     - address of another cheatcoin full node to connect\n"
 					"  -d             - run as daemon (default is interactive mode)\n"
 					"  -h             - print this help\n"
@@ -549,7 +553,7 @@ int main(int argc, char **argv) {
 	cheatcoin_mess("Starting blocks engine...");
 	if (cheatcoin_blocks_start(is_miner ? ~n_mining_threads : n_mining_threads)) return -1;
 	cheatcoin_mess("Starting pool engine...");
-	if (cheatcoin_pool_start(is_pool, pool_arg)) return -1;
+	if (cheatcoin_pool_start(is_pool, pool_arg, miner_address)) return -1;
 #ifndef CHEATCOINWALLET
 	cheatcoin_mess("Starting terminal server...");
 	if (pthread_create(&th, 0, &terminal_thread, 0)) return -1;

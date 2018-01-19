@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.816 $DVS:time$ */
+/* пул и майнер, T13.744-T13.836 $DVS:time$ */
 
 #ifndef CHEATCOIN_POOL_H
 #define CHEATCOIN_POOL_H
@@ -15,8 +15,9 @@ struct cheatcoin_pool_task {
 	void *ctx0, *ctx;
 };
 
-/* инициализация пула (pool_on = 1) или подключение майнера к пулу (pool_on = 0; pool_arg - параметры пула ip:port[:CFG] */
-extern int cheatcoin_pool_start(int pool_on, const char *pool_arg);
+/* инициализация пула (pool_on = 1) или подключение майнера к пулу (pool_on = 0; pool_arg - параметры пула ip:port[:CFG];
+   miner_addr - адрес майнера, если он указан явно */
+extern int cheatcoin_pool_start(int pool_on, const char *pool_arg, const char *miner_address);
 
 /* изменяет число потоков майнинга */
 extern int cheatcoin_mining_start(int n_mining_threads);

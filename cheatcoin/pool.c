@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.819 $DVS:time$ */
+/* пул и майнер, T13.744-T13.836 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -88,6 +88,7 @@ static struct dfslib_crypt *g_crypt;
 static struct cheatcoin_block *g_firstb = 0, *g_lastb = 0;
 static pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_share_mutex = PTHREAD_MUTEX_INITIALIZER;
+static const char *g_miner_address;
 void *g_ptr_share_mutex = &g_share_mutex;
 
 static inline void set_share(struct miner *m, struct cheatcoin_pool_task *task, cheatcoin_hash_t last, cheatcoin_hash_t hash) {
@@ -603,7 +604,8 @@ begin:
 	t0 = t00 = 0;
 	m->nfield_in = m->nfield_out = 0;
 
-	if (cheatcoin_get_our_block(hash)) { mess = "can't create a block"; goto err; }
+	if (g_miner_address) { if (cheatcoin_address2hash(g_miner_address, hash)) { mess = "incorrect miner address"; goto err; }}
+	else if (cheatcoin_get_our_block(hash)) { mess = "can't create a block"; goto err; }
 	pos = cheatcoin_get_block_pos(hash, &t);
 	if (pos < 0) { mess = "can't find the block"; goto err; }
 	blk = cheatcoin_storage_load(hash, t, pos, &b);
@@ -795,10 +797,11 @@ int cheatcoin_mining_start(int n_mining_threads) {
 	return 0;
 }
 
-int cheatcoin_pool_start(int pool_on, const char *pool_arg) {
+int cheatcoin_pool_start(int pool_on, const char *pool_arg, const char *miner_address) {
 	pthread_t th;
 	int i, res;
 	g_cheatcoin_pool = pool_on;
+	g_miner_address = miner_address;
 	for (i = 0; i < 2; ++i) {
 		g_cheatcoin_pool_task[i].ctx0 = malloc(cheatcoin_hash_ctx_size());
 		g_cheatcoin_pool_task[i].ctx = malloc(cheatcoin_hash_ctx_size());
