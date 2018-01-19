@@ -551,7 +551,7 @@ int main(int argc, char **argv) {
 	cheatcoin_mess("Initializing addresses...");
 	if (cheatcoin_address_init()) return -1;
 	cheatcoin_mess("Starting blocks engine...");
-	if (cheatcoin_blocks_start(is_miner ? ~n_mining_threads : n_mining_threads), !!miner_address) return -1;
+	if (cheatcoin_blocks_start((is_miner ? ~n_mining_threads : n_mining_threads), !!miner_address)) return -1;
 	cheatcoin_mess("Starting pool engine...");
 	if (cheatcoin_pool_start(is_pool, pool_arg, miner_address)) return -1;
 #ifndef CHEATCOINWALLET
