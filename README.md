@@ -26,17 +26,17 @@ Install and run (Linux):
 
 - Clone from the git repository:
 
-        $ git clone https://github.com/cheatoshin/cheatcoin.git
+        $ git clone https://github.com/cheatoshin/xdag.git
 
 - Make:
 
         $ cd cheatcoin/cheatcoin
         $ make
 
-- Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool 213.168.251.23:13654
+- Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool xdag.me:13654
   (for testnet the -t flag is also to be added):
 
-        $ ./xdag -m 2 -d 213.168.251.23:13654
+        $ ./xdag -m 2 -d xdag.me:13654
         Enter random characters: [enter]
 
 - Run terminal connected to the daemon in the same folder:
