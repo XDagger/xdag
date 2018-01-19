@@ -30,11 +30,10 @@ Install and run (Linux):
 
 - Make:
 
-        $ cd cheatcoin/cheatcoin
+        $ cd xdag/cheatcoin
         $ make
 
 - Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool xdag.me:13654
-  (for testnet the -t flag is also to be added):
 
         $ ./xdag -m 2 -d xdag.me:13654
         Enter random characters: [enter]
