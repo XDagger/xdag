@@ -82,7 +82,7 @@ static cheatcoin_amount_t cheatcoins2amount(const char *str) {
 	long double sum, flr;
 	cheatcoin_amount_t res;
 	int i;
-	if (sscanf(str, "%Lf", &sum) != 1 || sum < 0) return 0;
+	if (sscanf(str, "%Lf", &sum) != 1 || sum <= 0) return 0;
 	flr = floorl(sum);
 	res = (cheatcoin_amount_t)flr << 32;
 	sum -= flr;

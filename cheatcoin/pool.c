@@ -111,8 +111,10 @@ static inline void set_share(struct miner *m, struct cheatcoin_pool_task *task, 
 		diff = 46 - log(diff);
 		if (m->main_time < t) {
 			m->main_time = t;
-			m->prev_diff += m->maxdiff[i];
-			m->prev_diff_count++;
+			if (m->maxdiff[i] > 0) {
+				m->prev_diff += m->maxdiff[i];
+				m->prev_diff_count++;
+			}
 			m->maxdiff[i] = diff;
 			m->state &= ~MINER_BALANCE;
 		} else if (diff > m->maxdiff[i]) m->maxdiff[i] = diff;
