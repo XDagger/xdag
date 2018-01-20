@@ -59,7 +59,7 @@ static long double amount2cheatcoins(cheatcoin_amount_t amount) {
 		if (amount & 1) res += d;
 		if (i < 32) res /= 2; else d *= 2;
 	}
-	return res;
+	return floorl(res * 1000000000) / 1000000000;
 }
 
 static long double diff2log(cheatcoin_diff_t diff) {
