@@ -236,7 +236,7 @@ static void *pool_main_thread(void *arg) {
 static double countpay(struct miner *m, int i, double *pay) {
 	double sum = 0;
 	int n = 0;
-	if (m->maxdiff[n] > 0) { sum += m->maxdiff[i]; m->maxdiff[i] = 0; n++; }
+	if (m->maxdiff[i] > 0) { sum += m->maxdiff[i]; m->maxdiff[i] = 0; n++; }
 	*pay = diff2pay(sum, n);
 	sum += m->prev_diff;
 	n += m->prev_diff_count;
