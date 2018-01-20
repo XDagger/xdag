@@ -175,7 +175,8 @@ int cheatcoin_do_xfer(void *outv, const char *amount, const char *address) {
 	xfer.remains = cheatcoins2amount(amount);
 	if (!xfer.remains) { if (out) fprintf(out, "Xfer: nothing to transfer.\n"); return 1; }
 	if (xfer.remains > cheatcoin_get_balance(0)) { if (out) fprintf(out, "Xfer: balance too small.\n"); return 1; }
-	cheatcoin_address2hash(address, xfer.fields[XFER_MAX_IN].hash);
+	if (cheatcoin_address2hash(address, xfer.fields[XFER_MAX_IN].hash))
+		{ if (out) fprintf(out, "Xfer: incorrect address.\n"); return 1; }
 	cheatcoin_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
 	xfer.outsig = 1;
 	g_cheatcoin_state = CHEATCOIN_STATE_XFER;
