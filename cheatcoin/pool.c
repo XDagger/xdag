@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.836 $DVS:time$ */
+/* пул и майнер, T13.744-T13.837 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -67,6 +67,7 @@ struct miner {
 	uint64_t ntask;
 	struct cheatcoin_block *block;
 	uint32_t ip;
+	uint32_t prev_diff_count;
 	uint16_t port;
 	uint16_t state;
 	uint8_t data_size;
@@ -106,12 +107,12 @@ static inline void set_share(struct miner *m, struct cheatcoin_pool_task *task, 
 		int i = t & (N_CONFIRMATIONS - 1);
 		diff = ldexp(diff, -64);
 		diff += ((uint64_t *)hash)[3];
-		diff = ldexp(diff, -32);
-		if (diff <= 0) diff = 1e-32;
-		diff = 1 / diff;
+		if (diff < 1) diff = 1;
+		diff = 46 - log(diff);
 		if (m->main_time < t) {
 			m->main_time = t;
 			m->prev_diff += m->maxdiff[i];
+			m->prev_diff_count++;
 			m->maxdiff[i] = diff;
 			m->state &= ~MINER_BALANCE;
 		} else if (diff > m->maxdiff[i]) m->maxdiff[i] = diff;
@@ -228,6 +229,20 @@ static void *pool_main_thread(void *arg) {
 	return 0;
 }
 
+#define diff2pay(d,n) ((n) ? exp((d) / (n) - 20) * (n) : 0)
+
+static double countpay(struct miner *m, int i, double *pay) {
+	double sum = 0;
+	int n = 0;
+	if (m->maxdiff[n] > 0) { sum += m->maxdiff[i]; m->maxdiff[i] = 0; n++; }
+	*pay = diff2pay(sum, n);
+	sum += m->prev_diff;
+	n += m->prev_diff_count;
+	m->prev_diff = 0;
+	m->prev_diff_count = 0;
+	return diff2pay(sum, n);
+}
+
 static int pay_miners(cheatcoin_time_t t) {
 	struct cheatcoin_field fields[12];
 	struct cheatcoin_block buf, *b;
@@ -270,19 +285,11 @@ static int pay_miners(cheatcoin_time_t t) {
 	diff = malloc(2 * nminers * sizeof(double));
 	if (!diff) return -8;
 	prev_diff = diff + nminers;
-	sum = g_local_miner.maxdiff[n];
-	g_local_miner.maxdiff[n] = 0;
-	prev_sum = g_local_miner.prev_diff;
-	g_local_miner.prev_diff = 0;
-	prev_sum += sum;
+	prev_sum = countpay(&g_local_miner, n, &sum);
 	for (i = 0; i < nminers; ++i) {
 		m = g_miners + i;
 		if (m->state & MINER_FREE || !(m->state & MINER_ADDRESS)) continue;
-		diff[i] = m->maxdiff[n];
-		m->maxdiff[n] = 0;
-		prev_diff[i] = m->prev_diff;
-		m->prev_diff = 0;
-		prev_diff[i] += diff[i];
+		prev_diff[i] = countpay(m, n, &diff[i]);
 		sum += diff[i];
 		prev_sum += prev_diff[i];
 		if (reward_ind < 0 && !memcmp(nonce, m->id.data, sizeof(cheatcoin_hashlow_t))) reward_ind = i;
@@ -834,16 +841,17 @@ int cheatcoin_pool_start(int pool_on, const char *pool_arg, const char *miner_ad
 
 static int print_miner(FILE *out, int n, struct miner *m) {
 	double sum = m->prev_diff;
+	int count = m->prev_diff_count;
 	char buf[32], buf2[64];
 	uint32_t i = m->ip;
 	int j;
-	for (j = 0; j < N_CONFIRMATIONS; ++j) sum += m->maxdiff[j];
+	for (j = 0; j < N_CONFIRMATIONS; ++j) if (m->maxdiff[j] > 0) { sum += m->maxdiff[j]; count++; }
 	sprintf(buf, "%u.%u.%u.%u:%u", i & 0xff, i >> 8 & 0xff, i >> 16 & 0xff, i >> 24 & 0xff, ntohs(m->port));
 	sprintf(buf2, "%llu/%llu", (unsigned long long)m->nfield_in * sizeof(struct cheatcoin_field),
 			(unsigned long long)m->nfield_out * sizeof(struct cheatcoin_field));
 	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", n, cheatcoin_hash2address(m->id.data),
 		(m->state & MINER_FREE ? "free   " : (m->state & MINER_ARCHIVE ? "archive" :
-		(m->state & MINER_ADDRESS ? "active " : "badaddr"))), buf, buf2, sum);
+		(m->state & MINER_ADDRESS ? "active " : "badaddr"))), buf, buf2, diff2pay(sum, count));
 	return m->state & (MINER_FREE | MINER_ARCHIVE) ? 0 : 1;
 }
 
