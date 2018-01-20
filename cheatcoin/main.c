@@ -62,13 +62,20 @@ static long double amount2cheatcoins(cheatcoin_amount_t amount) {
 	return res;
 }
 
+static long double diff2log(cheatcoin_diff_t diff) {
+	long double res = (long double)cheatcoin_diff_to64(diff);
+	cheatcoin_diff_shr32(&diff);
+	cheatcoin_diff_shr32(&diff);
+	if (cheatcoin_diff_to64(diff)) res += ldexpl((long double)cheatcoin_diff_to64(diff), 64);
+	return (res > 0 ? logl(res) : 0);
+}
+
 static long double hashrate(cheatcoin_diff_t *diff) {
-	cheatcoin_diff_t sum;
+	long double sum = 0;
 	int i;
-	memset(&sum, 0, sizeof(sum));
-	for (i = 0; i < HASHRATE_LAST_MAX_TIME; ++i) sum = cheatcoin_diff_add(sum, diff[i]);
-	cheatcoin_diff_shr32(&sum);
-	return amount2cheatcoins(cheatcoin_diff_to64(sum));
+	for (i = 0; i < HASHRATE_LAST_MAX_TIME; ++i) sum += diff2log(diff[i]);
+	sum /= HASHRATE_LAST_MAX_TIME;
+	return ldexpl(expl(sum), -26);
 }
 
 static cheatcoin_amount_t cheatcoins2amount(const char *str) {

@@ -376,9 +376,10 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 		memset(g_cheatcoin_extstats.hashrate_ours  + i, 0, sizeof(cheatcoin_diff_t));
 		g_cheatcoin_extstats.hashrate_last_time = bsaved->time;
 	}
-	g_cheatcoin_extstats.hashrate_total[i] = cheatcoin_diff_add(g_cheatcoin_extstats.hashrate_total[i], diff0);
-	if (bi.flags & BI_OURS)
-		g_cheatcoin_extstats.hashrate_ours[i] = cheatcoin_diff_add(g_cheatcoin_extstats.hashrate_ours[i], diff0);
+	if (cheatcoin_diff_gt(diff0, g_cheatcoin_extstats.hashrate_total[i]))
+		g_cheatcoin_extstats.hashrate_total[i] = diff0;
+	if (bi.flags & BI_OURS && cheatcoin_diff_gt(diff0, g_cheatcoin_extstats.hashrate_ours[i]))
+		g_cheatcoin_extstats.hashrate_ours[i] = diff0;
 	err = -1;
 end:
 	for (j = 0; j < nkeys; ++j) cheatcoin_free_key(public_keys[j].key);
