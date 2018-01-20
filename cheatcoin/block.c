@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.836 $DVS:time$ */
+/* работа с блоками, T13.654-T13.837 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -740,6 +740,14 @@ extern int cheatcoin_set_balance(cheatcoin_hash_t hash, cheatcoin_amount_t balan
 	if (!hash) return -1;
 	pthread_mutex_lock(&block_mutex);
 	bi = block_by_hash(hash);
+	if (bi->flags & BI_OURS && bi != ourfirst) {
+		if (bi->ourprev) bi->ourprev->ournext = bi->ournext; else ourfirst = bi->ournext;
+		if (bi->ournext) bi->ournext->ourprev = bi->ourprev; else ourlast = bi->ourprev;
+		bi->ourprev = 0;
+		bi->ournext = ourfirst;
+		if (ourfirst) ourfirst->ourprev = bi; else ourlast = bi;
+		ourfirst = bi;
+	}
 	pthread_mutex_unlock(&block_mutex);
 	if (!bi) return -1;
 	if (bi->amount != balance) {
