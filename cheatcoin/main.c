@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.836 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.837 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,7 +75,7 @@ static long double hashrate(cheatcoin_diff_t *diff) {
 	int i;
 	for (i = 0; i < HASHRATE_LAST_MAX_TIME; ++i) sum += diff2log(diff[i]);
 	sum /= HASHRATE_LAST_MAX_TIME;
-	return ldexpl(expl(sum), -26);
+	return ldexpl(expl(sum), -58);
 }
 
 static cheatcoin_amount_t cheatcoins2amount(const char *str) {
