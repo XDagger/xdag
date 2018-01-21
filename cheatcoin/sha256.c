@@ -29,6 +29,7 @@
 #define SIG1(x) (ROTRIGHT(x,17) ^ ROTRIGHT(x,19) ^ ((x) >> 10))
 
 /**************************** VARIABLES *****************************/
+#ifndef SHA256_USE_OPENSSL_TXFM
 static const WORD k[64] = {
 	0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
 	0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
@@ -41,7 +42,7 @@ static const WORD k[64] = {
 };
 
 /*********************** FUNCTION DEFINITIONS ***********************/
-static void sha256_transform(SHA256_CTX *ctx, const BYTE data[])
+static void sha256_transform(SHA256REF_CTX *ctx, const BYTE data[])
 {
 	WORD a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
 
@@ -82,7 +83,13 @@ static void sha256_transform(SHA256_CTX *ctx, const BYTE data[])
 	ctx->state[7] += h;
 }
 
-void sha256_init(SHA256_CTX *ctx)
+#else
+	#include <openssl/sha.h>
+	
+	#define sha256_transform(x,y)	SHA256_Transform((SHA256_CTX *)x, y)
+#endif
+
+void sha256_init(SHA256REF_CTX *ctx)
 {
 	ctx->datalen = 0;
 	ctx->bitlen = 0;
@@ -96,7 +103,7 @@ void sha256_init(SHA256_CTX *ctx)
 	ctx->state[7] = 0x5be0cd19;
 }
 
-void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len)
+void sha256_update(SHA256REF_CTX *ctx, const BYTE data[], size_t len)
 {
 	WORD i;
 
@@ -111,7 +118,7 @@ void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len)
 	}
 }
 
-void sha256_final(SHA256_CTX *ctx, BYTE hash[])
+void sha256_final(SHA256REF_CTX *ctx, BYTE hash[])
 {
 	WORD i;
 
