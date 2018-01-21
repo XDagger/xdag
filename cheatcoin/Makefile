@@ -78,7 +78,7 @@ headers = \
 	$(ldusinc)/rbtree.h				\
 
 
-flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lm -Wall -Wmissing-prototypes -Wl,--export-dynamic
+flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
 
 
 all: xdag
@@ -86,8 +86,11 @@ all: xdag
 xdag: $(sources) $(headers) Makefile
 	gcc -o xdag $(sources) $(flags)
 
+xdagfast:
+	gcc -o xdagfast $(sources) -DSHA256_USE_OPENSSL_TXFM $(flags)
+
 clean:
-	rm xdag
+	rm xdag xdagfast
 
 install: xdag
 	sudo cp xdag /usr/local/bin/xdag

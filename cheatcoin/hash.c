@@ -5,7 +5,7 @@
 #include "hash.h"
 
 void cheatcoin_hash(void *data, size_t size, cheatcoin_hash_t hash) {
-	SHA256_CTX ctx;
+	SHA256REF_CTX ctx;
 	sha256_init(&ctx);
 	sha256_update(&ctx, data, size);
 	sha256_final(&ctx, (uint8_t *)hash);
@@ -15,21 +15,21 @@ void cheatcoin_hash(void *data, size_t size, cheatcoin_hash_t hash) {
 }
 
 unsigned cheatcoin_hash_ctx_size(void) {
-	return sizeof(SHA256_CTX);
+	return sizeof(SHA256REF_CTX);
 }
 
 void cheatcoin_hash_init(void *ctxv) {
-	SHA256_CTX *ctx = (SHA256_CTX *)ctxv;
+	SHA256REF_CTX *ctx = (SHA256REF_CTX *)ctxv;
 	sha256_init(ctx);
 }
 
 void cheatcoin_hash_update(void *ctxv, void *data, size_t size) {
-	SHA256_CTX *ctx = (SHA256_CTX *)ctxv;
+	SHA256REF_CTX *ctx = (SHA256REF_CTX *)ctxv;
 	sha256_update(ctx, data, size);
 }
 
 void cheatcoin_hash_final(void *ctxv, void *data, size_t size, cheatcoin_hash_t hash) {
-	SHA256_CTX ctx;
+	SHA256REF_CTX ctx;
 	memcpy(&ctx, ctxv, sizeof(ctx));
 	sha256_update(&ctx, (uint8_t *)data, size);
 	sha256_final(&ctx, (uint8_t *)hash);
@@ -39,7 +39,7 @@ void cheatcoin_hash_final(void *ctxv, void *data, size_t size, cheatcoin_hash_t 
 }
 
 uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, int step, cheatcoin_hash_t hash) {
-	SHA256_CTX ctx;
+	SHA256REF_CTX ctx;
 	cheatcoin_hash_t hash0;
 	uint64_t min_nonce = 0;
 	int i;
@@ -60,12 +60,12 @@ uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, i
 }
 
 void cheatcoin_hash_get_state(void *ctxv, cheatcoin_hash_t state) {
-	SHA256_CTX *ctx = (SHA256_CTX *)ctxv;
+	SHA256REF_CTX *ctx = (SHA256REF_CTX *)ctxv;
 	memcpy(state, ctx->state, sizeof(cheatcoin_hash_t));
 }
 
 void cheatcoin_hash_set_state(void *ctxv, cheatcoin_hash_t state, size_t size) {
-	SHA256_CTX *ctx = (SHA256_CTX *)ctxv;
+	SHA256REF_CTX *ctx = (SHA256REF_CTX *)ctxv;
 	memcpy(ctx->state, state, sizeof(cheatcoin_hash_t));
 	ctx->datalen = 0;
 	ctx->bitlen = size << 3;

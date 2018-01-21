@@ -114,3 +114,19 @@ Transport layer:
 ---------------
 
 The dnet network is used as transport layer.
+
+
+Updates:
+---------------
+
+Replacement SHA256 transform code from openssl project
+modified by true ( XDAG rvKaJSbP9DE6sg6XetYtSpaK+2aDbUq8 )
+
+50-150% speedup on Intel Core series post-Nehalem
+50-100% speedup on AMD Heavy Equipment cores
+400-500% speedup on Ryzen
+Better use of threads than reference implementation
+
+Heat output is increased with the fast version, so you
+may want to continue using the old implementation on
+devices with poor cooling (notebooks, etc).
