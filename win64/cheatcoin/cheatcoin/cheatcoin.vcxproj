@@ -100,7 +100,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{8F05F6FF-AA25-4D79-AB2D-886BA8976393}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>cheatcoin</RootNamespace>
+    <RootNamespace>xdag</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
     <ProjectName>xdag</ProjectName>
   </PropertyGroup>

@@ -21,6 +21,9 @@ typedef long ssize_t;
 static pthread_t pthread_invalid;
 extern int system_init(void);
 #define strdup(x) _strdup(x)
+#if defined(_MSC_VER)
+#define SHUT_RDWR SD_BOTH
+#endif
 #else
 #define pthread_invalid -1
 #define system_init()	0

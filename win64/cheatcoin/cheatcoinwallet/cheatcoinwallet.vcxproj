@@ -22,7 +22,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{EDACF749-CA11-48F7-806A-D39748389856}</ProjectGuid>
     <Keyword>MFCProj</Keyword>
-    <RootNamespace>cheatcoinwallet</RootNamespace>
+    <RootNamespace>xdagwallet</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
     <ProjectName>xdagwallet</ProjectName>
   </PropertyGroup>

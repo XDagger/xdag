@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.838" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.841" /* $DVS:time$ */
 
 /* история
+
+T13.841 исправление ошибок, сборка для Windows
 
 T13.838 добавлена опция -a, позволяющая явно задавать адрес, используемый в майнере;
 	изменён способ подсчёта хешрейта и способ распределения выигрыша среди майнеров

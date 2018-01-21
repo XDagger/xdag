@@ -1,4 +1,4 @@
-/* база хостов, T13.714-T13.816 $DVS:time$ */
+/* база хостов, T13.714-T13.841 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -121,7 +121,7 @@ static int read_database(const char *fname, int flags) {
 	FILE *f = fopen(fname, "r");
 	int n = 0, n_ips = 0, n_blocked = 0, i;
 	if (!f) return -1;
-	while(fscanf(f, "%s", str) == 1) {
+	while(fscanf(f, "%63s", str) == 1) {
 		p = strchr(str, ':');
 		if (!p || !p[1]) continue;
 		h0.flags = 0;

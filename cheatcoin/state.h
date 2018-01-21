@@ -1,4 +1,4 @@
-/* состояние программы, T13.788-T13.816; $DVS:time$ */
+/* состояние программы, T13.788-T13.841; $DVS:time$ */
 
 cheatcoin_state(INIT, "Initializing.")
 cheatcoin_state(KEYS, "Generating keys...")
@@ -17,4 +17,4 @@ cheatcoin_state(POOL, "Connected to the mainnet pool. No mining.")
 cheatcoin_state(MTST, "Connected to the testnet pool. Mining on. Normal testing.")
 cheatcoin_state(MINE, "Connected to the mainnet pool. Mining on. Normal operation.")
 cheatcoin_state(STST, "Synchronized with the test network. Normal testing.")
-cheatcoin_state(SYNC, "Synchronized witn the main network. Normal operation.")
+cheatcoin_state(SYNC, "Synchronized with the main network. Normal operation.")
