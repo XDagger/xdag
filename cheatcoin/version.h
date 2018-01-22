@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.842" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.844" /* $DVS:time$ */
 
 /* история
+
+T13.844 ещё одно улучшение производительности sha256 с использованием sse/avx/avx2
 
 T13.842 улучшение производительности sha256
 

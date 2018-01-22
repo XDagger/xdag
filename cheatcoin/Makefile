@@ -84,7 +84,7 @@ flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lm
 all: xdag
 
 xdag: $(sources) $(headers) Makefile
-	gcc -o xdag $(sources) -DSHA256_USE_OPENSSL_TXFM $(flags)
+	gcc -o xdag $(sources) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK $(flags)
 
 clean:
 	rm xdag

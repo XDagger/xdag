@@ -760,8 +760,8 @@ static void *mining_thread(void *arg) {
 			memcpy(last.data, task->nonce.data, sizeof(cheatcoin_hash_t));
 			nonce = last.amount + nthread;
 		}
-		last.amount = cheatcoin_hash_final_multi(task->ctx, &nonce, 256, g_cheatcoin_mining_threads, hash);
-		g_cheatcoin_extstats.nhashes += 256;
+		last.amount = cheatcoin_hash_final_multi(task->ctx, &nonce, 4096, g_cheatcoin_mining_threads, hash);
+		g_cheatcoin_extstats.nhashes += 4096;
 		set_share(&g_local_miner, task, last.data, hash);
 	}
 	return 0;
