@@ -1,4 +1,4 @@
-/* хеш-функция, T13.654-T13.842 $DVS:time$ */
+/* хеш-функция, T13.654-T13.844 $DVS:time$ */
 
 #include <string.h>
 #include "sha256.h"
@@ -75,7 +75,7 @@ typedef struct {
 	int blocks;
 } HASH_DESC;
 
-extern void sha256_multi_block(SHA256_MB_CTX *, const HASH_DESC *, int);
+extern void xsha256_multi_block(SHA256_MB_CTX *, const HASH_DESC *, int);
 
 uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, int step, cheatcoin_hash_t hash) {
 	SHA256_MB_CTX mctx1, mctx2, mctx;
@@ -116,7 +116,7 @@ uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, i
 		memcpy(&mctx, &mctx1, 8 * 8 * 4);
 		nonce0 = *nonce;
 		for (i = 0; i < N; ++i) { memcpy(array1 + i * 128 + 56, nonce, 8); *nonce += step; }
-		sha256_multi_block(&mctx, desc1, N/4);
+		xsha256_multi_block(&mctx, desc1, N/4);
 		for (i = 0; i < N; ++i) {
 			((uint32_t *)array2)[i * 16 + 0] = htonl(mctx.A[i]);
 			((uint32_t *)array2)[i * 16 + 1] = htonl(mctx.B[i]);
@@ -128,7 +128,7 @@ uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, i
 			((uint32_t *)array2)[i * 16 + 7] = htonl(mctx.H[i]);
 		}
 		memcpy(&mctx, &mctx2, 8 * 8 * 4);
-		sha256_multi_block(&mctx, desc2, N/4);
+		xsha256_multi_block(&mctx, desc2, N/4);
 		for (i = 0; i < N; ++i, nonce0 += step) {
 			((uint32_t *)hash0)[0] = htonl(mctx.A[i]);
 			((uint32_t *)hash0)[1] = htonl(mctx.B[i]);
