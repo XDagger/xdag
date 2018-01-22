@@ -11,6 +11,7 @@
 
 /*************************** HEADER FILES ***************************/
 #include <stddef.h>
+#include <openssl/sha.h>
 
 /****************************** MACROS ******************************/
 #define SHA256_BLOCK_SIZE 32            // SHA256 outputs a 32 byte digest
@@ -19,12 +20,20 @@
 typedef unsigned char BYTE;             // 8-bit byte
 typedef unsigned int  WORD;             // 32-bit word, change to "long" for 16-bit machines
 
+#if 0
 typedef struct {
 	WORD state[8];
 	unsigned long long bitlen;
 	BYTE data[64];
-	WORD datalen, extra;	
+	WORD datalen, md_len;
 } SHA256REF_CTX;
+#else
+typedef SHA256_CTX SHA256REF_CTX;
+#define state h
+#define bitlen Nl
+#define bitlenH Nh
+#define datalen num
+#endif
 
 /*********************** FUNCTION DECLARATIONS **********************/
 void sha256_init(SHA256REF_CTX *ctx);

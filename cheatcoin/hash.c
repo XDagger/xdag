@@ -1,4 +1,4 @@
-/* хеш-функция, T13.654-T13.775 $DVS:time$ */
+/* хеш-функция, T13.654-T13.842 $DVS:time$ */
 
 #include <string.h>
 #include "sha256.h"
@@ -69,4 +69,6 @@ void cheatcoin_hash_set_state(void *ctxv, cheatcoin_hash_t state, size_t size) {
 	memcpy(ctx->state, state, sizeof(cheatcoin_hash_t));
 	ctx->datalen = 0;
 	ctx->bitlen = size << 3;
+	ctx->bitlenH = 0;
+	ctx->md_len = SHA256_BLOCK_SIZE;
 }

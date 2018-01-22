@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.841" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.842" /* $DVS:time$ */
 
 /* история
+
+T13.842 улучшение производительности sha256
 
 T13.841 исправление ошибок, сборка для Windows
 

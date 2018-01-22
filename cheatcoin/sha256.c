@@ -15,6 +15,7 @@
 /*************************** HEADER FILES ***************************/
 #include <stdlib.h>
 #include <memory.h>
+#include <openssl/sha.h>
 #include "sha256.h"
 
 /****************************** MACROS ******************************/
@@ -84,8 +85,6 @@ static void sha256_transform(SHA256REF_CTX *ctx, const BYTE data[])
 }
 
 #else
-	#include <openssl/sha.h>
-	
 	#define sha256_transform(x,y)	SHA256_Transform((SHA256_CTX *)x, y)
 #endif
 
@@ -93,6 +92,7 @@ void sha256_init(SHA256REF_CTX *ctx)
 {
 	ctx->datalen = 0;
 	ctx->bitlen = 0;
+	ctx->bitlenH = 0;
 	ctx->state[0] = 0x6a09e667;
 	ctx->state[1] = 0xbb67ae85;
 	ctx->state[2] = 0x3c6ef372;
@@ -101,17 +101,19 @@ void sha256_init(SHA256REF_CTX *ctx)
 	ctx->state[5] = 0x9b05688c;
 	ctx->state[6] = 0x1f83d9ab;
 	ctx->state[7] = 0x5be0cd19;
+	ctx->md_len = SHA256_BLOCK_SIZE;
 }
 
 void sha256_update(SHA256REF_CTX *ctx, const BYTE data[], size_t len)
 {
 	WORD i;
+	BYTE *cdata = (BYTE *)ctx->data;
 
 	for (i = 0; i < len; ++i) {
-		ctx->data[ctx->datalen] = data[i];
+		cdata[ctx->datalen] = data[i];
 		ctx->datalen++;
 		if (ctx->datalen == 64) {
-			sha256_transform(ctx, ctx->data);
+			sha256_transform(ctx, cdata);
 			ctx->bitlen += 512;
 			ctx->datalen = 0;
 		}
@@ -121,34 +123,35 @@ void sha256_update(SHA256REF_CTX *ctx, const BYTE data[], size_t len)
 void sha256_final(SHA256REF_CTX *ctx, BYTE hash[])
 {
 	WORD i;
+	BYTE *cdata = (BYTE *)ctx->data;
 
 	i = ctx->datalen;
 
 	// Pad whatever data is left in the buffer.
 	if (ctx->datalen < 56) {
-		ctx->data[i++] = 0x80;
+		cdata[i++] = 0x80;
 		while (i < 56)
-			ctx->data[i++] = 0x00;
+			cdata[i++] = 0x00;
 	}
 	else {
-		ctx->data[i++] = 0x80;
+		cdata[i++] = 0x80;
 		while (i < 64)
-			ctx->data[i++] = 0x00;
-		sha256_transform(ctx, ctx->data);
-		memset(ctx->data, 0, 56);
+			cdata[i++] = 0x00;
+		sha256_transform(ctx, cdata);
+		memset(cdata, 0, 56);
 	}
 
 	// Append to the padding the total message's length in bits and transform.
 	ctx->bitlen += ctx->datalen * 8;
-	ctx->data[63] = ctx->bitlen;
-	ctx->data[62] = ctx->bitlen >> 8;
-	ctx->data[61] = ctx->bitlen >> 16;
-	ctx->data[60] = ctx->bitlen >> 24;
-	ctx->data[59] = ctx->bitlen >> 32;
-	ctx->data[58] = ctx->bitlen >> 40;
-	ctx->data[57] = ctx->bitlen >> 48;
-	ctx->data[56] = ctx->bitlen >> 56;
-	sha256_transform(ctx, ctx->data);
+	cdata[63] = ctx->bitlen;
+	cdata[62] = ctx->bitlen >> 8;
+	cdata[61] = ctx->bitlen >> 16;
+	cdata[60] = ctx->bitlen >> 24;
+	cdata[59] = ctx->bitlenH;
+	cdata[58] = ctx->bitlenH >> 8;
+	cdata[57] = ctx->bitlenH >> 16;
+	cdata[56] = ctx->bitlenH >> 24;
+	sha256_transform(ctx, cdata);
 
 	// Since this implementation uses little endian byte ordering and SHA uses big endian,
 	// reverse all the bytes when copying the final state to the output hash.
