@@ -1,4 +1,4 @@
-/* хеш-функция, T13.654-T13.844 $DVS:time$ */
+/* хеш-функция, T13.654-T13.845 $DVS:time$ */
 
 #include <string.h>
 #include "sha256.h"
@@ -90,13 +90,13 @@ uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, i
 	memset(array1, 0, 128);
 	memcpy(array1, ctx1->data, 56);
 	array1[64] = 0x80;
-	array1[126] = 2;
+	array1[126] = 0x10;
 	for (i = 1; i < N; ++i) memcpy(array1 + i * 128, array1, 128);
 	for (i = 0; i < N; ++i) desc1[i].ptr = array1 + i * 128, desc1[i].blocks = 2;
 
 	memset(array2, 0, 64);
 	array2[32] = 0x80;
-	array2[63] = 32;
+	array2[62] = 1;
 	for (i = 1; i < N; ++i) memcpy(array2 + i * 64, array2, 64);
 	for (i = 0; i < N; ++i) desc2[i].ptr = array2 + i * 64, desc2[i].blocks = 1;
 
@@ -138,10 +138,10 @@ uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, i
 			((uint32_t *)hash0)[5] = htonl(mctx.F[i]);
 			((uint32_t *)hash0)[6] = htonl(mctx.G[i]);
 			((uint32_t *)hash0)[7] = htonl(mctx.H[i]);
-                	if ((!i && !j) || cheatcoin_cmphash(hash0, hash) < 0) {
-                        	memcpy(hash, hash0, sizeof(cheatcoin_hash_t));
-                        	min_nonce = nonce0;
-                	}
+			if ((!i && !j) || cheatcoin_cmphash(hash0, hash) < 0) {
+				memcpy(hash, hash0, sizeof(cheatcoin_hash_t));
+				min_nonce = nonce0;
+			}
 		}
 	}
 	return min_nonce;
