@@ -43,6 +43,10 @@ static inline cheatcoin_diff_t cheatcoin_diff_div(cheatcoin_diff_t p, cheatcoin_
 #define read(a,b,c)				recv(a,b,c,0)
 #define sysconf(x)				(512)
 
+#define xOPENSSL_ia32_cpuid		OPENSSL_ia32_cpuid
+#define xOPENSSL_ia32cap_P		OPENSSL_ia32cap_P
+#define xsha256_multi_block		sha256_multi_block
+
 #else
 
 #define pthread_self_ptr()		pthread_self()

@@ -31,7 +31,7 @@
 
 /**************************** VARIABLES *****************************/
 #ifndef SHA256_USE_OPENSSL_TXFM
-static const WORD k[64] = {
+static const xWORD k[64] = {
 	0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
 	0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
 	0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
@@ -43,9 +43,9 @@ static const WORD k[64] = {
 };
 
 /*********************** FUNCTION DEFINITIONS ***********************/
-static void sha256_transform(SHA256REF_CTX *ctx, const BYTE data[])
+static void sha256_transform(SHA256REF_CTX *ctx, const xBYTE data[])
 {
-	WORD a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
+	xWORD a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
 
 	for (i = 0, j = 0; i < 16; ++i, j += 4)
 		m[i] = (data[j] << 24) | (data[j + 1] << 16) | (data[j + 2] << 8) | (data[j + 3]);
@@ -104,10 +104,10 @@ void sha256_init(SHA256REF_CTX *ctx)
 	ctx->md_len = SHA256_BLOCK_SIZE;
 }
 
-void sha256_update(SHA256REF_CTX *ctx, const BYTE data[], size_t len)
+void sha256_update(SHA256REF_CTX *ctx, const xBYTE data[], size_t len)
 {
-	WORD i;
-	BYTE *cdata = (BYTE *)ctx->data;
+	xWORD i;
+	xBYTE *cdata = (xBYTE *)ctx->data;
 
 	for (i = 0; i < len; ++i) {
 		cdata[ctx->datalen] = data[i];
@@ -120,10 +120,10 @@ void sha256_update(SHA256REF_CTX *ctx, const BYTE data[], size_t len)
 	}
 }
 
-void sha256_final(SHA256REF_CTX *ctx, BYTE hash[])
+void sha256_final(SHA256REF_CTX *ctx, xBYTE hash[])
 {
-	WORD i;
-	BYTE *cdata = (BYTE *)ctx->data;
+	xWORD i;
+	xBYTE *cdata = (xBYTE *)ctx->data;
 
 	i = ctx->datalen;
 

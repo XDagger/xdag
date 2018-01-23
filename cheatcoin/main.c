@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.837 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.847 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -434,6 +434,7 @@ int main(int argc, char **argv) {
 	pthread_t th;
 #if !defined(_WIN32) && !defined(_WIN64)
 	signal(SIGPIPE, SIG_IGN);
+	signal(SIGWINCH, SIG_IGN);
 #endif
 	g_progname = strdup(argv[0]);
 	while ((ptr = strchr(g_progname, '/')) || (ptr = strchr(g_progname, '\\'))) g_progname = ptr + 1;

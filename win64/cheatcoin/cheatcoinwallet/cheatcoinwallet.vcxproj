@@ -96,7 +96,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_WINDOWS;NDEBUG;DFSTOOLS;CHEATCOIN;CHEATCOINWALLET;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;SHA256_USE_OPENSSL_TXFM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;NDEBUG;DFSTOOLS;CHEATCOIN;CHEATCOINWALLET;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;SHA256_USE_OPENSSL_TXFM;SHA256_OPENSSL_MBLOCK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

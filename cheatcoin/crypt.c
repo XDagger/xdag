@@ -1,4 +1,4 @@
-/* криптография (ECDSA), T13.654-T13.844 $DVS:time$ */
+/* криптография (ECDSA), T13.654-T13.847 $DVS:time$ */
 
 #include <string.h>
 #include <openssl/crypto.h>
@@ -13,6 +13,7 @@
 #include "crypt.h"
 #include "transport.h"
 #include "log.h"
+#include "system.h"
 
 static EC_GROUP *group;
 

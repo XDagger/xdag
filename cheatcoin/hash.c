@@ -1,8 +1,12 @@
-/* хеш-функция, T13.654-T13.845 $DVS:time$ */
+/* хеш-функция, T13.654-T13.847 $DVS:time$ */
 
 #include <string.h>
+#ifdef SHA256_OPENSSL_MBLOCK
+#include <arpa/inet.h>
+#endif
 #include "sha256.h"
 #include "hash.h"
+#include "system.h"
 
 void cheatcoin_hash(void *data, size_t size, cheatcoin_hash_t hash) {
 	SHA256REF_CTX ctx;
@@ -62,8 +66,6 @@ uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, i
 }
 
 #else
-
-#include <arpa/inet.h>
 
 #define N 8
 

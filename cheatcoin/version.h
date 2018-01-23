@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.845" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.847" /* $DVS:time$ */
 
 /* история
+
+T13.847 игнорирование сигнала SIGWINCHб слияние с windows
 
 T13.845 ещё одно улучшение производительности sha256 с использованием sse/avx/avx2
 

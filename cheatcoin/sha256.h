@@ -17,15 +17,15 @@
 #define SHA256_BLOCK_SIZE 32            // SHA256 outputs a 32 byte digest
 
 /**************************** DATA TYPES ****************************/
-typedef unsigned char BYTE;             // 8-bit byte
-typedef unsigned int  WORD;             // 32-bit word, change to "long" for 16-bit machines
+typedef unsigned char xBYTE;             // 8-bit byte
+typedef unsigned int  xWORD;             // 32-bit word, change to "long" for 16-bit machines
 
 #if 0
 typedef struct {
-	WORD state[8];
+	xWORD state[8];
 	unsigned long long bitlen;
-	BYTE data[64];
-	WORD datalen, md_len;
+	xBYTE data[64];
+	xWORD datalen, md_len;
 } SHA256REF_CTX;
 #else
 typedef SHA256_CTX SHA256REF_CTX;
@@ -37,7 +37,7 @@ typedef SHA256_CTX SHA256REF_CTX;
 
 /*********************** FUNCTION DECLARATIONS **********************/
 void sha256_init(SHA256REF_CTX *ctx);
-void sha256_update(SHA256REF_CTX *ctx, const BYTE data[], size_t len);
-void sha256_final(SHA256REF_CTX *ctx, BYTE hash[]);
+void sha256_update(SHA256REF_CTX *ctx, const xBYTE data[], size_t len);
+void sha256_final(SHA256REF_CTX *ctx, xBYTE hash[]);
 
 #endif   // SHA256_H
