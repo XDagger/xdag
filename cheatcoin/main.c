@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.847 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.852 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -433,8 +433,11 @@ int main(int argc, char **argv) {
 	int transport_flags = 0, n_addrports = 0, n_mining_threads = 0, is_pool = 0, is_miner = 0, i, level;
 	pthread_t th;
 #if !defined(_WIN32) && !defined(_WIN64)
+	signal(SIGHUP, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGWINCH, SIG_IGN);
+	signal(SIGINT, SIG_IGN);
+	signal(SIGTERM, SIG_IGN);
 #endif
 	g_progname = strdup(argv[0]);
 	while ((ptr = strchr(g_progname, '/')) || (ptr = strchr(g_progname, '\\'))) g_progname = ptr + 1;

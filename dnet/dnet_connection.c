@@ -1,4 +1,4 @@
-/* dnet: connections; T11.253-T13.830; $DVS:time$ */
+/* dnet: connections; T11.253-T13.852; $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -67,7 +67,7 @@ static ssize_t dnet_conn_write(void *private_data, void *buf, size_t size) {
 		fd.events = POLLOUT;
 		fd.revents = 0;
 		if (poll(&fd, 1, 16000) != 1 || fd.revents != POLLOUT) {
-			dnet_log_printf("dnet: poll failed for socket %d\n", conn->socket);
+			dnet_log_printf("dnet: write poll failed for socket %d\n", conn->socket);
 			shutdown(conn->socket, SHUT_RDWR);
 			return -1l;
 		}
@@ -90,19 +90,17 @@ static inline ssize_t dnet_socket_read(int fd, void *buf, size_t size) {
 #ifdef __LDuS__
     return read(fd, buf, size);
 #else
-    struct timeval timeout = { DNET_UPDATE_PERIOD * 3 / 2, 0 };
-    while (timeout.tv_sec || timeout.tv_usec) {
-        fd_set rset;
-        FD_ZERO(&rset);
-        FD_SET(fd, &rset);
-        if (select(fd + 1, &rset, 0, 0, &timeout) < 0) {
-            dnet_log_printf("dnet: select returns an error, %s", strerror(errno));
-        }
-        if (FD_ISSET(fd, &rset)) {
+	time_t te = time(0) + DNET_UPDATE_PERIOD * 3 / 2, t;
+	while ((t = time(0)) < te) {
+		struct pollfd pfd;
+		pfd.fd = fd;
+		pfd.events = POLLIN;
+		if (poll(&pfd, 1, (te - t) * 1000) == 1 && pfd.revents == POLLIN) {
             return read(fd, buf, size);
         }
     }
-    return -1;
+	dnet_log_printf("dnet: read poll failed for socket %d\n", fd);
+	return -1;
 #endif
 }
 
