@@ -4,10 +4,13 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <errno.h>
 
 #define CHEATCOIN_COMMAND_MAX	0x1000
-#define FIFO_IN					"fifo_cmd.dat"
-#define FIFO_OUT				"fifo_res.dat"
+#define UNIX_SOCK				"unix_sock.dat"
 #define STATS_TXT				"/home/ec2-user/cheat/stats.txt"
 
 static void daemonize(void) {
@@ -38,22 +41,22 @@ static void daemonize(void) {
 
 int main(void) {
 	const char *cmd = "stats";
-	int fd;
+	struct sockaddr_un addr;
 	daemonize();
 	while(1) {
-		int c = 0;
+		int c = 0, s;
 		FILE *f;
-		fd = open(FIFO_IN, O_WRONLY);
-		if (fd >= 0) {
-			write(fd, cmd, strlen(cmd) + 1);
-			close(fd);
-			fd = open(FIFO_OUT, O_RDONLY);
-			if (fd >= 0 && (f = fopen(STATS_TXT, "w"))) {
-				while (read(fd, &c, 1) == 1 && c) fputc(c, f);
-				close(fd);
-				fclose(f);
-			}
+		if( (s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) { printf("Can't open unix domain socket errno:%d.\n",errno); continue; }
+		memset(&addr, 0, sizeof(addr));
+		addr.sun_family = AF_UNIX;
+		strcpy(addr.sun_path, UNIX_SOCK);
+		if( connect(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) { printf("Can't connect to unix domain socket errno:%d\n",errno); continue; }
+		write(s, cmd, strlen(cmd) + 1);
+		if ((f = fopen(STATS_TXT, "w"))) {
+			while (read(s, &c, 1) == 1 && c) fputc(c, f);
+			fclose(f);
 		}
+		close(s);
 		sleep(10);
 	}
 	return 0;

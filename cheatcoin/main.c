@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.852 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.853 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -395,9 +395,9 @@ static int terminal(void) {
 		if( connect(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) { printf("Can't connect to unix domain socket errno:%d\n",errno); continue; }
 		if (ispwd) write(s, cmd2, strlen(cmd2));
 		write(s, cmd, strlen(cmd) + 1);
+		if (!strcmp(ptr, "terminate")) { sleep(1); close(s); break; }
 		while (read(s, &c, 1) == 1 && c) putchar(c);
 		close(s);
-		if (!strcmp(ptr, "terminate")) break;
 	}
 #endif
 	return 0;
@@ -421,12 +421,15 @@ static void *terminal_thread(void *arg) {
 		if ( (cl = accept(s, NULL, NULL)) == -1) { cheatcoin_err("Unix domain socket accept errno:%d",errno); break; }
 		p = 0;
 		do {
-			p = read(cl, &cmd[p], sizeof(cmd)-p-1);
-		} while(p < sizeof(cmd) && cmd[p] != '\0'); 
-		fd = fdopen(cl, "w"); if (!fd) { cheatcoin_err("Can't fdopen unix domain socket errno:%d,errno"); break; }
-		res = cheatcoin_command(cmd, fd);
-		fclose(fd);
-		if (res < 0) exit(0);
+			p += res = read(cl, &cmd[p], sizeof(cmd)-p);
+		} while (res > 0 && p < sizeof(cmd) && cmd[p - 1] != '\0');
+		if (res < 0 || cmd[p - 1] != '\0') close(s);
+		else {
+			fd = fdopen(cl, "w"); if (!fd) { cheatcoin_err("Can't fdopen unix domain socket errno:%d",errno); break; }
+			res = cheatcoin_command(cmd, fd);
+			fclose(fd);
+			if (res < 0) exit(0);
+		}
 	}
 	return 0;
 }

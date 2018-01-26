@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.852" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.853" /* $DVS:time$ */
 
 /* история
+
+T13.853 коммуникация через fifo заменена на сокеты unix
 
 T13.852 исправлена ошибка со слишком большим дескриптором сокета в select
 
