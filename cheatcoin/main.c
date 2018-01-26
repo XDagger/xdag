@@ -10,6 +10,12 @@
 #include <math.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#if !defined(_WIN32) && !defined(_WIN64)
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <errno.h>
+#endif
 #include "address.h"
 #include "block.h"
 #include "crypt.h"
@@ -23,9 +29,9 @@
 #include "pool.h"
 #include "memory.h"
 
+
 #define CHEATCOIN_COMMAND_MAX	0x1000
-#define FIFO_IN					"fifo_cmd.dat"
-#define FIFO_OUT				"fifo_res.dat"
+#define UNIX_SOCK				"unix_sock.dat"
 #define XFER_MAX_IN				11
 
 char *g_coinname, *g_progname;
@@ -366,7 +372,8 @@ static int out_balances(void) {
 static int terminal(void) {
 #if !defined(_WIN32) && !defined(_WIN64)
 	char cmd[CHEATCOIN_COMMAND_MAX], cmd2[CHEATCOIN_COMMAND_MAX], *ptr, *lasts;
-	int fd;
+	int s;
+	struct sockaddr_un addr;
 	while(1) {
 		int ispwd = 0, c = 0;
 		printf("%s> ", g_progname); fflush(stdout);
@@ -381,47 +388,49 @@ static int terminal(void) {
 			sprintf(cmd2, "pwd=%08x%08x%08x%08x ", pwd[0], pwd[1], pwd[2], pwd[3]);
 			ispwd = 1;
 		}
-		fd = open(FIFO_IN, O_WRONLY);
-		if (fd < 0) { printf("Can't open pipe.\n"); continue; }
-		if (ispwd) write(fd, cmd2, strlen(cmd2));
-		write(fd, cmd, strlen(cmd) + 1);
-		close(fd);
-		fd = open(FIFO_OUT, O_RDONLY);
-		if (fd < 0) { printf("Can't open pipe.\n"); continue; }
-		while (read(fd, &c, 1) == 1 && c) putchar(c);
-		close(fd);
+		if( (s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) { printf("Can't open unix domain socket errno:%d.\n",errno); continue; }
+		memset(&addr, 0, sizeof(addr));
+		addr.sun_family = AF_UNIX;
+		strcpy(addr.sun_path, UNIX_SOCK);
+		if( connect(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) { printf("Can't connect to unix domain socket errno:%d\n",errno); continue; }
+		if (ispwd) write(s, cmd2, strlen(cmd2));
+		write(s, cmd, strlen(cmd) + 1);
+		while (read(s, &c, 1) == 1 && c) putchar(c);
+		close(s);
 		if (!strcmp(ptr, "terminate")) break;
 	}
 #endif
 	return 0;
 }
 
-static void *terminal_thread(void *arg) {
 #if !defined(_WIN32) && !defined(_WIN64)
-	char cmd[CHEATCOIN_COMMAND_MAX];
-	int pos, in, out, c, res;
-	FILE *fout;
-	mkfifo(FIFO_IN, 0660);
-	mkfifo(FIFO_OUT, 0660);
-	cheatcoin_info("Terminal thread entered main cycle");
-	while (1) {
-		in = open(FIFO_IN, O_RDONLY); if (in < 0) { cheatcoin_err("Can't open " FIFO_IN); break; }
-		out = open(FIFO_OUT, O_WRONLY); if (out < 0) { cheatcoin_err("Can't open " FIFO_OUT); break; }
-		fout = fdopen(out, "w"); if (!fout) { cheatcoin_err("Can't fdopen " FIFO_OUT); break; }
-		for (pos = 0; pos < CHEATCOIN_COMMAND_MAX - 1 && read(in, &c, 1) == 1 && c; ++pos) cmd[pos] = c;
-		cmd[pos] = 0;
-		res = cheatcoin_command(cmd, fout);
-		fputc(0, fout);
-		fflush(fout);
-		fclose(fout);
-//		close(out);
-		close(in);
+static void *terminal_thread(void *arg) {
+	struct sockaddr_un addr;
+	int s;
+	if( (s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) { cheatcoin_err("Can't create unix domain socket errno:%d",errno); return 0; }
+	memset(&addr, 0, sizeof(addr));
+	addr.sun_family = AF_UNIX;
+	strcpy(addr.sun_path, UNIX_SOCK);
+	unlink(UNIX_SOCK);
+	if (bind(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) { cheatcoin_err("Can't bind unix domain socket errno:%d",errno); return 0; }
+	if(listen(s, 5) == -1) { cheatcoin_err("Unix domain socket listen errno:%d",errno); return 0; }
+	while(1) {
+		char cmd[CHEATCOIN_COMMAND_MAX];
+		int cl, p, res;
+		FILE *fd;
+		if ( (cl = accept(s, NULL, NULL)) == -1) { cheatcoin_err("Unix domain socket accept errno:%d",errno); break; }
+		p = 0;
+		do {
+			p = read(cl, &cmd[p], sizeof(cmd)-p-1);
+		} while(p < sizeof(cmd) && cmd[p] != '\0'); 
+		fd = fdopen(cl, "w"); if (!fd) { cheatcoin_err("Can't fdopen unix domain socket errno:%d,errno"); break; }
+		res = cheatcoin_command(cmd, fd);
+		fclose(fd);
 		if (res < 0) exit(0);
-		sleep(1);
 	}
-#endif
 	return 0;
 }
+#endif /* WIN */
 
 #ifdef CHEATCOINWALLET
 int cheatcoin_main(int argc, char **argv) {
