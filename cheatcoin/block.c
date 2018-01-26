@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.837 $DVS:time$ */
+/* работа с блоками, T13.654-T13.855 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -43,6 +43,8 @@ enum bi_flags {
 	BI_OURS			= 0x20,
 };
 
+struct block_backrefs;
+
 struct block_internal {
 	struct ldus_rbtree node;
 	cheatcoin_hash_t hash;
@@ -51,9 +53,17 @@ struct block_internal {
 	cheatcoin_time_t time;
 	uint64_t storage_pos;
 	struct block_internal *ref, *link[MAX_LINKS];
+	struct block_backrefs *backrefs;
 	uint8_t flags, nlinks, max_diff_link, reserved;
 	uint16_t in_mask;
 	uint16_t n_our_key;
+};
+
+#define N_BACKREFS	(sizeof(struct block_internal) / sizeof(struct block_internal *) - 1)
+
+struct block_backrefs {
+	struct block_internal *backrefs[N_BACKREFS];
+	struct block_backrefs *next;
 };
 
 #define ourprev link[MAX_LINKS - 2]
@@ -360,12 +370,26 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 	}
 	if (bi.flags & BI_OURS)
 		bsaved->ourprev = ourlast, *(ourlast ? &ourlast->ournext : &ourfirst) = bsaved, ourlast = bsaved;
-	for (i = 0; i < bi.nlinks; ++i) if (!(bi.link[i]->flags & BI_REF)) {
-		for (ref0 = 0, ref = noref_first; ref != bi.link[i]; ref0 = ref, ref = ref->ref);
-		*(ref0 ? &ref0->ref : &noref_first) = ref->ref;
-		if (ref == noref_last) noref_last = ref0;
-		bi.link[i]->flags |= BI_REF;
-		g_cheatcoin_extstats.nnoref--;
+	for (i = 0; i < bi.nlinks; ++i) {
+		if (!(bi.link[i]->flags & BI_REF)) {
+			for (ref0 = 0, ref = noref_first; ref != bi.link[i]; ref0 = ref, ref = ref->ref);
+			*(ref0 ? &ref0->ref : &noref_first) = ref->ref;
+			if (ref == noref_last) noref_last = ref0;
+			bi.link[i]->flags |= BI_REF;
+			g_cheatcoin_extstats.nnoref--;
+		}
+		if (bi.linkamount[i]) {
+			ref = bi.link[i];
+			if (!ref->backrefs || ref->backrefs->backrefs[N_BACKREFS - 1]) {
+				struct block_backrefs *back = xdag_malloc(sizeof(struct block_backrefs));
+				if (!back) continue;
+				memset(back, 0, sizeof(struct block_backrefs));
+				back->next = ref->backrefs;
+				ref->backrefs = back;
+			}
+			for (j = 0; ref->backrefs->backrefs[j]; ++j);
+			ref->backrefs->backrefs[j] = bsaved;
+		}
 	}
 	*(noref_last ? &noref_last->ref : &noref_first) = bsaved;
 	noref_last = bsaved;
@@ -805,23 +829,25 @@ int cheatcoin_blocks_reset(void) {
 
 #define pramount(amount) (uint32_t)((amount) >> 32), (uint32_t)((((amount) & 0xffffffffull) * 1000000000) >> 32)
 
+static int bi_compar(const void *l, const void *r) {
+	cheatcoin_time_t tl = (*(struct block_internal **)l)->time, tr = (*(struct block_internal **)r)->time;
+	return (tl > tr) - (tl < tr);
+}
+
 /* вывести подробную информацию о блоке */
 int cheatcoin_print_block_info(cheatcoin_hash_t hash, FILE *out) {
-	struct block_internal *bi;
+	struct block_internal *bi, **ba, *ri;
+	struct block_backrefs *br;
 	struct tm tm;
 	char tbuf[64];
+	uint64_t *h;
 	time_t t;
-	int i;
+	int i, j, n, N;
 	pthread_mutex_lock(&block_mutex);
 	bi = block_by_hash(hash);
 	pthread_mutex_unlock(&block_mutex);
 	if (!bi) return -1;
-	fprintf(out, "   address: %s\n", cheatcoin_hash2address(hash));
-	fprintf(out, "   balance: %10u.%09u\n", pramount(bi->amount));
-	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
-	        (unsigned long long)((uint64_t*)hash)[3], (unsigned long long)((uint64_t*)hash)[2],
-	        (unsigned long long)((uint64_t*)hash)[1], (unsigned long long)((uint64_t*)hash)[0]);
-	fprintf(out, "difficulty: %llx%016llx\n", cheatcoin_diff_args(bi->difficulty));
+	h = bi->hash;
 	t = bi->time >> 10;
 	localtime_r(&t, &tm);
 	strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
@@ -829,16 +855,52 @@ int cheatcoin_print_block_info(cheatcoin_hash_t hash, FILE *out) {
 	fprintf(out, " timestamp: %llx\n", (unsigned long long)bi->time);
 	fprintf(out, "     flags: %x\n", bi->flags);
 	fprintf(out, "  file pos: %llx\n", (unsigned long long)bi->storage_pos);
-	fprintf(out, "----------------------------\n");
-	fprintf(out, "block as transaction details\n");
-	fprintf(out, "----------------------------\n");
+	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
+			(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
+	fprintf(out, "difficulty: %llx%016llx\n", cheatcoin_diff_args(bi->difficulty));
+	fprintf(out, "   balance: %s  %10u.%09u\n", cheatcoin_hash2address(h), pramount(bi->amount));
+	fprintf(out, "-------------------------------------------------------------------------------------------\n");
+	fprintf(out, "block as transaction: details\n");
+	fprintf(out, " direction  address                                    amount\n");
+	fprintf(out, "-------------------------------------------------------------------------------------------\n");
 	if (bi->flags & BI_MAIN)
-		fprintf(out, "   earning: %s %10u.%09u\n", cheatcoin_hash2address(bi->hash),
+		fprintf(out, "   earning: %s  %10u.%09u\n", cheatcoin_hash2address(h),
 		        pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(CHEATCOIN_ERA)) >> MAIN_BIG_PERIOD_LOG)));
-	fprintf(out, "       fee: %s %10u.%09u\n", (bi->ref ? cheatcoin_hash2address(bi->ref->hash) : "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+	fprintf(out, "       fee: %s  %10u.%09u\n", (bi->ref ? cheatcoin_hash2address(bi->ref->hash) : "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
 	        pramount(bi->fee));
 	for (i = 0; i < bi->nlinks; ++i)
-		fprintf(out, "    %6s: %s %10u.%09u\n", (i & bi->in_mask ? " input" : "output"), cheatcoin_hash2address(bi->link[i]->hash),
-		        pramount(bi->linkamount[i]));
+		fprintf(out, "    %6s: %s  %10u.%09u\n", (1 << i & bi->in_mask ? " input" : "output"),
+				cheatcoin_hash2address(bi->link[i]->hash), pramount(bi->linkamount[i]));
+	fprintf(out, "-------------------------------------------------------------------------------------------\n");
+	fprintf(out, "block as address: details\n");
+	fprintf(out, " direction  transaction                                amount       time                   \n");
+	fprintf(out, "-------------------------------------------------------------------------------------------\n");
+	N = 0x10000; n = 0;
+	ba = malloc(N * sizeof(struct block_internal *));
+	if (!ba) return -1;
+	for (br = bi->backrefs; br; br = br->next) {
+		for (i = N_BACKREFS; i && !br->backrefs[i - 1]; i--);
+		if (!i) continue;
+		if (n + i > N) {
+			N *= 2;
+			ba = realloc(ba, N * sizeof(struct block_internal *));
+			if (!ba) return -1;
+		}
+		memcpy(ba + n, br->backrefs, i * sizeof(struct block_internal *));
+		n += i;
+	}
+	if (!n) return 0;
+	qsort(ba, n, sizeof(struct block_internal *), bi_compar);
+	for (i = 0; i < n; ++i) if (!i || ba[i] != ba[i - 1]) {
+		ri = ba[i];
+		if (ri->flags & BI_APPLIED) for (j = 0; j < ri->nlinks; j++) if (ri->link[j] == bi && ri->linkamount[j]) {
+			t = ri->time >> 10;
+			localtime_r(&t, &tm);
+			strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
+			fprintf(out, "    %6s: %s  %10u.%09u  %s.%03d\n",
+					(1 << j & ri->in_mask ? "output" : " input"), cheatcoin_hash2address(ri->hash),
+					pramount(ri->linkamount[j]), tbuf, (int)((ri->time & 0x3ff) * 1000) >> 10);
+		}
+	}
 	return 0;
 }

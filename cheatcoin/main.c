@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.853 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.855 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +10,7 @@
 #include <math.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#include <poll.h>
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -226,14 +227,25 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 		cheatcoin_hash_t hash;
 		cmd = strtok_r(0, " \t\r\n", &lasts);
 		if (cmd) {
-			if (cheatcoin_address2hash(cmd, hash) || cheatcoin_print_block_info(hash, out))
-				fprintf(out, "Block is not found.\n");
+			int res = 0, len = strlen(cmd), i, c;
+			if (len == 32) {
+				if (cheatcoin_address2hash(cmd, hash)) { fprintf(out, "Address is incorrect.\n"); res = -1; }
+			} else if (len == 48 || len == 64) {
+				for (i = 0; i < len; ++i) if (!isxdigit(cmd[i])) { fprintf(out, "Hash is incorrect.\n"); res = -1; break; }
+				if (!res) for (i = 0; i < 24; ++i) {
+					sscanf(cmd + len - 2 - 2 * i, "%2x", &c);
+					((uint8_t *)hash)[i] = c;
+				}
+			} else { fprintf(out, "Argument is incorrect.\n"); res = -1; }
+			if (!res) {
+				if (cheatcoin_print_block_info(hash, out)) fprintf(out, "Block is not found.\n");
+			}
 		} else fprintf(out, "Block is not specified.\n");
 	} else if (!strcmp(cmd, "help")) {
 		fprintf(out, "Commands:\n"
 			"  account [N] - print first N (20 by default) our addresses with their amounts\n"
 			"  balance [A] - print balance of the address A or total balance for all our addresses\n"
-		    "  block [A]   - print extended info for the block corresponding to the address A\n"
+			"  block [A]   - print extended info for the block corresponding to the address or hash A\n"
 		    "  exit        - exit this program (not the daemon)\n"
 			"  help        - print this help\n"
 		    "  keygen      - generate new private/public key pair and set it by default\n"
@@ -415,25 +427,28 @@ static int terminal(void) {
 static void *terminal_thread(void *arg) {
 	struct sockaddr_un addr;
 	int s;
-	if( (s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) { cheatcoin_err("Can't create unix domain socket errno:%d",errno); return 0; }
+	if( (s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) { cheatcoin_err("Can't create unix domain socket errno:%d", errno); return 0; }
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
 	strcpy(addr.sun_path, UNIX_SOCK);
 	unlink(UNIX_SOCK);
-	if (bind(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) { cheatcoin_err("Can't bind unix domain socket errno:%d",errno); return 0; }
-	if(listen(s, 5) == -1) { cheatcoin_err("Unix domain socket listen errno:%d",errno); return 0; }
+	if (bind(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) { cheatcoin_err("Can't bind unix domain socket errno:%d", errno); return 0; }
+	if (listen(s, 100) == -1) { cheatcoin_err("Unix domain socket listen errno:%d", errno); return 0; }
 	while(1) {
 		char cmd[CHEATCOIN_COMMAND_MAX];
 		int cl, p, res;
 		FILE *fd;
-		if ( (cl = accept(s, NULL, NULL)) == -1) { cheatcoin_err("Unix domain socket accept errno:%d",errno); break; }
+		struct pollfd fds;
+		if ( (cl = accept(s, NULL, NULL)) == -1) { cheatcoin_err("Unix domain socket accept errno:%d", errno); break; }
 		p = 0;
+		fds.fd = cl; fds.events = POLLIN;
 		do {
+			if (poll(&fds, 1, 1000) != 1 || fds.revents != POLLIN) { res = -1; break; }
 			p += res = read(cl, &cmd[p], sizeof(cmd)-p);
 		} while (res > 0 && p < sizeof(cmd) && cmd[p - 1] != '\0');
-		if (res < 0 || cmd[p - 1] != '\0') close(s);
+		if (res < 0 || cmd[p - 1] != '\0') close(cl);
 		else {
-			fd = fdopen(cl, "w"); if (!fd) { cheatcoin_err("Can't fdopen unix domain socket errno:%d",errno); break; }
+			fd = fdopen(cl, "w"); if (!fd) { cheatcoin_err("Can't fdopen unix domain socket errno:%d", errno); break; }
 			res = cheatcoin_command(cmd, fd);
 			fclose(fd);
 			if (res < 0) exit(0);
