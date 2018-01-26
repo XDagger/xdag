@@ -4,6 +4,7 @@
 #define CHEATCOIN_BLOCK_H
 
 #include <stdint.h>
+#include <stdio.h>
 #include "hash.h"
 
 enum cheatcoin_field_type {
@@ -105,5 +106,8 @@ extern int cheatcoin_get_key(cheatcoin_hash_t hash);
 
 /* переинициализация системы обработки блоков */
 extern int cheatcoin_blocks_reset(void);
+
+/* вывести подробную информацию о блоке */
+extern int cheatcoin_print_block_info(cheatcoin_hash_t hash, FILE *out);
 
 #endif

@@ -19,6 +19,7 @@
 #include "sync.h"
 #include "pool.h"
 #include "memory.h"
+#include "address.h"
 
 #define MAIN_CHAIN_PERIOD	(64 << 10)
 #define MAX_WAITING_MAIN	2
@@ -799,5 +800,45 @@ int cheatcoin_blocks_reset(void) {
 		cheatcoin_show_state(0);
 	}
 	pthread_mutex_unlock(&block_mutex);
+	return 0;
+}
+
+#define pramount(amount) (uint32_t)((amount) >> 32), (uint32_t)((((amount) & 0xffffffffull) * 1000000000) >> 32)
+
+/* вывести подробную информацию о блоке */
+int cheatcoin_print_block_info(cheatcoin_hash_t hash, FILE *out) {
+	struct block_internal *bi;
+	struct tm tm;
+	char tbuf[64];
+	time_t t;
+	int i;
+	pthread_mutex_lock(&block_mutex);
+	bi = block_by_hash(hash);
+	pthread_mutex_unlock(&block_mutex);
+	if (!bi) return -1;
+	fprintf(out, "   address: %s\n", cheatcoin_hash2address(hash));
+	fprintf(out, "   balance: %10u.%09u\n", pramount(bi->amount));
+	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
+	        (unsigned long long)((uint64_t*)hash)[3], (unsigned long long)((uint64_t*)hash)[2],
+	        (unsigned long long)((uint64_t*)hash)[1], (unsigned long long)((uint64_t*)hash)[0]);
+	fprintf(out, "difficulty: %llx%016llx\n", cheatcoin_diff_args(bi->difficulty));
+	t = bi->time >> 10;
+	localtime_r(&t, &tm);
+	strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
+	fprintf(out, "      time: %s.%03d\n", tbuf, (int)((bi->time & 0x3ff) * 1000) >> 10);
+	fprintf(out, " timestamp: %llx\n", (unsigned long long)bi->time);
+	fprintf(out, "     flags: %x\n", bi->flags);
+	fprintf(out, "  file pos: %llx\n", (unsigned long long)bi->storage_pos);
+	fprintf(out, "----------------------------\n");
+	fprintf(out, "block as transaction details\n");
+	fprintf(out, "----------------------------\n");
+	if (bi->flags & BI_MAIN)
+		fprintf(out, "   earning: %s %10u.%09u\n", cheatcoin_hash2address(bi->hash),
+		        pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(CHEATCOIN_ERA)) >> MAIN_BIG_PERIOD_LOG)));
+	fprintf(out, "       fee: %s %10u.%09u\n", (bi->ref ? cheatcoin_hash2address(bi->ref->hash) : "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+	        pramount(bi->fee));
+	for (i = 0; i < bi->nlinks; ++i)
+		fprintf(out, "    %6s: %s %10u.%09u\n", (i & bi->in_mask ? " input" : "output"), cheatcoin_hash2address(bi->link[i]->hash),
+		        pramount(bi->linkamount[i]));
 	return 0;
 }

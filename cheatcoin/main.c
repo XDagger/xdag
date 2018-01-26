@@ -222,10 +222,18 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			} else balance = cheatcoin_get_balance(0);
 			fprintf(out, "Balance: %.9Lf %s\n", amount2cheatcoins(balance), coinname);
 		}
+	} else if (!strcmp(cmd, "block")) {
+		cheatcoin_hash_t hash;
+		cmd = strtok_r(0, " \t\r\n", &lasts);
+		if (cmd) {
+			if (cheatcoin_address2hash(cmd, hash) || cheatcoin_print_block_info(hash, out))
+				fprintf(out, "Block is not found.\n");
+		} else fprintf(out, "Block is not specified.\n");
 	} else if (!strcmp(cmd, "help")) {
 		fprintf(out, "Commands:\n"
 			"  account [N] - print first N (20 by default) our addresses with their amounts\n"
 			"  balance [A] - print balance of the address A or total balance for all our addresses\n"
+		    "  block [A]   - print extended info for the block corresponding to the address A\n"
 		    "  exit        - exit this program (not the daemon)\n"
 			"  help        - print this help\n"
 		    "  keygen      - generate new private/public key pair and set it by default\n"
