@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.855 $DVS:time$ */
+/* работа с блоками, T13.654-T13.856 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -863,9 +863,6 @@ int cheatcoin_print_block_info(cheatcoin_hash_t hash, FILE *out) {
 	fprintf(out, "block as transaction: details\n");
 	fprintf(out, " direction  address                                    amount\n");
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
-	if (bi->flags & BI_MAIN)
-		fprintf(out, "   earning: %s  %10u.%09u\n", cheatcoin_hash2address(h),
-		        pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(CHEATCOIN_ERA)) >> MAIN_BIG_PERIOD_LOG)));
 	fprintf(out, "       fee: %s  %10u.%09u\n", (bi->ref ? cheatcoin_hash2address(bi->ref->hash) : "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
 	        pramount(bi->fee));
 	for (i = 0; i < bi->nlinks; ++i)
@@ -875,6 +872,10 @@ int cheatcoin_print_block_info(cheatcoin_hash_t hash, FILE *out) {
 	fprintf(out, "block as address: details\n");
 	fprintf(out, " direction  transaction                                amount       time                   \n");
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
+	if (bi->flags & BI_MAIN)
+		fprintf(out, "   earning: %s  %10u.%09u  %s.%03d\n", cheatcoin_hash2address(h),
+				pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(CHEATCOIN_ERA)) >> MAIN_BIG_PERIOD_LOG)),
+				tbuf, (int)((bi->time & 0x3ff) * 1000) >> 10);
 	N = 0x10000; n = 0;
 	ba = malloc(N * sizeof(struct block_internal *));
 	if (!ba) return -1;

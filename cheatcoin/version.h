@@ -3,11 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.855" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.856" /* $DVS:time$ */
 
 /* история
 
-T13.855 добавлена команда block, показывающая информацию о блоке
+T13.856 добавлена команда block, показывающая информацию о блоке
 
 T13.853 коммуникация через fifo заменена на сокеты unix
 
