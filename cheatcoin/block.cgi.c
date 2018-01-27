@@ -1,5 +1,5 @@
 /* блок-эксплорер */
-#define VERSION	"XDAG block explorer T13.856-T13.856" /* $DVS:time$ */
+#define VERSION	"XDAG block explorer T13.856-T13.857" /* $DVS:time$ */
 
 #include <stdio.h>
 #include <string.h>
@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -15,8 +16,8 @@
 #define UNIX_SOCK	"/home/ec2-user/.cheatcoin1/unix_sock.dat"
 
 int main(void) {
-	char *var, cmd[256], *p, *q;
-	int c = 0, s, i;
+	char *var, cmd[256], *p, *q, buf[0x10000];
+	int c = 0, s, i, j, res;
 	struct sockaddr_un addr;
 	printf("Content-Type: text/html; charset=utf-8\r\n\r\n"
 		"<!DOCTYPE html><html><head>"
@@ -43,20 +44,25 @@ int main(void) {
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
 	strcpy(addr.sun_path, UNIX_SOCK);
-	if( connect(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) goto page;
+	if( connect(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) goto end;
 	write(s, cmd, strlen(cmd) + 1);
 	i = 0;
-	while (read(s, &c, 1) == 1 && c) {
-		cmd[i++] = c;
-		cmd[i] = 0;
-		if (c == '\n') {
-			if (i > 44 && cmd[10] == ':' && cmd[44] == ' ')
-				printf("%.12s<a href=/cgi-bin/block.cgi?a=%.32s>%.32s</a>%s", cmd, cmd+12, cmd+12, cmd+44);
-			else
-				printf("%s", cmd);
-			i = 0;
+	while ((res = read(s, buf, 0x10000)) > 0) {
+		for (j = 0; j < res; ++j) {
+			c = (uint8_t)buf[j];
+			if (!c) goto end;
+			cmd[i++] = c;
+			cmd[i] = 0;
+			if (c == '\n') {
+				if (i > 44 && cmd[10] == ':' && cmd[44] == ' ')
+					printf("%.12s<a href=/cgi-bin/block.cgi?a=%.32s>%.32s</a>%s", cmd, cmd+12, cmd+12, cmd+44);
+				else
+					printf("%s", cmd);
+				i = 0;
+			}
 		}
 	}
+end:
 	close(s);
 page:
 	printf("</pre><hr><p>%s</p></body></html>", VERSION);
