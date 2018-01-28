@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\client\address.c" />
+    <ClCompile Include="..\..\..\client\block.c" />
+    <ClCompile Include="..\..\..\client\crypt.c" />
+    <ClCompile Include="..\..\..\client\hash.c" />
+    <ClCompile Include="..\..\..\client\log.c" />
+    <ClCompile Include="..\..\..\client\main.c" />
+    <ClCompile Include="..\..\..\client\memory.c" />
+    <ClCompile Include="..\..\..\client\netdb.c" />
+    <ClCompile Include="..\..\..\client\pool.c" />
+    <ClCompile Include="..\..\..\client\sha256.c" />
+    <ClCompile Include="..\..\..\client\storage.c" />
+    <ClCompile Include="..\..\..\client\sync.c" />
+    <ClCompile Include="..\..\..\client\transport.c" />
+    <ClCompile Include="..\..\..\client\wallet.c" />
+    <ClCompile Include="..\..\..\dnet\dnet_command.c" />
+    <ClCompile Include="..\..\..\dnet\dnet_connection.c" />
+    <ClCompile Include="..\..\..\dnet\dnet_crypt.c" />
+    <ClCompile Include="..\..\..\dnet\dnet_database.c" />
+    <ClCompile Include="..\..\..\dnet\dnet_files.c" />
+    <ClCompile Include="..\..\..\dnet\dnet_log.c" />
+    <ClCompile Include="..\..\..\dnet\dnet_main.c" />
+    <ClCompile Include="..\..\..\dnet\dnet_packet.c" />
+    <ClCompile Include="..\..\..\dnet\dnet_stream.c" />
+    <ClCompile Include="..\..\..\dnet\dnet_tap.c" />
+    <ClCompile Include="..\..\..\dnet\dnet_threads.c" />
+    <ClCompile Include="..\..\..\dus\programs\dar\source\lib\crc_c.c" />
+    <ClCompile Include="..\..\..\dus\programs\dfstools\source\dfslib\dfslib_crypt.c" />
+    <ClCompile Include="..\..\..\dus\programs\dfstools\source\dfslib\dfslib_random.c" />
+    <ClCompile Include="..\..\..\dus\programs\dfstools\source\dfslib\dfslib_string.c" />
+    <ClCompile Include="..\..\..\dus\programs\dfstools\source\lib\dfsrsa.c" />
+    <ClCompile Include="..\..\..\win32\xdagwin\xdag\system.c" />
+    <ClCompile Include="xdagwallet.cpp" />
+    <ClCompile Include="xdagwalletDlg.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\client\address.h" />
+    <ClInclude Include="..\..\..\client\block.h" />
+    <ClInclude Include="..\..\..\client\crypt.h" />
+    <ClInclude Include="..\..\..\client\hash.h" />
+    <ClInclude Include="..\..\..\client\log.h" />
+    <ClInclude Include="..\..\..\client\main.h" />
+    <ClInclude Include="..\..\..\client\memory.h" />
+    <ClInclude Include="..\..\..\client\netdb.h" />
+    <ClInclude Include="..\..\..\client\pool.h" />
+    <ClInclude Include="..\..\..\client\sha256.h" />
+    <ClInclude Include="..\..\..\client\state.h" />
+    <ClInclude Include="..\..\..\client\storage.h" />
+    <ClInclude Include="..\..\..\client\sync.h" />
+    <ClInclude Include="..\..\..\client\system.h" />
+    <ClInclude Include="..\..\..\client\transport.h" />
+    <ClInclude Include="..\..\..\client\version.h" />
+    <ClInclude Include="..\..\..\client\wallet.h" />
+    <ClInclude Include="..\..\..\dnet\dnet_command.h" />
+    <ClInclude Include="..\..\..\dnet\dnet_connection.h" />
+    <ClInclude Include="..\..\..\dnet\dnet_crypt.h" />
+    <ClInclude Include="..\..\..\dnet\dnet_database.h" />
+    <ClInclude Include="..\..\..\dnet\dnet_files.h" />
+    <ClInclude Include="..\..\..\dnet\dnet_history.h" />
+    <ClInclude Include="..\..\..\dnet\dnet_log.h" />
+    <ClInclude Include="..\..\..\dnet\dnet_main.h" />
+    <ClInclude Include="..\..\..\dnet\dnet_packet.h" />
+    <ClInclude Include="..\..\..\dnet\dnet_stream.h" />
+    <ClInclude Include="..\..\..\dnet\dnet_tap.h" />
+    <ClInclude Include="..\..\..\dnet\dnet_threads.h" />
+    <ClInclude Include="..\..\..\dnet\dthread.h" />
+    <ClInclude Include="..\..\..\dnet\system.h" />
+    <ClInclude Include="..\..\..\dus\programs\dar\source\include\crc.h" />
+    <ClInclude Include="..\..\..\dus\programs\dfstools\source\dfslib\dfslib_crypt.h" />
+    <ClInclude Include="..\..\..\dus\programs\dfstools\source\dfslib\dfslib_random.h" />
+    <ClInclude Include="..\..\..\dus\programs\dfstools\source\dfslib\dfslib_string.h" />
+    <ClInclude Include="..\..\..\dus\programs\dfstools\source\dfslib\dfslib_types.h" />
+    <ClInclude Include="..\..\..\dus\programs\dfstools\source\include\dfsrsa.h" />
+    <ClInclude Include="..\..\..\ldus\source\include\ldus\atomic.h" />
+    <ClInclude Include="..\..\..\ldus\source\include\ldus\list.h" />
+    <ClInclude Include="..\..\..\ldus\source\include\ldus\rbtree.h" />
+    <ClInclude Include="..\..\..\win32\xdagwin\xdag\netdb.h" />
+    <ClInclude Include="..\..\..\win32\xdagwin\xdag\termios.h" />
+    <ClInclude Include="..\..\..\win32\xdagwin\xdag\unistd.h" />
+    <ClInclude Include="xdagwallet.h" />
+    <ClInclude Include="xdagwalletDlg.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="xdagwallet.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\xdagwallet.ico" />
+    <Image Include="res\Toolbar.bmp" />
+    <Image Include="res\Toolbar256.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\xdagwallet.rc2" />
+  </ItemGroup>
+</Project>
