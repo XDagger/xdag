@@ -10,8 +10,8 @@
 #include <math.h>
 #include <ctype.h>
 #include <sys/stat.h>
-#include <poll.h>
 #if !defined(_WIN32) && !defined(_WIN64)
+#include <poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -423,8 +423,8 @@ static int terminal(void) {
 	return 0;
 }
 
-#if !defined(_WIN32) && !defined(_WIN64)
 static void *terminal_thread(void *arg) {
+#if !defined(_WIN32) && !defined(_WIN64)
 	struct sockaddr_un addr;
 	int s;
 	if( (s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) { cheatcoin_err("Can't create unix domain socket errno:%d", errno); return 0; }
@@ -454,9 +454,11 @@ static void *terminal_thread(void *arg) {
 			if (res < 0) exit(0);
 		}
 	}
+#else
 	return 0;
-}
 #endif /* WIN */
+}
+
 
 #ifdef CHEATCOINWALLET
 int cheatcoin_main(int argc, char **argv) {
