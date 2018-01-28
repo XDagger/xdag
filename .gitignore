@@ -1,0 +1,4 @@
+# MSVC build stuff
+Release/
+Debug/
+.vs/
