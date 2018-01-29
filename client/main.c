@@ -391,9 +391,14 @@ static int out_balances(void) {
 
 static int terminal(void) {
 #if !defined(_WIN32) && !defined(_WIN64)
-	char cmd[CHEATCOIN_COMMAND_MAX], cmd2[CHEATCOIN_COMMAND_MAX], *ptr, *lasts;
+	// char cmd[CHEATCOIN_COMMAND_MAX], cmd2[CHEATCOIN_COMMAND_MAX], *ptr, *lasts;
+	char *cmd, *cmd2, *ptr, *lasts;
 	int s;
 	struct sockaddr_un addr;
+
+	cmd = malloc(CHEATCOIN_CMD_MAX);
+	cmd2 = malloc(CHEATCOIN_CMD_MAX);
+
 	while(1) {
 		int ispwd = 0, c = 0;
 		printf("%s> ", g_progname); fflush(stdout);
@@ -611,10 +616,16 @@ int main(int argc, char **argv) {
 	for(;;) {
 		if (transport_flags & CHEATCOIN_DAEMON) sleep(100);
 		else {
-			char cmd[CHEATCOIN_COMMAND_MAX];
+			// char cmd[CHEATCOIN_COMMAND_MAX];
+			char *cmd;
+			cmd = malloc(CHEATCOIN_COMMAND_MAX);
 			printf("%s> ", g_progname); fflush(stdout);
 			fgets(cmd, CHEATCOIN_COMMAND_MAX, stdin);
-			if (cheatcoin_command(cmd, stdout) < 0) break;
+			if (cheatcoin_command(cmd, stdout) < 0) {
+				free(cmd);
+				break;
+			}
+			free(cmd);
 		}
 	}
 #endif
