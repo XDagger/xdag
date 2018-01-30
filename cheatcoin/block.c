@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.856 $DVS:time$ */
+/* работа с блоками, T13.654-T13.864 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -827,7 +827,7 @@ int cheatcoin_blocks_reset(void) {
 	return 0;
 }
 
-#define pramount(amount) (uint32_t)((amount) >> 32), (uint32_t)((((amount) & 0xffffffffull) * 1000000000) >> 32)
+#define pramount(amount) xdag_amount2xdag(amount), xdag_amount2cheato(amount)
 
 static int bi_compar(const void *l, const void *r) {
 	cheatcoin_time_t tl = (*(struct block_internal **)l)->time, tr = (*(struct block_internal **)r)->time;
@@ -853,14 +853,14 @@ int cheatcoin_print_block_info(cheatcoin_hash_t hash, FILE *out) {
 	strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
 	fprintf(out, "      time: %s.%03d\n", tbuf, (int)((bi->time & 0x3ff) * 1000) >> 10);
 	fprintf(out, " timestamp: %llx\n", (unsigned long long)bi->time);
-	fprintf(out, "     flags: %x\n", bi->flags);
+	fprintf(out, "     flags: %x\n", bi->flags & ~BI_OURS);
 	fprintf(out, "  file pos: %llx\n", (unsigned long long)bi->storage_pos);
 	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 			(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
 	fprintf(out, "difficulty: %llx%016llx\n", cheatcoin_diff_args(bi->difficulty));
 	fprintf(out, "   balance: %s  %10u.%09u\n", cheatcoin_hash2address(h), pramount(bi->amount));
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
-	fprintf(out, "block as transaction: details\n");
+	fprintf(out, "                               block as transaction: details\n");
 	fprintf(out, " direction  address                                    amount\n");
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
 	fprintf(out, "       fee: %s  %10u.%09u\n", (bi->ref ? cheatcoin_hash2address(bi->ref->hash) : "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
@@ -869,7 +869,7 @@ int cheatcoin_print_block_info(cheatcoin_hash_t hash, FILE *out) {
 		fprintf(out, "    %6s: %s  %10u.%09u\n", (1 << i & bi->in_mask ? " input" : "output"),
 				cheatcoin_hash2address(bi->link[i]->hash), pramount(bi->linkamount[i]));
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
-	fprintf(out, "block as address: details\n");
+	fprintf(out, "                                 block as address: details\n");
 	fprintf(out, " direction  transaction                                amount       time                   \n");
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
 	if (bi->flags & BI_MAIN)

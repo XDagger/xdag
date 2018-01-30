@@ -1,4 +1,4 @@
-/* хеш-функция, T13.654-T13.847 $DVS:time$ */
+/* хеш-функция, T13.654-T13.864 $DVS:time$ */
 
 #include <string.h>
 #ifdef SHA256_OPENSSL_MBLOCK
@@ -87,6 +87,7 @@ uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, i
 	uint8_t *array1 = (uint8_t *)arr1, *array2 = (uint8_t *)arr2;
 	cheatcoin_hash_t hash0;
 	uint64_t min_nonce = 0, nonce0;
+	uint32_t *hash032 = (uint32_t *)(uint64_t *)hash0;
 	int i, j;
 
 	memset(array1, 0, 128);
@@ -132,14 +133,14 @@ uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, i
 		memcpy(&mctx, &mctx2, 8 * 8 * 4);
 		xsha256_multi_block(&mctx, desc2, N/4);
 		for (i = 0; i < N; ++i, nonce0 += step) {
-			((uint32_t *)hash0)[0] = htonl(mctx.A[i]);
-			((uint32_t *)hash0)[1] = htonl(mctx.B[i]);
-			((uint32_t *)hash0)[2] = htonl(mctx.C[i]);
-			((uint32_t *)hash0)[3] = htonl(mctx.D[i]);
-			((uint32_t *)hash0)[4] = htonl(mctx.E[i]);
-			((uint32_t *)hash0)[5] = htonl(mctx.F[i]);
-			((uint32_t *)hash0)[6] = htonl(mctx.G[i]);
-			((uint32_t *)hash0)[7] = htonl(mctx.H[i]);
+			hash032[0] = htonl(mctx.A[i]);
+			hash032[1] = htonl(mctx.B[i]);
+			hash032[2] = htonl(mctx.C[i]);
+			hash032[3] = htonl(mctx.D[i]);
+			hash032[4] = htonl(mctx.E[i]);
+			hash032[5] = htonl(mctx.F[i]);
+			hash032[6] = htonl(mctx.G[i]);
+			hash032[7] = htonl(mctx.H[i]);
 			if ((!i && !j) || cheatcoin_cmphash(hash0, hash) < 0) {
 				memcpy(hash, hash0, sizeof(cheatcoin_hash_t));
 				min_nonce = nonce0;

@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.856" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.864" /* $DVS:time$ */
 
 /* история
+
+T13.864 исправлена ошибка с перечислением дробных сумм
 
 T13.856 добавлена команда block, показывающая информацию о блоке
 

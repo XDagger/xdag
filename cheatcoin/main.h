@@ -1,4 +1,4 @@
-/* основные переменные, T13.714-T13.819 $DVS:time$ */
+/* основные переменные, T13.714-T13.864 $DVS:time$ */
 
 #ifndef CHEATCOIN_MAIN_H
 #define CHEATCOIN_MAIN_H
@@ -68,5 +68,8 @@ extern "C" {
 #ifdef __cplusplus
 };
 #endif
+
+#define xdag_amount2xdag(amount) ((unsigned)((amount) >> 32))
+#define xdag_amount2cheato(amount) ((unsigned)(((uint64_t)(unsigned)(amount) * 1000000000 + 0xffffffffull) >> 32))
 
 #endif
