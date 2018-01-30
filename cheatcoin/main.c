@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.864 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.865 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,13 +10,18 @@
 #include <math.h>
 #include <ctype.h>
 #include <sys/stat.h>
-#include <poll.h>
 #if !defined(_WIN32) && !defined(_WIN64)
+#include <poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <errno.h>
+#elif defined(_WIN64)
+#define poll WSAPoll
+#else
+#define poll(a,b,c) ((a)->revents = (a)->events, (b))
 #endif
+#include "system.h"
 #include "address.h"
 #include "block.h"
 #include "crypt.h"
@@ -87,7 +92,7 @@ static cheatcoin_amount_t cheatcoins2amount(const char *str) {
 	res = (cheatcoin_amount_t)flr << 32;
 	sum -= flr;
 	sum = ldexpl(sum, 32);
-	flr = floorl(sum);
+	flr = ceill(sum);
 	return res + (cheatcoin_amount_t)flr;
 }
 
@@ -593,9 +598,10 @@ int main(int argc, char **argv) {
 	cheatcoin_mess("Starting pool engine...");
 	if (cheatcoin_pool_start(is_pool, pool_arg, miner_address)) return -1;
 #ifndef CHEATCOINWALLET
+#if !defined(_WIN32) && !defined(_WIN64)
 	cheatcoin_mess("Starting terminal server...");
 	if (pthread_create(&th, 0, &terminal_thread, 0)) return -1;
-
+#endif
 	if (!(transport_flags & CHEATCOIN_DAEMON)) printf("Type command, help for example.\n");
 	for(;;) {
 		if (transport_flags & CHEATCOIN_DAEMON) sleep(100);
