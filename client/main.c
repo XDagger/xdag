@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.855 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.865 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +16,12 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <errno.h>
+#elif defined(_WIN64)
+#define poll WSAPoll
+#else
+#define poll(a,b,c) ((a)->revents = (a)->events, (b))
 #endif
+#include "system.h"
 #include "address.h"
 #include "block.h"
 #include "crypt.h"
@@ -60,13 +65,7 @@ struct cheatcoin_ext_stats g_cheatcoin_extstats;
 int (*g_cheatcoin_show_state)(const char *state, const char *balance, const char *address) = 0;
 
 static long double amount2cheatcoins(cheatcoin_amount_t amount) {
-	long double res = 0, d = 1;
-	int i;
-	for (i = 0; i < 32 || (amount && i < 64); ++i, amount >>= 1) {
-		if (amount & 1) res += d;
-		if (i < 32) res /= 2; else d *= 2;
-	}
-	return floorl(res * 1000000000) / 1000000000;
+	return xdag_amount2xdag(amount) + (long double)xdag_amount2cheato(amount) / 1000000000;
 }
 
 static long double diff2log(cheatcoin_diff_t diff) {
@@ -88,16 +87,13 @@ static long double hashrate(cheatcoin_diff_t *diff) {
 static cheatcoin_amount_t cheatcoins2amount(const char *str) {
 	long double sum, flr;
 	cheatcoin_amount_t res;
-	int i;
 	if (sscanf(str, "%Lf", &sum) != 1 || sum <= 0) return 0;
 	flr = floorl(sum);
 	res = (cheatcoin_amount_t)flr << 32;
 	sum -= flr;
-	for (i = 31; i >= 0; --i) {
-		sum *= 2;
-		if (sum >= 1) res |= 1ll << i, sum--;
-	}
-	return res;
+	sum = ldexpl(sum, 32);
+	flr = ceill(sum);
+	return res + (cheatcoin_amount_t)flr;
 }
 
 static int account_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t amount, cheatcoin_time_t time, int n_our_key) {
@@ -391,7 +387,6 @@ static int out_balances(void) {
 
 static int terminal(void) {
 #if !defined(_WIN32) && !defined(_WIN64)
-	// char cmd[CHEATCOIN_COMMAND_MAX], cmd2[CHEATCOIN_COMMAND_MAX], *ptr, *lasts;
 	char *cmd, *cmd2, *ptr, *lasts;
 	int s;
 	struct sockaddr_un addr;
@@ -424,12 +419,16 @@ static int terminal(void) {
 		while (read(s, &c, 1) == 1 && c) putchar(c);
 		close(s);
 	}
+
+	free(cmd);
+	free(cmd2);
+
 #endif
 	return 0;
 }
 
-static void *terminal_thread(void *arg) {
 #if !defined(_WIN32) && !defined(_WIN64)
+static void *terminal_thread(void *arg) {
 	struct sockaddr_un addr;
 	int s;
 	if( (s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) { cheatcoin_err("Can't create unix domain socket errno:%d", errno); return 0; }
@@ -459,11 +458,9 @@ static void *terminal_thread(void *arg) {
 			if (res < 0) exit(0);
 		}
 	}
-#else
 	return 0;
-#endif /* WIN */
 }
-
+#endif /* WIN */
 
 #ifdef CHEATCOINWALLET
 int cheatcoin_main(int argc, char **argv) {
@@ -609,14 +606,14 @@ int main(int argc, char **argv) {
 	cheatcoin_mess("Starting pool engine...");
 	if (cheatcoin_pool_start(is_pool, pool_arg, miner_address)) return -1;
 #ifndef CHEATCOINWALLET
+#if !defined(_WIN32) && !defined(_WIN64)
 	cheatcoin_mess("Starting terminal server...");
 	if (pthread_create(&th, 0, &terminal_thread, 0)) return -1;
-
+#endif
 	if (!(transport_flags & CHEATCOIN_DAEMON)) printf("Type command, help for example.\n");
 	for(;;) {
 		if (transport_flags & CHEATCOIN_DAEMON) sleep(100);
 		else {
-			// char cmd[CHEATCOIN_COMMAND_MAX];
 			char *cmd;
 			cmd = malloc(CHEATCOIN_COMMAND_MAX);
 			printf("%s> ", g_progname); fflush(stdout);
