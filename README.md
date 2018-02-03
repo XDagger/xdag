@@ -26,7 +26,7 @@ Install and run (Linux):
 
 - Clone from the git repository:
 
-        $ git clone https://github.com/cheatoshin/xdag.git
+        $ git clone https://github.com/trueserve/xdag
 
 - Make:
 
