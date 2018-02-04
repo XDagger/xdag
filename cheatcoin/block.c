@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.864 $DVS:time$ */
+/* работа с блоками, T13.654-T13.878 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -361,7 +361,7 @@ static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit) {
 					&& (!ref0 || MAIN_TIME(ref0->time) > MAIN_TIME(ref->time)))
 				{ ref->flags |= BI_MAIN_CHAIN; ref0 = ref; }
 		}
-		if (ref && MAIN_TIME(ref->time) == MAIN_TIME(bsaved->time)) ref = ref->link[ref->max_diff_link];
+		if (ref && ref0 && ref != ref0 && MAIN_TIME(ref->time) == MAIN_TIME(ref0->time)) ref = ref->link[ref->max_diff_link];
 		unwind_main(ref);
 		top_main_chain = bsaved;
 		g_cheatcoin_stats.difficulty = bi.difficulty;

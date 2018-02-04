@@ -3,9 +3,11 @@
 #ifndef CHEATCOIN_VERSION_H
 #define CHEATCOIN_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.865" /* $DVS:time$ */
+#define CHEATCOIN_VERSION "T13.654-T13.878" /* $DVS:time$ */
 
 /* история
+
+T13.878 исправлена ошибка с расхождением числа главных блоков
 
 T13.865 исправлена ошибка с перечислением дробных сумм
 
