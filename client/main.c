@@ -391,8 +391,8 @@ static int terminal(void) {
 	int s;
 	struct sockaddr_un addr;
 
-	cmd = malloc(CHEATCOIN_CMD_MAX);
-	cmd2 = malloc(CHEATCOIN_CMD_MAX);
+	cmd = malloc(CHEATCOIN_COMMAND_MAX);
+	cmd2 = malloc(CHEATCOIN_COMMAND_MAX);
 
 	while(1) {
 		int ispwd = 0, c = 0;
