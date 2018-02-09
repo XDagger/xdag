@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.878 $DVS:time$ */
+/* работа с блоками, T13.654-T13.889 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -22,7 +22,7 @@
 #include "address.h"
 
 #define MAIN_CHAIN_PERIOD	(64 << 10)
-#define MAX_WAITING_MAIN	2
+#define MAX_WAITING_MAIN	1
 #define DEF_TIME_LIMIT		0 /*(MAIN_CHAIN_PERIOD / 2)*/
 #define CHEATCOIN_TEST_ERA	0x16900000000ll
 #define CHEATCOIN_MAIN_ERA	0x16940000000ll
@@ -643,7 +643,7 @@ begin:
 			cheatcoin_mining_start(g_light_mode ? ~0 : 0);
 			while (get_timestamp() - t < MAIN_CHAIN_PERIOD + (3 << 10)) sleep(1);
 			pthread_mutex_lock(&block_mutex);
-			ldus_rbtree_walk_up(root, reset_callback);
+			if (xdag_free_all()) ldus_rbtree_walk_up(root, reset_callback);
 			root = 0;
 			g_balance = 0;
 			top_main_chain = pretop_main_chain = 0;
@@ -903,5 +903,6 @@ int cheatcoin_print_block_info(cheatcoin_hash_t hash, FILE *out) {
 					pramount(ri->linkamount[j]), tbuf, (int)((ri->time & 0x3ff) * 1000) >> 10);
 		}
 	}
+	free(ba);
 	return 0;
 }
