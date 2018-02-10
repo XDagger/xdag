@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.837 $DVS:time$ */
+/* пул и майнер, T13.744-T13.895 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -211,7 +211,7 @@ static void *pool_main_thread(void *arg) {
 					m->ntask = ntask;
 					nfld = 2;
 					memcpy(data, task->task, nfld * sizeof(struct cheatcoin_field));
-				} else if (!(m->state & MINER_BALANCE)) {
+				} else if (!(m->state & MINER_BALANCE) && time(0) >= (m->main_time << 6) + 4) {
 					m->state |= MINER_BALANCE;
 					memcpy(data[0].data, m->id.data, sizeof(cheatcoin_hash_t));
 					data[0].amount = cheatcoin_get_balance(data[0].data);

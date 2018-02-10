@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.865 $DVS:time$ */
+/* cheatcoin main, T13.654-T13.895 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -306,7 +306,7 @@ static int cheatcoin_command(char *cmd, FILE *out) {
 			" wait sync blocks: %u\n"
 			" chain difficulty: %llx%016llx of %llx%016llx\n"
 			" %9s supply: %.9Lf of %.9Lf\n"
-			"hour hashrate MHs: %.2Lf of %.2Lf\n",
+			"4 hr hashrate MHs: %.2Lf of %.2Lf\n",
 			g_cheatcoin_stats.nhosts, g_cheatcoin_stats.total_nhosts,
 			(long long)g_cheatcoin_stats.nblocks, (long long)g_cheatcoin_stats.total_nblocks,
 			(long long)g_cheatcoin_stats.nmain, (long long)g_cheatcoin_stats.total_nmain,

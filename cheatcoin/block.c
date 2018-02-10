@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.889 $DVS:time$ */
+/* работа с блоками, T13.654-T13.895 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -217,7 +217,7 @@ static void check_new_main(void) {
 	int i;
 	for (b = top_main_chain, i = 0; b && !(b->flags & BI_MAIN); b = b->link[b->max_diff_link])
 		if (b->flags & BI_MAIN_CHAIN) p = b, ++i;
-	if (p && i > MAX_WAITING_MAIN) set_main(p);
+	if (p && i > MAX_WAITING_MAIN && get_timestamp() >= p->time + 2 * 1024) set_main(p);
 }
 
 static void unwind_main(struct block_internal *b) {
@@ -662,7 +662,7 @@ begin:
 			if (!g_light_mode && t - conn_time >= 2 * MAIN_CHAIN_PERIOD
 					&& !memcmp(&g_cheatcoin_stats.difficulty, &g_cheatcoin_stats.max_difficulty, sizeof(cheatcoin_diff_t)))
 				sync_time = t;
-			if (t - (g_cheatcoin_xfer_last << 10) <= (g_light_mode ? 4 : 3) * MAIN_CHAIN_PERIOD)
+			if (t - (g_cheatcoin_xfer_last << 10) <= 2 * MAIN_CHAIN_PERIOD + 4)
 				g_cheatcoin_state = CHEATCOIN_STATE_XFER;
 			else if (g_light_mode) {
 				g_cheatcoin_state = (g_cheatcoin_mining_threads > 0 ?
@@ -836,7 +836,7 @@ static int bi_compar(const void *l, const void *r) {
 
 /* вывести подробную информацию о блоке */
 int cheatcoin_print_block_info(cheatcoin_hash_t hash, FILE *out) {
-	struct block_internal *bi, **ba, *ri;
+	struct block_internal *bi, **ba, **ba1, *ri;
 	struct block_backrefs *br;
 	struct tm tm;
 	char tbuf[64];
@@ -884,13 +884,14 @@ int cheatcoin_print_block_info(cheatcoin_hash_t hash, FILE *out) {
 		if (!i) continue;
 		if (n + i > N) {
 			N *= 2;
-			ba = realloc(ba, N * sizeof(struct block_internal *));
-			if (!ba) return -1;
+			ba1 = realloc(ba, N * sizeof(struct block_internal *));
+			if (!ba1) { free(ba); return -1; }
+			ba = ba1;
 		}
 		memcpy(ba + n, br->backrefs, i * sizeof(struct block_internal *));
 		n += i;
 	}
-	if (!n) return 0;
+	if (!n) { free(ba); return 0; }
 	qsort(ba, n, sizeof(struct block_internal *), bi_compar);
 	for (i = 0; i < n; ++i) if (!i || ba[i] != ba[i - 1]) {
 		ri = ba[i];
