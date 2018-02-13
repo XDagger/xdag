@@ -3,12 +3,13 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 
+#include <Windows.h>
 #define inline				__inline
 #include "../dus/programs/dfstools/source/include/dfsrsa.h"
 
 #define strtok_r			strtok_s
 #define localtime_r(a,b)	localtime_s(b,a)
-#ifdef _WIN64
+#ifdef _WIN32
 #define sleep(x)			Sleep((x)*1000)
 #else
 #define sleep(x)			_sleep(x)

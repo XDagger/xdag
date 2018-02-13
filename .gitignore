@@ -3,9 +3,8 @@ Release/
 Debug/
 .vs/
 
-/win32/xdagwin/cheatcoin.VC.db
-/win32/xdagwin/xdag/cheatcoin.vcxproj.user
-/win64/xdagwin/xdag.VC.db
-/win64/xdagwin/xdag.VC.VC.opendb
-/win64/xdagwin/xdag/xdag.vcxproj.user
-/win64/xdagwin/xdagwallet/xdagwallet.vcxproj.user
+/win/xdag.VC.db
+/win/xdag.VC.VC.opendb
+/win/xdag/xdag.vcxproj.user
+/win/xdagwallet/xdagwallet.vcxproj.user
+/win/ipch
