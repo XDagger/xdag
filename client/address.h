@@ -5,13 +5,13 @@
 
 #include "hash.h"
 
-/* инициализировать модуль адресов */
+//intialization of addresses module
 extern int cheatcoin_address_init(void);
 
-/* преобразовать адрес в хеш */
+//converts address to hash
 extern int cheatcoin_address2hash(const char *address, cheatcoin_hash_t hash);
 
-/* преобразовать хеш в адрес */
+//converts hash to address
 extern const char *cheatcoin_hash2address(const cheatcoin_hash_t hash);
 
 #endif

@@ -138,6 +138,8 @@
       <SubSystem>Windows</SubSystem>
       <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;uafxcwd.lib;LIBCMTd.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>uafxcwd.lib;LIBCMTd.lib</IgnoreSpecificDefaultLibraries>
+      <StackCommitSize>1000000</StackCommitSize>
+      <StackReserveSize>40000000</StackReserveSize>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -164,6 +166,8 @@
       <SubSystem>Windows</SubSystem>
       <AdditionalDependencies>libeay32MTd.lib;ssleay32MTd.lib;pthreadVC2.lib;ws2_32.lib;legacy_stdio_definitions.lib;uafxcwd.lib;LIBCMTd.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>uafxcwd.lib;LIBCMTd.lib</IgnoreSpecificDefaultLibraries>
+      <StackCommitSize>1000000</StackCommitSize>
+      <StackReserveSize>40000000</StackReserveSize>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -194,6 +198,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;uafxcw.lib;LIBCMT.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>uafxcw.lib;LIBCMT.lib</IgnoreSpecificDefaultLibraries>
+      <StackCommitSize>1000000</StackCommitSize>
+      <StackReserveSize>40000000</StackReserveSize>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -250,9 +256,15 @@
     <ClInclude Include="..\..\ldus\source\include\ldus\atomic.h" />
     <ClInclude Include="..\..\ldus\source\include\ldus\list.h" />
     <ClInclude Include="..\..\ldus\source\include\ldus\rbtree.h" />
-    <ClInclude Include="..\..\win32\xdagwin\xdag\netdb.h" />
-    <ClInclude Include="..\..\win32\xdagwin\xdag\termios.h" />
-    <ClInclude Include="..\..\win32\xdagwin\xdag\unistd.h" />
+    <ClInclude Include="..\arpa\inet.h" />
+    <ClInclude Include="..\netdb.h" />
+    <ClInclude Include="..\netinet\in.h" />
+    <ClInclude Include="..\sys\ioctl.h" />
+    <ClInclude Include="..\sys\resource.h" />
+    <ClInclude Include="..\sys\socket.h" />
+    <ClInclude Include="..\sys\time.h" />
+    <ClInclude Include="..\termios.h" />
+    <ClInclude Include="..\unistd.h" />
     <ClInclude Include="xdagwallet.h" />
     <ClInclude Include="xdagwalletDlg.h" />
     <ClInclude Include="resource.h" />
@@ -298,6 +310,8 @@
     <ResourceCompile Include="xdagwallet.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\client\sha256-mb-x86_64.s" />
+    <None Include="..\..\client\x86_64cpuid.s" />
     <None Include="res\xdagwallet.rc2" />
   </ItemGroup>
   <ItemGroup>

@@ -92,9 +92,19 @@
     <ClInclude Include="..\..\ldus\source\include\ldus\atomic.h" />
     <ClInclude Include="..\..\ldus\source\include\ldus\list.h" />
     <ClInclude Include="..\..\ldus\source\include\ldus\rbtree.h" />
-    <ClInclude Include="..\..\win32\xdagwin\cheatcoin\netdb.h" />
-    <ClInclude Include="..\..\win32\xdagwin\xdag\termios.h" />
-    <ClInclude Include="..\..\win32\xdagwin\xdag\unistd.h" />
+    <ClInclude Include="..\arpa\inet.h" />
+    <ClInclude Include="..\netdb.h" />
+    <ClInclude Include="..\netinet\in.h" />
+    <ClInclude Include="..\sys\ioctl.h" />
+    <ClInclude Include="..\sys\resource.h" />
+    <ClInclude Include="..\sys\socket.h" />
+    <ClInclude Include="..\sys\time.h" />
+    <ClInclude Include="..\termios.h" />
+    <ClInclude Include="..\unistd.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\client\sha256-mb-x86_64.s" />
+    <None Include="..\..\client\x86_64cpuid.s" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -182,6 +192,8 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>40000000</StackReserveSize>
+      <StackCommitSize>1000000</StackCommitSize>
     </Link>
     <PostBuildEvent>
       <Command>copy $(PTHREAD_ROOT)dll\x86\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y</Command>
@@ -223,7 +235,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;</AdditionalDependencies>
+      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>40000000</StackReserveSize>
+      <StackCommitSize>1000000</StackCommitSize>
     </Link>
     <PostBuildEvent>
       <Command>copy $(PTHREAD_ROOT)dll\x86\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y</Command>

@@ -1,8 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="xdagwallet.cpp" />
-    <ClCompile Include="xdagwalletDlg.cpp" />
     <ClCompile Include="..\..\client\address.c">
       <Filter>client</Filter>
     </ClCompile>
@@ -11,6 +9,12 @@
     </ClCompile>
     <ClCompile Include="..\..\client\crypt.c">
       <Filter>client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dnet\dnet_command.c">
+      <Filter>dnet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dnet\dnet_connection.c">
+      <Filter>dnet</Filter>
     </ClCompile>
     <ClCompile Include="..\..\dnet\dnet_crypt.c">
       <Filter>dnet</Filter>
@@ -54,12 +58,6 @@
     <ClCompile Include="..\..\dus\programs\dfstools\source\lib\dfsrsa.c">
       <Filter>dus\dfstools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\dnet\dnet_command.c">
-      <Filter>dnet</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dnet\dnet_connection.c">
-      <Filter>dnet</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\client\hash.c">
       <Filter>client</Filter>
     </ClCompile>
@@ -87,25 +85,17 @@
     <ClCompile Include="..\..\client\sync.c">
       <Filter>client</Filter>
     </ClCompile>
-    <ClCompile Include="..\system.c">
-      <Filter>win</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\client\transport.c">
       <Filter>client</Filter>
     </ClCompile>
     <ClCompile Include="..\..\client\wallet.c">
       <Filter>client</Filter>
     </ClCompile>
+    <ClCompile Include="..\system.c">
+      <Filter>win</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="xdagwallet.h" />
-    <ClInclude Include="xdagwalletDlg.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="targetver.h" />
-    <ClInclude Include="..\..\ldus\source\include\ldus\atomic.h">
-      <Filter>ldus</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\client\address.h">
       <Filter>client</Filter>
     </ClInclude>
@@ -114,6 +104,12 @@
     </ClInclude>
     <ClInclude Include="..\..\client\crypt.h">
       <Filter>client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dnet\dnet_command.h">
+      <Filter>dnet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dnet\dnet_connection.h">
+      <Filter>dnet</Filter>
     </ClInclude>
     <ClInclude Include="..\..\dnet\dnet_crypt.h">
       <Filter>dnet</Filter>
@@ -151,6 +147,9 @@
     <ClInclude Include="..\..\dnet\system.h">
       <Filter>dnet</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\ldus\source\include\ldus\atomic.h">
+      <Filter>ldus</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\ldus\source\include\ldus\list.h">
       <Filter>ldus</Filter>
     </ClInclude>
@@ -175,12 +174,6 @@
     <ClInclude Include="..\..\dus\programs\dfstools\source\include\dfsrsa.h">
       <Filter>dus\dfstools</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\dnet\dnet_command.h">
-      <Filter>dnet</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dnet\dnet_connection.h">
-      <Filter>dnet</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\client\hash.h">
       <Filter>client</Filter>
     </ClInclude>
@@ -199,10 +192,10 @@
     <ClInclude Include="..\..\client\pool.h">
       <Filter>client</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\client\state.h">
+    <ClInclude Include="..\..\client\sha256.h">
       <Filter>client</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\client\sha256.h">
+    <ClInclude Include="..\..\client\state.h">
       <Filter>client</Filter>
     </ClInclude>
     <ClInclude Include="..\..\client\storage.h">
@@ -252,52 +245,43 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="xdagwallet.rc" />
+    <Filter Include="client">
+      <UniqueIdentifier>{6c13ab7d-9e71-408b-af5d-b2f3c592d690}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dnet">
+      <UniqueIdentifier>{38db0e68-b7bb-4b4d-ba5d-4b2295becf8a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ldus">
+      <UniqueIdentifier>{99a29dd4-02ae-4a6f-b184-e64e7f5aa259}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dus">
+      <UniqueIdentifier>{8e2bd861-5959-4d76-9fed-62d039ca80b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dus\dar">
+      <UniqueIdentifier>{57e55af7-91e4-4ac6-9162-ae30fecec15c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dus\dfstools">
+      <UniqueIdentifier>{06853e23-69fb-4889-9636-12e6fa39c327}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win">
+      <UniqueIdentifier>{a32dc772-8c64-4796-9d61-339de0d41fef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win\arpa">
+      <UniqueIdentifier>{e5d09eca-29ff-4bc8-aa93-8723cd7cc316}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win\netinet">
+      <UniqueIdentifier>{b265030b-7311-4bbd-86af-bd52f1e33a33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win\sys">
+      <UniqueIdentifier>{c2469ccc-f122-4af6-9190-d4f5731a7e51}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\xdagwallet.ico" />
-    <Image Include="res\Toolbar.bmp" />
-    <Image Include="res\Toolbar256.bmp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="res\xdagwallet.rc2" />
     <None Include="..\..\client\sha256-mb-x86_64.s">
       <Filter>client</Filter>
     </None>
     <None Include="..\..\client\x86_64cpuid.s">
       <Filter>client</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="client">
-      <UniqueIdentifier>{8d12fb98-371c-4b75-a7ce-52aec171aaa9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="dnet">
-      <UniqueIdentifier>{e602b2b6-6865-42ce-81cb-8ccde8adc656}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ldus">
-      <UniqueIdentifier>{8ee18064-7b50-43d3-ad76-b18e2d2e4f77}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="dus">
-      <UniqueIdentifier>{cc31c691-ab16-4965-8b54-5e433c8cb32f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="dus\dar">
-      <UniqueIdentifier>{ddbb4ddd-681c-47dc-a220-2cd1c3c1a285}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="dus\dfstools">
-      <UniqueIdentifier>{6fa6076f-eda4-4bff-83f1-1a21edb074c6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="win">
-      <UniqueIdentifier>{df15789c-da21-44a5-91ad-0b79c6f910da}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="win\arpa">
-      <UniqueIdentifier>{637ca6c2-6a37-4744-940b-0b53ea641140}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="win\netinet">
-      <UniqueIdentifier>{cd7e829b-ee29-4e7f-bb0f-6b7c1f3efa17}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="win\sys">
-      <UniqueIdentifier>{c9eefc95-a949-4539-b8e6-ff3620e411b6}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
 </Project>
