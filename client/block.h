@@ -1,4 +1,4 @@
-/* работа с блоками, T13.654-T13.836 $DVS:time$ */
+/* processing of blocks, T13.654-T13.836 $DVS:time$ */
 
 #ifndef CHEATCOIN_BLOCK_H
 #define CHEATCOIN_BLOCK_H
