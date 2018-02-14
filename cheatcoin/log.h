@@ -1,4 +1,4 @@
-/* логирование, T13.670-T13.788 $DVS:time$ */
+/* Logging, T13.670-T13.788 $ DVS: time $ */
 
 #ifndef CHEATCOIN_LOG_H
 #define CHEATCOIN_LOG_H
@@ -24,7 +24,7 @@ extern int cheatcoin_log_init(void);
 
 #define cheatcoin_log_hash(hash) cheatcoin_log_array(hash, sizeof(cheatcoin_hash_t))
 
-/* устанавливает максимальный уровень ошибки для вывода в лог, возвращает прежний уровень (0 - ничего не выводить, 9 - всё) */
+/* sets the maximum error level for output to the log, returns the previous level (0 - do not output anything, 9 - all) */
 extern int cheatcoin_set_log_level(int level);
 
 #define cheatcoin_fatal(...) cheatcoin_log(CHEATCOIN_FATAL   , __VA_ARGS__)

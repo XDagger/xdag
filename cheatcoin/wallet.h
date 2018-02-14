@@ -1,4 +1,4 @@
-/* кошелёк, T13.681-T13.726 $DVS:time$ */
+/* purse, T13.681-T13.726 $ DVS: time $ */
 
 #ifndef CHEATCOIN_WALLET_H
 #define CHEATCOIN_WALLET_H
@@ -7,22 +7,22 @@
 
 struct cheatcoin_public_key {
 	void *key;
-	uint64_t *pub; /* младший бит содержит чётность */
+	uint64_t *pub; /* the least significant bit contains parity */
 };
 
-/* инициализировать кошелёк */
+/* initialize a purse */
 extern int cheatcoin_wallet_init(void);
 
-/* сгенерировать новый ключ и установить его по умолчанию, возвращает его номер */
+/* generate a new key and set it to default, returns its number */
 extern int cheatcoin_wallet_new_key(void);
 
-/* возвращает ключ по умолчанию, в *n_key записывает его номер */
+/* returns the default key, in * n_key writes its number */
 extern struct cheatcoin_public_key *cheatcoin_wallet_default_key(int *n_key);
 
-/* возвращает массив наших ключей */
+/* returns an array of our keys */
 extern struct cheatcoin_public_key *cheatcoin_wallet_our_keys(int *pnkeys);
 
-/* завершает работу с кошельком */
+/* finishes work with a purse */
 extern void cheatcoin_wallet_finish(void);
 
 #endif
