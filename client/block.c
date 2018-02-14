@@ -87,12 +87,13 @@ static uint64_t get_timestamp(void)
     return (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
 }
 
-//returns a number of the current period, period is 64 seconds
+/* returns a number of the current period, period is 64 seconds */
 cheatcoin_time_t cheatcoin_main_time(void)
 {
     return MAIN_TIME(get_timestamp());
 }
 
+/* returns the number of the time period corresponding to the start of the network */
 cheatcoin_time_t cheatcoin_start_main_time(void)
 {
     return MAIN_TIME(CHEATCOIN_ERA);
@@ -246,7 +247,7 @@ static uint64_t unapply_block(struct block_internal *bi)
     return (cheatcoin_amount_t)0 - bi->fee;
 }
 
-//returns current supply by specified count of main blocks
+/* calculates current supply by specified count of main blocks */
 cheatcoin_amount_t cheatcoin_get_supply(uint64_t nmain)
 {
     cheatcoin_amount_t res = 0, amount = MAIN_START_AMOUNT;
@@ -333,8 +334,9 @@ static inline cheatcoin_diff_t hash_difficulty(cheatcoin_hash_t hash)
     return cheatcoin_diff_div(max, res);
 }
 
-//returns a number of public key from keys array with lengh nkeys, which conforms to the signature starting from field signo_r of the block b
-//rerurns -1 if nothing is found
+/* returns a number of public key from keys array with lengh nkeys, which conforms to the signature starting from field signo_r of the block b
+ * rerurns -1 if nothing is found
+ */
 static int valid_signature(const struct cheatcoin_block *b, int signo_r, int nkeys, struct cheatcoin_public_key *keys)
 {
     struct cheatcoin_block buf[2];
@@ -369,8 +371,9 @@ static int valid_signature(const struct cheatcoin_block *b, int signo_r, int nke
 	log_block("Pretop", (b)->hash, (b)->time, (b)->storage_pos); \
 }
 
-//checks and adds a new block to the storage
-//returns: > 0 - block was added, 0 - block exists, < 0 - an error
+/* checks and adds a new block to the storage
+ *returns: > 0 - block was added, 0 - block exists, < 0 - an error
+ */
 static int add_block_nolock(struct cheatcoin_block *b, cheatcoin_time_t limit)
 {
     uint64_t timestamp = get_timestamp(), sum_in = 0, sum_out = 0, *psum, theader = b->field[0].transport_header;
@@ -701,7 +704,7 @@ static void *add_block_callback(void *block, void *data)
     return 0;
 }
 
-// checks and adds block to the storage. Return non-zero value in case of error.
+/* checks and adds block to the storage. Returns non-zero value in case of error. */
 int cheatcoin_add_block(struct cheatcoin_block *b)
 {
     int res;
@@ -718,9 +721,10 @@ int cheatcoin_add_block(struct cheatcoin_block *b)
 
 #define pretop_block() (top_main_chain && MAIN_TIME(top_main_chain->time) == MAIN_TIME(send_time) ? pretop_main_chain : top_main_chain)
 
-/* создать и опубликовать блок; в первых ninput полях fields содержатся адреса входов и соотв. кол-во читкоинов,
- * в следующих noutput полях - аналогично - выходы; fee - комиссия; send_time - время отправки блока; если оно больше текущего, то
- * проводится майнинг для генерации наиболее оптимального хеша */
+/* create and publish a block; The first 'ninput' fields 'fields' contain the addresses of the inputs and the corresponding quiantity of XDag,
+ * in the following 'noutput' fields similarly - outputs, fee; send_time (time of sending the block);
+ * if it is greater than the current one, then the mining is performed to generate the most optimal hash
+ */
 int cheatcoin_create_block(struct cheatcoin_field *fields, int ninput, int noutput, cheatcoin_amount_t fee, cheatcoin_time_t send_time)
 {
     struct cheatcoin_block b[2];
@@ -903,7 +907,7 @@ static int request_blocks(cheatcoin_time_t t, cheatcoin_time_t dt)
     return 0;
 }
 
-/* длинная процедура синхронизации */
+/* a long procedure of synchronization */
 static void *sync_thread(void *arg)
 {
     cheatcoin_time_t t = 0, st;
@@ -925,7 +929,7 @@ static void reset_callback(struct ldus_rbtree *node)
     free(node);
 }
 
-//main thread which works with block
+/* main thread which works with block */
 static void *work_thread(void *arg)
 {
     cheatcoin_time_t t = CHEATCOIN_ERA, conn_time = 0, sync_time = 0, t0;
@@ -935,13 +939,13 @@ static void *work_thread(void *arg)
     pthread_t th;
 
 begin:
-    //loading block from the local storage
+    /* loading block from the local storage */
     g_cheatcoin_state = CHEATCOIN_STATE_LOAD;
     cheatcoin_mess("Loading blocks from local storage...");
     cheatcoin_show_state(0);
     cheatcoin_load_blocks(t, get_timestamp(), &t, add_block_callback);
 
-    //waiting for command "run"
+    /* waiting for command "run" */
     while(!g_cheatcoin_run)
     {
         g_cheatcoin_state = CHEATCOIN_STATE_STOP;
@@ -960,11 +964,11 @@ begin:
         }
     }
 
-    //starting mining threads
+    /* starting mining threads */
     cheatcoin_mess("Starting mining threads...");
     cheatcoin_mining_start(n_mining_threads);
 
-    /* периодическая генерация блоков и определение главного блока */
+    /* periodical generation of blocks and determination of the main block */
     cheatcoin_mess("Entering main cycle...");
     for(;;)
     {
@@ -1061,9 +1065,10 @@ begin:
     return 0;
 }
 
-/* начало регулярной обработки блоков; n_mining_threads - число потоков для майнинга на CPU;
- * для лёгкой ноды n_mining_threads < 0 и число потоков майнинга равно ~n_mining_threads;
- * miner_address = 1 - явно задан адрес майнера */
+/* start of regular block processing; n_mining_threads - the number of threads for mining on the CPU;
+ * for the light node n_mining_threads < 0 and the number of threads is equal to ~n_mining_threads;
+ * miner_address = 1 - the address of the miner is explicitly set
+ */
 int cheatcoin_blocks_start(int n_mining_threads, int miner_address)
 {
     pthread_mutexattr_t attr;
@@ -1092,7 +1097,7 @@ int cheatcoin_blocks_start(int n_mining_threads, int miner_address)
     return res;
 }
 
-//returns our first block. If there is no blocks yet - the first block is created.
+/* returns our first block. If there is no blocks yet - the first block is created. */
 int cheatcoin_get_our_block(cheatcoin_hash_t hash)
 {
     struct block_internal *bi;
@@ -1114,7 +1119,7 @@ int cheatcoin_get_our_block(cheatcoin_hash_t hash)
     return 0;
 }
 
-//calls callback for each own block
+/* calls callback for each own block */
 int cheatcoin_traverse_our_blocks(void *data, int(*callback)(void *data, cheatcoin_hash_t hash,
     cheatcoin_amount_t amount, cheatcoin_time_t time, int n_our_key))
 {
@@ -1138,7 +1143,7 @@ static void traverse_all_callback(struct ldus_rbtree *node)
     (*g_traverse_callback)(g_traverse_data, bi->hash, bi->amount, bi->time);
 }
 
-//calls callback for each block
+/* calls callback for each block */
 int cheatcoin_traverse_all_blocks(void *data, int(*callback)(void *data, cheatcoin_hash_t hash,
     cheatcoin_amount_t amount, cheatcoin_time_t time))
 {
@@ -1150,7 +1155,7 @@ int cheatcoin_traverse_all_blocks(void *data, int(*callback)(void *data, cheatco
     return 0;
 }
 
-//returns current balance for specified address or balance for all addresses if hash == 0
+/* returns current balance for specified address or balance for all addresses if hash == 0 */
 cheatcoin_amount_t cheatcoin_get_balance(cheatcoin_hash_t hash)
 {
     struct block_internal *bi;
@@ -1168,7 +1173,7 @@ cheatcoin_amount_t cheatcoin_get_balance(cheatcoin_hash_t hash)
     return bi->amount;
 }
 
-//sets current balance for the specified address
+/* sets current balance for the specified address */
 extern int cheatcoin_set_balance(cheatcoin_hash_t hash, cheatcoin_amount_t balance)
 {
     struct block_internal *bi;
@@ -1235,7 +1240,7 @@ extern int cheatcoin_set_balance(cheatcoin_hash_t hash, cheatcoin_amount_t balan
     return 0;
 }
 
-//returns position and time of block by hash
+/*returns position and time of block by hash */
 int64_t cheatcoin_get_block_pos(const cheatcoin_hash_t hash, cheatcoin_time_t *t)
 {
     struct block_internal *bi;
@@ -1264,7 +1269,7 @@ int cheatcoin_get_key(cheatcoin_hash_t hash)
     return bi->n_our_key;
 }
 
-//reinitialization of block processing
+/* reinitialization of block processing */
 int cheatcoin_blocks_reset(void)
 {
     pthread_mutex_lock(&block_mutex);
@@ -1286,7 +1291,7 @@ static int bi_compar(const void *l, const void *r)
     return (tl > tr) - (tl < tr);
 }
 
-//prints detailed information about block
+/* prints detailed information about block */
 int cheatcoin_print_block_info(cheatcoin_hash_t hash, FILE *out)
 {
     struct block_internal *bi, **ba, **ba1, *ri;
@@ -1299,7 +1304,10 @@ int cheatcoin_print_block_info(cheatcoin_hash_t hash, FILE *out)
     pthread_mutex_lock(&block_mutex);
     bi = block_by_hash(hash);
     pthread_mutex_unlock(&block_mutex);
-    if(!bi) return -1;
+    if(!bi)
+    {
+        return -1;
+    }
     h = bi->hash;
     t = bi->time >> 10;
     localtime_r(&t, &tm);
@@ -1319,16 +1327,20 @@ int cheatcoin_print_block_info(cheatcoin_hash_t hash, FILE *out)
     fprintf(out, "       fee: %s  %10u.%09u\n", (bi->ref ? cheatcoin_hash2address(bi->ref->hash) : "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
         pramount(bi->fee));
     for(i = 0; i < bi->nlinks; ++i)
+    {
         fprintf(out, "    %6s: %s  %10u.%09u\n", (1 << i & bi->in_mask ? " input" : "output"),
             cheatcoin_hash2address(bi->link[i]->hash), pramount(bi->linkamount[i]));
+    }
     fprintf(out, "-------------------------------------------------------------------------------------------\n");
     fprintf(out, "                                 block as address: details\n");
     fprintf(out, " direction  transaction                                amount       time                   \n");
     fprintf(out, "-------------------------------------------------------------------------------------------\n");
     if(bi->flags & BI_MAIN)
+    {
         fprintf(out, "   earning: %s  %10u.%09u  %s.%03d\n", cheatcoin_hash2address(h),
             pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(CHEATCOIN_ERA)) >> MAIN_BIG_PERIOD_LOG)),
             tbuf, (int)((bi->time & 0x3ff) * 1000) >> 10);
+    }
     N = 0x10000; n = 0;
     ba = malloc(N * sizeof(struct block_internal *));
     if(!ba) return -1;
