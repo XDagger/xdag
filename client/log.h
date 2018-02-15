@@ -1,19 +1,20 @@
-/* логирование, T13.670-T13.788 $DVS:time$ */
+/* logging, T13.670-T13.788 $DVS:time$ */
 
 #ifndef CHEATCOIN_LOG_H
 #define CHEATCOIN_LOG_H
 
-enum cheatcoin_debug_levels {
-	CHEATCOIN_NOERROR,
-	CHEATCOIN_FATAL,
-	CHEATCOIN_CRITICAL,
-	CHEATCOIN_INTERNAL,
-	CHEATCOIN_ERROR,
-	CHEATCOIN_WARNING,
-	CHEATCOIN_MESSAGE,
-	CHEATCOIN_INFO,
-	CHEATCOIN_DEBUG,
-	CHEATCOIN_TRACE,
+enum cheatcoin_debug_levels
+{
+    CHEATCOIN_NOERROR,
+    CHEATCOIN_FATAL,
+    CHEATCOIN_CRITICAL,
+    CHEATCOIN_INTERNAL,
+    CHEATCOIN_ERROR,
+    CHEATCOIN_WARNING,
+    CHEATCOIN_MESSAGE,
+    CHEATCOIN_INFO,
+    CHEATCOIN_DEBUG,
+    CHEATCOIN_TRACE,
 };
 
 extern int cheatcoin_log(int level, const char *format, ...);
@@ -24,7 +25,7 @@ extern int cheatcoin_log_init(void);
 
 #define cheatcoin_log_hash(hash) cheatcoin_log_array(hash, sizeof(cheatcoin_hash_t))
 
-/* устанавливает максимальный уровень ошибки для вывода в лог, возвращает прежний уровень (0 - ничего не выводить, 9 - всё) */
+/* sets the maximum error level for output to the log, returns the previous level (0 - do not log anything, 9 - all) */
 extern int cheatcoin_set_log_level(int level);
 
 #define cheatcoin_fatal(...) cheatcoin_log(CHEATCOIN_FATAL   , __VA_ARGS__)

@@ -2,13 +2,14 @@
 #define _SYSTEM_H
 
 #if defined(_WIN32) || defined(_WIN64)
+#include <Windows.h>
 #include <pthread.h>
 #define inline __inline
 #define __attribute__(x) 
 typedef long ssize_t;
 #define fcntl(a,b,c) 0
 #define close closesocket
-#ifdef _WIN64
+#ifdef _WIN32
 #define sleep(x)			Sleep((x)*1000)
 #else
 #define sleep(x)			_sleep(x)

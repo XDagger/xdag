@@ -27,17 +27,10 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp)
     return 0;
 }
 
-#if !defined(_WIN64)
-__declspec(noreturn) void __cdecl __report_rangecheckfailure(void) {
-	fprintf(stderr, "Fatal error: openssl range check failure!\n");
-	fflush(stderr);
-	_exit(0);
-}
-#else
-FILE *__iob_func(void) {
+FILE *__iob_func(void) 
+{
 	return stdin;
 }
-#endif
 
 int system_init(void) {
 	WSADATA wsaData;
