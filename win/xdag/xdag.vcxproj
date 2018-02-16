@@ -196,7 +196,8 @@
       <StackCommitSize>1000000</StackCommitSize>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(PTHREAD_ROOT)dll\x86\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y</Command>
+      <Command>copy $(PTHREAD_ROOT)dll\x86\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
+copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -216,7 +217,8 @@
       <StackCommitSize>1000000</StackCommitSize>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(PTHREAD_ROOT)dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y</Command>
+      <Command>copy $(PTHREAD_ROOT)dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
+copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -240,7 +242,8 @@
       <StackCommitSize>1000000</StackCommitSize>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(PTHREAD_ROOT)dll\x86\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y</Command>
+      <Command>copy $(PTHREAD_ROOT)dll\x86\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
+copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -264,7 +267,8 @@
       <StackCommitSize>1000000</StackCommitSize>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(PTHREAD_ROOT)dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y</Command>
+      <Command>copy $(PTHREAD_ROOT)dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
+copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
