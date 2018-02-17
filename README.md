@@ -30,7 +30,7 @@ Install and run (Linux):
 
 - Make:
 
-        $ cd xdag/cheatcoin
+        $ cd xdag/client
         $ make
 
 - Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool xdag.me:13654
