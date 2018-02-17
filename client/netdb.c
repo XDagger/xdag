@@ -48,6 +48,8 @@ static struct ldus_rbtree *root = 0;
 static pthread_mutex_t host_mutex = PTHREAD_MUTEX_INITIALIZER;
 static struct host *selected_hosts[MAX_SELECTED_HOSTS], *our_host;
 static unsigned n_selected_hosts = 0;
+
+/* blocked ip for incoming connections and their number */
 uint32_t *g_cheatcoin_blocked_ips, *g_cheatcoin_white_ips;
 int g_cheatcoin_n_blocked_ips = 0, g_cheatcoin_n_white_ips = 0;
 
@@ -190,7 +192,9 @@ static void *monitor_thread(void *arg) {
 	return 0;
 }
 
-/* инициализировать базу хостов; our_host - внешний адрес нашего хоста (ip:port), addr_port_pairs - адреса других npairs хостов в том же формате */
+/* initialized hosts base, 'our_host_str' - exteranal address of our host (ip:port),
+* 'addr_port_pairs' - addresses of other 'npairs' hosts in the same format
+*/
 int cheatcoin_netdb_init(const char *our_host_str, int npairs, const char **addr_port_pairs) {
 	struct host h;
 	pthread_t t;
@@ -206,7 +210,7 @@ int cheatcoin_netdb_init(const char *our_host_str, int npairs, const char **addr
 	return 0;
 }
 
-/* записывает в массив данные для передачи другому хосту */
+/* writes data to the array for transmission to another host */
 unsigned cheatcoin_netdb_send(uint8_t *data, unsigned len) {
 	unsigned i;
 	for (i = 0; i < n_selected_hosts && len >= 6; ++i, len -= 6, data += 6) {
@@ -217,7 +221,7 @@ unsigned cheatcoin_netdb_send(uint8_t *data, unsigned len) {
 	return i * 6;
 }
 
-/* читает данные, переданные другим хостом */
+/* reads data sent by another host */
 unsigned cheatcoin_netdb_receive(const uint8_t *data, unsigned len) {
 	struct host h;
 	int i;
@@ -231,7 +235,7 @@ unsigned cheatcoin_netdb_receive(const uint8_t *data, unsigned len) {
 	return 6 * i;
 }
 
-/* завершает работу с базой хостов */
+/* completes the work with the host database */
 void cheatcoin_netdb_finish(void) {
 	pthread_mutex_lock(&host_mutex);
 }
