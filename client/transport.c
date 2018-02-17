@@ -168,10 +168,12 @@ static void conn_close_notify(void *conn) {
 	if (reply_connection == conn) reply_connection = 0;
 }
 
-/* внешний интерфейс */
+/* external interface */
 
-/* запустить транспортную подсистему; bindto - ip:port у которому привязать сокет, принимающий внешние соединения,
- * addr-port_pairs - массив указателей на строки ip:port, содержащие параметры других хостов для подключения; npairs - их число */
+/* starts the transport system; bindto - ip:port for a socket for external connections
+* addr-port_pairs - array of pointers to strings with parameters of other host for connection (ip:port),
+* npairs - count of the strings
+*/
 int cheatcoin_transport_start(int flags, const char *bindto, int npairs, const char **addr_port_pairs) {
 	const char **argv = malloc((npairs + 5) * sizeof(char *)), *version;
 	int argc = 0, i, res;
@@ -196,7 +198,7 @@ int cheatcoin_transport_start(int flags, const char *bindto, int npairs, const c
 	return res;
 }
 
-/* сгенерировать массив случайныз данных */
+/* generates an array with random data */
 int cheatcoin_generate_random_array(void *array, unsigned long size) {
 	return dnet_generate_random_array(array, size);
 }
@@ -224,8 +226,10 @@ static int do_request(int type, cheatcoin_time_t start_time, cheatcoin_time_t en
 	return (int)reply_result;
 }
 
-/* запросить у другого хоста все блоки, попадающиев данный временной интервал; для каждого блока вызывается функция
- * callback(), в которую передаётся блок и данные; возвращает -1 в случае ошибки */
+/* requests all blocks from the remote host, that are in specified time interval;
+* calls callback() for each block, callback recieved the block and data as paramenters;
+* return -1 in case of error
+*/
 int cheatcoin_request_blocks(cheatcoin_time_t start_time, cheatcoin_time_t end_time, void *data,
 		void *(*callback)(void *block, void *data)) {
 	return do_request(CHEATCOIN_MESSAGE_BLOCKS_REQUEST, start_time, end_time, data, callback);
@@ -237,7 +241,7 @@ int cheatcoin_request_sums(cheatcoin_time_t start_time, cheatcoin_time_t end_tim
 	return do_request(CHEATCOIN_MESSAGE_SUMS_REQUEST, start_time, end_time, sums, 0);
 }
 
-/* разослать другим участникам сети новый блок */
+/* sends a new block to network */
 int cheatcoin_send_new_block(struct cheatcoin_block *b) {
 	dnet_send_cheatcoin_packet(b, (void *)(uintptr_t)NEW_BLOCK_TTL);
 	cheatcoin_send_block_via_pool(b);

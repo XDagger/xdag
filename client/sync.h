@@ -5,13 +5,13 @@
 
 #include "block.h"
 
-/* проверить блок и включить его в базу данных с учётом синхронизации, возвращает не 0 в случае ошибки */
+/* checks a block and includes it in the database with synchronization, ruturs non-zero value in case of error */
 extern int cheatcoin_sync_add_block(struct cheatcoin_block *b, void *conn);
 
-/* извещает механизм синхронизации, что искомый блок уже найден */
+/* notifies synchronization mechanism about found block */
 extern int cheatcoin_sync_pop_block(struct cheatcoin_block *b);
 
-/* инициализация синхронизации блоков */
+/* initialized block synchronization */
 extern int cheatcoin_sync_init(void);
 
 extern int g_cheatcoin_sync_on;
