@@ -65,14 +65,14 @@ fail:
 	return -1;
 }
 
-/* сгенерировать новый ключ и установить его по умолчанию, возвращает его номер */
+/* generates a new key and sets is as defauld, returns its index */
 int cheatcoin_wallet_new_key(void) {
 	int res = add_key(0);
 	if (!res) res = nkeys - 1;
 	return res;
 }
 
-/* инициализировать кошелёк */
+/* initializes a wallet */
 int cheatcoin_wallet_init(void) {
 	uint32_t priv32[sizeof(cheatcoin_hash_t)/sizeof(uint32_t)];
 	cheatcoin_hash_t priv;
@@ -94,19 +94,19 @@ int cheatcoin_wallet_init(void) {
 	return 0;
 }
 
-/* возвращает ключ по умолчанию, в *n_key записывает его номер */
+/* returns a default key, the index of the default key is written to *n_key */
 struct cheatcoin_public_key *cheatcoin_wallet_default_key(int *n_key) {
 	if (nkeys) { if (n_key) *n_key = nkeys - 1; return keys_arr + nkeys - 1; }
 	return 0;
 }
 
-/* возвращает массив наших ключей */
+/* returns an array of our keys */
 struct cheatcoin_public_key *cheatcoin_wallet_our_keys(int *pnkeys) {
 	*pnkeys = nkeys;
 	return keys_arr;
 }
 
-/* завершает работу с кошельком */
+/* completes work with wallet */
 void cheatcoin_wallet_finish(void) {
 	pthread_mutex_lock(&wallet_mutex);
 }

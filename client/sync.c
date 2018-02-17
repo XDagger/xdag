@@ -29,7 +29,8 @@ static struct sync_block **g_sync_hash, **g_sync_hash_r;
 static pthread_mutex_t g_sync_hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 int g_cheatcoin_sync_on = 0;
 
-/* заносит блок в лист ожидания, ожидается блок с хешем, записанным в поле nfield блока b */
+/* moves the block to the wait list, block with hash written to field 'nfield' of block 'b' is expected 
+ (original russian comment was unclear too) */
 static int push_block(struct cheatcoin_block *b, void *conn, int nfield, int ttl) {
 	cheatcoin_hash_t hash;
 	struct sync_block **p, *q;
@@ -66,7 +67,7 @@ static int push_block(struct cheatcoin_block *b, void *conn, int nfield, int ttl
 	return 1;
 }
 
-/* извещает механизм синхронизации, что искомый блок уже найден */
+/* notifies synchronization mechanism about found block */
 int cheatcoin_sync_pop_block(struct cheatcoin_block *b) {
 	struct sync_block **p, *q, *r;
 	cheatcoin_hash_t hash;
@@ -89,7 +90,7 @@ begin:
 	return 0;
 }
 
-/* проверить блок и включить его в базу данных с учётом синхронизации, возвращает не 0 в случае ошибки */
+/* checks a block and includes it in the database with synchronization, ruturs non-zero value in case of error */
 int cheatcoin_sync_add_block(struct cheatcoin_block *b, void *conn) {
 	int res, ttl = b->field[0].transport_header >> 8 & 0xff;
 	res = cheatcoin_add_block(b);
@@ -125,7 +126,7 @@ int cheatcoin_sync_add_block(struct cheatcoin_block *b, void *conn) {
 	return 0;
 }
 
-/* инициализация синхронизации блоков */
+/* initialized block synchronization */
 int cheatcoin_sync_init(void) {
 	g_sync_hash = (struct sync_block **)calloc(sizeof(struct sync_block *), SYNC_HASH_SIZE);
 	g_sync_hash_r = (struct sync_block **)calloc(sizeof(struct sync_block *), SYNC_HASH_SIZE);

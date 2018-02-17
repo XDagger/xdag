@@ -5,7 +5,7 @@
 
 #include "hash.h"
 
-/* intializates the addresses module */
+/* intializes the addresses module */
 extern int cheatcoin_address_init(void);
 
 /* converts address to hash */

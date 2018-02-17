@@ -76,12 +76,15 @@ struct miner {
 
 struct cheatcoin_pool_task g_cheatcoin_pool_task[2];
 uint64_t g_cheatcoin_pool_ntask;
+/* a number of mining threads */
 int g_cheatcoin_mining_threads = 0;
 cheatcoin_hash_t g_cheatcoin_mined_hashes[N_CONFIRMATIONS], g_cheatcoin_mined_nonce[N_CONFIRMATIONS];
 
-/* 1 - программа работает как пул */
-static int g_cheatcoin_pool = 0, g_max_nminers = START_N_MINERS, g_max_nminers_ip = START_N_MINERS_IP, g_nminers = 0, g_socket = -1,
-		g_stop_mining = 1, g_stop_general_mining = 1;
+/* 1 - program wors as a pool */
+static int g_cheatcoin_pool = 0;
+
+static int g_max_nminers = START_N_MINERS, g_max_nminers_ip = START_N_MINERS_IP, g_nminers = 0, g_socket = -1,
+    g_stop_mining = 1, g_stop_general_mining = 1;
 static double g_pool_fee = 0, g_pool_reward = 0, g_pool_direct = 0, g_pool_fund = 0;
 static struct miner *g_miners, g_local_miner, g_fund_miner;
 static struct pollfd *g_fds;
@@ -90,6 +93,7 @@ static struct cheatcoin_block *g_firstb = 0, *g_lastb = 0;
 static pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_share_mutex = PTHREAD_MUTEX_INITIALIZER;
 static const char *g_miner_address;
+/* poiter to mutex for optimal share  */
 void *g_ptr_share_mutex = &g_share_mutex;
 
 static inline void set_share(struct miner *m, struct cheatcoin_pool_task *task, cheatcoin_hash_t last, cheatcoin_hash_t hash) {
@@ -371,6 +375,7 @@ static void *pool_block_thread(void *arg) {
 	return 0;
 }
 
+/* gets pool parameters as a string, 0 - if the pool is disabled */
 char *cheatcoin_pool_get_config(char *buf) {
 	if (!g_cheatcoin_pool) return 0;
 	sprintf(buf, "%d:%.2lf:%.2lf:%.2lf:%d:%.2lf", g_max_nminers, g_pool_fee * 100, g_pool_reward * 100,
@@ -378,6 +383,7 @@ char *cheatcoin_pool_get_config(char *buf) {
 	return buf;
 }
 
+/* sets pool parameters */
 int cheatcoin_pool_set_config(const char *str) {
 	char buf[0x100], *lasts;
 	if (!g_cheatcoin_pool) return -1;
@@ -580,7 +586,7 @@ static int send_to_pool(struct cheatcoin_field *fld, int nfld) {
 	return 0;
 }
 
-/* послать блок в сеть через пул */
+/* send block to network via pool */
 int cheatcoin_send_block_via_pool(struct cheatcoin_block *b) {
 	if (g_socket < 0) return -1;
 	pthread_mutex_lock(&g_pool_mutex);
@@ -774,6 +780,7 @@ static void *general_mining_thread(void *arg) {
 	return 0;
 }
 
+/* changes the number of mining threads */
 int cheatcoin_mining_start(int n_mining_threads) {
 	pthread_t th;
 	if ((n_mining_threads > 0 || g_cheatcoin_pool) && g_stop_general_mining) {
@@ -806,6 +813,8 @@ int cheatcoin_mining_start(int n_mining_threads) {
 	return 0;
 }
 
+/* initialization of the pool (pool_on = 1) or connecting the miner to pool (pool_on = 0; pool_arg - pool parameters ip:port[:CFG];
+miner_addr - address of the miner, if specified */
 int cheatcoin_pool_start(int pool_on, const char *pool_arg, const char *miner_address) {
 	pthread_t th;
 	int i, res;
@@ -857,6 +866,7 @@ static int print_miner(FILE *out, int n, struct miner *m) {
 	return m->state & (MINER_FREE | MINER_ARCHIVE) ? 0 : 1;
 }
 
+/* output to the file a list of miners */
 int cheatcoin_print_miners(FILE *out) {
 	int i, res;
 	fprintf(out, "List of miners:\n"

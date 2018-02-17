@@ -168,10 +168,12 @@ static void conn_close_notify(void *conn) {
 	if (reply_connection == conn) reply_connection = 0;
 }
 
-/* внешний интерфейс */
+/* external interface */
 
-/* запустить транспортную подсистему; bindto - ip:port у которому привязать сокет, принимающий внешние соединения,
- * addr-port_pairs - массив указателей на строки ip:port, содержащие параметры других хостов для подключения; npairs - их число */
+/* starts the transport system; bindto - ip:port for a socket for external connections
+* addr-port_pairs - array of pointers to strings with parameters of other host for connection (ip:port),
+* npairs - count of the strings
+*/
 int cheatcoin_transport_start(int flags, const char *bindto, int npairs, const char **addr_port_pairs) {
 	const char **argv = malloc((npairs + 5) * sizeof(char *)), *version;
 	int argc = 0, i, res;
@@ -196,7 +198,7 @@ int cheatcoin_transport_start(int flags, const char *bindto, int npairs, const c
 	return res;
 }
 
-/* сгенерировать массив случайныз данных */
+/* generates an array with random data */
 int cheatcoin_generate_random_array(void *array, unsigned long size) {
 	return dnet_generate_random_array(array, size);
 }
@@ -224,38 +226,43 @@ static int do_request(int type, cheatcoin_time_t start_time, cheatcoin_time_t en
 	return (int)reply_result;
 }
 
-/* запросить у другого хоста все блоки, попадающиев данный временной интервал; для каждого блока вызывается функция
- * callback(), в которую передаётся блок и данные; возвращает -1 в случае ошибки */
+/* requests all blocks from the remote host, that are in specified time interval;
+* calls callback() for each block, callback recieved the block and data as paramenters;
+* return -1 in case of error
+*/
 int cheatcoin_request_blocks(cheatcoin_time_t start_time, cheatcoin_time_t end_time, void *data,
 		void *(*callback)(void *block, void *data)) {
 	return do_request(CHEATCOIN_MESSAGE_BLOCKS_REQUEST, start_time, end_time, data, callback);
 }
 
-/* запрашивает на удалённом хосте и помещает в массив sums суммы блоков по отрезку от start до end, делённому на 16 частей;
- * end - start должно быть вида 16^k */
+/* requests a block from a remote host and places sums of blocks into 'sums' array,
+* blocks are filtered by interval from start_time to end_time, splitted to 16 parts;
+* end - start should be in form 16^k
+* (original russian comment is unclear too) */
 int cheatcoin_request_sums(cheatcoin_time_t start_time, cheatcoin_time_t end_time, struct cheatcoin_storage_sum sums[16]) {
 	return do_request(CHEATCOIN_MESSAGE_SUMS_REQUEST, start_time, end_time, sums, 0);
 }
 
-/* разослать другим участникам сети новый блок */
+/* sends a new block to network */
 int cheatcoin_send_new_block(struct cheatcoin_block *b) {
 	dnet_send_cheatcoin_packet(b, (void *)(uintptr_t)NEW_BLOCK_TTL);
 	cheatcoin_send_block_via_pool(b);
 	return 0;
 }
 
+/* executes transport level command, out - stream to display the result of the command execution */
 int cheatcoin_net_command(const char *cmd, void *out) {
 	return dnet_execute_command(cmd, out);
 }
 
-/* разослать пакет, conn - то же, что и в dnet_send_cheatcoin_packet */
+/* sends the package, conn is the same as in function dnet_send_cheatcoin_packet */
 int cheatcoin_send_packet(struct cheatcoin_block *b, void *conn) {
 	if ((uintptr_t)conn & ~0xffl && !((uintptr_t)conn & 1) && conn_add_rm(conn, 0) < 0) conn = (void *)1l;
 	dnet_send_cheatcoin_packet(b, conn);
 	return 0;
 }
 
-/* запросить у другого хоста (по данному соединению) блок по его хешу */
+/* requests a block by hash from another host */
 int cheatcoin_request_block(cheatcoin_hash_t hash, void *conn) {
 	struct cheatcoin_block b;
 	b.field[0].type = CHEATCOIN_MESSAGE_BLOCK_REQUEST << 4 | CHEATCOIN_FIELD_NONCE;
@@ -269,7 +276,7 @@ int cheatcoin_request_block(cheatcoin_hash_t hash, void *conn) {
 	return 0;
 }
 
-/* см. dnet_user_crypt_action */
+/* see dnet_user_crypt_action */
 int cheatcoin_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action) {
 	return dnet_user_crypt_action(data, data_id, size, action);
 }

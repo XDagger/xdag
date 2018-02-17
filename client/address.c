@@ -7,7 +7,7 @@
 static const uint8_t bits2mime[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static uint8_t mime2bits[256];
 
-/* intializates the addresses module */
+/* intializes the addresses module */
 int cheatcoin_address_init(void)
 {
     int i;

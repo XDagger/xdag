@@ -7,22 +7,22 @@
 
 struct cheatcoin_public_key {
 	void *key;
-	uint64_t *pub; /* младший бит содержит чётность */
+	uint64_t *pub; /* lower bit contains parity */
 };
 
-/* инициализировать кошелёк */
+/* initializes a wallet */
 extern int cheatcoin_wallet_init(void);
 
-/* сгенерировать новый ключ и установить его по умолчанию, возвращает его номер */
+/* generates a new key and sets is as defauld, returns its index */
 extern int cheatcoin_wallet_new_key(void);
 
-/* возвращает ключ по умолчанию, в *n_key записывает его номер */
+/* returns a default key, the index of the default key is written to *n_key */
 extern struct cheatcoin_public_key *cheatcoin_wallet_default_key(int *n_key);
 
-/* возвращает массив наших ключей */
+/* returns an array of our keys */
 extern struct cheatcoin_public_key *cheatcoin_wallet_our_keys(int *pnkeys);
 
-/* завершает работу с кошельком */
+/* completes work with wallet */
 extern void cheatcoin_wallet_finish(void);
 
 #endif
