@@ -31,11 +31,13 @@ extern int cheatcoin_send_new_block(struct cheatcoin_block *b);
 extern int cheatcoin_request_blocks(cheatcoin_time_t start_time, cheatcoin_time_t end_time, void *data,
 		void *(*callback)(void *, void *));
 
-/* request a block by hash from another host */
+/* requests a block by hash from another host */
 extern int cheatcoin_request_block(cheatcoin_hash_t hash, void *conn);
 
-/* запрашивает на удалённом хосте и помещает в массив sums суммы блоков по отрезку от start до end, делённому на 16 частей;
- * end - start должно быть вида 16^k */
+/* requests a block from a remote host and places sums of blocks into 'sums' array,
+ * blocks are filtered by interval from start_time to end_time, splitted to 16 parts;
+ * end - start should be in form 16^k
+ * (original russian comment is unclear too) */
 extern int cheatcoin_request_sums(cheatcoin_time_t start_time, cheatcoin_time_t end_time, struct cheatcoin_storage_sum sums[16]);
 
 /* executes transport level command, out - stream to display the result of the command execution */

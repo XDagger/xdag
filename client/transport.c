@@ -235,8 +235,10 @@ int cheatcoin_request_blocks(cheatcoin_time_t start_time, cheatcoin_time_t end_t
 	return do_request(CHEATCOIN_MESSAGE_BLOCKS_REQUEST, start_time, end_time, data, callback);
 }
 
-/* запрашивает на удалённом хосте и помещает в массив sums суммы блоков по отрезку от start до end, делённому на 16 частей;
- * end - start должно быть вида 16^k */
+/* requests a block from a remote host and places sums of blocks into 'sums' array,
+* blocks are filtered by interval from start_time to end_time, splitted to 16 parts;
+* end - start should be in form 16^k
+* (original russian comment is unclear too) */
 int cheatcoin_request_sums(cheatcoin_time_t start_time, cheatcoin_time_t end_time, struct cheatcoin_storage_sum sums[16]) {
 	return do_request(CHEATCOIN_MESSAGE_SUMS_REQUEST, start_time, end_time, sums, 0);
 }
@@ -248,18 +250,19 @@ int cheatcoin_send_new_block(struct cheatcoin_block *b) {
 	return 0;
 }
 
+/* executes transport level command, out - stream to display the result of the command execution */
 int cheatcoin_net_command(const char *cmd, void *out) {
 	return dnet_execute_command(cmd, out);
 }
 
-/* разослать пакет, conn - то же, что и в dnet_send_cheatcoin_packet */
+/* sends the package, conn is the same as in function dnet_send_cheatcoin_packet */
 int cheatcoin_send_packet(struct cheatcoin_block *b, void *conn) {
 	if ((uintptr_t)conn & ~0xffl && !((uintptr_t)conn & 1) && conn_add_rm(conn, 0) < 0) conn = (void *)1l;
 	dnet_send_cheatcoin_packet(b, conn);
 	return 0;
 }
 
-/* запросить у другого хоста (по данному соединению) блок по его хешу */
+/* requests a block by hash from another host */
 int cheatcoin_request_block(cheatcoin_hash_t hash, void *conn) {
 	struct cheatcoin_block b;
 	b.field[0].type = CHEATCOIN_MESSAGE_BLOCK_REQUEST << 4 | CHEATCOIN_FIELD_NONCE;
@@ -273,7 +276,7 @@ int cheatcoin_request_block(cheatcoin_hash_t hash, void *conn) {
 	return 0;
 }
 
-/* см. dnet_user_crypt_action */
+/* see dnet_user_crypt_action */
 int cheatcoin_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action) {
 	return dnet_user_crypt_action(data, data_id, size, action);
 }

@@ -21,10 +21,12 @@ extern struct cheatcoin_block *cheatcoin_storage_load(cheatcoin_hash_t hash, che
 extern uint64_t cheatcoin_load_blocks(cheatcoin_time_t start_time, cheatcoin_time_t end_time, void *data,
 		void *(*callback)(void *block, void *data));
 
-/* в массив sums помещает суммы блоков по отрезку от start до end, делённому на 16 частей; end - start должно быть вида 16^k */
+/* places the sums of blocks in 'sums' array, blocks are filtered by interval from start_time to end_time, splitted to 16 parts;
+ * end - start should be in form 16^k
+ * (original russian comment is unclear too) */
 extern int cheatcoin_load_sums(cheatcoin_time_t start_time, cheatcoin_time_t end_time, struct cheatcoin_storage_sum sums[16]);
 
-/* завершает работу с хранилищем */
+/* completes work with the storage */
 extern void cheatcoin_storage_finish(void);
 
 #endif
