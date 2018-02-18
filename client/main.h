@@ -1,72 +1,72 @@
 /* basic variables, T13.714-T13.895 $DVS:time$ */
 
-#ifndef CHEATCOIN_MAIN_H
-#define CHEATCOIN_MAIN_H
+#ifndef XDAG_MAIN_H
+#define XDAG_MAIN_H
 
 #include <time.h>
 #include "block.h"
 
-enum cheatcoin_states
+enum xdag_states
 {
-#define cheatcoin_state(n,s) CHEATCOIN_STATE_##n ,
+#define xdag_state(n,s) XDAG_STATE_##n ,
 #include "state.h"
-#undef cheatcoin_state
+#undef xdag_state
 };
 
 /* the maximum period of time for which blocks are requested, not their amounts */
 #define REQUEST_BLOCKS_MAX_TIME	(1 << 20)
 
-extern struct cheatcoin_stats
+extern struct xdag_stats
 {
-    cheatcoin_diff_t difficulty, max_difficulty;
+    xdag_diff_t difficulty, max_difficulty;
     uint64_t nblocks, total_nblocks;
     uint64_t nmain, total_nmain;
     uint32_t nhosts, total_nhosts, reserved1, reserved2;
-} g_cheatcoin_stats;
+} g_xdag_stats;
 
 #define HASHRATE_LAST_MAX_TIME	(64 * 4)
 
-extern struct cheatcoin_ext_stats
+extern struct xdag_ext_stats
 {
-    cheatcoin_diff_t hashrate_total[HASHRATE_LAST_MAX_TIME];
-    cheatcoin_diff_t hashrate_ours[HASHRATE_LAST_MAX_TIME];
-    cheatcoin_time_t hashrate_last_time;
+    xdag_diff_t hashrate_total[HASHRATE_LAST_MAX_TIME];
+    xdag_diff_t hashrate_ours[HASHRATE_LAST_MAX_TIME];
+    xdag_time_t hashrate_last_time;
     uint64_t nnoref;
     uint64_t nhashes;
     double hashrate_s;
     uint32_t nwaitsync;
-} g_cheatcoin_extstats;
+} g_xdag_extstats;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    extern void cheatcoin_log_xfer(cheatcoin_hash_t from, cheatcoin_hash_t to, cheatcoin_amount_t amount);
+    extern void xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount);
 
     /* the program state */
-    extern int g_cheatcoin_state;
+    extern int g_xdag_state;
 
     /* is there command 'run' */
-    extern int g_cheatcoin_run;
+    extern int g_xdag_run;
 
     /* 1 - the program works in a test network */
-    extern int g_cheatcoin_testnet;
+    extern int g_xdag_testnet;
 
     /* coin token and program name */
     extern char *g_coinname, *g_progname;
 
     /* time of last transfer */
-    extern time_t g_cheatcoin_xfer_last;
+    extern time_t g_xdag_xfer_last;
 
-    extern int cheatcoin_main(int argc, char **argv);
+    extern int xdag_main(int argc, char **argv);
 
-    extern int cheatcoin_set_password_callback(int(*callback)(const char *prompt, char *buf, unsigned size));
+    extern int xdag_set_password_callback(int(*callback)(const char *prompt, char *buf, unsigned size));
 
-    extern int cheatcoin_show_state(cheatcoin_hash_t hash);
+    extern int xdag_show_state(xdag_hash_t hash);
 
-    extern int(*g_cheatcoin_show_state)(const char *state, const char *balance, const char *address);
+    extern int(*g_xdag_show_state)(const char *state, const char *balance, const char *address);
 
-    extern int cheatcoin_do_xfer(void *out, const char *amount, const char *address);
+    extern int xdag_do_xfer(void *out, const char *amount, const char *address);
 
 #ifdef __cplusplus
 };

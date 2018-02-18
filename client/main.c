@@ -36,7 +36,7 @@
 #include "memory.h"
 
 
-#define CHEATCOIN_COMMAND_MAX	0x1000
+#define XDAG_COMMAND_MAX	0x1000
 #define UNIX_SOCK				"unix_sock.dat"
 #define XFER_MAX_IN				11
 
@@ -51,39 +51,39 @@ struct account_callback_data
 
 struct xfer_callback_data
 {
-    struct cheatcoin_field fields[XFER_MAX_IN + 1];
+    struct xdag_field fields[XFER_MAX_IN + 1];
     int keys[XFER_MAX_IN + 1];
-    cheatcoin_amount_t todo, done, remains;
+    xdag_amount_t todo, done, remains;
     int nfields, nkeys, outsig;
 };
 
-int g_cheatcoin_state = CHEATCOIN_STATE_INIT;
-int g_cheatcoin_testnet = 0, g_is_miner = 0;
+int g_xdag_state = XDAG_STATE_INIT;
+int g_xdag_testnet = 0, g_is_miner = 0;
 static int g_is_pool = 0;
-int g_cheatcoin_run = 0;
-time_t g_cheatcoin_xfer_last = 0;
-struct cheatcoin_stats g_cheatcoin_stats;
-struct cheatcoin_ext_stats g_cheatcoin_extstats;
-int(*g_cheatcoin_show_state)(const char *state, const char *balance, const char *address) = 0;
+int g_xdag_run = 0;
+time_t g_xdag_xfer_last = 0;
+struct xdag_stats g_xdag_stats;
+struct xdag_ext_stats g_xdag_extstats;
+int(*g_xdag_show_state)(const char *state, const char *balance, const char *address) = 0;
 
-static long double amount2cheatcoins(cheatcoin_amount_t amount)
+static long double amount2cheatcoins(xdag_amount_t amount)
 {
     return xdag_amount2xdag(amount) + (long double)xdag_amount2cheato(amount) / 1000000000;
 }
 
-static long double diff2log(cheatcoin_diff_t diff)
+static long double diff2log(xdag_diff_t diff)
 {
-    long double res = (long double)cheatcoin_diff_to64(diff);
-    cheatcoin_diff_shr32(&diff);
-    cheatcoin_diff_shr32(&diff);
-    if(cheatcoin_diff_to64(diff))
+    long double res = (long double)xdag_diff_to64(diff);
+    xdag_diff_shr32(&diff);
+    xdag_diff_shr32(&diff);
+    if(xdag_diff_to64(diff))
     {
-        res += ldexpl((long double)cheatcoin_diff_to64(diff), 64);
+        res += ldexpl((long double)xdag_diff_to64(diff), 64);
     }
     return (res > 0 ? logl(res) : 0);
 }
 
-static long double hashrate(cheatcoin_diff_t *diff)
+static long double hashrate(xdag_diff_t *diff)
 {
     long double sum = 0;
     int i;
@@ -95,43 +95,43 @@ static long double hashrate(cheatcoin_diff_t *diff)
     return ldexpl(expl(sum), -58);
 }
 
-static cheatcoin_amount_t cheatcoins2amount(const char *str)
+static xdag_amount_t cheatcoins2amount(const char *str)
 {
     long double sum, flr;
-    cheatcoin_amount_t res;
+    xdag_amount_t res;
     if(sscanf(str, "%Lf", &sum) != 1 || sum <= 0)
     {
         return 0;
     }
     flr = floorl(sum);
-    res = (cheatcoin_amount_t)flr << 32;
+    res = (xdag_amount_t)flr << 32;
     sum -= flr;
     sum = ldexpl(sum, 32);
     flr = ceill(sum);
-    return res + (cheatcoin_amount_t)flr;
+    return res + (xdag_amount_t)flr;
 }
 
-static int account_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t amount, cheatcoin_time_t time, int n_our_key)
+static int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key)
 {
     struct account_callback_data *d = (struct account_callback_data *)data;
     if(!d->count--) return -1;
-    if(g_cheatcoin_state < CHEATCOIN_STATE_XFER)
-        fprintf(d->out, "%s  key %d\n", cheatcoin_hash2address(hash), n_our_key);
+    if(g_xdag_state < XDAG_STATE_XFER)
+        fprintf(d->out, "%s  key %d\n", xdag_hash2address(hash), n_our_key);
     else
-        fprintf(d->out, "%s %20.9Lf  key %d\n", cheatcoin_hash2address(hash), amount2cheatcoins(amount), n_our_key);
+        fprintf(d->out, "%s %20.9Lf  key %d\n", xdag_hash2address(hash), amount2cheatcoins(amount), n_our_key);
     return 0;
 }
 
 static int make_block(struct xfer_callback_data *d)
 {
     int res;
-    if(d->nfields != XFER_MAX_IN) memcpy(d->fields + d->nfields, d->fields + XFER_MAX_IN, sizeof(cheatcoin_hashlow_t));
+    if(d->nfields != XFER_MAX_IN) memcpy(d->fields + d->nfields, d->fields + XFER_MAX_IN, sizeof(xdag_hashlow_t));
     d->fields[d->nfields].amount = d->todo;
-    res = cheatcoin_create_block(d->fields, d->nfields, 1, 0, 0);
+    res = xdag_create_block(d->fields, d->nfields, 1, 0, 0);
     if(res)
     {
-        cheatcoin_err("FAILED: to %s xfer %.9Lf %s, error %d",
-            cheatcoin_hash2address(d->fields[d->nfields].hash), amount2cheatcoins(d->todo), coinname, res);
+        xdag_err("FAILED: to %s xfer %.9Lf %s, error %d",
+            xdag_hash2address(d->fields[d->nfields].hash), amount2cheatcoins(d->todo), coinname, res);
         return -1;
     }
     d->done += d->todo;
@@ -144,22 +144,22 @@ static int make_block(struct xfer_callback_data *d)
 
 #define Nfields(d) (2 + d->nfields + 3 * d->nkeys + 2 * d->outsig)
 
-void cheatcoin_log_xfer(cheatcoin_hash_t from, cheatcoin_hash_t to, cheatcoin_amount_t amount)
+void xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount)
 {
-    cheatcoin_mess("Xfer  : from %s to %s xfer %.9Lf %s",
-        cheatcoin_hash2address(from), cheatcoin_hash2address(to), amount2cheatcoins(amount), coinname);
+    xdag_mess("Xfer  : from %s to %s xfer %.9Lf %s",
+        xdag_hash2address(from), xdag_hash2address(to), amount2cheatcoins(amount), coinname);
 }
 
-static int xfer_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t amount, cheatcoin_time_t time, int n_our_key)
+static int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key)
 {
     struct xfer_callback_data *d = (struct xfer_callback_data *)data;
-    cheatcoin_amount_t todo = d->remains;
+    xdag_amount_t todo = d->remains;
     int i;
     if(!amount)
     {
         return -1;
     }
-    if(g_is_pool && cheatcoin_main_time() < (time >> 16) + 2 * CHEATCOIN_POOL_N_CONFIRMATIONS)
+    if(g_is_pool && xdag_main_time() < (time >> 16) + 2 * XDAG_POOL_N_CONFIRMATIONS)
     {
         return 0;
     }
@@ -172,7 +172,7 @@ static int xfer_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t a
     }
     if(i == d->nkeys) d->keys[d->nkeys++] = n_our_key;
     if(d->keys[XFER_MAX_IN] == n_our_key) d->outsig = 0;
-    if(Nfields(d) > CHEATCOIN_BLOCK_FIELDS)
+    if(Nfields(d) > XDAG_BLOCK_FIELDS)
     {
         if(make_block(d)) return -1;
         d->keys[d->nkeys++] = n_our_key;
@@ -185,11 +185,11 @@ static int xfer_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t a
     {
         todo = amount;
     }
-    memcpy(d->fields + d->nfields, hash, sizeof(cheatcoin_hashlow_t));
+    memcpy(d->fields + d->nfields, hash, sizeof(xdag_hashlow_t));
     d->fields[d->nfields++].amount = todo;
     d->todo += todo, d->remains -= todo;
-    cheatcoin_log_xfer(hash, d->fields[XFER_MAX_IN].hash, todo);
-    if(!d->remains || Nfields(d) == CHEATCOIN_BLOCK_FIELDS)
+    xdag_log_xfer(hash, d->fields[XFER_MAX_IN].hash, todo);
+    if(!d->remains || Nfields(d) == XDAG_BLOCK_FIELDS)
     {
         if(make_block(d))
         {
@@ -206,19 +206,19 @@ static int xfer_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t a
 static const char *get_state(void)
 {
     static const char *states[] = {
-#define cheatcoin_state(n,s) s ,
+#define xdag_state(n,s) s ,
 #include "state.h"
-#undef cheatcoin_state
+#undef xdag_state
     };
-    return states[g_cheatcoin_state];
+    return states[g_xdag_state];
 }
 
-int cheatcoin_do_xfer(void *outv, const char *amount, const char *address)
+int xdag_do_xfer(void *outv, const char *amount, const char *address)
 {
     struct xfer_callback_data xfer;
     FILE *out = (FILE *)outv;
-#ifdef CHEATCOINWALLET
-    if(cheatcoin_user_crypt_action(0, 0, 0, 3))
+#ifdef XDAG_GUI_WALLET
+    if(xdag_user_crypt_action(0, 0, 0, 3))
     {
         sleep(3); return 1;
     }
@@ -229,28 +229,28 @@ int cheatcoin_do_xfer(void *outv, const char *amount, const char *address)
     {
         if(out) fprintf(out, "Xfer: nothing to transfer.\n"); return 1;
     }
-    if(xfer.remains > cheatcoin_get_balance(0))
+    if(xfer.remains > xdag_get_balance(0))
     {
         if(out) fprintf(out, "Xfer: balance too small.\n"); return 1;
     }
-    if(cheatcoin_address2hash(address, xfer.fields[XFER_MAX_IN].hash))
+    if(xdag_address2hash(address, xfer.fields[XFER_MAX_IN].hash))
     {
         if(out) fprintf(out, "Xfer: incorrect address.\n"); return 1;
     }
-    cheatcoin_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
+    xdag_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
     xfer.outsig = 1;
-    g_cheatcoin_state = CHEATCOIN_STATE_XFER;
-    g_cheatcoin_xfer_last = time(0);
-    cheatcoin_traverse_our_blocks(&xfer, &xfer_callback);
+    g_xdag_state = XDAG_STATE_XFER;
+    g_xdag_xfer_last = time(0);
+    xdag_traverse_our_blocks(&xfer, &xfer_callback);
     if(out)
     {
         fprintf(out, "Xfer: transferred %.9Lf %s to the address %s, see log for details.\n",
-            amount2cheatcoins(xfer.done), coinname, cheatcoin_hash2address(xfer.fields[XFER_MAX_IN].hash));
+            amount2cheatcoins(xfer.done), coinname, xdag_hash2address(xfer.fields[XFER_MAX_IN].hash));
     }
     return 0;
 }
 
-static int cheatcoin_command(char *cmd, FILE *out)
+static int xdag_command(char *cmd, FILE *out)
 {
     uint32_t pwd[4];
     char *lasts;
@@ -272,45 +272,45 @@ static int cheatcoin_command(char *cmd, FILE *out)
         {
             sscanf(cmd, "%d", &d.count);
         }
-        if(g_cheatcoin_state < CHEATCOIN_STATE_XFER)
+        if(g_xdag_state < XDAG_STATE_XFER)
         {
             fprintf(out, "Not ready to show balances. Type 'state' command to see the reason.\n");
         }
-        cheatcoin_traverse_our_blocks(&d, &account_callback);
+        xdag_traverse_our_blocks(&d, &account_callback);
     }
     else if(!strcmp(cmd, "balance"))
     {
-        if(g_cheatcoin_state < CHEATCOIN_STATE_XFER)
+        if(g_xdag_state < XDAG_STATE_XFER)
         {
             fprintf(out, "Not ready to show a balance. Type 'state' command to see the reason.\n");
         }
         else
         {
-            cheatcoin_hash_t hash;
-            cheatcoin_amount_t balance;
+            xdag_hash_t hash;
+            xdag_amount_t balance;
             cmd = strtok_r(0, " \t\r\n", &lasts);
             if(cmd)
             {
-                cheatcoin_address2hash(cmd, hash);
-                balance = cheatcoin_get_balance(hash);
+                xdag_address2hash(cmd, hash);
+                balance = xdag_get_balance(hash);
             }
             else
             {
-                balance = cheatcoin_get_balance(0);
+                balance = xdag_get_balance(0);
             }
             fprintf(out, "Balance: %.9Lf %s\n", amount2cheatcoins(balance), coinname);
         }
     }
     else if(!strcmp(cmd, "block"))
     {
-        cheatcoin_hash_t hash;
+        xdag_hash_t hash;
         cmd = strtok_r(0, " \t\r\n", &lasts);
         if(cmd)
         {
             int res = 0, len = strlen(cmd), i, c;
             if(len == 32)
             {
-                if(cheatcoin_address2hash(cmd, hash))
+                if(xdag_address2hash(cmd, hash))
                 {
                     fprintf(out, "Address is incorrect.\n");
                     res = -1;
@@ -337,7 +337,7 @@ static int cheatcoin_command(char *cmd, FILE *out)
             }
             if(!res)
             {
-                if(cheatcoin_print_block_info(hash, out))
+                if(xdag_print_block_info(hash, out))
                 {
                     fprintf(out, "Block is not found.\n");
                 }
@@ -368,7 +368,7 @@ static int cheatcoin_command(char *cmd, FILE *out)
     }
     else if(!strcmp(cmd, "keygen"))
     {
-        int res = cheatcoin_wallet_new_key();
+        int res = xdag_wallet_new_key();
         if(res < 0)
         {
             fprintf(out, "Can't generate new key pair.\n");
@@ -384,20 +384,20 @@ static int cheatcoin_command(char *cmd, FILE *out)
         cmd = strtok_r(0, " \t\r\n", &lasts);
         if(!cmd)
         {
-            fprintf(out, "%d\n", cheatcoin_set_log_level(-1));
+            fprintf(out, "%d\n", xdag_set_log_level(-1));
         }
-        else if(sscanf(cmd, "%u", &level) != 1 || level > CHEATCOIN_TRACE)
+        else if(sscanf(cmd, "%u", &level) != 1 || level > XDAG_TRACE)
         {
             fprintf(out, "Illegal level.\n");
         }
         else
         {
-            cheatcoin_set_log_level(level);
+            xdag_set_log_level(level);
         }
     }
     else if(!strcmp(cmd, "miners"))
     {
-        cheatcoin_print_miners(out);
+        xdag_print_miners(out);
     }
     else if(!strcmp(cmd, "mining"))
     {
@@ -405,7 +405,7 @@ static int cheatcoin_command(char *cmd, FILE *out)
         cmd = strtok_r(0, " \t\r\n", &lasts);
         if(!cmd)
         {
-            fprintf(out, "%d mining threads running\n", g_cheatcoin_mining_threads);
+            fprintf(out, "%d mining threads running\n", g_xdag_mining_threads);
         }
         else if(sscanf(cmd, "%d", &nthreads) != 1 || nthreads < 0)
         {
@@ -413,8 +413,8 @@ static int cheatcoin_command(char *cmd, FILE *out)
         }
         else
         {
-            cheatcoin_mining_start(g_is_miner ? ~nthreads : nthreads);
-            fprintf(out, "%d mining threads running\n", g_cheatcoin_mining_threads);
+            xdag_mining_start(g_is_miner ? ~nthreads : nthreads);
+            fprintf(out, "%d mining threads running\n", g_xdag_mining_threads);
         }
     }
     else if(!strcmp(cmd, "net"))
@@ -426,7 +426,7 @@ static int cheatcoin_command(char *cmd, FILE *out)
             strcat(netcmd, cmd);
             strcat(netcmd, " ");
         }
-        cheatcoin_net_command(netcmd, out);
+        xdag_net_command(netcmd, out);
     }
     else if(!strcmp(cmd, "pool"))
     {
@@ -434,7 +434,7 @@ static int cheatcoin_command(char *cmd, FILE *out)
         if(!cmd)
         {
             char buf[0x100];
-            cmd = cheatcoin_pool_get_config(buf);
+            cmd = xdag_pool_get_config(buf);
             if(!cmd)
             {
                 fprintf(out, "Pool is disabled.\n");
@@ -446,12 +446,12 @@ static int cheatcoin_command(char *cmd, FILE *out)
         }
         else
         {
-            cheatcoin_pool_set_config(cmd);
+            xdag_pool_set_config(cmd);
         }
     }
     else if(!strcmp(cmd, "run"))
     {
-        g_cheatcoin_run = 1;
+        g_xdag_run = 1;
     }
     else if(!strcmp(cmd, "state"))
     {
@@ -459,7 +459,7 @@ static int cheatcoin_command(char *cmd, FILE *out)
     }
     else if(!strcmp(cmd, "stats"))
     {
-        if(g_is_miner) fprintf(out, "your hashrate MHs: %.2lf\n", g_cheatcoin_extstats.hashrate_s / (1024 * 1024));
+        if(g_is_miner) fprintf(out, "your hashrate MHs: %.2lf\n", g_xdag_extstats.hashrate_s / (1024 * 1024));
         else fprintf(out, "Statistics for ours and maximum known parameters:\n"
             "            hosts: %u of %u\n"
             "           blocks: %llu of %llu\n"
@@ -469,22 +469,22 @@ static int cheatcoin_command(char *cmd, FILE *out)
             " chain difficulty: %llx%016llx of %llx%016llx\n"
             " %9s supply: %.9Lf of %.9Lf\n"
             "4 hr hashrate MHs: %.2Lf of %.2Lf\n",
-            g_cheatcoin_stats.nhosts, g_cheatcoin_stats.total_nhosts,
-            (long long)g_cheatcoin_stats.nblocks, (long long)g_cheatcoin_stats.total_nblocks,
-            (long long)g_cheatcoin_stats.nmain, (long long)g_cheatcoin_stats.total_nmain,
-            (long long)g_cheatcoin_extstats.nnoref, g_cheatcoin_extstats.nwaitsync,
-            cheatcoin_diff_args(g_cheatcoin_stats.difficulty),
-            cheatcoin_diff_args(g_cheatcoin_stats.max_difficulty), coinname,
-            amount2cheatcoins(cheatcoin_get_supply(g_cheatcoin_stats.nmain)),
-            amount2cheatcoins(cheatcoin_get_supply(g_cheatcoin_stats.total_nmain)),
-            hashrate(g_cheatcoin_extstats.hashrate_ours), hashrate(g_cheatcoin_extstats.hashrate_total)
+            g_xdag_stats.nhosts, g_xdag_stats.total_nhosts,
+            (long long)g_xdag_stats.nblocks, (long long)g_xdag_stats.total_nblocks,
+            (long long)g_xdag_stats.nmain, (long long)g_xdag_stats.total_nmain,
+            (long long)g_xdag_extstats.nnoref, g_xdag_extstats.nwaitsync,
+            xdag_diff_args(g_xdag_stats.difficulty),
+            xdag_diff_args(g_xdag_stats.max_difficulty), coinname,
+            amount2cheatcoins(xdag_get_supply(g_xdag_stats.nmain)),
+            amount2cheatcoins(xdag_get_supply(g_xdag_stats.total_nmain)),
+            hashrate(g_xdag_extstats.hashrate_ours), hashrate(g_xdag_extstats.hashrate_total)
         );
     }
     else if(!strcmp(cmd, "exit") || !strcmp(cmd, "terminate"))
     {
-        cheatcoin_wallet_finish();
-        cheatcoin_netdb_finish();
-        cheatcoin_storage_finish();
+        xdag_wallet_finish();
+        xdag_netdb_finish();
+        xdag_storage_finish();
         xdag_mem_finish();
         return -1;
     }
@@ -501,13 +501,13 @@ static int cheatcoin_command(char *cmd, FILE *out)
         {
             fprintf(out, "Xfer: destination address not given.\n"); return 1;
         }
-        if(out == stdout ? cheatcoin_user_crypt_action(0, 0, 0, 3) : (ispwd ? cheatcoin_user_crypt_action(pwd, 0, 4, 5) : 1))
+        if(out == stdout ? xdag_user_crypt_action(0, 0, 0, 3) : (ispwd ? xdag_user_crypt_action(pwd, 0, 4, 5) : 1))
         {
             sleep(3); fprintf(out, "Password incorrect.\n");
         }
         else
         {
-            cheatcoin_do_xfer(out, amount, address);
+            xdag_do_xfer(out, amount, address);
         }
     }
     else
@@ -519,15 +519,15 @@ static int cheatcoin_command(char *cmd, FILE *out)
 
 struct out_balances_data
 {
-    struct cheatcoin_field *blocks;
+    struct xdag_field *blocks;
     unsigned nblocks, maxnblocks;
 };
 
-static int out_balances_callback(void *data, cheatcoin_hash_t hash, cheatcoin_amount_t amount, cheatcoin_time_t time)
+static int out_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time)
 {
     struct out_balances_data *d = (struct out_balances_data *)data;
-    struct cheatcoin_field f;
-    memcpy(f.hash, hash, sizeof(cheatcoin_hashlow_t));
+    struct xdag_field f;
+    memcpy(f.hash, hash, sizeof(xdag_hashlow_t));
     f.amount = amount;
     if(!f.amount)
     {
@@ -536,23 +536,23 @@ static int out_balances_callback(void *data, cheatcoin_hash_t hash, cheatcoin_am
     if(d->nblocks == d->maxnblocks)
     {
         d->maxnblocks = (d->maxnblocks ? d->maxnblocks * 2 : 0x100000);
-        d->blocks = realloc(d->blocks, d->maxnblocks * sizeof(struct cheatcoin_field));
+        d->blocks = realloc(d->blocks, d->maxnblocks * sizeof(struct xdag_field));
     }
-    memcpy(d->blocks + d->nblocks, &f, sizeof(struct cheatcoin_field));
+    memcpy(d->blocks + d->nblocks, &f, sizeof(struct xdag_field));
     d->nblocks++;
     return 0;
 }
 
 static int out_sort_callback(const void *l, const void *r)
 {
-    return strcmp(cheatcoin_hash2address(((struct cheatcoin_field *)l)->data),
-        cheatcoin_hash2address(((struct cheatcoin_field *)r)->data));
+    return strcmp(xdag_hash2address(((struct xdag_field *)l)->data),
+        xdag_hash2address(((struct xdag_field *)r)->data));
 }
 
 static void *add_block_callback(void *block, void *data)
 {
     unsigned *i = (unsigned *)data;
-    cheatcoin_add_block((struct cheatcoin_block *)block);
+    xdag_add_block((struct xdag_block *)block);
     if(!(++*i % 10000)) printf("blocks: %u\n", *i);
     return 0;
 }
@@ -561,16 +561,16 @@ static int out_balances(void)
 {
     struct out_balances_data d;
     unsigned i = 0;
-    cheatcoin_set_log_level(0);
-    xdag_mem_init((cheatcoin_main_time() - cheatcoin_start_main_time()) << 17);
-    cheatcoin_crypt_init(0);
+    xdag_set_log_level(0);
+    xdag_mem_init((xdag_main_time() - xdag_start_main_time()) << 17);
+    xdag_crypt_init(0);
     memset(&d, 0, sizeof(struct out_balances_data));
-    cheatcoin_load_blocks(cheatcoin_start_main_time() << 16, cheatcoin_main_time() << 16, &i, add_block_callback);
-    cheatcoin_traverse_all_blocks(&d, out_balances_callback);
-    qsort(d.blocks, d.nblocks, sizeof(struct cheatcoin_field), out_sort_callback);
+    xdag_load_blocks(xdag_start_main_time() << 16, xdag_main_time() << 16, &i, add_block_callback);
+    xdag_traverse_all_blocks(&d, out_balances_callback);
+    qsort(d.blocks, d.nblocks, sizeof(struct xdag_field), out_sort_callback);
     for(i = 0; i < d.nblocks; ++i)
     {
-        printf("%s  %20.9Lf\n", cheatcoin_hash2address(d.blocks[i].data), amount2cheatcoins(d.blocks[i].amount));
+        printf("%s  %20.9Lf\n", xdag_hash2address(d.blocks[i].data), amount2cheatcoins(d.blocks[i].amount));
     }
     return 0;
 }
@@ -582,14 +582,14 @@ static int terminal(void)
     int s;
     struct sockaddr_un addr;
 
-    cmd = malloc(CHEATCOIN_COMMAND_MAX);
-    cmd2 = malloc(CHEATCOIN_COMMAND_MAX);
+    cmd = malloc(XDAG_COMMAND_MAX);
+    cmd2 = malloc(XDAG_COMMAND_MAX);
 
     while(1)
     {
         int ispwd = 0, c = 0;
         printf("%s> ", g_progname); fflush(stdout);
-        fgets(cmd, CHEATCOIN_COMMAND_MAX, stdin);
+        fgets(cmd, XDAG_COMMAND_MAX, stdin);
         strcpy(cmd2, cmd);
         ptr = strtok_r(cmd2, " \t\r\n", &lasts);
         if(!ptr) continue;
@@ -597,7 +597,7 @@ static int terminal(void)
         if(!strcmp(ptr, "xfer"))
         {
             uint32_t pwd[4];
-            cheatcoin_user_crypt_action(pwd, 0, 4, 4);
+            xdag_user_crypt_action(pwd, 0, 4, 4);
             sprintf(cmd2, "pwd=%08x%08x%08x%08x ", pwd[0], pwd[1], pwd[2], pwd[3]);
             ispwd = 1;
         }
@@ -625,20 +625,20 @@ static void *terminal_thread(void *arg)
 {
     struct sockaddr_un addr;
     int s;
-    if((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) { cheatcoin_err("Can't create unix domain socket errno:%d", errno); return 0; }
+    if((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) { xdag_err("Can't create unix domain socket errno:%d", errno); return 0; }
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, UNIX_SOCK);
     unlink(UNIX_SOCK);
-    if(bind(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) { cheatcoin_err("Can't bind unix domain socket errno:%d", errno); return 0; }
-    if(listen(s, 100) == -1) { cheatcoin_err("Unix domain socket listen errno:%d", errno); return 0; }
+    if(bind(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) { xdag_err("Can't bind unix domain socket errno:%d", errno); return 0; }
+    if(listen(s, 100) == -1) { xdag_err("Unix domain socket listen errno:%d", errno); return 0; }
     while(1)
     {
-        char cmd[CHEATCOIN_COMMAND_MAX];
+        char cmd[XDAG_COMMAND_MAX];
         int cl, p, res;
         FILE *fd;
         struct pollfd fds;
-        if((cl = accept(s, NULL, NULL)) == -1) { cheatcoin_err("Unix domain socket accept errno:%d", errno); break; }
+        if((cl = accept(s, NULL, NULL)) == -1) { xdag_err("Unix domain socket accept errno:%d", errno); break; }
         p = 0;
         fds.fd = cl; fds.events = POLLIN;
         do
@@ -650,8 +650,8 @@ static void *terminal_thread(void *arg)
         if(res < 0 || cmd[p - 1] != '\0') close(cl);
         else
         {
-            fd = fdopen(cl, "w"); if(!fd) { cheatcoin_err("Can't fdopen unix domain socket errno:%d", errno); break; }
-            res = cheatcoin_command(cmd, fd);
+            fd = fdopen(cl, "w"); if(!fd) { xdag_err("Can't fdopen unix domain socket errno:%d", errno); break; }
+            res = xdag_command(cmd, fd);
             fclose(fd);
             if(res < 0) exit(0);
         }
@@ -660,8 +660,8 @@ static void *terminal_thread(void *arg)
 }
 #endif /* WIN */
 
-#ifdef CHEATCOINWALLET
-int cheatcoin_main(int argc, char **argv)
+#ifdef XDAG_GUI_WALLET
+int xdag_main(int argc, char **argv)
 {
 #else
 int main(int argc, char **argv)
@@ -684,11 +684,11 @@ int main(int argc, char **argv)
     for(ptr = g_progname; *ptr; ptr++) *ptr = tolower((unsigned char)*ptr);
     coinname = strdup(g_progname);
     for(ptr = coinname; *ptr; ptr++) *ptr = toupper((unsigned char)*ptr);
-#ifndef CHEATCOINWALLET
-    printf("%s client/server, version %s.\n", g_progname, CHEATCOIN_VERSION);
+#ifndef XDAG_GUI_WALLET
+    printf("%s client/server, version %s.\n", g_progname, XDAG_VERSION);
 #endif
-    g_cheatcoin_run = 1;
-    cheatcoin_show_state(0);
+    g_xdag_run = 1;
+    xdag_show_state(0);
     if(argc <= 1) goto help;
     for(i = 1; i < argc; ++i)
     {
@@ -703,7 +703,7 @@ int main(int argc, char **argv)
                 break;
             case 'd':
 #if !defined(_WIN32) && !defined(_WIN64)
-                transport_flags |= CHEATCOIN_DAEMON;
+                transport_flags |= XDAG_DAEMON;
 #endif
                 break;
             case 'h':
@@ -755,19 +755,19 @@ int main(int argc, char **argv)
                 }
                 break;
             case 'r':
-                g_cheatcoin_run = 0;
+                g_xdag_run = 0;
                 break;
             case 's':
                 if(++i < argc)
                     bindto = argv[i];
                 break;
             case 't':
-                g_cheatcoin_testnet = 1;
+                g_xdag_testnet = 1;
                 break;
             case 'v':
                 if(++i < argc && sscanf(argv[i], "%d", &level) == 1)
                 {
-                    cheatcoin_set_log_level(level);
+                    xdag_set_log_level(level);
                 }
                 else
                 {
@@ -798,48 +798,48 @@ int main(int argc, char **argv)
             sprintf(str, "0.0.0.0%s", p); bindto = strdup(str);
         }
     }
-    memset(&g_cheatcoin_stats, 0, sizeof(g_cheatcoin_stats));
-    memset(&g_cheatcoin_extstats, 0, sizeof(g_cheatcoin_extstats));
+    memset(&g_xdag_stats, 0, sizeof(g_xdag_stats));
+    memset(&g_xdag_extstats, 0, sizeof(g_xdag_extstats));
 
-    cheatcoin_mess("Starting %s, version %s", g_progname, CHEATCOIN_VERSION);
-    cheatcoin_mess("Starting synchonization engine...");
-    if(cheatcoin_sync_init()) return -1;
-    cheatcoin_mess("Starting dnet transport...");
+    xdag_mess("Starting %s, version %s", g_progname, XDAG_VERSION);
+    xdag_mess("Starting synchonization engine...");
+    if(xdag_sync_init()) return -1;
+    xdag_mess("Starting dnet transport...");
     printf("Transport module: ");
-    if(cheatcoin_transport_start(transport_flags, bindto, n_addrports, addrports)) return -1;
-    cheatcoin_mess("Initializing log system...");
-    if(cheatcoin_log_init()) return -1;
+    if(xdag_transport_start(transport_flags, bindto, n_addrports, addrports)) return -1;
+    xdag_mess("Initializing log system...");
+    if(xdag_log_init()) return -1;
     if(!is_miner)
     {
-        cheatcoin_mess("Reading hosts database...");
-        if(cheatcoin_netdb_init(pubaddr, n_addrports, addrports)) return -1;
+        xdag_mess("Reading hosts database...");
+        if(xdag_netdb_init(pubaddr, n_addrports, addrports)) return -1;
     }
-    cheatcoin_mess("Initializing cryptography...");
-    if(cheatcoin_crypt_init(1)) return -1;
-    cheatcoin_mess("Reading wallet...");
-    if(cheatcoin_wallet_init()) return -1;
-    cheatcoin_mess("Initializing addresses...");
-    if(cheatcoin_address_init()) return -1;
-    cheatcoin_mess("Starting blocks engine...");
-    if(cheatcoin_blocks_start((is_miner ? ~n_mining_threads : n_mining_threads), !!miner_address)) return -1;
-    cheatcoin_mess("Starting pool engine...");
-    if(cheatcoin_pool_start(is_pool, pool_arg, miner_address)) return -1;
-#ifndef CHEATCOINWALLET
+    xdag_mess("Initializing cryptography...");
+    if(xdag_crypt_init(1)) return -1;
+    xdag_mess("Reading wallet...");
+    if(xdag_wallet_init()) return -1;
+    xdag_mess("Initializing addresses...");
+    if(xdag_address_init()) return -1;
+    xdag_mess("Starting blocks engine...");
+    if(xdag_blocks_start((is_miner ? ~n_mining_threads : n_mining_threads), !!miner_address)) return -1;
+    xdag_mess("Starting pool engine...");
+    if(xdag_pool_start(is_pool, pool_arg, miner_address)) return -1;
+#ifndef XDAG_GUI_WALLET
 #if !defined(_WIN32) && !defined(_WIN64)
-    cheatcoin_mess("Starting terminal server...");
+    xdag_mess("Starting terminal server...");
     if(pthread_create(&th, 0, &terminal_thread, 0)) return -1;
 #endif
-    if(!(transport_flags & CHEATCOIN_DAEMON)) printf("Type command, help for example.\n");
+    if(!(transport_flags & XDAG_DAEMON)) printf("Type command, help for example.\n");
     for(;;)
     {
-        if(transport_flags & CHEATCOIN_DAEMON) sleep(100);
+        if(transport_flags & XDAG_DAEMON) sleep(100);
         else
         {
             char *cmd;
-            cmd = malloc(CHEATCOIN_COMMAND_MAX);
+            cmd = malloc(XDAG_COMMAND_MAX);
             printf("%s> ", g_progname); fflush(stdout);
-            fgets(cmd, CHEATCOIN_COMMAND_MAX, stdin);
-            if(cheatcoin_command(cmd, stdout) < 0)
+            fgets(cmd, XDAG_COMMAND_MAX, stdin);
+            if(xdag_command(cmd, stdout) < 0)
             {
                 free(cmd);
                 break;
@@ -851,25 +851,25 @@ int main(int argc, char **argv)
     return 0;
 }
 
-int cheatcoin_set_password_callback(int(*callback)(const char *prompt, char *buf, unsigned size))
+int xdag_set_password_callback(int(*callback)(const char *prompt, char *buf, unsigned size))
 {
-    return cheatcoin_user_crypt_action((uint32_t *)(void *)callback, 0, 0, 6);
+    return xdag_user_crypt_action((uint32_t *)(void *)callback, 0, 0, 6);
 }
 
-int cheatcoin_show_state(cheatcoin_hash_t hash)
+int xdag_show_state(xdag_hash_t hash)
 {
     char balance[64], address[64], state[256];
-    if(!g_cheatcoin_show_state)
+    if(!g_xdag_show_state)
     {
         return -1;
     }
-    if(g_cheatcoin_state < CHEATCOIN_STATE_XFER)
+    if(g_xdag_state < XDAG_STATE_XFER)
     {
         strcpy(balance, "Not ready");
     }
     else
     {
-        sprintf(balance, "%.9Lf", amount2cheatcoins(cheatcoin_get_balance(0)));
+        sprintf(balance, "%.9Lf", amount2cheatcoins(xdag_get_balance(0)));
     }
     if(!hash)
     {
@@ -877,8 +877,8 @@ int cheatcoin_show_state(cheatcoin_hash_t hash)
     }
     else
     {
-        strcpy(address, cheatcoin_hash2address(hash));
+        strcpy(address, xdag_hash2address(hash));
     }
     strcpy(state, get_state());
-    return (*g_cheatcoin_show_state)(state, balance, address);
+    return (*g_xdag_show_state)(state, balance, address);
 }

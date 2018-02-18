@@ -18,8 +18,8 @@
 #define MAX_BLOCKED_IPS		64
 #define MAX_WHITE_IPS		64
 #define MAX_ALLOWED_FROM_IP	4
-#define DATABASE			(g_cheatcoin_testnet ? "netdb-testnet.txt" : "netdb.txt")
-#define DATABASEWHITE		(g_cheatcoin_testnet ? "netdb-white-testnet.txt" : "netdb-white.txt")
+#define DATABASE			(g_xdag_testnet ? "netdb-testnet.txt" : "netdb.txt")
+#define DATABASEWHITE		(g_xdag_testnet ? "netdb-white-testnet.txt" : "netdb-white.txt")
 
 enum host_flags {
 	HOST_OUR		= 1,
@@ -50,8 +50,8 @@ static struct host *selected_hosts[MAX_SELECTED_HOSTS], *our_host;
 static unsigned n_selected_hosts = 0;
 
 /* blocked ip for incoming connections and their number */
-uint32_t *g_cheatcoin_blocked_ips, *g_cheatcoin_white_ips;
-int g_cheatcoin_n_blocked_ips = 0, g_cheatcoin_n_white_ips = 0;
+uint32_t *g_xdag_blocked_ips, *g_xdag_white_ips;
+int g_xdag_n_blocked_ips = 0, g_xdag_n_white_ips = 0;
 
 static struct host *find_add_host(struct host *h) {
 	struct host *h0;
@@ -61,9 +61,9 @@ static struct host *find_add_host(struct host *h) {
 	} else if (!(h->flags & HOST_NOT_ADD) && (h0 = malloc(sizeof(struct host)))) {
 		memcpy(h0, h, sizeof(struct host));
 		ldus_rbtree_insert(&root, &h0->node);
-		g_cheatcoin_stats.nhosts++;
-		if (g_cheatcoin_stats.nhosts > g_cheatcoin_stats.total_nhosts)
-			g_cheatcoin_stats.total_nhosts = g_cheatcoin_stats.nhosts;
+		g_xdag_stats.nhosts++;
+		if (g_xdag_stats.nhosts > g_xdag_stats.total_nhosts)
+			g_xdag_stats.total_nhosts = g_xdag_stats.nhosts;
 		if (!(h->flags & HOST_INDB)) {
 			FILE *f = fopen(DATABASE, "a");
 			if (f) {
@@ -73,7 +73,7 @@ static struct host *find_add_host(struct host *h) {
 		}
 	}
 	if (h->flags & HOST_WHITE) {
-		if (g_cheatcoin_n_white_ips < MAX_WHITE_IPS) g_cheatcoin_white_ips[g_cheatcoin_n_white_ips++] = h0->ip;
+		if (g_xdag_n_white_ips < MAX_WHITE_IPS) g_xdag_white_ips[g_xdag_n_white_ips++] = h0->ip;
 	}
 	pthread_mutex_unlock(&host_mutex);
 	return h0;
@@ -85,7 +85,7 @@ static struct host *random_host(int mask) {
 	for (i = 0; !p && i < 10; ++i) {
 		pthread_mutex_lock(&host_mutex);
 		r = root, p = 0;
-		n = g_cheatcoin_stats.nhosts;
+		n = g_xdag_stats.nhosts;
 		while (r) {
 			p = _rbtree_ptr(r);
 			if (!(rand() % (n > 3 ? n : 3))) break;
@@ -133,15 +133,15 @@ static int read_database(const char *fname, int flags) {
 			if (i == n_ips && i < MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP) ips[i] = h0.ip, ips_count[i] = 1, n_ips++;
 			else if (i < n_ips && ips_count[i] < MAX_ALLOWED_FROM_IP
 					&& ++ips_count[i] == MAX_ALLOWED_FROM_IP && n_blocked < MAX_BLOCKED_IPS)
-				g_cheatcoin_blocked_ips[n_blocked++] = ips[i];
+				g_xdag_blocked_ips[n_blocked++] = ips[i];
 		}
 		if (!h) continue;
-		cheatcoin_debug("Netdb : host=%lx, flags=%x, read '%s'", (long)h, h->flags, str);
+		xdag_debug("Netdb : host=%lx, flags=%x, read '%s'", (long)h, h->flags, str);
 		if (flags & HOST_CONNECTED && n_selected_hosts < MAX_SELECTED_HOSTS / 2) selected_hosts[n_selected_hosts++] = h;
 		n++;
 	}
 	fclose(f);
-	if (flags & HOST_CONNECTED) g_cheatcoin_n_blocked_ips = n_blocked;
+	if (flags & HOST_CONNECTED) g_xdag_n_blocked_ips = n_blocked;
 	return n;
 }
 
@@ -151,13 +151,13 @@ static void reset_callback(struct ldus_rbtree *node) {
 }
 
 static void *monitor_thread(void *arg) {
-	while (!g_cheatcoin_sync_on) sleep(1);
+	while (!g_xdag_sync_on) sleep(1);
 	for(;;) {
 		FILE *f = fopen("netdb.tmp", "w");
 		int n, i, j;
 		time_t t = time(0);
 		if (!f) continue;
-		cheatcoin_net_command("conn", f);
+		xdag_net_command("conn", f);
 		fclose(f);
 		pthread_mutex_lock(&host_mutex);
 		ldus_rbtree_walk_right(root, reset_callback);
@@ -172,11 +172,11 @@ static void *monitor_thread(void *arg) {
 			char str[64];
 			if (!h) continue;
 			if (n < MAX_SELECTED_HOSTS) {
-				for (j = 0; j < g_cheatcoin_n_white_ips; ++j)
-					if (h->ip == g_cheatcoin_white_ips[j]) {
+				for (j = 0; j < g_xdag_n_white_ips; ++j)
+					if (h->ip == g_xdag_white_ips[j]) {
 						sprintf(str, "connect %u.%u.%u.%u:%u", h->ip & 0xff, h->ip >> 8 & 0xff, h->ip >> 16 & 0xff, h->ip >> 24 & 0xff, h->port);
-						cheatcoin_debug("Netdb : host=%lx flags=%x query='%s'", (long)h, h->flags, str);
-						cheatcoin_net_command(str, (f ? f : stderr));
+						xdag_debug("Netdb : host=%lx flags=%x query='%s'", (long)h, h->flags, str);
+						xdag_net_command(str, (f ? f : stderr));
 						n++;
 						break;
 					}
@@ -185,7 +185,7 @@ static void *monitor_thread(void *arg) {
 			if (n_selected_hosts < MAX_SELECTED_HOSTS) selected_hosts[n_selected_hosts++] = h;
 		}
 		if (f) fclose(f);
-		g_cheatcoin_n_white_ips = 0;
+		g_xdag_n_white_ips = 0;
 		read_database(DATABASEWHITE, HOST_WHITE);
 		while (time(0) - t < 67) sleep(1);
 	}
@@ -195,23 +195,23 @@ static void *monitor_thread(void *arg) {
 /* initialized hosts base, 'our_host_str' - exteranal address of our host (ip:port),
 * 'addr_port_pairs' - addresses of other 'npairs' hosts in the same format
 */
-int cheatcoin_netdb_init(const char *our_host_str, int npairs, const char **addr_port_pairs) {
+int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port_pairs) {
 	struct host h;
 	pthread_t t;
 	int i;
-	g_cheatcoin_blocked_ips = malloc(MAX_BLOCKED_IPS * sizeof(uint32_t));
-	g_cheatcoin_white_ips = malloc(MAX_WHITE_IPS * sizeof(uint32_t));
-	if (!g_cheatcoin_blocked_ips || !g_cheatcoin_white_ips) return -1;
-	if (read_database(DATABASE, HOST_INDB) < 0) { cheatcoin_fatal("Can't find file '%s'\n", DATABASE); return -1; }
+	g_xdag_blocked_ips = malloc(MAX_BLOCKED_IPS * sizeof(uint32_t));
+	g_xdag_white_ips = malloc(MAX_WHITE_IPS * sizeof(uint32_t));
+	if (!g_xdag_blocked_ips || !g_xdag_white_ips) return -1;
+	if (read_database(DATABASE, HOST_INDB) < 0) { xdag_fatal("Can't find file '%s'\n", DATABASE); return -1; }
 	read_database(DATABASEWHITE, HOST_WHITE);
 	our_host = find_add_ipport(&h, our_host_str, HOST_OUR | HOST_SET);
 	for (i = 0; i < npairs; ++i) find_add_ipport(&h, addr_port_pairs[i], 0);
-	if (pthread_create(&t, 0, monitor_thread, 0)) { cheatcoin_fatal("Can't start netdb thread\n"); return -1; }
+	if (pthread_create(&t, 0, monitor_thread, 0)) { xdag_fatal("Can't start netdb thread\n"); return -1; }
 	return 0;
 }
 
 /* writes data to the array for transmission to another host */
-unsigned cheatcoin_netdb_send(uint8_t *data, unsigned len) {
+unsigned xdag_netdb_send(uint8_t *data, unsigned len) {
 	unsigned i;
 	for (i = 0; i < n_selected_hosts && len >= 6; ++i, len -= 6, data += 6) {
 		memcpy(data, &selected_hosts[i]->ip, 4);
@@ -222,7 +222,7 @@ unsigned cheatcoin_netdb_send(uint8_t *data, unsigned len) {
 }
 
 /* reads data sent by another host */
-unsigned cheatcoin_netdb_receive(const uint8_t *data, unsigned len) {
+unsigned xdag_netdb_receive(const uint8_t *data, unsigned len) {
 	struct host h;
 	int i;
 	h.flags = 0;
@@ -236,6 +236,6 @@ unsigned cheatcoin_netdb_receive(const uint8_t *data, unsigned len) {
 }
 
 /* completes the work with the host database */
-void cheatcoin_netdb_finish(void) {
+void xdag_netdb_finish(void) {
 	pthread_mutex_lock(&host_mutex);
 }

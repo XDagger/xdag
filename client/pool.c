@@ -39,12 +39,12 @@
 #define N_MINERS		4096
 #define START_N_MINERS	256
 #define START_N_MINERS_IP 8
-#define N_CONFIRMATIONS	CHEATCOIN_POOL_N_CONFIRMATIONS
+#define N_CONFIRMATIONS	XDAG_POOL_N_CONFIRMATIONS
 #define MINERS_PWD		"minersgonnamine"
 #define SECTOR0_BASE	0x1947f3acu
 #define SECTOR0_OFFSET	0x82e9d1b5u
 #define HEADER_WORD		0x3fca9e2bu
-#define DATA_SIZE		(sizeof(struct cheatcoin_field) / sizeof(uint32_t))
+#define DATA_SIZE		(sizeof(struct xdag_field) / sizeof(uint32_t))
 #define SEND_PERIOD		10 /* период в секундах, с которым майнер посылает пулу результаты */
 #define FUND_ADDRESS	"FQglVQtb60vQv2DOWEUL7yh3smtj7g1s" /* адрес фонда сообщества */
 
@@ -58,14 +58,14 @@ enum miner_state {
 
 struct miner {
 	double maxdiff[N_CONFIRMATIONS];
-	struct cheatcoin_field id;
+	struct xdag_field id;
 	uint32_t data[DATA_SIZE];
 	double prev_diff;
-	cheatcoin_time_t main_time;
+	xdag_time_t main_time;
 	uint64_t nfield_in;
 	uint64_t nfield_out;
 	uint64_t ntask;
-	struct cheatcoin_block *block;
+	struct xdag_block *block;
 	uint32_t ip;
 	uint32_t prev_diff_count;
 	uint16_t port;
@@ -74,14 +74,14 @@ struct miner {
 	uint8_t block_size;
 };
 
-struct cheatcoin_pool_task g_cheatcoin_pool_task[2];
-uint64_t g_cheatcoin_pool_ntask;
+struct xdag_pool_task g_xdag_pool_task[2];
+uint64_t g_xdag_pool_ntask;
 /* a number of mining threads */
-int g_cheatcoin_mining_threads = 0;
-cheatcoin_hash_t g_cheatcoin_mined_hashes[N_CONFIRMATIONS], g_cheatcoin_mined_nonce[N_CONFIRMATIONS];
+int g_xdag_mining_threads = 0;
+xdag_hash_t g_xdag_mined_hashes[N_CONFIRMATIONS], g_xdag_mined_nonce[N_CONFIRMATIONS];
 
 /* 1 - program wors as a pool */
-static int g_cheatcoin_pool = 0;
+static int g_xdag_pool = 0;
 
 static int g_max_nminers = START_N_MINERS, g_max_nminers_ip = START_N_MINERS_IP, g_nminers = 0, g_socket = -1,
     g_stop_mining = 1, g_stop_general_mining = 1;
@@ -89,20 +89,20 @@ static double g_pool_fee = 0, g_pool_reward = 0, g_pool_direct = 0, g_pool_fund 
 static struct miner *g_miners, g_local_miner, g_fund_miner;
 static struct pollfd *g_fds;
 static struct dfslib_crypt *g_crypt;
-static struct cheatcoin_block *g_firstb = 0, *g_lastb = 0;
+static struct xdag_block *g_firstb = 0, *g_lastb = 0;
 static pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_share_mutex = PTHREAD_MUTEX_INITIALIZER;
 static const char *g_miner_address;
 /* poiter to mutex for optimal share  */
 void *g_ptr_share_mutex = &g_share_mutex;
 
-static inline void set_share(struct miner *m, struct cheatcoin_pool_task *task, cheatcoin_hash_t last, cheatcoin_hash_t hash) {
-	cheatcoin_time_t t = task->main_time;
-	if (cheatcoin_cmphash(hash, task->minhash.data) < 0) {
+static inline void set_share(struct miner *m, struct xdag_pool_task *task, xdag_hash_t last, xdag_hash_t hash) {
+	xdag_time_t t = task->main_time;
+	if (xdag_cmphash(hash, task->minhash.data) < 0) {
 		pthread_mutex_lock(&g_share_mutex);
-		if (cheatcoin_cmphash(hash, task->minhash.data) < 0) {
-			memcpy(task->minhash.data, hash, sizeof(cheatcoin_hash_t));
-			memcpy(task->lastfield.data, last, sizeof(cheatcoin_hash_t));
+		if (xdag_cmphash(hash, task->minhash.data) < 0) {
+			memcpy(task->minhash.data, hash, sizeof(xdag_hash_t));
+			memcpy(task->lastfield.data, last, sizeof(xdag_hash_t));
 		}
 		pthread_mutex_unlock(&g_share_mutex);
 	}
@@ -126,14 +126,14 @@ static inline void set_share(struct miner *m, struct cheatcoin_pool_task *task, 
 }
 
 static void *pool_main_thread(void *arg) {
-	struct cheatcoin_pool_task *task;
+	struct xdag_pool_task *task;
 	const char *mess;
 	struct miner *m;
 	struct pollfd *p;
 	uint64_t ntask;
 	int i, todo, nminers, done, j;
 
-	while (!g_cheatcoin_sync_on) sleep(1);
+	while (!g_xdag_sync_on) sleep(1);
 
 	for(;;) {
 		nminers = g_nminers;
@@ -152,34 +152,34 @@ static void *pool_main_thread(void *arg) {
 				p->fd = -1;
 				if (m->block) { free(m->block); m->block = 0; }
 				j = m->ip;
-				cheatcoin_info("Pool  : miner %d disconnected from %u.%u.%u.%u:%u by %s", i,
+				xdag_info("Pool  : miner %d disconnected from %u.%u.%u.%u:%u by %s", i,
 					j & 0xff, j >> 8 & 0xff, j >> 16 & 0xff, j >> 24 & 0xff, ntohs(m->port), mess);
 				continue;
 			}
 			if (p->revents & POLLERR) { done = 1; mess = "socket error"; goto disconnect; }
 			if (p->revents & POLLIN) {
 				done = 1;
-				todo = sizeof(struct cheatcoin_field) - m->data_size;
+				todo = sizeof(struct xdag_field) - m->data_size;
 				todo = read(p->fd, (uint8_t *)m->data + m->data_size, todo);
 				if (todo <= 0) { mess = "read error"; goto disconnect; }
 				m->data_size += todo;
-				if (m->data_size == sizeof(struct cheatcoin_field)) {
+				if (m->data_size == sizeof(struct xdag_field)) {
 					m->data_size = 0;
 					dfslib_uncrypt_array(g_crypt, m->data, DATA_SIZE, m->nfield_in++);
 					if (!m->block_size && m->data[0] == HEADER_WORD) {
-						m->block = malloc(sizeof(struct cheatcoin_block));
+						m->block = malloc(sizeof(struct xdag_block));
 						if (!m->block) continue;
-						memcpy(m->block->field, m->data, sizeof(struct cheatcoin_field));
+						memcpy(m->block->field, m->data, sizeof(struct xdag_field));
 						m->block_size++;
 					} else if (m->nfield_in == 1) {
 						mess = "protocol mismatch"; m->state = MINER_FREE; goto disconnect_free;
 					} else if (m->block_size) {
-						memcpy(m->block->field + m->block_size, m->data, sizeof(struct cheatcoin_field));
+						memcpy(m->block->field + m->block_size, m->data, sizeof(struct xdag_field));
 						m->block_size++;
-						if (m->block_size == CHEATCOIN_BLOCK_FIELDS) {
+						if (m->block_size == XDAG_BLOCK_FIELDS) {
 							uint32_t crc = m->block->field[0].transport_header >> 32;
 							m->block->field[0].transport_header &= (uint64_t)0xffffffffu;
-							if (crc == crc_of_array((uint8_t *)m->block, sizeof(struct cheatcoin_block))) {
+							if (crc == crc_of_array((uint8_t *)m->block, sizeof(struct xdag_block))) {
 								m->block->field[0].transport_header = 0;
 								pthread_mutex_lock(&g_pool_mutex);
 								if (!g_firstb) g_firstb = g_lastb = m->block;
@@ -190,43 +190,43 @@ static void *pool_main_thread(void *arg) {
 							m->block_size = 0;
 						}
 					} else {
-						cheatcoin_hash_t hash;
-						ntask = g_cheatcoin_pool_ntask;
-						task = &g_cheatcoin_pool_task[ntask & 1];
-						if (!(m->state & MINER_ADDRESS) || memcmp(m->id.data, m->data, sizeof(cheatcoin_hashlow_t))) {
-							cheatcoin_time_t t;
+						xdag_hash_t hash;
+						ntask = g_xdag_pool_ntask;
+						task = &g_xdag_pool_task[ntask & 1];
+						if (!(m->state & MINER_ADDRESS) || memcmp(m->id.data, m->data, sizeof(xdag_hashlow_t))) {
+							xdag_time_t t;
 							int64_t pos;
-							memcpy(m->id.data, m->data, sizeof(struct cheatcoin_field));
-							pos = cheatcoin_get_block_pos(m->id.data, &t);
+							memcpy(m->id.data, m->data, sizeof(struct xdag_field));
+							pos = xdag_get_block_pos(m->id.data, &t);
 							if (pos < 0) m->state &= ~MINER_ADDRESS;
 							else m->state |= MINER_ADDRESS;
-						} else memcpy(m->id.data, m->data, sizeof(struct cheatcoin_field));
-						cheatcoin_hash_final(task->ctx0, m->data, sizeof(struct cheatcoin_field), hash);
+						} else memcpy(m->id.data, m->data, sizeof(struct xdag_field));
+						xdag_hash_final(task->ctx0, m->data, sizeof(struct xdag_field), hash);
 						set_share(m, task, m->id.data, hash);
 					}
 				}
 			}
 			if (p->revents & POLLOUT) {
-				struct cheatcoin_field data[2];
+				struct xdag_field data[2];
 				int j, nfld = 0;
-				ntask = g_cheatcoin_pool_ntask;
-				task = &g_cheatcoin_pool_task[ntask & 1];
+				ntask = g_xdag_pool_ntask;
+				task = &g_xdag_pool_task[ntask & 1];
 				if (m->ntask < ntask) {
 					m->ntask = ntask;
 					nfld = 2;
-					memcpy(data, task->task, nfld * sizeof(struct cheatcoin_field));
+					memcpy(data, task->task, nfld * sizeof(struct xdag_field));
 				} else if (!(m->state & MINER_BALANCE) && time(0) >= (m->main_time << 6) + 4) {
 					m->state |= MINER_BALANCE;
-					memcpy(data[0].data, m->id.data, sizeof(cheatcoin_hash_t));
-					data[0].amount = cheatcoin_get_balance(data[0].data);
+					memcpy(data[0].data, m->id.data, sizeof(xdag_hash_t));
+					data[0].amount = xdag_get_balance(data[0].data);
 					nfld = 1;
 				}
 				if (nfld) {
 					done = 1;
 					for (j = 0; j < nfld; ++j)
 						dfslib_encrypt_array(g_crypt, (uint32_t *)(data + j), DATA_SIZE, m->nfield_out++);
-					todo = write(p->fd, data, nfld * sizeof(struct cheatcoin_field));
-					if (todo != nfld * sizeof(struct cheatcoin_field)) { mess = "write error"; goto disconnect; }
+					todo = write(p->fd, data, nfld * sizeof(struct xdag_field));
+					if (todo != nfld * sizeof(struct xdag_field)) { mess = "write error"; goto disconnect; }
 				}
 			}
 		}
@@ -249,11 +249,11 @@ static double countpay(struct miner *m, int i, double *pay) {
 	return diff2pay(sum, n);
 }
 
-static int pay_miners(cheatcoin_time_t t) {
-	struct cheatcoin_field fields[12];
-	struct cheatcoin_block buf, *b;
+static int pay_miners(xdag_time_t t) {
+	struct xdag_field fields[12];
+	struct xdag_block buf, *b;
 	uint64_t *h, *nonce;
-	cheatcoin_amount_t balance, pay, reward = 0, direct = 0, fund = 0;
+	xdag_amount_t balance, pay, reward = 0, direct = 0, fund = 0;
 	struct miner *m;
 	int64_t pos;
 	int i, n, nminers, reward_ind = -1, key, defkey, nfields, nfld;
@@ -261,9 +261,9 @@ static int pay_miners(cheatcoin_time_t t) {
 	nminers = g_nminers;
 	if (!nminers) return -1;
 	n = t & (N_CONFIRMATIONS - 1);
-	h = g_cheatcoin_mined_hashes[n];
-	nonce = g_cheatcoin_mined_nonce[n];
-	balance = cheatcoin_get_balance(h);
+	h = g_xdag_mined_hashes[n];
+	nonce = g_xdag_mined_nonce[n];
+	balance = xdag_get_balance(h);
 	if (!balance) return -2;
 	pay = balance - g_pool_fee * balance;
 	if (!pay) return -3;
@@ -271,8 +271,8 @@ static int pay_miners(cheatcoin_time_t t) {
 	pay -= reward;
 	if (g_pool_fund) {
 		if (!(g_fund_miner.state & MINER_ADDRESS)) {
-			cheatcoin_time_t t;
-			if (!cheatcoin_address2hash(FUND_ADDRESS, g_fund_miner.id.hash) && cheatcoin_get_block_pos(g_fund_miner.id.hash, &t) >= 0)
+			xdag_time_t t;
+			if (!xdag_address2hash(FUND_ADDRESS, g_fund_miner.id.hash) && xdag_get_block_pos(g_fund_miner.id.hash, &t) >= 0)
 				g_fund_miner.state |= MINER_ADDRESS;
 		}
 		if (g_fund_miner.state & MINER_ADDRESS) {
@@ -280,13 +280,13 @@ static int pay_miners(cheatcoin_time_t t) {
 			pay -= fund;
 		}
 	}
-	key = cheatcoin_get_key(h);
+	key = xdag_get_key(h);
 	if (key < 0) return -4;
-	if (!cheatcoin_wallet_default_key(&defkey)) return -5;
+	if (!xdag_wallet_default_key(&defkey)) return -5;
 	nfields = (key == defkey ? 12 : 10);
-	pos = cheatcoin_get_block_pos(h, &t);
+	pos = xdag_get_block_pos(h, &t);
 	if (pos < 0) return -6;
-	b = cheatcoin_storage_load(h, t, pos, &buf);
+	b = xdag_storage_load(h, t, pos, &buf);
 	if (!b) return -7;
 	diff = malloc(2 * nminers * sizeof(double));
 	if (!diff) return -8;
@@ -298,14 +298,14 @@ static int pay_miners(cheatcoin_time_t t) {
 		prev_diff[i] = countpay(m, n, &diff[i]);
 		sum += diff[i];
 		prev_sum += prev_diff[i];
-		if (reward_ind < 0 && !memcmp(nonce, m->id.data, sizeof(cheatcoin_hashlow_t))) reward_ind = i;
+		if (reward_ind < 0 && !memcmp(nonce, m->id.data, sizeof(xdag_hashlow_t))) reward_ind = i;
 	}
 	if (!prev_sum) return -9;
 	if (sum > 0) {
 		direct = balance * g_pool_direct;
 		pay -= direct;
 	}
-	memcpy(fields[0].data, h, sizeof(cheatcoin_hashlow_t));
+	memcpy(fields[0].data, h, sizeof(xdag_hashlow_t));
 	fields[0].amount = 0;
 	for (nfld = 1, i = 0; i <= nminers; ++i) {
 		if (i < nminers) {
@@ -320,55 +320,55 @@ static int pay_miners(cheatcoin_time_t t) {
 			topay = fund;
 		}
 		if (!topay) continue;
-		memcpy(fields[nfld].data, m->id.data, sizeof(cheatcoin_hashlow_t));
+		memcpy(fields[nfld].data, m->id.data, sizeof(xdag_hashlow_t));
 		fields[nfld].amount = topay;
 		fields[0].amount += topay;
-		cheatcoin_log_xfer(fields[0].data, fields[nfld].data, topay);
+		xdag_log_xfer(fields[0].data, fields[nfld].data, topay);
 		if (++nfld == nfields) {
-			cheatcoin_create_block(fields, 1, nfld - 1, 0, 0);
+			xdag_create_block(fields, 1, nfld - 1, 0, 0);
 			nfld = 1;
 			fields[0].amount = 0;
 		}
 	}
-	if (nfld > 1) cheatcoin_create_block(fields, 1, nfld - 1, 0, 0);
+	if (nfld > 1) xdag_create_block(fields, 1, nfld - 1, 0, 0);
 
 	return 0;
 }
 
 static void *pool_block_thread(void *arg) {
-	struct cheatcoin_pool_task *task;
+	struct xdag_pool_task *task;
 	uint64_t ntask;
-	cheatcoin_time_t t0 = 0, t;
-	struct cheatcoin_block *b;
+	xdag_time_t t0 = 0, t;
+	struct xdag_block *b;
 	int done, res;
 
-	while (!g_cheatcoin_sync_on) sleep(1);
+	while (!g_xdag_sync_on) sleep(1);
 
 	for(;;) {
 		done = 0;
-		ntask = g_cheatcoin_pool_ntask;
-		task = &g_cheatcoin_pool_task[ntask & 1];
+		ntask = g_xdag_pool_ntask;
+		task = &g_xdag_pool_task[ntask & 1];
 		t = task->main_time;
 		if (t > t0) {
-			uint64_t *h = g_cheatcoin_mined_hashes[(t - N_CONFIRMATIONS + 1) & (N_CONFIRMATIONS - 1)];
+			uint64_t *h = g_xdag_mined_hashes[(t - N_CONFIRMATIONS + 1) & (N_CONFIRMATIONS - 1)];
 			done = 1;
 			t0 = t;
 			res = pay_miners(t - N_CONFIRMATIONS + 1);
-			cheatcoin_info("%s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
+			xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
 				h[3], h[2], h[1], h[0], (t - N_CONFIRMATIONS + 1) << 16 | 0xffff, res);
 		}
 		pthread_mutex_lock(&g_pool_mutex);
 		if (g_firstb) {
 			b = g_firstb;
-			g_firstb = (struct cheatcoin_block *)(uintptr_t)b->field[0].transport_header;
+			g_firstb = (struct xdag_block *)(uintptr_t)b->field[0].transport_header;
 			if (!g_firstb) g_lastb = 0;
 		} else b = 0;
 		pthread_mutex_unlock(&g_pool_mutex);
 		if (b) {
 			done = 1;
 			b->field[0].transport_header = 2;
-			res = cheatcoin_add_block(b);
-			if (res > 0) cheatcoin_send_new_block(b);
+			res = xdag_add_block(b);
+			if (res > 0) xdag_send_new_block(b);
 		}
 		if (!done) sleep(1);
 	}
@@ -376,17 +376,17 @@ static void *pool_block_thread(void *arg) {
 }
 
 /* gets pool parameters as a string, 0 - if the pool is disabled */
-char *cheatcoin_pool_get_config(char *buf) {
-	if (!g_cheatcoin_pool) return 0;
+char *xdag_pool_get_config(char *buf) {
+	if (!g_xdag_pool) return 0;
 	sprintf(buf, "%d:%.2lf:%.2lf:%.2lf:%d:%.2lf", g_max_nminers, g_pool_fee * 100, g_pool_reward * 100,
 	    g_pool_direct * 100, g_max_nminers_ip, g_pool_fund * 100);
 	return buf;
 }
 
 /* sets pool parameters */
-int cheatcoin_pool_set_config(const char *str) {
+int xdag_pool_set_config(const char *str) {
 	char buf[0x100], *lasts;
-	if (!g_cheatcoin_pool) return -1;
+	if (!g_xdag_pool) return -1;
 	strcpy(buf, str);
 
 	str = strtok_r(buf, " \t\r\n:", &lasts);
@@ -450,17 +450,17 @@ static void *pool_net_thread(void *arg) {
 //	unsigned long nonblock = 1;
 	struct linger linger_opt = { 1, 0 }; // Linger active, timeout 0
 	socklen_t peeraddr_len = sizeof(peeraddr);
-	cheatcoin_time_t t;
+	xdag_time_t t;
 	struct miner *m;
 	struct pollfd *p;
 
-	while (!g_cheatcoin_sync_on) sleep(1);
+	while (!g_xdag_sync_on) sleep(1);
 
 	// Create a socket
 	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock == INVALID_SOCKET) { mess = "cannot create a socket"; goto err; }
 	if (fcntl(sock, F_SETFD, FD_CLOEXEC) == -1) {
-		cheatcoin_err("pool  : can't set FD_CLOEXEC flag on socket %d, %s\n", sock, strerror(errno));
+		xdag_err("pool  : can't set FD_CLOEXEC flag on socket %d, %s\n", sock, strerror(errno));
 	}
 
 	// Fill in the address of server
@@ -495,7 +495,7 @@ static void *pool_net_thread(void *arg) {
 	setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *)&rcvbufsize, sizeof(int));
 
 	str = strtok_r(0, " \t\r\n", &lasts);
-	if (str) cheatcoin_pool_set_config(str);
+	if (str) xdag_pool_set_config(str);
 
 	// Now, listen for a connection
 	res = listen(sock, N_MINERS);    // "1" is the maximal length of the queue
@@ -509,7 +509,7 @@ static void *pool_net_thread(void *arg) {
 		setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char *)&rcvbufsize, sizeof(int));
 //		ioctl(fd, FIONBIO, (char*)&nonblock);
 
-		t = cheatcoin_main_time();
+		t = xdag_main_time();
 		for (i = 0, count = 1, i0 = -1; i < g_nminers; ++i) {
 			m = g_miners + i;
 			if (m->state & MINER_FREE) { if (i0 < 0) i0 = i; }
@@ -530,33 +530,33 @@ static void *pool_net_thread(void *arg) {
 			j = m->ip = peeraddr.sin_addr.s_addr;
 			m->port = peeraddr.sin_port;
 			if (i == g_nminers) g_nminers++;
-			cheatcoin_info("Pool  : miner %d connected from %u.%u.%u.%u:%u", i,
+			xdag_info("Pool  : miner %d connected from %u.%u.%u.%u:%u", i,
 					j & 0xff, j >> 8 & 0xff, j >> 16 & 0xff, j >> 24 & 0xff, ntohs(m->port));
 		}
 	}
 
 	return 0;
 err:
-	cheatcoin_err("pool  : %s %s (error %d)", mess, mess1, res);
+	xdag_err("pool  : %s %s (error %d)", mess, mess1, res);
 	return 0;
 }
 
-static int send_to_pool(struct cheatcoin_field *fld, int nfld) {
-	struct cheatcoin_field f[CHEATCOIN_BLOCK_FIELDS];
-	cheatcoin_hash_t h;
+static int send_to_pool(struct xdag_field *fld, int nfld) {
+	struct xdag_field f[XDAG_BLOCK_FIELDS];
+	xdag_hash_t h;
 	struct miner *m = &g_local_miner;
-	int i, res, todo = nfld * sizeof(struct cheatcoin_field), done = 0;
+	int i, res, todo = nfld * sizeof(struct xdag_field), done = 0;
 	if (g_socket < 0) {
 		pthread_mutex_unlock(&g_pool_mutex);
 		return -1;
 	}
 	memcpy(f, fld, todo);
-	if (nfld == CHEATCOIN_BLOCK_FIELDS) {
+	if (nfld == XDAG_BLOCK_FIELDS) {
 		uint32_t crc;
 		f[0].transport_header = 0;
-		cheatcoin_hash(f, sizeof(struct cheatcoin_block), h);
+		xdag_hash(f, sizeof(struct xdag_block), h);
 		f[0].transport_header = HEADER_WORD;
-		crc = crc_of_array((uint8_t *)f, sizeof(struct cheatcoin_block));
+		crc = crc_of_array((uint8_t *)f, sizeof(struct xdag_block));
 		f[0].transport_header |= (uint64_t)crc << 32;
 	}
 	for (i = 0; i < nfld; ++i)
@@ -579,25 +579,25 @@ static int send_to_pool(struct cheatcoin_field *fld, int nfld) {
 		done += res, todo -= res;
 	}
 	pthread_mutex_unlock(&g_pool_mutex);
-	if (nfld == CHEATCOIN_BLOCK_FIELDS) {
-		cheatcoin_info("Sent  : %016llx%016llx%016llx%016llx t=%llx res=%d",
+	if (nfld == XDAG_BLOCK_FIELDS) {
+		xdag_info("Sent  : %016llx%016llx%016llx%016llx t=%llx res=%d",
 			h[3], h[2], h[1], h[0], fld[0].time, 0);
 	}
 	return 0;
 }
 
 /* send block to network via pool */
-int cheatcoin_send_block_via_pool(struct cheatcoin_block *b) {
+int xdag_send_block_via_pool(struct xdag_block *b) {
 	if (g_socket < 0) return -1;
 	pthread_mutex_lock(&g_pool_mutex);
-	return send_to_pool(b->field, CHEATCOIN_BLOCK_FIELDS);
+	return send_to_pool(b->field, XDAG_BLOCK_FIELDS);
 }
 
 
 static void *miner_net_thread(void *arg) {
-	struct cheatcoin_block *blk, b;
-	struct cheatcoin_field data[2];
-	cheatcoin_hash_t hash;
+	struct xdag_block *blk, b;
+	struct xdag_field data[2];
+	xdag_hash_t hash;
 	const char *str = (const char *)arg, *s;
 	char buf[0x100];
 	const char *mess, *mess1 = "";
@@ -607,32 +607,32 @@ static void *miner_net_thread(void *arg) {
 	int res = 0, reuseaddr = 1, ndata, maxndata;
 	int64_t pos;
 	struct linger linger_opt = { 1, 0 }; // Linger active, timeout 0
-	cheatcoin_time_t t;
+	xdag_time_t t;
 	struct miner *m = &g_local_miner;
 	time_t t00, t0, tt;
 
-	while (!g_cheatcoin_sync_on) sleep(1);
+	while (!g_xdag_sync_on) sleep(1);
 
 begin:
 	ndata = 0;
-	maxndata = sizeof(struct cheatcoin_field);
+	maxndata = sizeof(struct xdag_field);
 	t0 = t00 = 0;
 	m->nfield_in = m->nfield_out = 0;
 
-	if (g_miner_address) { if (cheatcoin_address2hash(g_miner_address, hash)) { mess = "incorrect miner address"; goto err; }}
-	else if (cheatcoin_get_our_block(hash)) { mess = "can't create a block"; goto err; }
-	pos = cheatcoin_get_block_pos(hash, &t);
+	if (g_miner_address) { if (xdag_address2hash(g_miner_address, hash)) { mess = "incorrect miner address"; goto err; }}
+	else if (xdag_get_our_block(hash)) { mess = "can't create a block"; goto err; }
+	pos = xdag_get_block_pos(hash, &t);
 	if (pos < 0) { mess = "can't find the block"; goto err; }
-	blk = cheatcoin_storage_load(hash, t, pos, &b);
+	blk = xdag_storage_load(hash, t, pos, &b);
 	if (!blk) { mess = "can't load the block"; goto err; }
-	if (blk != &b) memcpy(&b, blk, sizeof(struct cheatcoin_block));
+	if (blk != &b) memcpy(&b, blk, sizeof(struct xdag_block));
 
 	pthread_mutex_lock(&g_pool_mutex);
 	// Create a socket
 	g_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (g_socket == INVALID_SOCKET) { pthread_mutex_unlock(&g_pool_mutex); mess = "cannot create a socket"; goto err; }
 	if (fcntl(g_socket, F_SETFD, FD_CLOEXEC) == -1) {
-		cheatcoin_err("pool  : can't set FD_CLOEXEC flag on socket %d, %s\n", g_socket, strerror(errno));
+		xdag_err("pool  : can't set FD_CLOEXEC flag on socket %d, %s\n", g_socket, strerror(errno));
 	}
 
 	// Fill in the address of server
@@ -666,7 +666,7 @@ begin:
 	res = connect(g_socket, (struct sockaddr*)&peeraddr, sizeof(peeraddr));
 	if (res) { pthread_mutex_unlock(&g_pool_mutex); mess = "cannot connect to the pool"; goto err; }
 
-	if (send_to_pool(b.field, CHEATCOIN_BLOCK_FIELDS) < 0) { mess = "socket is closed"; goto err; }
+	if (send_to_pool(b.field, XDAG_BLOCK_FIELDS) < 0) { mess = "socket is closed"; goto err; }
 
 	for(;;) {
 		struct pollfd p;
@@ -683,42 +683,42 @@ begin:
 			if (res < 0) { pthread_mutex_unlock(&g_pool_mutex); mess = "read error on socket"; goto err; }
 			ndata += res;
 			if (ndata == maxndata) {
-				struct cheatcoin_field *last = data + (ndata / sizeof(struct cheatcoin_field) - 1);
+				struct xdag_field *last = data + (ndata / sizeof(struct xdag_field) - 1);
 				dfslib_uncrypt_array(g_crypt, (uint32_t *)last->data, DATA_SIZE, m->nfield_in++);
-				if (!memcmp(last->data, hash, sizeof(cheatcoin_hashlow_t))) {
-					cheatcoin_set_balance(hash, last->amount);
-					g_cheatcoin_last_received = tt;
+				if (!memcmp(last->data, hash, sizeof(xdag_hashlow_t))) {
+					xdag_set_balance(hash, last->amount);
+					g_xdag_last_received = tt;
 					ndata = 0;
-					maxndata = sizeof(struct cheatcoin_field);
-				} else if (maxndata == 2 * sizeof(struct cheatcoin_field)){
-					uint64_t ntask = g_cheatcoin_pool_ntask + 1;
-					struct cheatcoin_pool_task *task = &g_cheatcoin_pool_task[ntask & 1];
-					task->main_time = cheatcoin_main_time();
-					cheatcoin_hash_set_state(task->ctx, data[0].data,
-							sizeof(struct cheatcoin_block) - 2 * sizeof(struct cheatcoin_field));
-					cheatcoin_hash_update(task->ctx, data[1].data, sizeof(struct cheatcoin_field));
-					cheatcoin_hash_update(task->ctx, hash, sizeof(cheatcoin_hashlow_t));
-					cheatcoin_generate_random_array(task->nonce.data, sizeof(cheatcoin_hash_t));
-					memcpy(task->nonce.data, hash, sizeof(cheatcoin_hashlow_t));
-					memcpy(task->lastfield.data, task->nonce.data, sizeof(cheatcoin_hash_t));
-					cheatcoin_hash_final(task->ctx, &task->nonce.amount, sizeof(uint64_t), task->minhash.data);
-					g_cheatcoin_pool_ntask = ntask;
+					maxndata = sizeof(struct xdag_field);
+				} else if (maxndata == 2 * sizeof(struct xdag_field)){
+					uint64_t ntask = g_xdag_pool_ntask + 1;
+					struct xdag_pool_task *task = &g_xdag_pool_task[ntask & 1];
+					task->main_time = xdag_main_time();
+					xdag_hash_set_state(task->ctx, data[0].data,
+							sizeof(struct xdag_block) - 2 * sizeof(struct xdag_field));
+					xdag_hash_update(task->ctx, data[1].data, sizeof(struct xdag_field));
+					xdag_hash_update(task->ctx, hash, sizeof(xdag_hashlow_t));
+					xdag_generate_random_array(task->nonce.data, sizeof(xdag_hash_t));
+					memcpy(task->nonce.data, hash, sizeof(xdag_hashlow_t));
+					memcpy(task->lastfield.data, task->nonce.data, sizeof(xdag_hash_t));
+					xdag_hash_final(task->ctx, &task->nonce.amount, sizeof(uint64_t), task->minhash.data);
+					g_xdag_pool_ntask = ntask;
 					t00 = time(0);
-					cheatcoin_info("Task  : t=%llx N=%llu", task->main_time << 16 | 0xffff, ntask);
+					xdag_info("Task  : t=%llx N=%llu", task->main_time << 16 | 0xffff, ntask);
 					ndata = 0;
-					maxndata = sizeof(struct cheatcoin_field);
+					maxndata = sizeof(struct xdag_field);
 				} else {
-					maxndata = 2 * sizeof(struct cheatcoin_field);
+					maxndata = 2 * sizeof(struct xdag_field);
 				}
 			}
 		}
 		if (p.revents & POLLOUT) {
-			uint64_t ntask = g_cheatcoin_pool_ntask;
-			struct cheatcoin_pool_task *task = &g_cheatcoin_pool_task[ntask & 1];
+			uint64_t ntask = g_xdag_pool_ntask;
+			struct xdag_pool_task *task = &g_xdag_pool_task[ntask & 1];
 			uint64_t *h = task->minhash.data;
 			t0 = time(0);
 			res = send_to_pool(&task->lastfield, 1);
-			cheatcoin_info("Share : %016llx%016llx%016llx%016llx t=%llx res=%d",
+			xdag_info("Share : %016llx%016llx%016llx%016llx t=%llx res=%d",
 				h[3], h[2], h[1], h[0], task->main_time << 16 | 0xffff, res);
 			if (res) { mess = "write error on socket"; goto err; }
 		} else pthread_mutex_unlock(&g_pool_mutex);
@@ -726,7 +726,7 @@ begin:
 
 	return 0;
 err:
-	cheatcoin_err("Miner : %s %s (error %d)", mess, mess1, res);
+	xdag_err("Miner : %s %s (error %d)", mess, mess1, res);
 	pthread_mutex_lock(&g_pool_mutex);
 	if (g_socket != INVALID_SOCKET) { close(g_socket); g_socket = INVALID_SOCKET; }
 	pthread_mutex_unlock(&g_pool_mutex);
@@ -750,80 +750,80 @@ static int crypt_start(void) {
 }
 
 static void *mining_thread(void *arg) {
-	struct cheatcoin_pool_task *task;
-	cheatcoin_hash_t hash;
-	struct cheatcoin_field last;
+	struct xdag_pool_task *task;
+	xdag_hash_t hash;
+	struct xdag_field last;
 	int nthread = (int)(uintptr_t)arg;
 	uint64_t ntask, oldntask = 0;
 	uint64_t nonce;
-	while (!g_cheatcoin_sync_on && !g_stop_mining) sleep(1);
+	while (!g_xdag_sync_on && !g_stop_mining) sleep(1);
 	while (!g_stop_mining) {
-		ntask = g_cheatcoin_pool_ntask;
-		task = &g_cheatcoin_pool_task[ntask & 1];
+		ntask = g_xdag_pool_ntask;
+		task = &g_xdag_pool_task[ntask & 1];
 		if (!ntask) { sleep(1); continue; }
 		if (ntask != oldntask) {
 			oldntask = ntask;
-			memcpy(last.data, task->nonce.data, sizeof(cheatcoin_hash_t));
+			memcpy(last.data, task->nonce.data, sizeof(xdag_hash_t));
 			nonce = last.amount + nthread;
 		}
-		last.amount = cheatcoin_hash_final_multi(task->ctx, &nonce, 4096, g_cheatcoin_mining_threads, hash);
-		g_cheatcoin_extstats.nhashes += 4096;
+		last.amount = xdag_hash_final_multi(task->ctx, &nonce, 4096, g_xdag_mining_threads, hash);
+		g_xdag_extstats.nhashes += 4096;
 		set_share(&g_local_miner, task, last.data, hash);
 	}
 	return 0;
 }
 
 static void *general_mining_thread(void *arg) {
-	while (!g_cheatcoin_sync_on && !g_stop_general_mining) sleep(1);
-	while (!g_stop_general_mining) cheatcoin_create_block(0, 0, 0, 0, cheatcoin_main_time() << 16 | 0xffff);
-	cheatcoin_mess("Stopping general mining thread...");
+	while (!g_xdag_sync_on && !g_stop_general_mining) sleep(1);
+	while (!g_stop_general_mining) xdag_create_block(0, 0, 0, 0, xdag_main_time() << 16 | 0xffff);
+	xdag_mess("Stopping general mining thread...");
 	return 0;
 }
 
 /* changes the number of mining threads */
-int cheatcoin_mining_start(int n_mining_threads) {
+int xdag_mining_start(int n_mining_threads) {
 	pthread_t th;
-	if ((n_mining_threads > 0 || g_cheatcoin_pool) && g_stop_general_mining) {
-		cheatcoin_mess("Starting general mining thread...");
+	if ((n_mining_threads > 0 || g_xdag_pool) && g_stop_general_mining) {
+		xdag_mess("Starting general mining thread...");
 		g_stop_general_mining = 0;
 		pthread_create(&th, 0, general_mining_thread, 0);
 		pthread_detach(th);
 	}
 	if (n_mining_threads < 0) n_mining_threads = ~n_mining_threads;
-	if (n_mining_threads == g_cheatcoin_mining_threads);
+	if (n_mining_threads == g_xdag_mining_threads);
 	else if (!n_mining_threads) {
 		g_stop_mining = 1;
-		if (!g_cheatcoin_pool) g_stop_general_mining = 1;
-		g_cheatcoin_mining_threads = 0;
-	} else if (!g_cheatcoin_mining_threads) {
+		if (!g_xdag_pool) g_stop_general_mining = 1;
+		g_xdag_mining_threads = 0;
+	} else if (!g_xdag_mining_threads) {
 		g_stop_mining = 0;
-	} else if (g_cheatcoin_mining_threads > n_mining_threads) {
+	} else if (g_xdag_mining_threads > n_mining_threads) {
 		g_stop_mining = 1;
 		sleep(5);
 		g_stop_mining = 0;
-		g_cheatcoin_mining_threads = 0;
+		g_xdag_mining_threads = 0;
 	}
-	while (g_cheatcoin_mining_threads < n_mining_threads) {
-		pthread_create(&th, 0, mining_thread, (void *)(uintptr_t)g_cheatcoin_mining_threads);
+	while (g_xdag_mining_threads < n_mining_threads) {
+		pthread_create(&th, 0, mining_thread, (void *)(uintptr_t)g_xdag_mining_threads);
 		pthread_detach(th);
-		g_cheatcoin_mining_threads++;
+		g_xdag_mining_threads++;
 	}
-	cheatcoin_get_our_block(g_local_miner.id.data);
-	g_local_miner.state = (g_cheatcoin_mining_threads ? 0 : MINER_ARCHIVE);
+	xdag_get_our_block(g_local_miner.id.data);
+	g_local_miner.state = (g_xdag_mining_threads ? 0 : MINER_ARCHIVE);
 	return 0;
 }
 
 /* initialization of the pool (pool_on = 1) or connecting the miner to pool (pool_on = 0; pool_arg - pool parameters ip:port[:CFG];
 miner_addr - address of the miner, if specified */
-int cheatcoin_pool_start(int pool_on, const char *pool_arg, const char *miner_address) {
+int xdag_pool_start(int pool_on, const char *pool_arg, const char *miner_address) {
 	pthread_t th;
 	int i, res;
-	g_cheatcoin_pool = pool_on;
+	g_xdag_pool = pool_on;
 	g_miner_address = miner_address;
 	for (i = 0; i < 2; ++i) {
-		g_cheatcoin_pool_task[i].ctx0 = malloc(cheatcoin_hash_ctx_size());
-		g_cheatcoin_pool_task[i].ctx = malloc(cheatcoin_hash_ctx_size());
-		if (!g_cheatcoin_pool_task[i].ctx0 || !g_cheatcoin_pool_task[i].ctx) return -1;
+		g_xdag_pool_task[i].ctx0 = malloc(xdag_hash_ctx_size());
+		g_xdag_pool_task[i].ctx = malloc(xdag_hash_ctx_size());
+		if (!g_xdag_pool_task[i].ctx0 || !g_xdag_pool_task[i].ctx) return -1;
 	}
 	if (!pool_on && !pool_arg) return 0;
 	if (crypt_start()) return -1;
@@ -858,16 +858,16 @@ static int print_miner(FILE *out, int n, struct miner *m) {
 	int j;
 	for (j = 0; j < N_CONFIRMATIONS; ++j) if (m->maxdiff[j] > 0) { sum += m->maxdiff[j]; count++; }
 	sprintf(buf, "%u.%u.%u.%u:%u", i & 0xff, i >> 8 & 0xff, i >> 16 & 0xff, i >> 24 & 0xff, ntohs(m->port));
-	sprintf(buf2, "%llu/%llu", (unsigned long long)m->nfield_in * sizeof(struct cheatcoin_field),
-			(unsigned long long)m->nfield_out * sizeof(struct cheatcoin_field));
-	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", n, cheatcoin_hash2address(m->id.data),
+	sprintf(buf2, "%llu/%llu", (unsigned long long)m->nfield_in * sizeof(struct xdag_field),
+			(unsigned long long)m->nfield_out * sizeof(struct xdag_field));
+	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", n, xdag_hash2address(m->id.data),
 		(m->state & MINER_FREE ? "free   " : (m->state & MINER_ARCHIVE ? "archive" :
 		(m->state & MINER_ADDRESS ? "active " : "badaddr"))), buf, buf2, diff2pay(sum, count));
 	return m->state & (MINER_FREE | MINER_ARCHIVE) ? 0 : 1;
 }
 
 /* output to the file a list of miners */
-int cheatcoin_print_miners(FILE *out) {
+int xdag_print_miners(FILE *out) {
 	int i, res;
 	fprintf(out, "List of miners:\n"
 " NN  Address for payment to            Status   IP and port            in/out bytes      nopaid shares\n"

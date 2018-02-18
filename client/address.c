@@ -8,7 +8,7 @@ static const uint8_t bits2mime[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnop
 static uint8_t mime2bits[256];
 
 /* intializes the addresses module */
-int cheatcoin_address_init(void)
+int xdag_address_init(void)
 {
     int i;
     memset(mime2bits, 0xFF, 256);
@@ -20,7 +20,7 @@ int cheatcoin_address_init(void)
 }
 
 /* converts address to hash */
-int cheatcoin_address2hash(const char *address, cheatcoin_hash_t hash)
+int xdag_address2hash(const char *address, xdag_hash_t hash)
 {
     uint8_t *fld = (uint8_t *)hash;
     int i, c, d, e, n;
@@ -52,7 +52,7 @@ int cheatcoin_address2hash(const char *address, cheatcoin_hash_t hash)
 }
 
 /* converts hash to address */
-const char *cheatcoin_hash2address(const cheatcoin_hash_t hash)
+const char *xdag_hash2address(const xdag_hash_t hash)
 {
     static char bufs[4][33];
     static int k = 0;

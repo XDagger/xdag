@@ -21,14 +21,14 @@ extern unsigned int xOPENSSL_ia32cap_P[4];
 extern int xOPENSSL_ia32_cpuid(unsigned int *);
 
 /* initialization of the encryption system */
-int cheatcoin_crypt_init(int withrandom)
+int xdag_crypt_init(int withrandom)
 {
     if(withrandom)
     {
         uint64_t buf[64];
         xOPENSSL_ia32_cpuid(xOPENSSL_ia32cap_P);
-        cheatcoin_generate_random_array(buf, sizeof(buf));
-        cheatcoin_debug("Seed  : [%s]", cheatcoin_log_array(buf, sizeof(buf)));
+        xdag_generate_random_array(buf, sizeof(buf));
+        xdag_debug("Seed  : [%s]", xdag_log_array(buf, sizeof(buf)));
         RAND_seed(buf, sizeof(buf));
     }
     group = EC_GROUP_new_by_curve_name(NID_secp256k1);
@@ -40,9 +40,9 @@ int cheatcoin_crypt_init(int withrandom)
  * the private key is saved to the 'privkey' array, the public key to the 'pubkey' array,
  * the parity of the public key is saved to the variable 'pubkey_bit'
  */
-void *cheatcoin_create_key(cheatcoin_hash_t privkey, cheatcoin_hash_t pubkey, uint8_t *pubkey_bit)
+void *xdag_create_key(xdag_hash_t privkey, xdag_hash_t pubkey, uint8_t *pubkey_bit)
 {
-    uint8_t buf[sizeof(cheatcoin_hash_t) + 1];
+    uint8_t buf[sizeof(xdag_hash_t) + 1];
     EC_KEY *eckey = 0;
     const BIGNUM *priv = 0;
     const EC_POINT *pub = 0;
@@ -70,7 +70,7 @@ void *cheatcoin_create_key(cheatcoin_hash_t privkey, cheatcoin_hash_t pubkey, ui
     {
         goto fail;
     }
-    if(BN_bn2bin(priv, (uint8_t *)privkey) != sizeof(cheatcoin_hash_t))
+    if(BN_bn2bin(priv, (uint8_t *)privkey) != sizeof(xdag_hash_t))
     {
         goto fail;
     }
@@ -85,11 +85,11 @@ void *cheatcoin_create_key(cheatcoin_hash_t privkey, cheatcoin_hash_t pubkey, ui
         goto fail;
     }
     BN_CTX_start(ctx);
-    if(EC_POINT_point2oct(group, pub, POINT_CONVERSION_COMPRESSED, buf, sizeof(cheatcoin_hash_t) + 1, ctx) != sizeof(cheatcoin_hash_t) + 1)
+    if(EC_POINT_point2oct(group, pub, POINT_CONVERSION_COMPRESSED, buf, sizeof(xdag_hash_t) + 1, ctx) != sizeof(xdag_hash_t) + 1)
     {
         goto fail;
     }
-    memcpy(pubkey, buf + 1, sizeof(cheatcoin_hash_t));
+    memcpy(pubkey, buf + 1, sizeof(xdag_hash_t));
     *pubkey_bit = *buf & 1;
     res = 0;
 fail:
@@ -105,9 +105,9 @@ fail:
 }
 
 /* returns the internal representation of the key and the public key by the known private key */
-void *cheatcoin_private_to_key(const cheatcoin_hash_t privkey, cheatcoin_hash_t pubkey, uint8_t *pubkey_bit)
+void *xdag_private_to_key(const xdag_hash_t privkey, xdag_hash_t pubkey, uint8_t *pubkey_bit)
 {
-    uint8_t buf[sizeof(cheatcoin_hash_t) + 1];
+    uint8_t buf[sizeof(xdag_hash_t) + 1];
     EC_KEY *eckey = 0;
     BIGNUM *priv = 0;
     EC_POINT *pub = 0;
@@ -132,7 +132,7 @@ void *cheatcoin_private_to_key(const cheatcoin_hash_t privkey, cheatcoin_hash_t 
         goto fail;
     }
     //	BN_init(priv);
-    BN_bin2bn((uint8_t *)privkey, sizeof(cheatcoin_hash_t), priv);
+    BN_bin2bn((uint8_t *)privkey, sizeof(xdag_hash_t), priv);
     EC_KEY_set_private_key(eckey, priv);
     ctx = BN_CTX_new();
     if(!ctx)
@@ -147,11 +147,11 @@ void *cheatcoin_private_to_key(const cheatcoin_hash_t privkey, cheatcoin_hash_t 
     }
     EC_POINT_mul(group, pub, priv, NULL, NULL, ctx);
     EC_KEY_set_public_key(eckey, pub);
-    if(EC_POINT_point2oct(group, pub, POINT_CONVERSION_COMPRESSED, buf, sizeof(cheatcoin_hash_t) + 1, ctx) != sizeof(cheatcoin_hash_t) + 1)
+    if(EC_POINT_point2oct(group, pub, POINT_CONVERSION_COMPRESSED, buf, sizeof(xdag_hash_t) + 1, ctx) != sizeof(xdag_hash_t) + 1)
     {
         goto fail;
     }
-    memcpy(pubkey, buf + 1, sizeof(cheatcoin_hash_t));
+    memcpy(pubkey, buf + 1, sizeof(xdag_hash_t));
     *pubkey_bit = *buf & 1;
     res = 0;
 fail:
@@ -175,7 +175,7 @@ fail:
 }
 
 /* Returns the internal representation of the key by the known public key */
-void *cheatcoin_public_to_key(const cheatcoin_hash_t pubkey, uint8_t pubkey_bit)
+void *xdag_public_to_key(const xdag_hash_t pubkey, uint8_t pubkey_bit)
 {
     EC_KEY *eckey = 0;
     BIGNUM *pub = 0;
@@ -201,7 +201,7 @@ void *cheatcoin_public_to_key(const cheatcoin_hash_t pubkey, uint8_t pubkey_bit)
         goto fail;
     }
     //	BN_init(pub);
-    BN_bin2bn((uint8_t*)pubkey, sizeof(cheatcoin_hash_t), pub);
+    BN_bin2bn((uint8_t*)pubkey, sizeof(xdag_hash_t), pub);
     p = EC_POINT_new(group);
     if(!p)
     {
@@ -240,72 +240,72 @@ fail:
 }
 
 /* removes the internal key representation */
-void cheatcoin_free_key(void *key)
+void xdag_free_key(void *key)
 {
     EC_KEY_free((EC_KEY *)key);
 }
 
 /* sign the hash and put the result in sign_r and sign_s */
-int cheatcoin_sign(const void *key, const cheatcoin_hash_t hash, cheatcoin_hash_t sign_r, cheatcoin_hash_t sign_s)
+int xdag_sign(const void *key, const xdag_hash_t hash, xdag_hash_t sign_r, xdag_hash_t sign_s)
 {
     uint8_t buf[72], *p;
     unsigned sig_len, s;
-    if(!ECDSA_sign(0, (const uint8_t *)hash, sizeof(cheatcoin_hash_t), buf, &sig_len, (EC_KEY *)key))
+    if(!ECDSA_sign(0, (const uint8_t *)hash, sizeof(xdag_hash_t), buf, &sig_len, (EC_KEY *)key))
     {
         return -1;
     }
     p = buf + 3, s = *p++;
-    if(s >= sizeof(cheatcoin_hash_t))
+    if(s >= sizeof(xdag_hash_t))
     {
-        memcpy(sign_r, p + s - sizeof(cheatcoin_hash_t), sizeof(cheatcoin_hash_t));
+        memcpy(sign_r, p + s - sizeof(xdag_hash_t), sizeof(xdag_hash_t));
     }
     else
     {
-        memset(sign_r, 0, sizeof(cheatcoin_hash_t));
-        memcpy((uint8_t *)sign_r + sizeof(cheatcoin_hash_t) - s, p, s);
+        memset(sign_r, 0, sizeof(xdag_hash_t));
+        memcpy((uint8_t *)sign_r + sizeof(xdag_hash_t) - s, p, s);
     }
     p += s + 1, s = *p++;
-    if(s >= sizeof(cheatcoin_hash_t))
+    if(s >= sizeof(xdag_hash_t))
     {
-        memcpy(sign_s, p + s - sizeof(cheatcoin_hash_t), sizeof(cheatcoin_hash_t));
+        memcpy(sign_s, p + s - sizeof(xdag_hash_t), sizeof(xdag_hash_t));
     }
     else
     {
-        memset(sign_s, 0, sizeof(cheatcoin_hash_t));
-        memcpy((uint8_t *)sign_s + sizeof(cheatcoin_hash_t) - s, p, s);
+        memset(sign_s, 0, sizeof(xdag_hash_t));
+        memcpy((uint8_t *)sign_s + sizeof(xdag_hash_t) - s, p, s);
     }
-    cheatcoin_debug("Sign  : hash=[%s] sign=[%s] r=[%s], s=[%s]", cheatcoin_log_hash(hash),
-        cheatcoin_log_array(buf, sig_len), cheatcoin_log_hash(sign_r), cheatcoin_log_hash(sign_s));
+    xdag_debug("Sign  : hash=[%s] sign=[%s] r=[%s], s=[%s]", xdag_log_hash(hash),
+        xdag_log_array(buf, sig_len), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
     return 0;
 }
 
-static uint8_t *add_number_to_sign(uint8_t *sign, const cheatcoin_hash_t num)
+static uint8_t *add_number_to_sign(uint8_t *sign, const xdag_hash_t num)
 {
     uint8_t *n = (uint8_t *)num;
     int i, len, leadzero;
-    for(i = 0; i < sizeof(cheatcoin_hash_t) && !n[i]; ++i);
-    leadzero = (i < sizeof(cheatcoin_hash_t) && n[i] & 0x80);
-    len = (sizeof(cheatcoin_hash_t) - i) + leadzero;
+    for(i = 0; i < sizeof(xdag_hash_t) && !n[i]; ++i);
+    leadzero = (i < sizeof(xdag_hash_t) && n[i] & 0x80);
+    len = (sizeof(xdag_hash_t) - i) + leadzero;
     *sign++ = 0x02;
     *sign++ = len;
     if(leadzero)
     {
         *sign++ = 0;
     }
-    while(i < sizeof(cheatcoin_hash_t)) *sign++ = n[i++];
+    while(i < sizeof(xdag_hash_t)) *sign++ = n[i++];
     return sign;
 }
 
 /*verify that the signature (sign_r, sign_s) corresponds to a hash 'hash', a version for its own key; returns 0 on success */
-int cheatcoin_verify_signature(const void *key, const cheatcoin_hash_t hash, const cheatcoin_hash_t sign_r, const cheatcoin_hash_t sign_s)
+int xdag_verify_signature(const void *key, const xdag_hash_t hash, const xdag_hash_t sign_r, const xdag_hash_t sign_s)
 {
     uint8_t buf[72], *ptr;
     int res;
     ptr = add_number_to_sign(buf + 2, sign_r);
     ptr = add_number_to_sign(ptr, sign_s);
     buf[0] = 0x30, buf[1] = ptr - buf - 2;
-    res = ECDSA_verify(0, (const uint8_t *)hash, sizeof(cheatcoin_hash_t), buf, ptr - buf, (EC_KEY *)key);
-    cheatcoin_debug("Verify: res=%2d key=%lx hash=[%s] sign=[%s] r=[%s], s=[%s]", res, (long)key, cheatcoin_log_hash(hash),
-        cheatcoin_log_array(buf, ptr - buf), cheatcoin_log_hash(sign_r), cheatcoin_log_hash(sign_s));
+    res = ECDSA_verify(0, (const uint8_t *)hash, sizeof(xdag_hash_t), buf, ptr - buf, (EC_KEY *)key);
+    xdag_debug("Verify: res=%2d key=%lx hash=[%s] sign=[%s] r=[%s], s=[%s]", res, (long)key, xdag_log_hash(hash),
+        xdag_log_array(buf, ptr - buf), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
     return res != 1;
 }
