@@ -9,7 +9,7 @@
 #include "storage.h"
 
 enum cheatcoin_transport_flags {
-	CHEATCOIN_DAEMON	 = 1,
+	CHEATCOIN_DAEMON = 1,
 };
 
 /* запустить транспортную подсистему; bindto - ip:port у которому привязать сокет, принимающий внешние соединения,
@@ -25,7 +25,7 @@ extern int cheatcoin_send_new_block(struct cheatcoin_block *b);
 /* запросить у другого хоста все блоки, попадающиев данный временной интервал; для каждого блока вызывается функция
  * callback(), в которую передаётся блок и данные; возвращает -1 в случае ошибки */
 extern int cheatcoin_request_blocks(cheatcoin_time_t start_time, cheatcoin_time_t end_time, void *data,
-		void *(*callback)(void *, void *));
+									void *(*callback)(void *, void *));
 
 /* запросить у другого хоста (по данному соединению) блок по его хешу */
 extern int cheatcoin_request_block(cheatcoin_hash_t hash, void *conn);
