@@ -1,0 +1,10 @@
+# MSVC build stuff
+Release/
+Debug/
+.vs/
+
+/win/xdag.VC.db
+/win/xdag.VC.VC.opendb
+/win/xdag/xdag.vcxproj.user
+/win/xdagwallet/xdagwallet.vcxproj.user
+/win/ipch
