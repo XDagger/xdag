@@ -40,7 +40,7 @@ Install and run (Linux):
 
 - Run terminal connected to the daemon in the same folder:
 
-        $ xdag -i
+        $ ./xdag -i
         xdag> help
         [see help]
 
