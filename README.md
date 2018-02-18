@@ -1,7 +1,7 @@
 The Dagger (XDAG) cryptocurrency
 ================================
 
-- Community site: https://xdag.io - Developer's site: http://xdag.me
+- Community site: https://xdag.org
 - Main net is launched January 5, 2018 at 22:45 GMT. 
 
 
@@ -26,16 +26,16 @@ Install and run (Linux):
 
 - Clone from the git repository:
 
-        $ git clone https://github.com/trueserve/xdag
+        $ git clone https://github.com/XDagger/xdag
 
 - Make:
 
         $ cd xdag/client
         $ make
 
-- Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool xdag.me:13654
+- Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool blabla.com:13654
 
-        $ ./xdag -m 2 -d xdag.me:13654
+        $ ./xdag -m 2 -d blabla.com:13654
         Enter random characters: [enter]
 
 - Run terminal connected to the daemon in the same folder:
