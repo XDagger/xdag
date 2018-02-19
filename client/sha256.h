@@ -20,14 +20,14 @@
 typedef unsigned char xBYTE;             // 8-bit byte
 typedef unsigned int  xWORD;             // 32-bit word, change to "long" for 16-bit machines
 
-#if 0
+#if 0	// original implementation
 typedef struct {
 	xWORD state[8];
 	unsigned long long bitlen;
 	xBYTE data[64];
 	xWORD datalen, md_len;
 } SHA256REF_CTX;
-#else
+#else	// openssl hack
 typedef SHA256_CTX SHA256REF_CTX;
 #define state h
 #define bitlen Nl
