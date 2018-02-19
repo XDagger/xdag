@@ -39,7 +39,10 @@ static int add_key(cheatcoin_hash_t priv) {
 		if (!f) goto fail;
 		memcpy(priv32, k->priv, sizeof(cheatcoin_hash_t));
 		cheatcoin_user_crypt_action(priv32, nkeys, sizeof(cheatcoin_hash_t)/sizeof(uint32_t), 1);
-		if (fwrite(priv32, sizeof(cheatcoin_hash_t), 1, f) != 1) { fclose(f); goto fail; }
+		if (fwrite(priv32, sizeof(cheatcoin_hash_t), 1, f) != 1) {
+			fclose(f);
+			goto fail;
+		}
 		fclose(f);
 	}
 	if (!k->key) goto fail;
@@ -47,9 +50,10 @@ static int add_key(cheatcoin_hash_t priv) {
 	def_key = k;
 	if (nkeys == maxnkeys) {
 		struct cheatcoin_public_key *newarr = (struct cheatcoin_public_key *)
-				realloc(keys_arr, ((maxnkeys | 0xff) + 1) * sizeof(struct cheatcoin_public_key));
+			realloc(keys_arr, ((maxnkeys | 0xff) + 1) * sizeof(struct cheatcoin_public_key));
 		if (!newarr) goto fail;
-		maxnkeys |= 0xff, maxnkeys++;
+		maxnkeys |= 0xff;
+		maxnkeys++;
 		keys_arr = newarr;
 	}
 	keys_arr[nkeys].key = k->key;

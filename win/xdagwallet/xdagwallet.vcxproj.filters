@@ -96,6 +96,9 @@
     <ClCompile Include="..\..\client\wallet.c">
       <Filter>client</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\client\commands.c">
+      <Filter>client</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="xdagwallet.h" />
@@ -249,6 +252,9 @@
     </ClInclude>
     <ClInclude Include="..\sys\time.h">
       <Filter>win\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\commands.h">
+      <Filter>client</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

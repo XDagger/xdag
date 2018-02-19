@@ -222,6 +222,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
   <ItemGroup>
     <ClInclude Include="..\..\client\address.h" />
     <ClInclude Include="..\..\client\block.h" />
+    <ClInclude Include="..\..\client\commands.h" />
     <ClInclude Include="..\..\client\crypt.h" />
     <ClInclude Include="..\..\client\hash.h" />
     <ClInclude Include="..\..\client\log.h" />
@@ -278,6 +279,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
   <ItemGroup>
     <ClCompile Include="..\..\client\address.c" />
     <ClCompile Include="..\..\client\block.c" />
+    <ClCompile Include="..\..\client\commands.c" />
     <ClCompile Include="..\..\client\crypt.c" />
     <ClCompile Include="..\..\client\hash.c" />
     <ClCompile Include="..\..\client\log.c" />

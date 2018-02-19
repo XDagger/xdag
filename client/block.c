@@ -20,6 +20,7 @@
 #include "pool.h"
 #include "memory.h"
 #include "address.h"
+#include "commands.h"
 
 #define MAIN_CHAIN_PERIOD	(64 << 10)
 #define MAX_WAITING_MAIN	1
