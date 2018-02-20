@@ -9,7 +9,7 @@
 #include "storage.h"
 
 enum xdag_transport_flags {
-	XDAG_DAEMON	 = 1,
+	XDAG_DAEMON = 1,
 };
 
 /* starts the transport system; bindto - ip:port for a socket for external connections
@@ -29,7 +29,7 @@ extern int xdag_send_new_block(struct xdag_block *b);
  * return -1 in case of error
  */
 extern int xdag_request_blocks(xdag_time_t start_time, xdag_time_t end_time, void *data,
-		void *(*callback)(void *, void *));
+									void *(*callback)(void *, void *));
 
 /* requests a block by hash from another host */
 extern int xdag_request_block(xdag_hash_t hash, void *conn);

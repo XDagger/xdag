@@ -7,7 +7,7 @@
 #include "block.h"
 #include "hash.h"
 
-#define XDAG_POOL_N_CONFIRMATIONS	16
+#define XDAG_POOL_N_CONFIRMATIONS  16
 
 struct xdag_pool_task {
 	struct xdag_field task[2], lastfield, minhash, nonce;

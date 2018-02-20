@@ -132,8 +132,7 @@ void sha256_final(SHA256REF_CTX *ctx, xBYTE hash[])
 		cdata[i++] = 0x80;
 		while (i < 56)
 			cdata[i++] = 0x00;
-	}
-	else {
+	} else {
 		cdata[i++] = 0x80;
 		while (i < 64)
 			cdata[i++] = 0x00;

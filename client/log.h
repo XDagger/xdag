@@ -25,7 +25,7 @@ extern int xdag_log_init(void);
 
 #define xdag_log_hash(hash) xdag_log_array(hash, sizeof(xdag_hash_t))
 
-/* sets the maximum error level for output to the log, returns the previous level (0 - do not log anything, 9 - all) */
+// sets the maximum error level for output to the log, returns the previous level (0 - do not log anything, 9 - all)
 extern int xdag_set_log_level(int level);
 
 #define xdag_fatal(...) xdag_log(XDAG_FATAL   , __VA_ARGS__)

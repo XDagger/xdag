@@ -1,4 +1,4 @@
-/* hash-function, T13.654-T13.775 $DVS:time$ */
+/* hash function, T13.654-T13.775 $DVS:time$ */
 
 #ifndef XDAG_HASH_H
 #define XDAG_HASH_H
