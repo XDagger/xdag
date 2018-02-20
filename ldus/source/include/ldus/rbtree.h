@@ -1,4 +1,4 @@
-/* работа с чёрно-красным деревом, T11.684-T13.285; $DVS:time$ */
+/* red-black tree, T11.684-T13.285; $DVS:time$ */
 
 #ifndef	LDUS_RBTREE_H_INCLUDED
 #define LDUS_RBTREE_H_INCLUDED
@@ -212,7 +212,5 @@ prefix int ldus_rbtree_remove(struct ldus_rbtree **proot, struct ldus_rbtree *no
 	if (_rbtree_color(*proot)) { *proot = 0; return 0; } \
 	*proot = 0; return 1; \
 }
-
-#define ldus_rbtree_define(lessthan) ldus_rbtree_define_prefix(lessthan, static, )
 
 #endif

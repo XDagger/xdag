@@ -44,9 +44,10 @@ void processLevelCommand(char *cmd, FILE *out);
 void processMiningCommand(char *cmd, FILE *out);
 void processNetCommand(char *cmd, FILE *out);
 void processPoolCommand(char *cmd, FILE *out);
-void processStatsCommand(char *cmd, FILE *out);
+void processStatsCommand(FILE *out);
 void processExitCommand();
 void processXferCommand(FILE *out, int ispwd, uint32_t* pwd);
+void processLastBlocksCommand(char *cmd, FILE *out);
 // Function declarations
 
 void startCommandProcessing(int transportFlags)
@@ -104,12 +105,14 @@ int xdag_command(char *cmd, FILE *out)
 	} else if (!strcmp(cmd, "state")) {
 		fprintf(out, "%s\n", get_state());
 	} else if (!strcmp(cmd, "stats")) {
-		processStatsCommand(cmd, out);
+		processStatsCommand(out);
 	} else if (!strcmp(cmd, "exit") || !strcmp(cmd, "terminate")) {
 		processExitCommand();
 		return -1;
 	} else if (!strcmp(cmd, "xfer")) {
 		processXferCommand(out, ispwd, pwd);
+	} else if (!strcmp(cmd, "lastblocks")) {
+		processLastBlocksCommand(cmd, out);
 	} else {
 		fprintf(out, "Illegal command.\n");
 	}
@@ -154,30 +157,37 @@ void processBalanceCommand(char *cmd, FILE *out)
 void processBlockCommand(char *cmd, FILE *out)
 {
 	char *next;
+	int c;
 	xdag_hash_t hash;
 	cmd = strtok_r(0, " \t\r\n", &next);
 	if (cmd) {
-		int res = 0, len = strlen(cmd), i, c;
+		int incorrect = 0;
+		int len = strlen(cmd);
+
 		if (len == 32) {
 			if (xdag_address2hash(cmd, hash)) {
 				fprintf(out, "Address is incorrect.\n");
-				res = -1;
+				incorrect = -1;
 			}
 		} else if (len == 48 || len == 64) {
-			for (i = 0; i < len; ++i) if (!isxdigit(cmd[i])) {
-				fprintf(out, "Hash is incorrect.\n");
-				res = -1;
-				break;
+			for (int i = 0; i < len; ++i) {
+				if (!isxdigit(cmd[i])) {
+					fprintf(out, "Hash is incorrect.\n");
+					incorrect = -1;
+					break;
+				}
 			}
-			if (!res) for (i = 0; i < 24; ++i) {
-				sscanf(cmd + len - 2 - 2 * i, "%2x", &c);
-				((uint8_t *)hash)[i] = c;
+			if (!incorrect) {
+				for (int i = 0; i < 24; ++i) {
+					sscanf(cmd + len - 2 - 2 * i, "%2x", &c);
+					((uint8_t *)hash)[i] = c;
+				}
 			}
 		} else {
 			fprintf(out, "Argument is incorrect.\n");
-			res = -1;
+			incorrect = -1;
 		}
-		if (!res) {
+		if (!incorrect) {
 			if (xdag_print_block_info(hash, out)) {
 				fprintf(out, "Block is not found.\n");
 			}
@@ -255,7 +265,7 @@ void processPoolCommand(char *cmd, FILE *out)
 	}
 }
 
-void processStatsCommand(char *cmd, FILE *out)
+void processStatsCommand(FILE *out)
 {
 	if (g_is_miner) {
 		fprintf(out, "your hashrate MHs: %.2lf\n", g_xdag_extstats.hashrate_s / (1024 * 1024));
@@ -309,6 +319,20 @@ void processXferCommand(FILE *out, int ispwd, uint32_t* pwd)
 		fprintf(out, "Password incorrect.\n");
 	} else {
 		xdag_do_xfer(out, amount, address);
+	}
+}
+
+void processLastBlocksCommand(char *cmd, FILE *out)
+{
+	char *next;
+	int blocksCount;
+	cmd = strtok_r(0, " \t\r\n", &next);
+	if (!cmd) {
+		fprintf(out, "Blocks count is not specified.\n");
+	} else if (sscanf(cmd, "%d", &blocksCount) != 1 || blocksCount <= 0) {
+		fprintf(out, "Illegal number.\n");
+	} else {
+		//TODO: something interesting should be here :)
 	}
 }
 

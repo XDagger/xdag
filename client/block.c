@@ -25,9 +25,9 @@
 #define MAIN_CHAIN_PERIOD       (64 << 10)
 #define MAX_WAITING_MAIN        1
 #define DEF_TIME_LIMIT          0 // (MAIN_CHAIN_PERIOD / 2)
-#define XDAG_TEST_ERA      0x16900000000ll
-#define XDAG_MAIN_ERA      0x16940000000ll
-#define XDAG_ERA           xdag_era
+#define XDAG_TEST_ERA           0x16900000000ll
+#define XDAG_MAIN_ERA           0x16940000000ll
+#define XDAG_ERA                xdag_era
 #define MAIN_START_AMOUNT       (1ll << 42)
 #define MAIN_BIG_PERIOD_LOG     21
 #define MAIN_TIME(t)            ((t) >> 16)
@@ -114,7 +114,7 @@ static struct block_internal *block_by_hash(const xdag_hashlow_t hash)
 static void log_block(const char *mess, xdag_hash_t h, xdag_time_t t, uint64_t pos)
 {
 	xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess,
-				   ((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t, pos);
+		((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t, pos);
 }
 
 static inline void accept_amount(struct block_internal *bi, xdag_amount_t sum)
@@ -363,7 +363,7 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int nkeys, s
 }
 
 #define set_pretop(b) if ((b) && MAIN_TIME((b)->time) < MAIN_TIME(timestamp) && \
-						  (!pretop_main_chain || xdag_diff_gt((b)->difficulty, pretop_main_chain->difficulty))) { \
+		(!pretop_main_chain || xdag_diff_gt((b)->difficulty, pretop_main_chain->difficulty))) { \
 		pretop_main_chain = (b); \
 		log_block("Pretop", (b)->hash, (b)->time, (b)->storage_pos); \
 }
