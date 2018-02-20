@@ -1,4 +1,4 @@
-/* адреса, T13.692-T13.692 $DVS:time$ */
+/* addresses, T13.692-T13.692 $DVS:time$ */
 
 #ifndef CHEATCOIN_ADDRESS_H
 #define CHEATCOIN_ADDRESS_H

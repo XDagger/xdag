@@ -9,7 +9,7 @@
 #include "storage.h"
 
 enum cheatcoin_transport_flags {
-	CHEATCOIN_DAEMON	 = 1,
+	CHEATCOIN_DAEMON = 1,
 };
 
 /* starts the transport system; bindto - ip:port for a socket for external connections
@@ -29,7 +29,7 @@ extern int cheatcoin_send_new_block(struct cheatcoin_block *b);
  * return -1 in case of error
  */
 extern int cheatcoin_request_blocks(cheatcoin_time_t start_time, cheatcoin_time_t end_time, void *data,
-		void *(*callback)(void *, void *));
+									void *(*callback)(void *, void *));
 
 /* requests a block by hash from another host */
 extern int cheatcoin_request_block(cheatcoin_hash_t hash, void *conn);

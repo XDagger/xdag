@@ -7,7 +7,7 @@
 #include "block.h"
 #include "hash.h"
 
-#define CHEATCOIN_POOL_N_CONFIRMATIONS	16
+#define CHEATCOIN_POOL_N_CONFIRMATIONS  16
 
 struct cheatcoin_pool_task {
 	struct cheatcoin_field task[2], lastfield, minhash, nonce;
