@@ -8,7 +8,7 @@
 #include "hash.h"
 #include "system.h"
 
-void cheatcoin_hash(void *data, size_t size, cheatcoin_hash_t hash)
+void xdag_hash(void *data, size_t size, xdag_hash_t hash)
 {
 	SHA256REF_CTX ctx;
 
@@ -16,30 +16,30 @@ void cheatcoin_hash(void *data, size_t size, cheatcoin_hash_t hash)
 	sha256_update(&ctx, data, size);
 	sha256_final(&ctx, (uint8_t*)hash);
 	sha256_init(&ctx);
-	sha256_update(&ctx, (uint8_t*)hash, sizeof(cheatcoin_hash_t));
+	sha256_update(&ctx, (uint8_t*)hash, sizeof(xdag_hash_t));
 	sha256_final(&ctx, (uint8_t*)hash);
 }
 
-unsigned cheatcoin_hash_ctx_size(void)
+unsigned xdag_hash_ctx_size(void)
 {
 	return sizeof(SHA256REF_CTX);
 }
 
-void cheatcoin_hash_init(void *ctxv)
+void xdag_hash_init(void *ctxv)
 {
 	SHA256REF_CTX *ctx = (SHA256REF_CTX*)ctxv;
 
 	sha256_init(ctx);
 }
 
-void cheatcoin_hash_update(void *ctxv, void *data, size_t size)
+void xdag_hash_update(void *ctxv, void *data, size_t size)
 {
 	SHA256REF_CTX *ctx = (SHA256REF_CTX*)ctxv;
 
 	sha256_update(ctx, data, size);
 }
 
-void cheatcoin_hash_final(void *ctxv, void *data, size_t size, cheatcoin_hash_t hash)
+void xdag_hash_final(void *ctxv, void *data, size_t size, xdag_hash_t hash)
 {
 	SHA256REF_CTX ctx;
 
@@ -47,16 +47,16 @@ void cheatcoin_hash_final(void *ctxv, void *data, size_t size, cheatcoin_hash_t 
 	sha256_update(&ctx, (uint8_t*)data, size);
 	sha256_final(&ctx, (uint8_t*)hash);
 	sha256_init(&ctx);
-	sha256_update(&ctx, (uint8_t*)hash, sizeof(cheatcoin_hash_t));
+	sha256_update(&ctx, (uint8_t*)hash, sizeof(xdag_hash_t));
 	sha256_final(&ctx, (uint8_t*)hash);
 }
 
 #ifndef SHA256_OPENSSL_MBLOCK
 
-uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, int step, cheatcoin_hash_t hash)
+uint64_t xdag_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, int step, xdag_hash_t hash)
 {
 	SHA256REF_CTX ctx;
-	cheatcoin_hash_t hash0;
+	xdag_hash_t hash0;
 	uint64_t min_nonce = 0;
 	int i;
 
@@ -65,11 +65,11 @@ uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, i
 		sha256_update(&ctx, (uint8_t*)nonce, sizeof(uint64_t));
 		sha256_final(&ctx, (uint8_t*)hash0);
 		sha256_init(&ctx);
-		sha256_update(&ctx, (uint8_t*)hash0, sizeof(cheatcoin_hash_t));
+		sha256_update(&ctx, (uint8_t*)hash0, sizeof(xdag_hash_t));
 		sha256_final(&ctx, (uint8_t*)hash0);
 
-		if (!i || cheatcoin_cmphash(hash0, hash) < 0) {
-			memcpy(hash, hash0, sizeof(cheatcoin_hash_t));
+		if (!i || xdag_cmphash(hash0, hash) < 0) {
+			memcpy(hash, hash0, sizeof(xdag_hash_t));
 			min_nonce = *nonce;
 		}
 
@@ -93,14 +93,14 @@ typedef struct {
 
 extern void xsha256_multi_block(SHA256_MB_CTX *, const HASH_DESC *, int);
 
-uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, int step, cheatcoin_hash_t hash)
+uint64_t xdag_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, int step, xdag_hash_t hash)
 {
 	SHA256_MB_CTX mctx1, mctx2, mctx;
 	SHA256REF_CTX *ctx1 = (SHA256REF_CTX*)ctxv, ctx2[1];
 	HASH_DESC desc1[N], desc2[N];
 	uint64_t arr1[N * 16], arr2[N * 8];
 	uint8_t *array1 = (uint8_t*)arr1, *array2 = (uint8_t*)arr2;
-	cheatcoin_hash_t hash0;
+	xdag_hash_t hash0;
 	uint64_t min_nonce = 0, nonce0;
 	uint32_t *hash032 = (uint32_t*)(uint64_t*)hash0;
 	int i, j;
@@ -174,8 +174,8 @@ uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, i
 			hash032[5] = htonl(mctx.F[i]);
 			hash032[6] = htonl(mctx.G[i]);
 			hash032[7] = htonl(mctx.H[i]);
-			if ((!i && !j) || cheatcoin_cmphash(hash0, hash) < 0) {
-				memcpy(hash, hash0, sizeof(cheatcoin_hash_t));
+			if ((!i && !j) || xdag_cmphash(hash0, hash) < 0) {
+				memcpy(hash, hash0, sizeof(xdag_hash_t));
 				min_nonce = nonce0;
 			}
 		}
@@ -187,18 +187,18 @@ uint64_t cheatcoin_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, i
 
 #endif
 
-void cheatcoin_hash_get_state(void *ctxv, cheatcoin_hash_t state)
+void xdag_hash_get_state(void *ctxv, xdag_hash_t state)
 {
 	SHA256REF_CTX *ctx = (SHA256REF_CTX*)ctxv;
 
-	memcpy(state, ctx->state, sizeof(cheatcoin_hash_t));
+	memcpy(state, ctx->state, sizeof(xdag_hash_t));
 }
 
-void cheatcoin_hash_set_state(void *ctxv, cheatcoin_hash_t state, size_t size)
+void xdag_hash_set_state(void *ctxv, xdag_hash_t state, size_t size)
 {
 	SHA256REF_CTX *ctx = (SHA256REF_CTX*)ctxv;
 
-	memcpy(ctx->state, state, sizeof(cheatcoin_hash_t));
+	memcpy(ctx->state, state, sizeof(xdag_hash_t));
 	ctx->datalen = 0;
 	ctx->bitlen = size << 3;
 	ctx->bitlenH = 0;

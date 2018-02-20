@@ -23,7 +23,7 @@ enum dnet_packet_types {
 	DNET_PKT_FORWARDED_UDP	= 0x88,
 	DNET_PKT_FILE_OP		= 0x89,
 	DNET_PKT_CRYPT			= 0x8A,
-	DNET_PKT_CHEATCOIN		= 0x8B,
+	DNET_PKT_XDAG		= 0x8B,
 	DNET_PKT_MAX			= 0x8B,
 };
 

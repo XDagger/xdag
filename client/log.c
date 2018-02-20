@@ -9,12 +9,12 @@
 #include "log.h"
 #include "main.h"
 
-#define CHEATCOIN_LOG_FILE "%s.log"
+#define XDAG_LOG_FILE "%s.log"
 
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
-static int log_level = CHEATCOIN_INFO;
+static int log_level = XDAG_INFO;
 
-int cheatcoin_log(int level, const char *format, ...)
+int xdag_log(int level, const char *format, ...)
 {
 	static const char lvl[] = "NONEFATACRITINTEERROWARNMESSINFODBUGTRAC";
 	char tbuf[64], buf[64];
@@ -25,8 +25,8 @@ int cheatcoin_log(int level, const char *format, ...)
 	int done;
 	time_t t;
 
-	if (level < 0 || level > CHEATCOIN_TRACE) {
-		level = CHEATCOIN_INTERNAL;
+	if (level < 0 || level > XDAG_TRACE) {
+		level = XDAG_INTERNAL;
 	}
 
 	if (level > log_level) {
@@ -38,7 +38,7 @@ int cheatcoin_log(int level, const char *format, ...)
 	localtime_r(&t, &tm);
 	strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
 	pthread_mutex_lock(&log_mutex);
-	sprintf(buf, CHEATCOIN_LOG_FILE, g_progname);
+	sprintf(buf, XDAG_LOG_FILE, g_progname);
 	
 	f = fopen(buf, "a");
 	if (!f) {
@@ -60,7 +60,7 @@ int cheatcoin_log(int level, const char *format, ...)
 	return done;
 }
 
-extern char *cheatcoin_log_array(const void *arr, unsigned size)
+extern char *xdag_log_array(const void *arr, unsigned size)
 {
 	static int k = 0;
 	static char buf[4][0x1000];
@@ -75,11 +75,11 @@ extern char *cheatcoin_log_array(const void *arr, unsigned size)
 }
 
 /* sets the maximum error level for output to the log, returns the previous level (0 - do not log anything, 9 - all) */
-extern int cheatcoin_set_log_level(int level)
+extern int xdag_set_log_level(int level)
 {
 	int level0 = log_level;
 
-	if (level >= 0 && level <= CHEATCOIN_TRACE) {
+	if (level >= 0 && level <= XDAG_TRACE) {
 		log_level = level;
 	}
 
@@ -104,31 +104,31 @@ static void sigCatch(int signum, siginfo_t *info, void *context)
 	int frames, i;
 	char **strs;
 
-	cheatcoin_fatal("Signal %d delivered", signum);
+	xdag_fatal("Signal %d delivered", signum);
 #ifdef __x86_64__
 	{
 		static char buf[0x100]; *buf = 0;
 		ucontext_t *uc = (ucontext_t*)context;
 		REG_(RIP); REG_(EFL); REG_(ERR); REG_(CR2);
-		cheatcoin_fatal("%s", buf); *buf = 0;
+		xdag_fatal("%s", buf); *buf = 0;
 		REG_(RAX); REG_(RBX); REG_(RCX); REG_(RDX); REG_(RSI); REG_(RDI); REG_(RBP); REG_(RSP);
-		cheatcoin_fatal("%s", buf); *buf = 0;
+		xdag_fatal("%s", buf); *buf = 0;
 		REG_(R8); REG_(R9); REG_(R10); REG_(R11); REG_(R12); REG_(R13); REG_(R14); REG_(R15);
-		cheatcoin_fatal("%s", buf);
+		xdag_fatal("%s", buf);
 	}
 #endif
 	frames = backtrace(callstack, 100);
 	strs = backtrace_symbols(callstack, frames);
 
 	for (i = 0; i < frames; ++i) {
-		cheatcoin_fatal("%s", strs[i]);
+		xdag_fatal("%s", strs[i]);
 	}
 	signal(signum, SIG_DFL);
 	kill(getpid(), signum);
 	exit(-1);
 }
 
-int cheatcoin_log_init(void)
+int xdag_log_init(void)
 {
 	int i;
 	struct sigaction sa;
@@ -147,7 +147,7 @@ int cheatcoin_log_init(void)
 
 #else
 
-int cheatcoin_log_init(void)
+int xdag_log_init(void)
 {
 	return 0;
 }

@@ -102,7 +102,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_WINDOWS;NDEBUG;DFSTOOLS;CHEATCOIN;CHEATCOINWALLET;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;SHA256_USE_OPENSSL_TXFM;SHA256_OPENSSL_MBLOCK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;NDEBUG;DFSTOOLS;XDAG_GUI_WALLET;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;SHA256_USE_OPENSSL_TXFM;SHA256_OPENSSL_MBLOCK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -133,7 +133,7 @@ copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;DFSTOOLS;CHEATCOIN;CHEATCOINWALLET;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;DFSTOOLS;XDAG_GUI_WALLET;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -162,7 +162,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_WINDOWS;_DEBUG;DFSTOOLS;CHEATCOIN;CHEATCOINWALLET;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;SHA256_USE_OPENSSL_TXFM;SHA256_OPENSSL_MBLOCK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;_DEBUG;DFSTOOLS;XDAG_GUI_WALLET;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;SHA256_USE_OPENSSL_TXFM;SHA256_OPENSSL_MBLOCK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -193,7 +193,7 @@ copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;DFSTOOLS;CHEATCOIN;CHEATCOINWALLET;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;DFSTOOLS;XDAG_GUI_WALLET;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

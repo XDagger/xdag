@@ -10,21 +10,21 @@
 #include "main.h"
 #include "transport.h"
 
-#define WALLET_FILE (g_cheatcoin_testnet ? "wallet-testnet.dat" : "wallet.dat")
+#define WALLET_FILE (g_xdag_testnet ? "wallet-testnet.dat" : "wallet.dat")
 
 struct key_internal {
-	cheatcoin_hash_t pub, priv;
+	xdag_hash_t pub, priv;
 	void *key;
 	struct key_internal *prev;
 	uint8_t pub_bit;
 };
 
 static struct key_internal *def_key = 0;
-static struct cheatcoin_public_key *keys_arr = 0;
+static struct xdag_public_key *keys_arr = 0;
 static pthread_mutex_t wallet_mutex = PTHREAD_MUTEX_INITIALIZER;
 int nkeys = 0, maxnkeys = 0;
 
-static int add_key(cheatcoin_hash_t priv)
+static int add_key(xdag_hash_t priv)
 {
 	struct key_internal *k = malloc(sizeof(struct key_internal));
 
@@ -33,22 +33,22 @@ static int add_key(cheatcoin_hash_t priv)
 	pthread_mutex_lock(&wallet_mutex);
 
 	if (priv) {
-		memcpy(k->priv, priv, sizeof(cheatcoin_hash_t));
-		k->key = cheatcoin_private_to_key(k->priv, k->pub, &k->pub_bit);
+		memcpy(k->priv, priv, sizeof(xdag_hash_t));
+		k->key = xdag_private_to_key(k->priv, k->pub, &k->pub_bit);
 	} else {
 		FILE *f;
-		uint32_t priv32[sizeof(cheatcoin_hash_t) / sizeof(uint32_t)];
+		uint32_t priv32[sizeof(xdag_hash_t) / sizeof(uint32_t)];
 
-		k->key = cheatcoin_create_key(k->priv, k->pub, &k->pub_bit);
+		k->key = xdag_create_key(k->priv, k->pub, &k->pub_bit);
 		
 		f = fopen(WALLET_FILE, "ab");
 		if (!f) goto fail;
 		
-		memcpy(priv32, k->priv, sizeof(cheatcoin_hash_t));
+		memcpy(priv32, k->priv, sizeof(xdag_hash_t));
 		
-		cheatcoin_user_crypt_action(priv32, nkeys, sizeof(cheatcoin_hash_t) / sizeof(uint32_t), 1);
+		xdag_user_crypt_action(priv32, nkeys, sizeof(xdag_hash_t) / sizeof(uint32_t), 1);
 		
-		if (fwrite(priv32, sizeof(cheatcoin_hash_t), 1, f) != 1) {
+		if (fwrite(priv32, sizeof(xdag_hash_t), 1, f) != 1) {
 			fclose(f); goto fail;
 		}
 
@@ -61,8 +61,8 @@ static int add_key(cheatcoin_hash_t priv)
 	def_key = k;
 	
 	if (nkeys == maxnkeys) {
-		struct cheatcoin_public_key *newarr = (struct cheatcoin_public_key *)
-											  realloc(keys_arr, ((maxnkeys | 0xff) + 1) * sizeof(struct cheatcoin_public_key));
+		struct xdag_public_key *newarr = (struct xdag_public_key *)
+											  realloc(keys_arr, ((maxnkeys | 0xff) + 1) * sizeof(struct xdag_public_key));
 		if (!newarr) goto fail;
 
 		maxnkeys |= 0xff, maxnkeys++;
@@ -72,8 +72,8 @@ static int add_key(cheatcoin_hash_t priv)
 	keys_arr[nkeys].key = k->key;
 	keys_arr[nkeys].pub = (uint64_t*)((uintptr_t)&k->pub | k->pub_bit);
 
-	cheatcoin_debug("Key %2d: priv=[%s] pub=[%02x:%s]", nkeys,
-					cheatcoin_log_hash(k->priv), 0x02 + k->pub_bit,  cheatcoin_log_hash(k->pub));
+	xdag_debug("Key %2d: priv=[%s] pub=[%02x:%s]", nkeys,
+					xdag_log_hash(k->priv), 0x02 + k->pub_bit,  xdag_log_hash(k->pub));
 	
 	nkeys++;
 	
@@ -88,7 +88,7 @@ fail:
 }
 
 /* generates a new key and sets is as defauld, returns its index */
-int cheatcoin_wallet_new_key(void)
+int xdag_wallet_new_key(void)
 {
 	int res = add_key(0);
 
@@ -99,10 +99,10 @@ int cheatcoin_wallet_new_key(void)
 }
 
 /* initializes a wallet */
-int cheatcoin_wallet_init(void)
+int xdag_wallet_init(void)
 {
-	uint32_t priv32[sizeof(cheatcoin_hash_t) / sizeof(uint32_t)];
-	cheatcoin_hash_t priv;
+	uint32_t priv32[sizeof(xdag_hash_t) / sizeof(uint32_t)];
+	xdag_hash_t priv;
 	FILE *f = fopen(WALLET_FILE, "rb");
 	int n;
 
@@ -112,16 +112,16 @@ int cheatcoin_wallet_init(void)
 		f = fopen(WALLET_FILE, "r");
 		if (!f) return -1;
 		
-		fread(priv32, sizeof(cheatcoin_hash_t), 1, f);
+		fread(priv32, sizeof(xdag_hash_t), 1, f);
 		
 		n = 1;
 	} else {
 		n = 0;
 	}
 
-	while (fread(priv32, sizeof(cheatcoin_hash_t), 1, f) == 1) {
-		cheatcoin_user_crypt_action(priv32, n++, sizeof(cheatcoin_hash_t) / sizeof(uint32_t), 2);
-		memcpy(priv, priv32, sizeof(cheatcoin_hash_t));
+	while (fread(priv32, sizeof(xdag_hash_t), 1, f) == 1) {
+		xdag_user_crypt_action(priv32, n++, sizeof(xdag_hash_t) / sizeof(uint32_t), 2);
+		memcpy(priv, priv32, sizeof(xdag_hash_t));
 		add_key(priv);
 	}
 
@@ -131,7 +131,7 @@ int cheatcoin_wallet_init(void)
 }
 
 /* returns a default key, the index of the default key is written to *n_key */
-struct cheatcoin_public_key *cheatcoin_wallet_default_key(int *n_key)
+struct xdag_public_key *xdag_wallet_default_key(int *n_key)
 {
 	if (nkeys) {
 		if (n_key) {
@@ -144,7 +144,7 @@ struct cheatcoin_public_key *cheatcoin_wallet_default_key(int *n_key)
 }
 
 /* returns an array of our keys */
-struct cheatcoin_public_key *cheatcoin_wallet_our_keys(int *pnkeys)
+struct xdag_public_key *xdag_wallet_our_keys(int *pnkeys)
 {
 	*pnkeys = nkeys;
 
@@ -152,7 +152,7 @@ struct cheatcoin_public_key *cheatcoin_wallet_our_keys(int *pnkeys)
 }
 
 /* completes work with wallet */
-void cheatcoin_wallet_finish(void)
+void xdag_wallet_finish(void)
 {
 	pthread_mutex_lock(&wallet_mutex);
 }

@@ -1,9 +1,9 @@
 /* version and history */
 
-#ifndef CHEATCOIN_VERSION_H
-#define CHEATCOIN_VERSION_H
+#ifndef XDAG_VERSION_H
+#define XDAG_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.895" /* $DVS:time$ */
+#define XDAG_VERSION "T13.654-T13.895" /* $DVS:time$ */
 
 /* история
 
