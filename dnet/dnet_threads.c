@@ -192,10 +192,8 @@ err:
 
 static void *dnet_thread_client_server(void *arg) {
     struct dnet_thread *t = (struct dnet_thread *)arg;
-#ifdef CHEATCOIN
-	extern int g_cheatcoin_sync_on;
-	while (!g_cheatcoin_sync_on) sleep(1);
-#endif
+	extern int g_xdag_sync_on;
+	while (!g_xdag_sync_on) sleep(1);
 	for(;;) {
 #ifndef QDNET
         if (dnet_limited_version) dnet_log_printf("dnet.%d: starting connection.\n", t->nthread);
@@ -226,9 +224,7 @@ static void *dnet_thread_accepted(void *arg) {
 	g_n_inbound--;
     t->conn.socket = -1;
     //pthread_mutex_lock(&t->conn.mutex);
-#ifdef CHEATCOIN
 	if (dnet_connection_close_notify) (*dnet_connection_close_notify)(&t->conn);
-#endif
 	t->to_remove = 1;
     //pthread_mutex_unlock(&t->conn.mutex);
 	return 0;

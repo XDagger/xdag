@@ -39,15 +39,15 @@
 char *g_coinname, *g_progname;
 #define coinname   g_coinname
 
-int g_cheatcoin_state = CHEATCOIN_STATE_INIT;
-int g_cheatcoin_testnet = 0;
+int g_xdag_state = XDAG_STATE_INIT;
+int g_xdag_testnet = 0;
 int g_is_miner = 0;
 static int g_is_pool = 0;
-int g_cheatcoin_run = 0;
-time_t g_cheatcoin_xfer_last = 0;
-struct cheatcoin_stats g_cheatcoin_stats;
-struct cheatcoin_ext_stats g_cheatcoin_extstats;
-int(*g_cheatcoin_show_state)(const char *state, const char *balance, const char *address) = 0;
+int g_xdag_run = 0;
+time_t g_xdag_xfer_last = 0;
+struct xdag_stats g_xdag_stats;
+struct xdag_ext_stats g_xdag_extstats;
+int(*g_xdag_show_state)(const char *state, const char *balance, const char *address) = 0;
 
 void printUsage(char* appName);
 
@@ -58,14 +58,14 @@ static int terminal(void)
     int s;
     struct sockaddr_un addr;
 
-    cmd = malloc(CHEATCOIN_COMMAND_MAX);
-    cmd2 = malloc(CHEATCOIN_COMMAND_MAX);
+    cmd = malloc(XDAG_COMMAND_MAX);
+    cmd2 = malloc(XDAG_COMMAND_MAX);
 
     while(1)
     {
         int ispwd = 0, c = 0;
         printf("%s> ", g_progname); fflush(stdout);
-        fgets(cmd, CHEATCOIN_COMMAND_MAX, stdin);
+        fgets(cmd, XDAG_COMMAND_MAX, stdin);
         strcpy(cmd2, cmd);
         ptr = strtok_r(cmd2, " \t\r\n", &lasts);
         if(!ptr) continue;
@@ -73,7 +73,7 @@ static int terminal(void)
         if(!strcmp(ptr, "xfer"))
         {
             uint32_t pwd[4];
-            cheatcoin_user_crypt_action(pwd, 0, 4, 4);
+            xdag_user_crypt_action(pwd, 0, 4, 4);
             sprintf(cmd2, "pwd=%08x%08x%08x%08x ", pwd[0], pwd[1], pwd[2], pwd[3]);
             ispwd = 1;
         }
@@ -101,20 +101,20 @@ static void *terminal_thread(void *arg)
 {
     struct sockaddr_un addr;
     int s;
-    if((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) { cheatcoin_err("Can't create unix domain socket errno:%d", errno); return 0; }
+    if((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) { xdag_err("Can't create unix domain socket errno:%d", errno); return 0; }
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, UNIX_SOCK);
     unlink(UNIX_SOCK);
-    if(bind(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) { cheatcoin_err("Can't bind unix domain socket errno:%d", errno); return 0; }
-    if(listen(s, 100) == -1) { cheatcoin_err("Unix domain socket listen errno:%d", errno); return 0; }
+    if(bind(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) { xdag_err("Can't bind unix domain socket errno:%d", errno); return 0; }
+    if(listen(s, 100) == -1) { xdag_err("Unix domain socket listen errno:%d", errno); return 0; }
     while(1)
     {
-        char cmd[CHEATCOIN_COMMAND_MAX];
+        char cmd[XDAG_COMMAND_MAX];
         int cl, p, res;
         FILE *fd;
         struct pollfd fds;
-        if((cl = accept(s, NULL, NULL)) == -1) { cheatcoin_err("Unix domain socket accept errno:%d", errno); break; }
+        if((cl = accept(s, NULL, NULL)) == -1) { xdag_err("Unix domain socket accept errno:%d", errno); break; }
         p = 0;
         fds.fd = cl; fds.events = POLLIN;
         do
@@ -126,8 +126,8 @@ static void *terminal_thread(void *arg)
         if(res < 0 || cmd[p - 1] != '\0') close(cl);
         else
         {
-            fd = fdopen(cl, "w"); if(!fd) { cheatcoin_err("Can't fdopen unix domain socket errno:%d", errno); break; }
-            res = cheatcoin_command(cmd, fd);
+            fd = fdopen(cl, "w"); if(!fd) { xdag_err("Can't fdopen unix domain socket errno:%d", errno); break; }
+            res = xdag_command(cmd, fd);
             fclose(fd);
             if(res < 0) exit(0);
         }
@@ -136,8 +136,8 @@ static void *terminal_thread(void *arg)
 }
 #endif /* WIN */
 
-#ifdef CHEATCOINWALLET
-int cheatcoin_main(int argc, char **argv)
+#ifdef XDAG_GUI_WALLET
+int xdag_main(int argc, char **argv)
 {
 #else
 int main(int argc, char **argv)
@@ -160,11 +160,11 @@ int main(int argc, char **argv)
     for(ptr = g_progname; *ptr; ptr++) *ptr = tolower((unsigned char)*ptr);
     coinname = strdup(g_progname);
     for(ptr = coinname; *ptr; ptr++) *ptr = toupper((unsigned char)*ptr);
-#ifndef CHEATCOINWALLET
-    printf("%s client/server, version %s.\n", g_progname, CHEATCOIN_VERSION);
+#ifndef XDAG_GUI_WALLET
+    printf("%s client/server, version %s.\n", g_progname, XDAG_VERSION);
 #endif
-    g_cheatcoin_run = 1;
-    cheatcoin_show_state(0);
+    g_xdag_run = 1;
+    xdag_show_state(0);
 	
 	if (argc <= 1) {
 		printUsage(argv[0]);
@@ -184,7 +184,7 @@ int main(int argc, char **argv)
                 break;
             case 'd':
 #if !defined(_WIN32) && !defined(_WIN64)
-                transport_flags |= CHEATCOIN_DAEMON;
+                transport_flags |= XDAG_DAEMON;
 #endif
                 break;
             case 'i':
@@ -210,19 +210,19 @@ int main(int argc, char **argv)
                 }
                 break;
             case 'r':
-                g_cheatcoin_run = 0;
+                g_xdag_run = 0;
                 break;
             case 's':
                 if(++i < argc)
                     bindto = argv[i];
                 break;
             case 't':
-                g_cheatcoin_testnet = 1;
+                g_xdag_testnet = 1;
                 break;
             case 'v':
                 if(++i < argc && sscanf(argv[i], "%d", &level) == 1)
                 {
-                    cheatcoin_set_log_level(level);
+                    xdag_set_log_level(level);
                 }
                 else
                 {
@@ -254,35 +254,35 @@ int main(int argc, char **argv)
             sprintf(str, "0.0.0.0%s", p); bindto = strdup(str);
         }
     }
-    memset(&g_cheatcoin_stats, 0, sizeof(g_cheatcoin_stats));
-    memset(&g_cheatcoin_extstats, 0, sizeof(g_cheatcoin_extstats));
+    memset(&g_xdag_stats, 0, sizeof(g_xdag_stats));
+    memset(&g_xdag_extstats, 0, sizeof(g_xdag_extstats));
 
-    cheatcoin_mess("Starting %s, version %s", g_progname, CHEATCOIN_VERSION);
-    cheatcoin_mess("Starting synchonization engine...");
-    if(cheatcoin_sync_init()) return -1;
-    cheatcoin_mess("Starting dnet transport...");
+    xdag_mess("Starting %s, version %s", g_progname, XDAG_VERSION);
+    xdag_mess("Starting synchonization engine...");
+    if(xdag_sync_init()) return -1;
+    xdag_mess("Starting dnet transport...");
     printf("Transport module: ");
-    if(cheatcoin_transport_start(transport_flags, bindto, n_addrports, addrports)) return -1;
-    cheatcoin_mess("Initializing log system...");
-    if(cheatcoin_log_init()) return -1;
+    if(xdag_transport_start(transport_flags, bindto, n_addrports, addrports)) return -1;
+    xdag_mess("Initializing log system...");
+    if(xdag_log_init()) return -1;
     if(!is_miner)
     {
-        cheatcoin_mess("Reading hosts database...");
-        if(cheatcoin_netdb_init(pubaddr, n_addrports, addrports)) return -1;
+        xdag_mess("Reading hosts database...");
+        if(xdag_netdb_init(pubaddr, n_addrports, addrports)) return -1;
     }
-    cheatcoin_mess("Initializing cryptography...");
-    if(cheatcoin_crypt_init(1)) return -1;
-    cheatcoin_mess("Reading wallet...");
-    if(cheatcoin_wallet_init()) return -1;
-    cheatcoin_mess("Initializing addresses...");
-    if(cheatcoin_address_init()) return -1;
-    cheatcoin_mess("Starting blocks engine...");
-    if(cheatcoin_blocks_start((is_miner ? ~n_mining_threads : n_mining_threads), !!miner_address)) return -1;
-    cheatcoin_mess("Starting pool engine...");
-    if(cheatcoin_pool_start(is_pool, pool_arg, miner_address)) return -1;
-#ifndef CHEATCOINWALLET
+    xdag_mess("Initializing cryptography...");
+    if(xdag_crypt_init(1)) return -1;
+    xdag_mess("Reading wallet...");
+    if(xdag_wallet_init()) return -1;
+    xdag_mess("Initializing addresses...");
+    if(xdag_address_init()) return -1;
+    xdag_mess("Starting blocks engine...");
+    if(xdag_blocks_start((is_miner ? ~n_mining_threads : n_mining_threads), !!miner_address)) return -1;
+    xdag_mess("Starting pool engine...");
+    if(xdag_pool_start(is_pool, pool_arg, miner_address)) return -1;
+#ifndef XDAG_GUI_WALLET
 #if !defined(_WIN32) && !defined(_WIN64)
-    cheatcoin_mess("Starting terminal server...");
+    xdag_mess("Starting terminal server...");
     if(pthread_create(&th, 0, &terminal_thread, 0)) return -1;
 #endif
 	startCommandProcessing(transport_flags);
@@ -290,9 +290,9 @@ int main(int argc, char **argv)
     return 0;
 }
 
-int cheatcoin_set_password_callback(int(*callback)(const char *prompt, char *buf, unsigned size))
+int xdag_set_password_callback(int(*callback)(const char *prompt, char *buf, unsigned size))
 {
-    return cheatcoin_user_crypt_action((uint32_t *)(void *)callback, 0, 0, 6);
+    return xdag_user_crypt_action((uint32_t *)(void *)callback, 0, 0, 6);
 }
 
 void printUsage(char* appName)

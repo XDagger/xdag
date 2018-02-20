@@ -9,11 +9,11 @@ extern "C" {
 #endif
 
 /* time of last transfer */
-extern time_t g_cheatcoin_xfer_last;
+extern time_t g_xdag_xfer_last;
 
-extern void cheatcoin_log_xfer(cheatcoin_hash_t from, cheatcoin_hash_t to, cheatcoin_amount_t amount);
-extern int cheatcoin_do_xfer(void *out, const char *amount, const char *address);
-int cheatcoin_show_state(cheatcoin_hash_t hash);
+extern void xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount);
+extern int xdag_do_xfer(void *out, const char *amount, const char *address);
+int xdag_show_state(xdag_hash_t hash);
 
 #ifdef __cplusplus
 };
