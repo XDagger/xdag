@@ -3,23 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <pthread.h>
-#include <signal.h>
-#include <math.h>
 #include <ctype.h>
-#include <sys/stat.h>
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <errno.h>
-#elif defined(_WIN64)
-#define poll WSAPoll
-#else
-#define poll(a,b,c) ((a)->revents = (a)->events, (b))
 #endif
 #include "system.h"
 #include "address.h"
@@ -33,7 +24,6 @@
 #include "main.h"
 #include "sync.h"
 #include "pool.h"
-#include "memory.h"
 #include "commands.h"
 
 char *g_coinname, *g_progname;
@@ -145,8 +135,7 @@ int main(int argc, char **argv)
 #endif
     const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
     char *ptr;
-    int transport_flags = 0, n_addrports = 0, n_mining_threads = 0, is_pool = 0, is_miner = 0, i, level;
-    pthread_t th;
+    int transport_flags = 0, n_addrports = 0, n_mining_threads = 0, is_pool = 0, is_miner = 0, level;
 #if !defined(_WIN32) && !defined(_WIN64)
     signal(SIGHUP, SIG_IGN);
     signal(SIGPIPE, SIG_IGN);
@@ -171,7 +160,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 	
-    for(i = 1; i < argc; ++i)
+    for(int i = 1; i < argc; ++i)
     {
         if(argv[i][0] == '-' && argv[i][1] && !argv[i][2]) switch(argv[i][1])
         {
@@ -283,6 +272,7 @@ int main(int argc, char **argv)
 #ifndef XDAG_GUI_WALLET
 #if !defined(_WIN32) && !defined(_WIN64)
     xdag_mess("Starting terminal server...");
+	pthread_t th;
     if(pthread_create(&th, 0, &terminal_thread, 0)) return -1;
 #endif
 	startCommandProcessing(transport_flags);

@@ -5,7 +5,10 @@
 #include "log.h"
 #include "pool.h"
 #include "transport.h"
+#include "netdb.h"
 #include <math.h>
+#include "memory.h"
+#include "crypt.h"
 
 #define XDAG_COMMAND_MAX	0x1000
 #define UNIX_SOCK				"unix_sock.dat"
@@ -36,18 +39,19 @@ int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_
 long double amount2xdags(xdag_amount_t amount);
 long double hashrate(xdag_diff_t *diff);
 const char *get_state();
-void processAccountCommand(char *cmd, FILE *out);
-void processBalanceCommand(char *cmd, FILE *out);
-void processBlockCommand(char *cmd, FILE *out);
-void processKeyGenCommand(char *cmd, FILE *out);
-void processLevelCommand(char *cmd, FILE *out);
-void processMiningCommand(char *cmd, FILE *out);
-void processNetCommand(char *cmd, FILE *out);
-void processPoolCommand(char *cmd, FILE *out);
+int xdag_command(char *cmd, FILE *out);
+void processAccountCommand(char *nextParam, FILE *out);
+void processBalanceCommand(char *nextParam, FILE *out);
+void processBlockCommand(char *nextParam, FILE *out);
+void processKeyGenCommand(FILE *out);
+void processLevelCommand(char *nextParam, FILE *out);
+void processMiningCommand(char *nextParam, FILE *out);
+void processNetCommand(char *nextParam, FILE *out);
+void processPoolCommand(char *nextParam, FILE *out);
 void processStatsCommand(FILE *out);
 void processExitCommand();
-void processXferCommand(FILE *out, int ispwd, uint32_t* pwd);
-void processLastBlocksCommand(char *cmd, FILE *out);
+void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd);
+void processLastBlocksCommand(char *nextParam, FILE *out);
 // Function declarations
 
 void startCommandProcessing(int transportFlags)
@@ -71,35 +75,35 @@ void startCommandProcessing(int transportFlags)
 int xdag_command(char *cmd, FILE *out)
 {
 	uint32_t pwd[4];
-	char *next;
+	char *nextParam;
 	int ispwd = 0;
 
-	cmd = strtok_r(cmd, " \t\r\n", &next);
+	cmd = strtok_r(cmd, " \t\r\n", &nextParam);
 	if (!cmd) return 0;
 	if (sscanf(cmd, "pwd=%8x%8x%8x%8x", pwd, pwd + 1, pwd + 2, pwd + 3) == 4) {
 		ispwd = 1;
-		cmd = strtok_r(0, " \t\r\n", &next);
+		cmd = strtok_r(0, " \t\r\n", &nextParam);
 	}
 	if (!strcmp(cmd, "account")) {
-		processAccountCommand(cmd, out);
+		processAccountCommand(nextParam, out);
 	} else if (!strcmp(cmd, "balance")) {
-		processBalanceCommand(cmd, out);
+		processBalanceCommand(nextParam, out);
 	} else if (!strcmp(cmd, "block")) {
-		processBlockCommand(cmd, out);
+		processBlockCommand(nextParam, out);
 	} else if (!strcmp(cmd, "help")) {
 		printHelp(out);
 	} else if (!strcmp(cmd, "keygen")) {
-		processKeyGenCommand(cmd, out);
+		processKeyGenCommand(out);
 	} else if (!strcmp(cmd, "level")) {
-		processLevelCommand(cmd, out);
+		processLevelCommand(nextParam, out);
 	} else if (!strcmp(cmd, "miners")) {
 		xdag_print_miners(out);
 	} else if (!strcmp(cmd, "mining")) {
-		processMiningCommand(cmd, out);
+		processMiningCommand(nextParam, out);
 	} else if (!strcmp(cmd, "net")) {
-		processNetCommand(cmd, out);
+		processNetCommand(nextParam, out);
 	} else if (!strcmp(cmd, "pool")) {
-		processPoolCommand(cmd, out);
+		processPoolCommand(nextParam, out);
 	} else if (!strcmp(cmd, "run")) {
 		g_xdag_run = 1;
 	} else if (!strcmp(cmd, "state")) {
@@ -110,22 +114,21 @@ int xdag_command(char *cmd, FILE *out)
 		processExitCommand();
 		return -1;
 	} else if (!strcmp(cmd, "xfer")) {
-		processXferCommand(out, ispwd, pwd);
+		processXferCommand(nextParam, out, ispwd, pwd);
 	} else if (!strcmp(cmd, "lastblocks")) {
-		processLastBlocksCommand(cmd, out);
+		processLastBlocksCommand(nextParam, out);
 	} else {
 		fprintf(out, "Illegal command.\n");
 	}
 	return 0;
 }
 
-void processAccountCommand(char *cmd, FILE *out)
+void processAccountCommand(char *nextParam, FILE *out)
 {
-	char *next;
 	struct account_callback_data d;
 	d.out = out;
 	d.count = (g_is_miner ? 1 : 20);
-	cmd = strtok_r(0, " \t\r\n", &next);
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
 	if (cmd) {
 		sscanf(cmd, "%d", &d.count);
 	}
@@ -135,15 +138,14 @@ void processAccountCommand(char *cmd, FILE *out)
 	xdag_traverse_our_blocks(&d, &account_callback);
 }
 
-void processBalanceCommand(char *cmd, FILE *out)
+void processBalanceCommand(char *nextParam, FILE *out)
 {
-	char *next;
 	if (g_xdag_state < XDAG_STATE_XFER) {
 		fprintf(out, "Not ready to show a balance. Type 'state' command to see the reason.\n");
 	} else {
 		xdag_hash_t hash;
 		xdag_amount_t balance;
-		cmd = strtok_r(0, " \t\r\n", &next);
+		char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
 		if (cmd) {
 			xdag_address2hash(cmd, hash);
 			balance = xdag_get_balance(hash);
@@ -154,15 +156,14 @@ void processBalanceCommand(char *cmd, FILE *out)
 	}
 }
 
-void processBlockCommand(char *cmd, FILE *out)
+void processBlockCommand(char *nextParam, FILE *out)
 {
-	char *next;
 	int c;
 	xdag_hash_t hash;
-	cmd = strtok_r(0, " \t\r\n", &next);
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
 	if (cmd) {
 		int incorrect = 0;
-		int len = strlen(cmd);
+		size_t len = strlen(cmd);
 
 		if (len == 32) {
 			if (xdag_address2hash(cmd, hash)) {
@@ -197,9 +198,9 @@ void processBlockCommand(char *cmd, FILE *out)
 	}
 }
 
-void processKeyGenCommand(char *cmd, FILE *out)
+void processKeyGenCommand(FILE *out)
 {
-	int res = xdag_wallet_new_key();
+	const int res = xdag_wallet_new_key();
 	if (res < 0) {
 		fprintf(out, "Can't generate new key pair.\n");
 	} else {
@@ -207,11 +208,10 @@ void processKeyGenCommand(char *cmd, FILE *out)
 	}
 }
 
-void processLevelCommand(char *cmd, FILE *out)
+void processLevelCommand(char *nextParam, FILE *out)
 {
-	char *next;
 	unsigned level;
-	cmd = strtok_r(0, " \t\r\n", &next);
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
 	if (!cmd) {
 		fprintf(out, "%d\n", xdag_set_log_level(-1));
 	} else if (sscanf(cmd, "%u", &level) != 1 || level > XDAG_TRACE) {
@@ -221,11 +221,10 @@ void processLevelCommand(char *cmd, FILE *out)
 	}
 }
 
-void processMiningCommand(char *cmd, FILE *out)
+void processMiningCommand(char *nextParam, FILE *out)
 {
-	char *next;
 	int nthreads;
-	cmd = strtok_r(0, " \t\r\n", &next);
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
 	if (!cmd) {
 		fprintf(out, "%d mining threads running\n", g_xdag_mining_threads);
 	} else if (sscanf(cmd, "%d", &nthreads) != 1 || nthreads < 0) {
@@ -236,22 +235,21 @@ void processMiningCommand(char *cmd, FILE *out)
 	}
 }
 
-void processNetCommand(char *cmd, FILE *out)
+void processNetCommand(char *nextParam, FILE *out)
 {
-	char *next;
+	char *cmd;
 	char netcmd[4096];
 	*netcmd = 0;
-	while ((cmd = strtok_r(0, " \t\r\n", &next))) {
+	while ((cmd = strtok_r(nextParam, " \t\r\n", &nextParam))) {
 		strcat(netcmd, cmd);
 		strcat(netcmd, " ");
 	}
 	xdag_net_command(netcmd, out);
 }
 
-void processPoolCommand(char *cmd, FILE *out)
+void processPoolCommand(char *nextParam, FILE *out)
 {
-	char *next;
-	cmd = strtok_r(0, " \t\r\n", &next);
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
 	if (!cmd) {
 		char buf[0x100];
 		cmd = xdag_pool_get_config(buf);
@@ -300,19 +298,17 @@ void processExitCommand()
 	xdag_mem_finish();
 }
 
-void processXferCommand(FILE *out, int ispwd, uint32_t* pwd)
+void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd)
 {
-	char *next;
-	char *amount, *address;
-	amount = strtok_r(0, " \t\r\n", &next);
+	char *amount = strtok_r(nextParam, " \t\r\n", &nextParam);
 	if (!amount) {
 		fprintf(out, "Xfer: amount not given.\n");
-		return 1;
+		return;
 	}
-	address = strtok_r(0, " \t\r\n", &next);
+	char *address = strtok_r(0, " \t\r\n", &nextParam);
 	if (!address) {
 		fprintf(out, "Xfer: destination address not given.\n");
-		return 1;
+		return;
 	}
 	if (out == stdout ? xdag_user_crypt_action(0, 0, 0, 3) : (ispwd ? xdag_user_crypt_action(pwd, 0, 4, 5) : 1)) {
 		sleep(3);
@@ -322,11 +318,10 @@ void processXferCommand(FILE *out, int ispwd, uint32_t* pwd)
 	}
 }
 
-void processLastBlocksCommand(char *cmd, FILE *out)
+void processLastBlocksCommand(char *nextParam, FILE *out)
 {
-	char *next;
 	int blocksCount;
-	cmd = strtok_r(0, " \t\r\n", &next);
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
 	if (!cmd) {
 		fprintf(out, "Blocks count is not specified.\n");
 	} else if (sscanf(cmd, "%d", &blocksCount) != 1 || blocksCount <= 0) {
@@ -350,8 +345,7 @@ long double diff2log(xdag_diff_t diff)
 long double hashrate(xdag_diff_t *diff)
 {
 	long double sum = 0;
-	int i;
-	for (i = 0; i < HASHRATE_LAST_MAX_TIME; ++i) {
+	for (int i = 0; i < HASHRATE_LAST_MAX_TIME; ++i) {
 		sum += diff2log(diff[i]);
 	}
 	sum /= HASHRATE_LAST_MAX_TIME;
@@ -370,13 +364,12 @@ const char *get_state()
 
 xdag_amount_t xdags2amount(const char *str)
 {
-	long double sum, flr;
-	xdag_amount_t res;
+	long double sum;
 	if (sscanf(str, "%Lf", &sum) != 1 || sum <= 0) {
 		return 0;
 	}
-	flr = floorl(sum);
-	res = (xdag_amount_t)flr << 32;
+	long double flr = floorl(sum);
+	xdag_amount_t res = (xdag_amount_t)flr << 32;
 	sum -= flr;
 	sum = ldexpl(sum, 32);
 	flr = ceill(sum);
@@ -401,12 +394,11 @@ int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_ti
 
 int make_block(struct xfer_callback_data *d)
 {
-	int res;
 	if (d->nfields != XFER_MAX_IN) {
 		memcpy(d->fields + d->nfields, d->fields + XFER_MAX_IN, sizeof(xdag_hashlow_t));
 	}
 	d->fields[d->nfields].amount = d->todo;
-	res = xdag_create_block(d->fields, d->nfields, 1, 0, 0);
+	int res = xdag_create_block(d->fields, d->nfields, 1, 0, 0);
 	if (res) {
 		xdag_err("FAILED: to %s xfer %.9Lf %s, error %d",
 			xdag_hash2address(d->fields[d->nfields].hash), amount2xdags(d->todo), g_coinname, res);
