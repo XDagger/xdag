@@ -6,6 +6,9 @@
 #include <pthread.h>
 #include <ctype.h>
 #if !defined(_WIN32) && !defined(_WIN64)
+#include <fcntl.h>
+#include <unistd.h>
+#include <signal.h>
 #include <poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -25,6 +28,8 @@
 #include "sync.h"
 #include "pool.h"
 #include "commands.h"
+
+#define UNIX_SOCK  "unix_sock.dat"
 
 char *g_coinname, *g_progname;
 #define coinname   g_coinname

@@ -507,7 +507,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 					struct xdag_block buf;
 					struct xdag_block *bref = xdag_storage_load(blockRef->hash, blockRef->time, blockRef->storage_pos, &buf);
 					if (!bref) {
-						err = 8; goto end;
+						err = 8;
+						goto end;
 					}
 
 					for (j = k = 0; j < XDAG_BLOCK_FIELDS; ++j) {

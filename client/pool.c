@@ -35,6 +35,7 @@
 #include "transport.h"
 #include "wallet.h"
 #include "log.h"
+#include "commands.h"
 
 #define N_MINERS        4096
 #define START_N_MINERS  256
@@ -756,15 +757,13 @@ static int send_to_pool(struct xdag_field *fld, int nfld)
 	memcpy(f, fld, todo);
 
 	if (nfld == XDAG_BLOCK_FIELDS) {
-		uint32_t crc;
-
 		f[0].transport_header = 0;
 		
 		xdag_hash(f, sizeof(struct xdag_block), h);
 		
 		f[0].transport_header = HEADER_WORD;
 		
-		crc = crc_of_array((uint8_t*)f, sizeof(struct xdag_block));
+		uint32_t crc = crc_of_array((uint8_t*)f, sizeof(struct xdag_block));
 		
 		f[0].transport_header |= (uint64_t)crc << 32;
 	}
@@ -1053,11 +1052,10 @@ static int crypt_start(void)
 
 static void *mining_thread(void *arg)
 {
-	struct xdag_pool_task *task;
 	xdag_hash_t hash;
 	struct xdag_field last;
-	int nthread = (int)(uintptr_t)arg;
-	uint64_t ntask, oldntask = 0;
+	const int nthread = (int)(uintptr_t)arg;
+	uint64_t oldntask = 0;
 	uint64_t nonce;
 
 	while (!g_xdag_sync_on && !g_stop_mining) {
@@ -1065,8 +1063,8 @@ static void *mining_thread(void *arg)
 	}
 
 	while (!g_stop_mining) {
-		ntask = g_xdag_pool_ntask;
-		task = &g_xdag_pool_task[ntask & 1];
+		const uint64_t ntask = g_xdag_pool_ntask;
+		struct xdag_pool_task *task = &g_xdag_pool_task[ntask & 1];
 
 		if (!ntask) {
 			sleep(1); continue;
@@ -1153,12 +1151,12 @@ miner_addr - address of the miner, if specified */
 int xdag_pool_start(int pool_on, const char *pool_arg, const char *miner_address)
 {
 	pthread_t th;
-	int i, res;
+	int res;
 
 	g_xdag_pool = pool_on;
 	g_miner_address = miner_address;
 
-	for (i = 0; i < 2; ++i) {
+	for (int i = 0; i < 2; ++i) {
 		g_xdag_pool_task[i].ctx0 = malloc(xdag_hash_ctx_size());
 		g_xdag_pool_task[i].ctx = malloc(xdag_hash_ctx_size());
 		
@@ -1207,9 +1205,8 @@ static int print_miner(FILE *out, int n, struct miner *m)
 	int count = m->prev_diff_count;
 	char buf[32], buf2[64];
 	uint32_t i = m->ip;
-	int j;
 
-	for (j = 0; j < N_CONFIRMATIONS; ++j) {
+	for (int j = 0; j < N_CONFIRMATIONS; ++j) {
 		if (m->maxdiff[j] > 0) {
 			sum += m->maxdiff[j]; count++;
 		}
@@ -1228,14 +1225,12 @@ static int print_miner(FILE *out, int n, struct miner *m)
 /* output to the file a list of miners */
 int xdag_print_miners(FILE *out)
 {
-	int i, res;
-
 	fprintf(out, "List of miners:\n"
 			" NN  Address for payment to            Status   IP and port            in/out bytes      nopaid shares\n"
 			"------------------------------------------------------------------------------------------------------\n");
-	res = print_miner(out, -1, &g_local_miner);
+	int res = print_miner(out, -1, &g_local_miner);
 
-	for (i = 0; i < g_nminers; ++i) {
+	for (int i = 0; i < g_nminers; ++i) {
 		res += print_miner(out, i, g_miners + i);
 	}
 

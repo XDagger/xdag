@@ -10,8 +10,6 @@
 #include "memory.h"
 #include "crypt.h"
 
-#define XDAG_COMMAND_MAX	0x1000
-#define UNIX_SOCK				"unix_sock.dat"
 #define XFER_MAX_IN				11
 #define Nfields(d) (2 + d->nfields + 3 * d->nkeys + 2 * d->outsig)
 
@@ -424,13 +422,22 @@ int xdag_do_xfer(void *outv, const char *amount, const char *address)
 	memset(&xfer, 0, sizeof(xfer));
 	xfer.remains = xdags2amount(amount);
 	if (!xfer.remains) {
-		if (out) fprintf(out, "Xfer: nothing to transfer.\n"); return 1;
+		if (out) {
+			fprintf(out, "Xfer: nothing to transfer.\n");
+		}
+		return 1;
 	}
 	if (xfer.remains > xdag_get_balance(0)) {
-		if (out) fprintf(out, "Xfer: balance too small.\n"); return 1;
+		if (out) {
+			fprintf(out, "Xfer: balance too small.\n");
+		}
+		return 1;
 	}
 	if (xdag_address2hash(address, xfer.fields[XFER_MAX_IN].hash)) {
-		if (out) fprintf(out, "Xfer: incorrect address.\n"); return 1;
+		if (out) {
+			fprintf(out, "Xfer: incorrect address.\n");
+		}
+		return 1;
 	}
 	xdag_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
 	xfer.outsig = 1;
