@@ -19,8 +19,9 @@ extern int xdag_do_xfer(void *outv, const char *amount, const char *address);
 #endif
 
 void startCommandProcessing(int transportFlags);
+int xdag_command(char *cmd, FILE *out);
 void xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount);
-int out_balances();
+int out_balances(void);
 int xdag_show_state(xdag_hash_t hash);
 
 #endif // !XDAG_COMMANDS_H

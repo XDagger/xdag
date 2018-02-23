@@ -1,4 +1,8 @@
 #include "commands.h"
+#include <string.h>
+#include <math.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include "main.h"
 #include "address.h"
 #include "wallet.h"
@@ -6,9 +10,11 @@
 #include "pool.h"
 #include "transport.h"
 #include "netdb.h"
-#include <math.h>
 #include "memory.h"
 #include "crypt.h"
+#if !defined(_WIN32) && !defined(_WIN64)
+#include <unistd.h>
+#endif
 
 #define XFER_MAX_IN				11
 #define Nfields(d) (2 + d->nfields + 3 * d->nkeys + 2 * d->outsig)
@@ -36,8 +42,7 @@ int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_ti
 int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
 long double amount2xdags(xdag_amount_t amount);
 long double hashrate(xdag_diff_t *diff);
-const char *get_state();
-int xdag_command(char *cmd, FILE *out);
+const char *get_state(void);
 void processAccountCommand(char *nextParam, FILE *out);
 void processBalanceCommand(char *nextParam, FILE *out);
 void processBlockCommand(char *nextParam, FILE *out);
@@ -47,7 +52,7 @@ void processMiningCommand(char *nextParam, FILE *out);
 void processNetCommand(char *nextParam, FILE *out);
 void processPoolCommand(char *nextParam, FILE *out);
 void processStatsCommand(FILE *out);
-void processExitCommand();
+void processExitCommand(void);
 void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd);
 void processLastBlocksCommand(char *nextParam, FILE *out);
 // Function declarations
@@ -329,7 +334,7 @@ void processLastBlocksCommand(char *nextParam, FILE *out)
 	}
 }
 
-long double diff2log(xdag_diff_t diff)
+static long double diff2log(xdag_diff_t diff)
 {
 	long double res = (long double)xdag_diff_to64(diff);
 	xdag_diff_shr32(&diff);
@@ -360,7 +365,7 @@ const char *get_state()
 	return states[g_xdag_state];
 }
 
-xdag_amount_t xdags2amount(const char *str)
+static xdag_amount_t xdags2amount(const char *str)
 {
 	long double sum;
 	if (sscanf(str, "%Lf", &sum) != 1 || sum <= 0) {
@@ -390,7 +395,7 @@ int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_ti
 	return 0;
 }
 
-int make_block(struct xfer_callback_data *d)
+static int make_block(struct xfer_callback_data *d)
 {
 	if (d->nfields != XFER_MAX_IN) {
 		memcpy(d->fields + d->nfields, d->fields + XFER_MAX_IN, sizeof(xdag_hashlow_t));
@@ -500,7 +505,7 @@ void xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount)
 		xdag_hash2address(from), xdag_hash2address(to), amount2xdags(amount), g_coinname);
 }
 
-int out_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time)
+static int out_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time)
 {
 	struct out_balances_data *d = (struct out_balances_data *)data;
 	struct xdag_field f;
@@ -518,13 +523,13 @@ int out_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xd
 	return 0;
 }
 
-int out_sort_callback(const void *l, const void *r)
+static int out_sort_callback(const void *l, const void *r)
 {
 	return strcmp(xdag_hash2address(((struct xdag_field *)l)->data),
 		xdag_hash2address(((struct xdag_field *)r)->data));
 }
 
-void *add_block_callback(void *block, void *data)
+static void *add_block_callback(void *block, void *data)
 {
 	unsigned *i = (unsigned *)data;
 	xdag_add_block((struct xdag_block *)block);
