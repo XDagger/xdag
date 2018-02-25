@@ -73,14 +73,14 @@ public:
 	afx_msg void OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
 };
 
-CPasswordDlg::CPasswordDlg() : CDialogEx(IDD_DIALOG1)
+CPasswordDlg::CPasswordDlg() : CDialogEx(IDD_DIALOG_PASSWORD)
 {
 }
 
 void CPasswordDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_EDIT1, password);
+	DDX_Control(pDX, IDC_EDIT_PASSWORD, password);
 }
 
 BEGIN_MESSAGE_MAP(CPasswordDlg, CDialogEx)
@@ -88,10 +88,7 @@ BEGIN_MESSAGE_MAP(CPasswordDlg, CDialogEx)
 	ON_WM_ACTIVATE()
 END_MESSAGE_MAP()
 
-
 // CXDagWalletDlg dialog
-
-
 
 CXDagWalletDlg::CXDagWalletDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_XDAGWALLET_DIALOG, pParent)
@@ -102,20 +99,20 @@ CXDagWalletDlg::CXDagWalletDlg(CWnd* pParent /*=NULL*/)
 void CXDagWalletDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_EDIT1, pooladdr);
-	DDX_Control(pDX, IDC_EDIT2, nthreads);
-	DDX_Control(pDX, IDC_EDIT3, balance);
-	DDX_Control(pDX, IDC_EDIT4, address);
-	DDX_Control(pDX, IDC_EDIT5, amount);
-	DDX_Control(pDX, IDC_EDIT6, transfer);
+	DDX_Control(pDX, IDC_EDIT_PASSWORD, pooladdr);
+	DDX_Control(pDX, IDC_EDIT_MINING_THREADS, nthreads);
+	DDX_Control(pDX, IDC_EDIT_BALANCE, balance);
+	DDX_Control(pDX, IDC_EDIT_ACCOUNT_ADDRESS, address);
+	DDX_Control(pDX, IDC_EDIT_TRANSFER_AMOUNT, amount);
+	DDX_Control(pDX, IDC_EDIT_TRANSFER_TO, transfer);
 }
 
 BEGIN_MESSAGE_MAP(CXDagWalletDlg, CDialog)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
-	ON_BN_CLICKED(IDC_BUTTON1, &CXDagWalletDlg::OnClickedButton1)
-	ON_BN_CLICKED(IDC_BUTTON2, &CXDagWalletDlg::OnClickedButton2)
+	ON_BN_CLICKED(IDC_BUTTON_CONNECT, &CXDagWalletDlg::OnClickedButtonConnect)
+	ON_BN_CLICKED(IDC_BUTTON_XFER, &CXDagWalletDlg::OnClickedButtonXfer)
 END_MESSAGE_MAP()
 
 
@@ -232,7 +229,7 @@ int CXDagWalletDlg::showState(const char *state, const char *balance, const char
 	return 0;
 }
 
-void CXDagWalletDlg::OnClickedButton1()
+void CXDagWalletDlg::OnClickedButtonConnect()
 {
 	wchar_t wpoolbuf[256], wnthreadsbuf[16];
 	char *poolbuf = new char[256], *nthreadsbuf = new char[16];
@@ -272,7 +269,7 @@ void CPasswordDlg::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
 }
 
 
-void CXDagWalletDlg::OnClickedButton2()
+void CXDagWalletDlg::OnClickedButtonXfer()
 {
 	// TODO: Add your control notification handler code here
 	wchar_t wamountbuf[64], wxferbuf[64];

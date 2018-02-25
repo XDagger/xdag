@@ -33,7 +33,7 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:
-	afx_msg void OnClickedButton1();
+	afx_msg void OnClickedButtonConnect();
 	CEdit pooladdr;
 	CEdit nthreads;
 private:
@@ -45,7 +45,7 @@ public:
 	CEdit address;
 	CEdit amount;
 	CEdit transfer;
-	afx_msg void OnClickedButton2();
+	afx_msg void OnClickedButtonXfer();
 };
 
 extern CXDagWalletDlg *g_dlg;
