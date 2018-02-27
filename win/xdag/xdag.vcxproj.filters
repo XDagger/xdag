@@ -97,6 +97,9 @@
     <ClCompile Include="..\..\client\commands.c">
       <Filter>client</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\client\terminal.c">
+      <Filter>client</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client\address.h">
@@ -247,6 +250,9 @@
       <Filter>win\sys</Filter>
     </ClInclude>
     <ClInclude Include="..\..\client\commands.h">
+      <Filter>client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\terminal.h">
       <Filter>client</Filter>
     </ClInclude>
   </ItemGroup>

@@ -28,8 +28,7 @@
 #include "sync.h"
 #include "pool.h"
 #include "commands.h"
-
-#define UNIX_SOCK  "unix_sock.dat"
+#include "terminal.h"
 
 char *g_coinname, *g_progname;
 #define coinname   g_coinname
@@ -45,91 +44,6 @@ struct xdag_ext_stats g_xdag_extstats;
 int(*g_xdag_show_state)(const char *state, const char *balance, const char *address) = 0;
 
 void printUsage(char* appName);
-
-static int terminal(void)
-{
-#if !defined(_WIN32) && !defined(_WIN64)
-    char *cmd, *cmd2, *ptr, *lasts;
-    int s;
-    struct sockaddr_un addr;
-
-    cmd = malloc(XDAG_COMMAND_MAX);
-    cmd2 = malloc(XDAG_COMMAND_MAX);
-
-    while(1)
-    {
-        int ispwd = 0, c = 0;
-        printf("%s> ", g_progname); fflush(stdout);
-        fgets(cmd, XDAG_COMMAND_MAX, stdin);
-        strcpy(cmd2, cmd);
-        ptr = strtok_r(cmd2, " \t\r\n", &lasts);
-        if(!ptr) continue;
-        if(!strcmp(ptr, "exit")) break;
-        if(!strcmp(ptr, "xfer"))
-        {
-            uint32_t pwd[4];
-            xdag_user_crypt_action(pwd, 0, 4, 4);
-            sprintf(cmd2, "pwd=%08x%08x%08x%08x ", pwd[0], pwd[1], pwd[2], pwd[3]);
-            ispwd = 1;
-        }
-        if((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) { printf("Can't open unix domain socket errno:%d.\n", errno); continue; }
-        memset(&addr, 0, sizeof(addr));
-        addr.sun_family = AF_UNIX;
-        strcpy(addr.sun_path, UNIX_SOCK);
-        if(connect(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) { printf("Can't connect to unix domain socket errno:%d\n", errno); continue; }
-        if(ispwd) write(s, cmd2, strlen(cmd2));
-        write(s, cmd, strlen(cmd) + 1);
-        if(!strcmp(ptr, "terminate")) { sleep(1); close(s); break; }
-        while(read(s, &c, 1) == 1 && c) putchar(c);
-        close(s);
-    }
-
-    free(cmd);
-    free(cmd2);
-
-#endif
-    return 0;
-}
-
-#if !defined(_WIN32) && !defined(_WIN64)
-static void *terminal_thread(void *arg)
-{
-    struct sockaddr_un addr;
-    int s;
-    if((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) { xdag_err("Can't create unix domain socket errno:%d", errno); return 0; }
-    memset(&addr, 0, sizeof(addr));
-    addr.sun_family = AF_UNIX;
-    strcpy(addr.sun_path, UNIX_SOCK);
-    unlink(UNIX_SOCK);
-    if(bind(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) { xdag_err("Can't bind unix domain socket errno:%d", errno); return 0; }
-    if(listen(s, 100) == -1) { xdag_err("Unix domain socket listen errno:%d", errno); return 0; }
-    while(1)
-    {
-        char cmd[XDAG_COMMAND_MAX];
-        int cl, p, res;
-        FILE *fd;
-        struct pollfd fds;
-        if((cl = accept(s, NULL, NULL)) == -1) { xdag_err("Unix domain socket accept errno:%d", errno); break; }
-        p = 0;
-        fds.fd = cl; fds.events = POLLIN;
-        do
-        {
-            if(poll(&fds, 1, 1000) != 1 || fds.revents != POLLIN) { res = -1; break; }
-            p += res = read(cl, &cmd[p], sizeof(cmd) - p);
-        }
-        while(res > 0 && p < sizeof(cmd) && cmd[p - 1] != '\0');
-        if(res < 0 || cmd[p - 1] != '\0') close(cl);
-        else
-        {
-            fd = fdopen(cl, "w"); if(!fd) { xdag_err("Can't fdopen unix domain socket errno:%d", errno); break; }
-            res = xdag_command(cmd, fd);
-            fclose(fd);
-            if(res < 0) exit(0);
-        }
-    }
-    return 0;
-}
-#endif /* WIN */
 
 #ifdef XDAG_GUI_WALLET
 int xdag_main(int argc, char **argv)
@@ -275,11 +189,13 @@ int main(int argc, char **argv)
     xdag_mess("Starting pool engine...");
     if(xdag_pool_start(is_pool, pool_arg, miner_address)) return -1;
 #ifndef XDAG_GUI_WALLET
-#if !defined(_WIN32) && !defined(_WIN64)
+
     xdag_mess("Starting terminal server...");
 	pthread_t th;
-    if(pthread_create(&th, 0, &terminal_thread, 0)) return -1;
-#endif
+	if (pthread_create(&th, 0, &terminal_thread, 0)) {
+		return -1;
+	}
+
 	startCommandProcessing(transport_flags);
 #endif
     return 0;

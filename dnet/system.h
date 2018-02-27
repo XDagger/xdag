@@ -1,5 +1,5 @@
-#ifndef _SYSTEM_H
-#define _SYSTEM_H
+#ifndef _SYSTEM_DNET_H
+#define _SYSTEM_DNET_H
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <Windows.h>

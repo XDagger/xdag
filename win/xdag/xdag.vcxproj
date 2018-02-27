@@ -32,6 +32,7 @@
     <ClCompile Include="..\..\client\sha256.c" />
     <ClCompile Include="..\..\client\storage.c" />
     <ClCompile Include="..\..\client\sync.c" />
+    <ClCompile Include="..\..\client\terminal.c" />
     <ClCompile Include="..\..\client\transport.c" />
     <ClCompile Include="..\..\client\wallet.c" />
     <ClCompile Include="..\..\dnet\dnet_command.c" />
@@ -68,6 +69,7 @@
     <ClInclude Include="..\..\client\storage.h" />
     <ClInclude Include="..\..\client\sync.h" />
     <ClInclude Include="..\..\client\system.h" />
+    <ClInclude Include="..\..\client\terminal.h" />
     <ClInclude Include="..\..\client\transport.h" />
     <ClInclude Include="..\..\client\version.h" />
     <ClInclude Include="..\..\client\wallet.h" />
