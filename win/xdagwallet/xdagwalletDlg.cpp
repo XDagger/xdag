@@ -7,7 +7,8 @@
 #include "xdagwalletDlg.h"
 #include "afxdialogex.h"
 #include "../../client/main.h"
-#include "afxwin.h"
+#include "PasswordDlg.h"
+
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -47,64 +48,37 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
 END_MESSAGE_MAP()
 
-// Password dialog used for App About
-
-class CPasswordDlg : public CDialogEx
-{
-public:
-	CPasswordDlg();
-
-	// Dialog Data
-#ifdef AFX_DESIGN_TIME
-	enum { IDD = IDD_DIALOG1 };
-#endif
-
-protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-
-														// Implementation
-protected:
-	DECLARE_MESSAGE_MAP()
-public:
-	CEdit password;
-	afx_msg void OnBnClickedOk();
-	wchar_t passwd[256];
-	int len;
-	afx_msg void OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
-};
-
-CPasswordDlg::CPasswordDlg() : CDialogEx(IDD_DIALOG_PASSWORD)
-{
-}
-
-void CPasswordDlg::DoDataExchange(CDataExchange* pDX)
-{
-	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_EDIT_PASSWORD, password);
-}
-
-BEGIN_MESSAGE_MAP(CPasswordDlg, CDialogEx)
-	ON_BN_CLICKED(IDOK, &CPasswordDlg::OnBnClickedOk)
-	ON_WM_ACTIVATE()
-END_MESSAGE_MAP()
-
 // CXDagWalletDlg dialog
 
 CXDagWalletDlg::CXDagWalletDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_XDAGWALLET_DIALOG, pParent)
+    , _poolAddress(_T(""))
+    , _miningThreadsCount(0)
+    , _hashRate(_T(""))
+    , _balance(_T(""))
+    , _accountAddress(_T(""))
+    , _transferAmount(_T(""))
+    , _transferAddress(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 
 void CXDagWalletDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_EDIT_PASSWORD, pooladdr);
-	DDX_Control(pDX, IDC_EDIT_MINING_THREADS, nthreads);
-	DDX_Control(pDX, IDC_EDIT_BALANCE, balance);
-	DDX_Control(pDX, IDC_EDIT_ACCOUNT_ADDRESS, address);
-	DDX_Control(pDX, IDC_EDIT_TRANSFER_AMOUNT, amount);
-	DDX_Control(pDX, IDC_EDIT_TRANSFER_TO, transfer);
+    CDialog::DoDataExchange(pDX);
+
+    DDX_Control(pDX, IDC_BUTTON_APPLY, _applyButton);
+    DDX_Text(pDX, IDC_EDIT_POOL_ADDRESS, _poolAddress);
+    DDV_MaxChars(pDX, _poolAddress, 64);
+    DDX_Text(pDX, IDC_EDIT_MINING_THREADS, _miningThreadsCount);
+    DDV_MinMaxInt(pDX, _miningThreadsCount, 0, 999);
+    DDX_Text(pDX, IDC_EDIT_HASHRATE, _hashRate);
+    DDX_Text(pDX, IDC_EDIT_BALANCE, _balance);
+    DDX_Text(pDX, IDC_EDIT_ACCOUNT_ADDRESS, _accountAddress);
+    DDX_Text(pDX, IDC_EDIT_TRANSFER_AMOUNT, _transferAmount);
+    DDV_MaxChars(pDX, _transferAmount, 32);
+    DDX_Text(pDX, IDC_EDIT_TRANSFER_TO, _transferAddress);
+	DDV_MaxChars(pDX, _transferAddress, 64);
 }
 
 BEGIN_MESSAGE_MAP(CXDagWalletDlg, CDialog)
@@ -113,6 +87,7 @@ BEGIN_MESSAGE_MAP(CXDagWalletDlg, CDialog)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_BUTTON_CONNECT, &CXDagWalletDlg::OnClickedButtonConnect)
 	ON_BN_CLICKED(IDC_BUTTON_XFER, &CXDagWalletDlg::OnClickedButtonXfer)
+    ON_BN_CLICKED(IDC_BUTTON_APPLY, &CXDagWalletDlg::OnBnClickedButtonApply)
 END_MESSAGE_MAP()
 
 
@@ -201,10 +176,13 @@ HCURSOR CXDagWalletDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-int CXDagWalletDlg::inputPassword(const char *prompt, char *buf, unsigned size) {
+int CXDagWalletDlg::InputPassword(const char *prompt, char *buf, unsigned size) 
+{
 	int i, len;
 	CPasswordDlg dlgPwd;
-	for (i = 0; i < 254 && prompt[i]; ++i) dlgPwd.passwd[i] = prompt[i];
+    for(i = 0; i < 254 && prompt[i]; ++i) {
+        dlgPwd.passwd[i] = prompt[i];
+    }
 	dlgPwd.passwd[i] = ':';
 	dlgPwd.passwd[i+1] = 0;
 	dlgPwd.DoModal();
@@ -216,7 +194,8 @@ int CXDagWalletDlg::inputPassword(const char *prompt, char *buf, unsigned size) 
 	return 0;
 }
 
-int CXDagWalletDlg::showState(const char *state, const char *balance, const char *address) {
+int CXDagWalletDlg::ShowState(const char *state, const char *balance, const char *address) 
+{
 	wchar_t wbalance[64], waddress[64], wstate[256];
 	int i;
 	for (i = 0; i < 64; ++i) wbalance[i] = balance[i];
@@ -224,7 +203,7 @@ int CXDagWalletDlg::showState(const char *state, const char *balance, const char
 	for (i = 0; i < 256; ++i) wstate[i] = state[i];
 	g_dlg->balance.SetWindowTextW(wbalance);
 	g_dlg->address.SetWindowTextW(waddress);
-	g_dlg->SetDlgItemTextW(IDC_STATIC8, wstate);
+	g_dlg->SetDlgItemTextW(IDC_STATIC_STATE, wstate);
 	g_dlg->UpdateData(false);
 	return 0;
 }
@@ -244,34 +223,13 @@ void CXDagWalletDlg::OnClickedButtonConnect()
 	poolbuf[poollen] = 0;
 	nthreadsbuf[thrlen] = 0;
 	char *argv[] = { "xdag.exe", "-m", nthreadsbuf, poolbuf };
-	xdag_set_password_callback(&inputPassword);
-	g_xdag_show_state = &showState;
+	xdag_set_password_callback(&InputPassword);
+	g_xdag_show_state = &ShowState;
 	xdag_main(argc, argv);
-	// TODO: Add your control notification handler code here
 }
-
-
-void CPasswordDlg::OnBnClickedOk()
-{
-	UpdateData(true);
-	len = password.GetLine(0, passwd, 256);
-	// TODO: Add your control notification handler code here
-	CDialogEx::OnOK();
-}
-
-
-void CPasswordDlg::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
-{
-	CDialogEx::OnActivate(nState, pWndOther, bMinimized);
-	SetDlgItemTextW(IDC_STATIC1, passwd);
-	UpdateData(false);
-	// TODO: Add your message handler code here
-}
-
 
 void CXDagWalletDlg::OnClickedButtonXfer()
 {
-	// TODO: Add your control notification handler code here
 	wchar_t wamountbuf[64], wxferbuf[64];
 	char amountbuf[64], xferbuf[64];
 	int i, amountlen, xferlen;
@@ -285,4 +243,10 @@ void CXDagWalletDlg::OnClickedButtonXfer()
 	amountbuf[amountlen] = 0;
 	xferbuf[xferlen] = 0;
 	xdag_do_xfer(0, amountbuf, xferbuf);
+}
+
+
+void CXDagWalletDlg::OnBnClickedButtonApply()
+{
+    
 }

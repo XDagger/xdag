@@ -96,6 +96,7 @@
     <ClCompile Include="..\..\client\wallet.c">
       <Filter>client</Filter>
     </ClCompile>
+    <ClCompile Include="PasswordDlg.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="xdagwallet.h" />
@@ -250,6 +251,7 @@
     <ClInclude Include="..\sys\time.h">
       <Filter>win\sys</Filter>
     </ClInclude>
+    <ClInclude Include="PasswordDlg.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="xdagwallet.rc" />

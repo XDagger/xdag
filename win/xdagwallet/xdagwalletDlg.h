@@ -1,10 +1,9 @@
-
 // cheatcoinwalletDlg.h : header file
 //
 
 #pragma once
-#include "afxwin.h"
 
+#include "afxwin.h"
 
 // CXDagWalletDlg dialog
 class CXDagWalletDlg : public CDialog
@@ -32,20 +31,23 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
-public:
-	afx_msg void OnClickedButtonConnect();
-	CEdit pooladdr;
-	CEdit nthreads;
-private:
-	static int inputPassword(const char *prompt, char *buf, unsigned size);
-	static int showState(const char *state, const char *balance, const char *address);
 
-public:
-	CEdit balance;
-	CEdit address;
-	CEdit amount;
-	CEdit transfer;
-	afx_msg void OnClickedButtonXfer();
+private:
+    CButton _applyButton;
+    CString _poolAddress;
+    int _miningThreadsCount;
+    CString _hashRate;
+    CString _balance;
+    CString _accountAddress;
+    CString _transferAmount;
+    CString _transferAddress;
+
+    afx_msg void OnClickedButtonConnect();
+    afx_msg void OnClickedButtonXfer();
+    afx_msg void OnBnClickedButtonApply();
+
+	static int InputPassword(const char *prompt, char *buf, unsigned size);
+	static int ShowState(const char *state, const char *balance, const char *address);
 };
 
 extern CXDagWalletDlg *g_dlg;
