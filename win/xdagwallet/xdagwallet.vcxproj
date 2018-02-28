@@ -269,6 +269,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
     <ClInclude Include="..\sys\time.h" />
     <ClInclude Include="..\termios.h" />
     <ClInclude Include="..\unistd.h" />
+    <ClInclude Include="PasswordDlg.h" />
     <ClInclude Include="xdagwallet.h" />
     <ClInclude Include="xdagwalletDlg.h" />
     <ClInclude Include="resource.h" />
@@ -307,6 +308,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_string.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\lib\dfsrsa.c" />
     <ClCompile Include="..\system.c" />
+    <ClCompile Include="PasswordDlg.cpp" />
     <ClCompile Include="xdagwallet.cpp" />
     <ClCompile Include="xdagwalletDlg.cpp" />
   </ItemGroup>

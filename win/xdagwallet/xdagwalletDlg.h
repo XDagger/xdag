@@ -48,6 +48,10 @@ private:
 
 	static int InputPassword(const char *prompt, char *buf, unsigned size);
 	static int ShowState(const char *state, const char *balance, const char *address);
+	
+public:
+	void SetBalance(CString balance) { _balance = balance; }
+	void SetAccountAddress(CString accountAddress) { _accountAddress = accountAddress; }
 };
 
 extern CXDagWalletDlg *g_dlg;

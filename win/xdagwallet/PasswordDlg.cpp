@@ -20,7 +20,8 @@ CPasswordDlg::CPasswordDlg() : CDialogEx(IDD_DIALOG_PASSWORD)
 void CPasswordDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_EDIT_PASSWORD, password);
+	DDX_Text(pDX, IDC_EDIT_PASSWORD, _password);
+	DDX_Text(pDX, IDC_STATIC_PASSWORD_PROMT, _passwordPromt);
 }
 
 BEGIN_MESSAGE_MAP(CPasswordDlg, CDialogEx)
@@ -28,17 +29,15 @@ BEGIN_MESSAGE_MAP(CPasswordDlg, CDialogEx)
 	ON_WM_ACTIVATE()
 END_MESSAGE_MAP()
 
-void CPasswordDlg::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
+BOOL CPasswordDlg::OnInitDialog()
 {
-    CDialogEx::OnActivate(nState, pWndOther, bMinimized);
-    SetDlgItemTextW(IDC_STATIC1, passwd);
-    UpdateData(false);
+	CDialog::OnInitDialog();
+	UpdateData(false);
+	return TRUE;
 }
 
 void CPasswordDlg::OnBnClickedOk()
 {
 	UpdateData(true);
-	len = password.GetLine(0, passwd, 256);
-	// TODO: Add your control notification handler code here
 	CDialogEx::OnOK();
 }

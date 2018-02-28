@@ -17,12 +17,11 @@
 #define IDC_EDIT_TRANSFER_AMOUNT        1005
 #define IDC_EDIT_TRANSFER_TO            1006
 #define IDC_BUTTON_XFER                 1007
-#define IDC_STATIC8                     1008
 #define IDC_STATIC_STATE                1008
-#define IDC_STATIC1                     1009
 #define IDC_BUTTON_APPLY                1009
 #define IDC_EDIT_POOL_ADDRESS           1010
 #define IDC_EDIT_HASHRATE               1011
+#define IDC_STATIC_PASSWORD_PROMT       1012
 
 // Next default values for new objects
 // 

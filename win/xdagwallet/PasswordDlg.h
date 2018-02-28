@@ -17,14 +17,15 @@ public:
 #endif
 
 protected:
+	virtual BOOL OnInitDialog();
     virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-
-protected:
     DECLARE_MESSAGE_MAP()
-public:
-    CEdit password;
+private:
+	CString _passwordPromt;
+	CString _password;
     afx_msg void OnBnClickedOk();
-    wchar_t passwd[256];
-    int len;
-    afx_msg void OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
+
+public:
+	void SetPasswordPromt(CString passwordPromt) { _passwordPromt = passwordPromt; }
+	CString GetPassword() { return _password; }
 };

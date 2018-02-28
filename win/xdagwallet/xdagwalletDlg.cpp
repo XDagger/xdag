@@ -9,7 +9,6 @@
 #include "../../client/main.h"
 #include "PasswordDlg.h"
 
-
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -106,9 +105,8 @@ BOOL CXDagWalletDlg::OnInitDialog()
 	CMenu* pSysMenu = GetSystemMenu(FALSE);
 	if (pSysMenu != NULL)
 	{
-		BOOL bNameValid;
 		CString strAboutMenu;
-		bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
+		BOOL bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
 		ASSERT(bNameValid);
 		if (!strAboutMenu.IsEmpty())
 		{
@@ -122,7 +120,7 @@ BOOL CXDagWalletDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// Set big icon
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
-	// TODO: Add extra initialization here
+	_applyButton.EnableWindow(FALSE);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -178,73 +176,44 @@ HCURSOR CXDagWalletDlg::OnQueryDragIcon()
 
 int CXDagWalletDlg::InputPassword(const char *prompt, char *buf, unsigned size) 
 {
-	int i, len;
 	CPasswordDlg dlgPwd;
-    for(i = 0; i < 254 && prompt[i]; ++i) {
-        dlgPwd.passwd[i] = prompt[i];
-    }
-	dlgPwd.passwd[i] = ':';
-	dlgPwd.passwd[i+1] = 0;
+	dlgPwd.SetPasswordPromt(CString(prompt));
 	dlgPwd.DoModal();
-	len = dlgPwd.len;
-	if (len < 0) len = 0;
-	if (len >= size) len = size - 1;
-	for (i = 0; i < len; ++i) buf[i] = dlgPwd.passwd[i];
-	buf[len] = 0;
+	strncpy(buf, (char*)(LPCTSTR)dlgPwd.GetPassword(), size);
 	return 0;
 }
 
 int CXDagWalletDlg::ShowState(const char *state, const char *balance, const char *address) 
 {
-	wchar_t wbalance[64], waddress[64], wstate[256];
+	/*wchar_t wbalance[64], waddress[64], wstate[256];
 	int i;
 	for (i = 0; i < 64; ++i) wbalance[i] = balance[i];
 	for (i = 0; i < 64; ++i) waddress[i] = address[i];
 	for (i = 0; i < 256; ++i) wstate[i] = state[i];
 	g_dlg->balance.SetWindowTextW(wbalance);
-	g_dlg->address.SetWindowTextW(waddress);
-	g_dlg->SetDlgItemTextW(IDC_STATIC_STATE, wstate);
+	g_dlg->address.SetWindowTextW(waddress);*/
+	g_dlg->SetBalance(CString(balance));
+	g_dlg->SetAccountAddress(CString(address));
+	g_dlg->SetDlgItemTextW(IDC_STATIC_STATE, CString(state));
 	g_dlg->UpdateData(false);
 	return 0;
 }
 
 void CXDagWalletDlg::OnClickedButtonConnect()
 {
-	wchar_t wpoolbuf[256], wnthreadsbuf[16];
-	char *poolbuf = new char[256], *nthreadsbuf = new char[16];
-	int argc = 4, i, poollen, thrlen;
 	UpdateData(true);
-	poollen = pooladdr.GetLine(0, wpoolbuf, 256);
-	thrlen = nthreads.GetLine(0, wnthreadsbuf, 16);
-	if (poollen < 0) poollen = 0;
-	if (thrlen < 0) thrlen = 0;
-	for (i = 0; i < poollen; ++i) poolbuf[i] = wpoolbuf[i];
-	for (i = 0; i < thrlen; ++i) nthreadsbuf[i] = wnthreadsbuf[i];
-	poolbuf[poollen] = 0;
-	nthreadsbuf[thrlen] = 0;
-	char *argv[] = { "xdag.exe", "-m", nthreadsbuf, poolbuf };
+	char buf[10];
+	char *argv[] = { "xdag.exe", "-m", _itoa(_miningThreadsCount, buf, 10), (char*)(LPCTSTR)_poolAddress };
 	xdag_set_password_callback(&InputPassword);
 	g_xdag_show_state = &ShowState;
-	xdag_main(argc, argv);
+	xdag_main(4, argv);
 }
 
 void CXDagWalletDlg::OnClickedButtonXfer()
 {
-	wchar_t wamountbuf[64], wxferbuf[64];
-	char amountbuf[64], xferbuf[64];
-	int i, amountlen, xferlen;
 	UpdateData(true);
-	amountlen = amount.GetLine(0, wamountbuf, 64);
-	xferlen = transfer.GetLine(0, wxferbuf, 64);
-	if (amountlen < 0) amountlen = 0;
-	if (xferlen < 0) xferlen = 0;
-	for (i = 0; i < amountlen; ++i) amountbuf[i] = wamountbuf[i];
-	for (i = 0; i < xferlen; ++i) xferbuf[i] = wxferbuf[i];
-	amountbuf[amountlen] = 0;
-	xferbuf[xferlen] = 0;
-	xdag_do_xfer(0, amountbuf, xferbuf);
+	xdag_do_xfer(0, (char*)(LPCTSTR)_transferAmount, (char*)(LPCTSTR)_transferAddress);
 }
-
 
 void CXDagWalletDlg::OnBnClickedButtonApply()
 {
