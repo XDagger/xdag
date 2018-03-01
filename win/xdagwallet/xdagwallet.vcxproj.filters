@@ -258,8 +258,6 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\xdagwallet.ico" />
-    <Image Include="res\Toolbar.bmp" />
-    <Image Include="res\Toolbar256.bmp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\xdagwallet.rc2" />
