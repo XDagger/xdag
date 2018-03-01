@@ -194,7 +194,7 @@ int CXDagWalletDlg::ShowState(const char *state, const char *balance, const char
 	g_dlg->address.SetWindowTextW(waddress);*/
 	g_dlg->SetBalance(CString(balance));
 	g_dlg->SetAccountAddress(CString(address));
-	g_dlg->SetDlgItemTextW(IDC_STATIC_STATE, CString(state));
+	g_dlg->SetDlgItemText(IDC_STATIC_STATE, CString(state));
 	g_dlg->UpdateData(false);
 	return 0;
 }
