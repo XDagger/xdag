@@ -127,6 +127,9 @@ BOOL CXDagWalletDlg::OnInitDialog()
 	_transferAddressEdit.EnableWindow(FALSE);
 	_xferButton.EnableWindow(FALSE);
 
+	_poolAddress = AfxGetApp()->GetProfileString(_T("Settings"), _T("PoolAddress"));
+	UpdateData(FALSE);
+
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -199,8 +202,8 @@ LRESULT CXDagWalletDlg::OnUpdateState(WPARAM wParam, LPARAM lParam)
 		_balanceEdit.SetWindowText(_balance);
 	}
 	_accountAddressEdit.GetWindowText(currentValue);
-	if (currentValue != _balance) {
-		_accountAddressEdit.SetWindowText(_balance);
+	if (currentValue != _accountAddress) {
+		_accountAddressEdit.SetWindowText(_accountAddress);
 	}
 	_stateControl.SetWindowText(_state);
 	return 0;
@@ -220,6 +223,7 @@ void CXDagWalletDlg::OnClickedButtonConnect()
 	_transferAddressEdit.EnableWindow(TRUE);
 	_xferButton.EnableWindow(TRUE);
 	SetTimer(ID_TIMER_HASHRATE, 5000, NULL);
+	AfxGetApp()->WriteProfileString(_T("Settings"), _T("PoolAddress"), _poolAddress);
 }
 
 void CXDagWalletDlg::OnClickedButtonXfer()
