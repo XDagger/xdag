@@ -17,17 +17,16 @@ CXDagWalletDlg *g_dlg = 0;
 
 // CAboutDlg dialog used for App About
 
-class CAboutDlg : public CDialogEx
-{
+class CAboutDlg : public CDialogEx {
 public:
 	CAboutDlg();
 
-// Dialog Data
+	// Dialog Data
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_ABOUTBOX };
 #endif
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
 // Implementation
@@ -36,8 +35,7 @@ protected:
 };
 
 CAboutDlg::CAboutDlg() : CDialogEx(IDD_ABOUTBOX)
-{
-}
+{}
 
 void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 {
@@ -51,33 +49,37 @@ END_MESSAGE_MAP()
 
 CXDagWalletDlg::CXDagWalletDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_XDAGWALLET_DIALOG, pParent)
-    , _poolAddress(_T(""))
-    , _miningThreadsCount(0)
-    , _hashRate(_T(""))
-    , _balance(_T(""))
-    , _accountAddress(_T(""))
-    , _transferAmount(_T(""))
-    , _transferAddress(_T(""))
+	, _poolAddress(_T(""))
+	, _miningThreadsCount(0)
+	, _balance(_T(""))
+	, _accountAddress(_T(""))
+	, _transferAmount(_T(""))
+	, _transferAddress(_T(""))
+	, _state(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 
 void CXDagWalletDlg::DoDataExchange(CDataExchange* pDX)
 {
-    CDialog::DoDataExchange(pDX);
+	CDialog::DoDataExchange(pDX);
 
-    DDX_Control(pDX, IDC_BUTTON_APPLY, _applyButton);
-    DDX_Text(pDX, IDC_EDIT_POOL_ADDRESS, _poolAddress);
-    DDV_MaxChars(pDX, _poolAddress, 64);
-    DDX_Text(pDX, IDC_EDIT_MINING_THREADS, _miningThreadsCount);
-    DDV_MinMaxInt(pDX, _miningThreadsCount, 0, 999);
-    DDX_Text(pDX, IDC_EDIT_HASHRATE, _hashRate);
-    DDX_Text(pDX, IDC_EDIT_BALANCE, _balance);
-    DDX_Text(pDX, IDC_EDIT_ACCOUNT_ADDRESS, _accountAddress);
-    DDX_Text(pDX, IDC_EDIT_TRANSFER_AMOUNT, _transferAmount);
-    DDV_MaxChars(pDX, _transferAmount, 32);
-    DDX_Text(pDX, IDC_EDIT_TRANSFER_TO, _transferAddress);
+	DDX_Control(pDX, IDC_BUTTON_APPLY, _applyButton);
+	DDX_Text(pDX, IDC_EDIT_POOL_ADDRESS, _poolAddress);
+	DDV_MaxChars(pDX, _poolAddress, 64);
+	DDX_Text(pDX, IDC_EDIT_MINING_THREADS, _miningThreadsCount);
+	DDV_MinMaxInt(pDX, _miningThreadsCount, 0, 999);
+	DDX_Control(pDX, IDC_EDIT_HASHRATE, _hashRateEdit);
+	DDX_Control(pDX, IDC_EDIT_BALANCE, _balanceEdit);
+	DDX_Control(pDX, IDC_EDIT_ACCOUNT_ADDRESS, _accountAddressEdit);
+	DDX_Text(pDX, IDC_EDIT_TRANSFER_AMOUNT, _transferAmount);
+	DDV_MaxChars(pDX, _transferAmount, 32);
+	DDX_Text(pDX, IDC_EDIT_TRANSFER_TO, _transferAddress);
 	DDV_MaxChars(pDX, _transferAddress, 64);
+	DDX_Control(pDX, IDC_STATIC_STATE, _stateControl);
+	DDX_Control(pDX, IDC_EDIT_TRANSFER_AMOUNT, _transferAmountEdit);
+	DDX_Control(pDX, IDC_EDIT_TRANSFER_TO, _transferAddressEdit);
+	DDX_Control(pDX, IDC_BUTTON_XFER, _xferButton);
 }
 
 BEGIN_MESSAGE_MAP(CXDagWalletDlg, CDialog)
@@ -86,7 +88,9 @@ BEGIN_MESSAGE_MAP(CXDagWalletDlg, CDialog)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_BUTTON_CONNECT, &CXDagWalletDlg::OnClickedButtonConnect)
 	ON_BN_CLICKED(IDC_BUTTON_XFER, &CXDagWalletDlg::OnClickedButtonXfer)
-    ON_BN_CLICKED(IDC_BUTTON_APPLY, &CXDagWalletDlg::OnBnClickedButtonApply)
+	ON_BN_CLICKED(IDC_BUTTON_APPLY, &CXDagWalletDlg::OnBnClickedButtonApply)
+	ON_MESSAGE(WM_UPDATE_STATE, &CXDagWalletDlg::OnUpdateState)
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -103,13 +107,11 @@ BOOL CXDagWalletDlg::OnInitDialog()
 	ASSERT(IDM_ABOUTBOX < 0xF000);
 
 	CMenu* pSysMenu = GetSystemMenu(FALSE);
-	if (pSysMenu != NULL)
-	{
+	if (pSysMenu != NULL) {
 		CString strAboutMenu;
 		BOOL bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
 		ASSERT(bNameValid);
-		if (!strAboutMenu.IsEmpty())
-		{
+		if (!strAboutMenu.IsEmpty()) {
 			pSysMenu->AppendMenu(MF_SEPARATOR);
 			pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
 		}
@@ -121,19 +123,19 @@ BOOL CXDagWalletDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	_applyButton.EnableWindow(FALSE);
+	_transferAmountEdit.EnableWindow(FALSE);
+	_transferAddressEdit.EnableWindow(FALSE);
+	_xferButton.EnableWindow(FALSE);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
 void CXDagWalletDlg::OnSysCommand(UINT nID, LPARAM lParam)
 {
-	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
-	{
+	if ((nID & 0xFFF0) == IDM_ABOUTBOX) {
 		CAboutDlg dlgAbout;
 		dlgAbout.DoModal();
-	}
-	else
-	{
+	} else {
 		CDialog::OnSysCommand(nID, lParam);
 	}
 }
@@ -144,8 +146,7 @@ void CXDagWalletDlg::OnSysCommand(UINT nID, LPARAM lParam)
 
 void CXDagWalletDlg::OnPaint()
 {
-	if (IsIconic())
-	{
+	if (IsIconic()) {
 		CPaintDC dc(this); // device context for painting
 
 		SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
@@ -160,9 +161,7 @@ void CXDagWalletDlg::OnPaint()
 
 		// Draw the icon
 		dc.DrawIcon(x, y, m_hIcon);
-	}
-	else
-	{
+	} else {
 		CDialog::OnPaint();
 	}
 }
@@ -174,7 +173,7 @@ HCURSOR CXDagWalletDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-int CXDagWalletDlg::InputPassword(const char *prompt, char *buf, unsigned size) 
+int CXDagWalletDlg::InputPassword(const char *prompt, char *buf, unsigned size)
 {
 	CPasswordDlg dlgPwd;
 	dlgPwd.SetPasswordPromt(CString(prompt));
@@ -183,19 +182,27 @@ int CXDagWalletDlg::InputPassword(const char *prompt, char *buf, unsigned size)
 	return 0;
 }
 
-int CXDagWalletDlg::ShowState(const char *state, const char *balance, const char *address) 
+int CXDagWalletDlg::ShowState(const char *state, const char *balance, const char *address)
 {
-	/*wchar_t wbalance[64], waddress[64], wstate[256];
-	int i;
-	for (i = 0; i < 64; ++i) wbalance[i] = balance[i];
-	for (i = 0; i < 64; ++i) waddress[i] = address[i];
-	for (i = 0; i < 256; ++i) wstate[i] = state[i];
-	g_dlg->balance.SetWindowTextW(wbalance);
-	g_dlg->address.SetWindowTextW(waddress);*/
-	g_dlg->SetBalance(CString(balance));
-	g_dlg->SetAccountAddress(CString(address));
-	g_dlg->SetDlgItemText(IDC_STATIC_STATE, CString(state));
-	g_dlg->UpdateData(false);
+	g_dlg->SetBalance(balance);
+	g_dlg->SetAccountAddress(address);
+	g_dlg->SetState(state);
+	g_dlg->PostMessage(WM_UPDATE_STATE);
+	return 0;
+}
+
+LRESULT CXDagWalletDlg::OnUpdateState(WPARAM wParam, LPARAM lParam)
+{
+	CString currentValue;
+	_balanceEdit.GetWindowText(currentValue);
+	if (currentValue != _balance) {
+		_balanceEdit.SetWindowText(_balance);
+	}
+	_accountAddressEdit.GetWindowText(currentValue);
+	if (currentValue != _balance) {
+		_accountAddressEdit.SetWindowText(_balance);
+	}
+	_stateControl.SetWindowText(_state);
 	return 0;
 }
 
@@ -207,15 +214,30 @@ void CXDagWalletDlg::OnClickedButtonConnect()
 	xdag_set_password_callback(&InputPassword);
 	g_xdag_show_state = &ShowState;
 	xdag_main(4, argv);
+
+	_applyButton.EnableWindow(TRUE);
+	_transferAmountEdit.EnableWindow(TRUE);
+	_transferAddressEdit.EnableWindow(TRUE);
+	_xferButton.EnableWindow(TRUE);
+	SetTimer(ID_TIMER_HASHRATE, 5000, NULL);
 }
 
 void CXDagWalletDlg::OnClickedButtonXfer()
 {
-	UpdateData(true);
+	UpdateData(TRUE);
 	xdag_do_xfer(0, (char*)(LPCTSTR)_transferAmount, (char*)(LPCTSTR)_transferAddress);
 }
 
 void CXDagWalletDlg::OnBnClickedButtonApply()
 {
-    
+	UpdateData(TRUE);
+	xdagSetCountMiningTread(_miningThreadsCount);
+}
+
+void CXDagWalletDlg::OnTimer(WPARAM wParam)
+{
+	const double hashRate = xdagGetHashRate();
+	CString hashRateStr;
+	hashRateStr.Format("%.2lf", hashRate);
+	_hashRateEdit.SetWindowText(hashRateStr);
 }
