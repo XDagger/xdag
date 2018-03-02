@@ -394,6 +394,7 @@ static int xdag_command(char *cmd, FILE *out)
 			fprintf(out, "%d mining threads running\n", g_xdag_mining_threads);
 		} else if (sscanf(cmd, "%d", &nthreads) != 1 || nthreads < 0) {
 			fprintf(out, "Illegal number.\n");
+
 		} else {
 			xdag_mining_start(g_is_miner ? ~nthreads : nthreads);
 			fprintf(out, "%d mining threads running\n", g_xdag_mining_threads);
@@ -426,7 +427,7 @@ static int xdag_command(char *cmd, FILE *out)
 		fprintf(out, "%s\n", get_state());
 	} else if (!strcmp(cmd, "stats")) {
 		if (g_is_miner) {
-			fprintf(out, "your hashrate MHs: %.2lf\n", g_xdag_extstats.hashrate_s / (1024 * 1024));
+			fprintf(out, "your hashrate MHs: %.2lf\n", xdagGetHashRate());
 		} else {
 			fprintf(out, "Statistics for ours and maximum known parameters:\n"
 					"            hosts: %u of %u\n"
@@ -895,4 +896,14 @@ int xdag_show_state(xdag_hash_t hash)
 	strcpy(state, get_state());
 	
 	return (*g_xdag_show_state)(state, balance, address);
+}
+
+void xdagSetCountMiningTread(int miningThreadsCount)
+{
+	xdag_mining_start(~miningThreadsCount);
+}
+
+double xdagGetHashRate()
+{
+	return g_xdag_extstats.hashrate_s / (1024 * 1024);
 }

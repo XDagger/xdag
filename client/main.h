@@ -65,6 +65,9 @@ extern int (*g_xdag_show_state)(const char *state, const char *balance, const ch
 
 extern int xdag_do_xfer(void *out, const char *amount, const char *address);
 
+extern void xdagSetCountMiningTread(int miningThreadsCount);
+extern double xdagGetHashRate();
+
 #ifdef __cplusplus
 };
 #endif
