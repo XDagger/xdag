@@ -269,7 +269,7 @@ void processPoolCommand(char *nextParam, FILE *out)
 void processStatsCommand(FILE *out)
 {
 	if (g_is_miner) {
-		fprintf(out, "your hashrate MHs: %.2lf\n", g_xdag_extstats.hashrate_s / (1024 * 1024));
+		fprintf(out, "your hashrate MHs: %.2lf\n", xdagGetHashRate());
 	} else {
 		fprintf(out, "Statistics for ours and maximum known parameters:\n"
 			"            hosts: %u of %u\n"
@@ -594,4 +594,14 @@ void printHelp(FILE *out)
 		"  terminate   - terminate both daemon and this program\n"
 		"  xfer S A    - transfer S our %s to the address A\n"
 		, g_coinname);
+}
+
+void xdagSetCountMiningTread(int miningThreadsCount)
+{
+	xdag_mining_start(~miningThreadsCount);
+}
+
+double xdagGetHashRate()
+{
+	return g_xdag_extstats.hashrate_s / (1024 * 1024);
 }
