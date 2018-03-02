@@ -1,4 +1,3 @@
-
 // cheatcoinwalletDlg.cpp : implementation file
 //
 

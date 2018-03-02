@@ -32,7 +32,7 @@ const uint32_t APPLICATION_DOMAIN_PORT = 7676;
 int terminal(void)
 {
 	char *lasts;
-	int s;
+	int sock;
 	
 	if (system_init() != 0) {
 		printf("Can't initialize sockets");
@@ -69,7 +69,7 @@ int terminal(void)
 			continue;
 		}
 #else
-		if ((s = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 			printf("Can't create domain socket errno:%d", WSAGetLastError());
 			return 0;
 		}
@@ -77,24 +77,24 @@ int terminal(void)
 		addrLocal.sin_family = AF_INET;
 		addrLocal.sin_port = htons(APPLICATION_DOMAIN_PORT);
 		addrLocal.sin_addr.s_addr = htonl(LOCAL_HOST_IP);
-		if (connect(s, (struct sockadr*)&addrLocal, sizeof(addrLocal)) == -1) {
+		if (connect(sock, (struct sockadr*)&addrLocal, sizeof(addrLocal)) == -1) {
 			printf("Can't connect to domain socket errno:%d", errno);
 			return 0;
 		}
 #endif
 		if (ispwd) {
-			write(s, cmd2, strlen(cmd2));
+			write(sock, cmd2, strlen(cmd2));
 		}
-		write(s, cmd, strlen(cmd) + 1);
+		write(sock, cmd, strlen(cmd) + 1);
 		if (!strcmp(ptr, "terminate")) {
 			sleep(1);
-			close(s);
+			close(sock);
 			break;
 		}
-		while (read(s, &c, 1) == 1 && c) {
+		while (read(sock, &c, 1) == 1 && c) {
 			putchar(c);
 		}
-		close(s);
+		close(sock);
 	}
 
 	return 0;
@@ -102,7 +102,7 @@ int terminal(void)
 
 void *terminal_thread(void *arg)
 {
-	int s;
+	int sock;
 #if !defined(_WIN32) && !defined(_WIN64)
 	struct sockaddr_un addr;
 	
@@ -119,7 +119,7 @@ void *terminal_thread(void *arg)
 		return 0;
 	}
 #else	
-	if ((s = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		xdag_err("Can't create domain socket errno:%d", WSAGetLastError());
 		return 0;
 	}
@@ -138,44 +138,56 @@ void *terminal_thread(void *arg)
 	}
 	while (1) {
 		char cmd[XDAG_COMMAND_MAX];
-		int cl, res;
+		int clientSock, res;
 		struct pollfd fds;
-		if ((cl = accept(s, NULL, NULL)) == -1) {
+		if ((clientSock = accept(sock, NULL, NULL)) == -1) {
 			xdag_err("Unix domain socket accept errno:%d", errno);
 			break;
 		}
 
 		int p = 0;
-		fds.fd = cl;
+		fds.fd = clientSock;
 		fds.events = POLLIN;
 		do {
 			if (poll(&fds, 1, 1000) != 1 || !(fds.revents & POLLIN)) {
 				res = -1;
 				break;
 			}
-			p += res = read(cl, &cmd[p], sizeof(cmd) - p);
+			p += res = read(clientSock, &cmd[p], sizeof(cmd) - p);
 		} while (res > 0 && p < sizeof(cmd) && cmd[p - 1] != '\0');
 
 		if (res < 0 || cmd[p - 1] != '\0') {
-			close(cl);
+			close(clientSock);
 		} else {
 #if !defined(_WIN32) && !defined(_WIN64)
-			FILE *fd = fdopen(cl, "w");
+			FILE *fd = fdopen(clientSock, "w");
 			if (!fd) {
 				xdag_err("Can't fdopen unix domain socket errno:%d", errno);
 				break;
 			}
 #else
-			int xx = _open_osfhandle(cl, _O_WRONLY);
-			FILE *fd = _fdopen(xx, "w");
+			FILE *fd = tmpfile();
 			if (!fd) {
-				xdag_err("Can't fdopen unix domain socket errno:%d", errno);
+				xdag_err("Can't create a temporary file");
 				break;
 			}
 #endif
 
 			res = xdag_command(cmd, fd);
+
+#if !defined(_WIN32) && !defined(_WIN64)
 			fclose(fd);
+#else
+			rewind(fd);
+
+			char buf[256];
+			while (!feof(fd)) {
+				const int length = fread(buf, 1, 256, fd);
+				write(clientSock, buf, length);
+			}
+			fclose(fd);
+			close(clientSock);
+#endif
 			if (res < 0) {
 				exit(0);
 			}
