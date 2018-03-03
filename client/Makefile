@@ -23,6 +23,7 @@ sources = \
 	transport.c					\
 	wallet.c					\
 	commands.c					\
+	terminal.c					\
 	x86_64cpuid.s				\
 	$(dnet)/dnet_crypt.c		\
 	$(dnet)/dnet_database.c		\

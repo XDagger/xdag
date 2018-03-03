@@ -239,8 +239,6 @@ static void *dnet_thread_accepted(void *arg)
 	int res = dnet_connection_main(&t->conn);
 	if (res) {
 		const char *mess = "connection error";
-		int err = WSAGetLastError();
-		int err2 = errno;
 		dnet_log_printf("dnet.%d: %s (%d), %s\n", t->nthread, mess, res, strerror(errno));
 	}
 	close(t->conn.socket);

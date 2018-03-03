@@ -601,7 +601,7 @@ void xdagSetCountMiningTread(int miningThreadsCount)
 	xdag_mining_start(~miningThreadsCount);
 }
 
-double xdagGetHashRate()
+double xdagGetHashRate(void)
 {
 	return g_xdag_extstats.hashrate_s / (1024 * 1024);
 }

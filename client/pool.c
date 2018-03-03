@@ -832,14 +832,15 @@ static void *miner_net_thread(void *arg)
 	xdag_time_t t;
 	struct miner *m = &g_local_miner;
 	time_t t00, t0, tt;
+	int ndata, maxndata;
 
 	while (!g_xdag_sync_on) {
 		sleep(1);
 	}
 
  begin:
-	int ndata = 0;
-	int maxndata = sizeof(struct xdag_field);
+	ndata = 0;
+	maxndata = sizeof(struct xdag_field);
 	t0 = t00 = 0;
 	m->nfield_in = m->nfield_out = 0;
 

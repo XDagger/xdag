@@ -190,7 +190,7 @@ int main(int argc, char **argv)
     if(xdag_pool_start(is_pool, pool_arg, miner_address)) return -1;
 
 #ifndef XDAG_GUI_WALLET
-	if (is_pool || transport_flags & XDAG_DAEMON > 0) {
+	if (is_pool || (transport_flags & XDAG_DAEMON) > 0) {
 		xdag_mess("Starting terminal server...");
 		pthread_t th;
 		if (pthread_create(&th, 0, &terminal_thread, 0)) {
