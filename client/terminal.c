@@ -1,14 +1,14 @@
 #include "terminal.h"
+#include <stdlib.h>
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
 #include <signal.h>
-#else
-#include <io.h>
+#include <errno.h>
+#include <fcntl.h>
 #endif
 #include <sys/socket.h>
-#include <fcntl.h>
 #include "commands.h"
 #include "main.h"
 #include "transport.h"
@@ -106,15 +106,15 @@ void *terminal_thread(void *arg)
 #if !defined(_WIN32) && !defined(_WIN64)
 	struct sockaddr_un addr;
 	
-	if ((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+	if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
 		xdag_err("Can't create unix domain socket errno:%d", errno);
 		return 0;
 	}
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
 	strcpy(addr.sun_path, UNIX_SOCK);
-	_unlink(UNIX_SOCK);
-	if (bind(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+	unlink(UNIX_SOCK);
+	if (bind(sock, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
 		xdag_err("Can't bind unix domain socket errno:%d", errno);
 		return 0;
 	}

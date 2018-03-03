@@ -6,14 +6,7 @@
 #include <pthread.h>
 #include <ctype.h>
 #if !defined(_WIN32) && !defined(_WIN64)
-#include <fcntl.h>
-#include <unistd.h>
 #include <signal.h>
-#include <poll.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <errno.h>
 #endif
 #include "system.h"
 #include "address.h"
@@ -154,14 +147,13 @@ int main(int argc, char **argv)
     }
     g_is_miner = is_miner;
     g_is_pool = is_pool;
-    if(pubaddr && !bindto)
-    {
-        char str[64], *p = strchr(pubaddr, ':');
-        if(p)
-        {
-            sprintf(str, "0.0.0.0%s", p); bindto = strdup(str);
-        }
-    }
+	if (pubaddr && !bindto) {
+		char str[64], *p = strchr(pubaddr, ':');
+		if (p) {
+			sprintf(str, "0.0.0.0%s", p);
+			bindto = strdup(str);
+		}
+	}
     memset(&g_xdag_stats, 0, sizeof(g_xdag_stats));
     memset(&g_xdag_extstats, 0, sizeof(g_xdag_extstats));
 

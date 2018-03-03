@@ -60,6 +60,7 @@ headers = \
 	transport.h						\
 	wallet.h						\
 	commands.h						\
+	terminal.h						\
 	$(dnet)/dnet_crypt.h			\
 	$(dnet)/dnet_database.h			\
 	$(dnet)/dnet_history.h			\
