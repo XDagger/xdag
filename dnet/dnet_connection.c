@@ -95,7 +95,7 @@ static inline ssize_t dnet_socket_read(int fd, void *buf, size_t size) {
 		struct pollfd pfd;
 		pfd.fd = fd;
 		pfd.events = POLLIN;
-		if (poll(&pfd, 1, (te - t) * 1000) == 1 && pfd.revents == POLLIN) {
+		if (poll(&pfd, 1, (te - t) * 1000) == 1 && (pfd.revents & POLLIN)) {
             return read(fd, buf, size);
         }
     }
@@ -130,7 +130,11 @@ int dnet_connection_main(struct dnet_connection *conn) {
 			thread->conn.socket = -1;
 			thread->type = DNET_THREAD_EXCHANGER;
 			res = dnet_thread_create(thread);
-			if (res) { thread->to_remove = 1; res = 4; goto end; }
+			if (res) {
+				thread->to_remove = 1;
+				res = 4;
+				goto end;
+			}
 		}
     }
 	res = (int)size * 10 + 4;

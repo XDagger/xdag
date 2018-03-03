@@ -110,6 +110,12 @@
     <None Include="..\..\client\sha256-mb-x86_64.s" />
     <None Include="..\..\client\x86_64cpuid.s" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\client\netdb-testnet.txt" />
+    <Text Include="..\..\client\netdb-white-testnet.txt" />
+    <Text Include="..\..\client\netdb-white.txt" />
+    <Text Include="..\..\client\netdb.txt" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{8F05F6FF-AA25-4D79-AB2D-886BA8976393}</ProjectGuid>
@@ -226,7 +232,8 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
 copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y
 copy $(SolutionDir)..\client\netdb.txt "$(OutDir)netdb.txt" /Y
 copy $(SolutionDir)..\client\netdb-testnet.txt "$(OutDir)netdb-testnet.txt" /Y
-copy $(SolutionDir)..\client\netdb-white.txt "$(OutDir)netdb-white.txt" /Y</Command>
+copy $(SolutionDir)..\client\netdb-white.txt "$(OutDir)netdb-white.txt" /Y
+copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testnet.txt" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
