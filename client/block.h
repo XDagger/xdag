@@ -106,4 +106,7 @@ extern int xdag_blocks_reset(void);
 // prints detailed information about block
 extern int xdag_print_block_info(xdag_hash_t hash, FILE *out);
 
+// retrieves addresses of N last main blocks
+extern void xdagGetLastMainBlocks(int count, char** addressArray);
+
 #endif

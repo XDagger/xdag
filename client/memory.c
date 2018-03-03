@@ -129,3 +129,19 @@ int xdag_free_all(void)
 
 #endif
 
+char** xdagCreateStringArray(int count, int stringLen)
+{
+	char** stringArray = malloc(count * sizeof(char*));
+	for (int i = 0; i < count; ++i) {
+		stringArray[i] = malloc(stringLen);
+	}
+	return  stringArray;
+}
+
+void xdagFreeStringArray(char** stringArray, int count)
+{
+	for (int i = 0; i < count; ++i) {
+		free(stringArray[i]);
+	}
+	free(stringArray);
+}

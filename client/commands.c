@@ -330,7 +330,16 @@ void processLastBlocksCommand(char *nextParam, FILE *out)
 	} else if (sscanf(cmd, "%d", &blocksCount) != 1 || blocksCount <= 0) {
 		fprintf(out, "Illegal number.\n");
 	} else {
-		//TODO: something interesting should be here :)
+		//100 is limit
+		if (blocksCount > 100) {
+			blocksCount = 100;
+		}
+		char** addressList = xdagCreateStringArray(blocksCount, 40);	//lets assume max address length as 39 symbols + null terminator
+		xdagGetLastMainBlocks(blocksCount, addressList);
+		for (int i = 0; i < blocksCount; ++i) {
+			fprintf(out, "%s\n", addressList[i]);
+		}
+		xdagFreeStringArray(addressList, blocksCount);
 	}
 }
 
