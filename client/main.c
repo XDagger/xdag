@@ -149,7 +149,7 @@ int main(int argc, char **argv)
     }
     if(is_miner && (is_pool || pubaddr || bindto || n_addrports))
     {
-        printf("Miner can't be a pool or have directly connected to the cheatcoin network.\n");
+        printf("Miner can't be a pool or have directly connected to the xdag network.\n");
         return -1;
     }
     g_is_miner = is_miner;
@@ -188,12 +188,14 @@ int main(int argc, char **argv)
     if(xdag_blocks_start((is_miner ? ~n_mining_threads : n_mining_threads), !!miner_address)) return -1;
     xdag_mess("Starting pool engine...");
     if(xdag_pool_start(is_pool, pool_arg, miner_address)) return -1;
-#ifndef XDAG_GUI_WALLET
 
-    xdag_mess("Starting terminal server...");
-	pthread_t th;
-	if (pthread_create(&th, 0, &terminal_thread, 0)) {
-		return -1;
+#ifndef XDAG_GUI_WALLET
+	if (is_pool || transport_flags & XDAG_DAEMON > 0) {
+		xdag_mess("Starting terminal server...");
+		pthread_t th;
+		if (pthread_create(&th, 0, &terminal_thread, 0)) {
+			return -1;
+		}
 	}
 
 	startCommandProcessing(transport_flags);

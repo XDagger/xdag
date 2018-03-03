@@ -223,7 +223,10 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
     </Link>
     <PostBuildEvent>
       <Command>copy $(PTHREAD_ROOT)dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
-copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Command>
+copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y
+copy $(SolutionDir)..\client\netdb.txt "$(OutDir)netdb.txt" /Y
+copy $(SolutionDir)..\client\netdb-testnet.txt "$(OutDir)netdb-testnet.txt" /Y
+copy $(SolutionDir)..\client\netdb-white.txt "$(OutDir)netdb-white.txt" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

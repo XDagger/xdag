@@ -56,7 +56,7 @@ int terminal(void)
 			ispwd = 1;
 		}
 #if !defined(_WIN32) && !defined(_WIN64)
-		if ((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+		if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
 			printf("Can't open unix domain socket errno:%d.\n", errno);
 			continue;
 		}
@@ -64,7 +64,7 @@ int terminal(void)
 		memset(&addr, 0, sizeof(addr));
 		addr.sun_family = AF_UNIX;
 		strcpy(addr.sun_path, UNIX_SOCK);
-		if (connect(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+		if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
 			printf("Can't connect to unix domain socket errno:%d\n", errno);
 			continue;
 		}
@@ -127,12 +127,12 @@ void *terminal_thread(void *arg)
 	addrLocal.sin_family = AF_INET;
 	addrLocal.sin_port = htons(APPLICATION_DOMAIN_PORT);
 	addrLocal.sin_addr.s_addr = htonl(LOCAL_HOST_IP);
-	if (bind(s, (struct sockadr*)&addrLocal, sizeof(addrLocal)) == -1) {
+	if (bind(sock, (struct sockadr*)&addrLocal, sizeof(addrLocal)) == -1) {
 		xdag_err("Can't bind domain socket errno:%d", errno);
 		return 0;
 	}
 #endif
-	if (listen(s, 100) == -1) {
+	if (listen(sock, 100) == -1) {
 		xdag_err("Unix domain socket listen errno:%d", errno);
 		return 0;
 	}

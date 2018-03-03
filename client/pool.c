@@ -143,29 +143,28 @@ static void *pool_main_thread(void *arg)
 {
 	struct xdag_pool_task *task;
 	const char *mess;
-	struct miner *m;
-	struct pollfd *p;
 	uint64_t ntask;
-	int i, todo, nminers, done, j;
+	int todo, done;
 
 	while (!g_xdag_sync_on) {
 		sleep(1);
 	}
 
 	for (;;) {
-		nminers = g_nminers;
+		int nminers = g_nminers;
 		if (!poll(g_fds, nminers, 1000)) continue;
 
-		for (i = done = 0; i < nminers; ++i) {
-			m = g_miners + i;
-			p = g_fds + i;
+		for (int i = done = 0; i < nminers; ++i) {
+			struct miner *m = g_miners + i;
+			struct pollfd *p = g_fds + i;
 			
 			if (m->state & (MINER_ARCHIVE | MINER_FREE)) continue;
 			
 			if (p->revents & POLLNVAL) continue;
 			
 			if (p->revents & POLLHUP) {
-				done = 1; mess = "socket hangup";
+				done = 1; 
+				mess = "socket hangup";
  disconnect:
 				m->state |= MINER_ARCHIVE;
  disconnect_free:
@@ -177,7 +176,7 @@ static void *pool_main_thread(void *arg)
 					free(m->block); m->block = 0;
 				}
 
-				j = m->ip;
+				int j = m->ip;
 				
 				xdag_info("Pool  : miner %d disconnected from %u.%u.%u.%u:%u by %s", i,
 							   j & 0xff, j >> 8 & 0xff, j >> 16 & 0xff, j >> 24 & 0xff, ntohs(m->port), mess);
@@ -186,7 +185,9 @@ static void *pool_main_thread(void *arg)
 			}
 
 			if (p->revents & POLLERR) {
-				done = 1; mess = "socket error"; goto disconnect;
+				done = 1;
+				mess = "socket error"; 
+				goto disconnect;
 			}
 
 			if (p->revents & POLLIN) {
@@ -195,7 +196,8 @@ static void *pool_main_thread(void *arg)
 				todo = read(p->fd, (uint8_t*)m->data + m->data_size, todo);
 				
 				if (todo <= 0) {
-					mess = "read error"; goto disconnect;
+					mess = "read error"; 
+					goto disconnect;
 				}
 				
 				m->data_size += todo;
@@ -212,7 +214,8 @@ static void *pool_main_thread(void *arg)
 						memcpy(m->block->field, m->data, sizeof(struct xdag_field));
 						m->block_size++;
 					} else if (m->nfield_in == 1) {
-						mess = "protocol mismatch"; m->state = MINER_FREE; goto disconnect_free;
+						mess = "protocol mismatch"; m->state = MINER_FREE; 
+						goto disconnect_free;
 					} else if (m->block_size) {
 						memcpy(m->block->field + m->block_size, m->data, sizeof(struct xdag_field));
 						m->block_size++;
@@ -229,7 +232,8 @@ static void *pool_main_thread(void *arg)
 								if (!g_firstb) {
 									g_firstb = g_lastb = m->block;
 								} else {
-									g_lastb->field[0].transport_header = (uintptr_t)m->block, g_lastb = m->block;
+									g_lastb->field[0].transport_header = (uintptr_t)m->block;
+									g_lastb = m->block;
 								}
 								
 								pthread_mutex_unlock(&g_pool_mutex);
@@ -248,10 +252,9 @@ static void *pool_main_thread(void *arg)
 
 						if (!(m->state & MINER_ADDRESS) || memcmp(m->id.data, m->data, sizeof(xdag_hashlow_t))) {
 							xdag_time_t t;
-							int64_t pos;
 
 							memcpy(m->id.data, m->data, sizeof(struct xdag_field));
-							pos = xdag_get_block_pos(m->id.data, &t);
+							int64_t pos = xdag_get_block_pos(m->id.data, &t);
 							
 							if (pos < 0) {
 								m->state &= ~MINER_ADDRESS;
@@ -270,7 +273,7 @@ static void *pool_main_thread(void *arg)
 
 			if (p->revents & POLLOUT) {
 				struct xdag_field data[2];
-				int j, nfld = 0;
+				int nfld = 0;
 
 				ntask = g_xdag_pool_ntask;
 				task = &g_xdag_pool_task[ntask & 1];
@@ -289,7 +292,7 @@ static void *pool_main_thread(void *arg)
 				if (nfld) {
 					done = 1;
 
-					for (j = 0; j < nfld; ++j) {
+					for (int j = 0; j < nfld; ++j) {
 						dfslib_encrypt_array(g_crypt, (uint32_t*)(data + j), DATA_SIZE, m->nfield_out++);
 					}
 
@@ -456,21 +459,19 @@ static int pay_miners(xdag_time_t t)
 
 static void *pool_block_thread(void *arg)
 {
-	struct xdag_pool_task *task;
-	uint64_t ntask;
-	xdag_time_t t0 = 0, t;
+	xdag_time_t t0 = 0;
 	struct xdag_block *b;
-	int done, res;
+	int res;
 
 	while (!g_xdag_sync_on) {
 		sleep(1);
 	}
 
 	for (;;) {
-		done = 0;
-		ntask = g_xdag_pool_ntask;
-		task = &g_xdag_pool_task[ntask & 1];
-		t = task->main_time;
+		int done = 0;
+		uint64_t ntask = g_xdag_pool_ntask;
+		struct xdag_pool_task *task = &g_xdag_pool_task[ntask & 1];
+		xdag_time_t t = task->main_time;
 
 		if (t > t0) {
 			uint64_t *h = g_xdag_mined_hashes[(t - N_CONFIRMATIONS + 1) & (N_CONFIRMATIONS - 1)];
@@ -614,20 +615,18 @@ static void *pool_net_thread(void *arg)
 	struct sockaddr_in peeraddr;
 //	struct hostent *host;
 	char *lasts;
-	int res = 0, sock, fd, rcvbufsize = 1024, reuseaddr = 1, i, j, i0, count;
+	int res = 0, rcvbufsize = 1024, reuseaddr = 1, i, i0, count;
 //	unsigned long nonblock = 1;
 	struct linger linger_opt = { 1, 0 }; // Linger active, timeout 0
 	socklen_t peeraddr_len = sizeof(peeraddr);
-	xdag_time_t t;
 	struct miner *m;
-	struct pollfd *p;
 
 	while (!g_xdag_sync_on) {
 		sleep(1);
 	}
 
 	// Create a socket
-	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock == INVALID_SOCKET) {
 		mess = "cannot create a socket"; goto err;
 	}
@@ -686,14 +685,15 @@ static void *pool_net_thread(void *arg)
 	for (;;) {
 		// Accept a connection (the "accept" command waits for a connection with
 		// no timeout limit...)
-		fd = accept(sock, (struct sockaddr*)&peeraddr, &peeraddr_len);
+		int fd = accept(sock, (struct sockaddr*)&peeraddr, &peeraddr_len);
 		if (fd < 0) {
-			mess = "cannot accept"; goto err;
+			mess = "cannot accept"; 
+			goto err;
 		}
 		setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char*)&rcvbufsize, sizeof(int));
 //		ioctl(fd, FIONBIO, (char*)&nonblock);
 
-		t = xdag_main_time();
+		xdag_time_t t = xdag_main_time();
 
 		for (i = 0, count = 1, i0 = -1; i < g_nminers; ++i) {
 			m = g_miners + i;
@@ -716,14 +716,14 @@ static void *pool_net_thread(void *arg)
 			close(fd);
 		} else {
 			m = g_miners + i;
-			p = g_fds + i;
+			struct pollfd *p = g_fds + i;
 			p->fd = fd;
 			p->events = POLLIN | POLLOUT;
 			p->revents = 0;
 
 			memset(m, 0, sizeof(struct miner));
 			
-			j = m->ip = peeraddr.sin_addr.s_addr;
+			int j = m->ip = peeraddr.sin_addr.s_addr;
 			m->port = peeraddr.sin_port;
 			
 			if (i == g_nminers)
@@ -819,17 +819,15 @@ int xdag_send_block_via_pool(struct xdag_block *b)
 
 static void *miner_net_thread(void *arg)
 {
-	struct xdag_block *blk, b;
+	struct xdag_block b;
 	struct xdag_field data[2];
 	xdag_hash_t hash;
-	const char *str = (const char*)arg, *s;
+	const char *str = (const char*)arg;
 	char buf[0x100];
 	const char *mess, *mess1 = "";
 	struct sockaddr_in peeraddr;
-	struct hostent *host;
 	char *lasts;
-	int res = 0, reuseaddr = 1, ndata, maxndata;
-	int64_t pos;
+	int res = 0, reuseaddr = 1;
 	struct linger linger_opt = { 1, 0 }; // Linger active, timeout 0
 	xdag_time_t t;
 	struct miner *m = &g_local_miner;
@@ -840,28 +838,32 @@ static void *miner_net_thread(void *arg)
 	}
 
  begin:
-	ndata = 0;
-	maxndata = sizeof(struct xdag_field);
+	int ndata = 0;
+	int maxndata = sizeof(struct xdag_field);
 	t0 = t00 = 0;
 	m->nfield_in = m->nfield_out = 0;
 
 	if (g_miner_address) {
 		if (xdag_address2hash(g_miner_address, hash)) {
-			mess = "incorrect miner address"; goto err;
+			mess = "incorrect miner address"; 
+			goto err;
 		}
 	} else if (xdag_get_our_block(hash)) {
-		mess = "can't create a block"; goto err;
+		mess = "can't create a block"; 
+		goto err;
 	}
 
-	pos = xdag_get_block_pos(hash, &t);
+	int64_t pos = xdag_get_block_pos(hash, &t);
 	
 	if (pos < 0) {
-		mess = "can't find the block"; goto err;
+		mess = "can't find the block"; 
+		goto err;
 	}
 
-	blk = xdag_storage_load(hash, t, pos, &b);
+	struct xdag_block *blk = xdag_storage_load(hash, t, pos, &b);
 	if (!blk) {
-		mess = "can't load the block"; goto err;
+		mess = "can't load the block"; 
+		goto err;
 	}
 	if (blk != &b) memcpy(&b, blk, sizeof(struct xdag_block));
 
@@ -869,7 +871,8 @@ static void *miner_net_thread(void *arg)
 	// Create a socket
 	g_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (g_socket == INVALID_SOCKET) {
-		pthread_mutex_unlock(&g_pool_mutex); mess = "cannot create a socket"; goto err;
+		pthread_mutex_unlock(&g_pool_mutex); mess = "cannot create a socket"; 
+		goto err;
 	}
 	if (fcntl(g_socket, F_SETFD, FD_CLOEXEC) == -1) {
 		xdag_err("pool  : can't set FD_CLOEXEC flag on socket %d, %s\n", g_socket, strerror(errno));
@@ -881,14 +884,14 @@ static void *miner_net_thread(void *arg)
 
 	// Resolve the server address (convert from symbolic name to IP number)
 	strcpy(buf, str);
-	s = strtok_r(buf, " \t\r\n:", &lasts);
+	const char *s = strtok_r(buf, " \t\r\n:", &lasts);
 	if (!s) {
 		pthread_mutex_unlock(&g_pool_mutex); mess = "host is not given"; goto err;
 	}
 	if (!strcmp(s, "any")) {
 		peeraddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	} else if (!inet_aton(s, &peeraddr.sin_addr)) {
-		host = gethostbyname(s);
+		struct hostent *host = gethostbyname(s);
 		if (!host || !host->h_addr_list[0]) {
 			pthread_mutex_unlock(&g_pool_mutex); mess = "cannot resolve host ", mess1 = s; res = h_errno; goto err;
 		}
@@ -899,7 +902,8 @@ static void *miner_net_thread(void *arg)
 	// Resolve port
 	s = strtok_r(0, " \t\r\n:", &lasts);
 	if (!s) {
-		pthread_mutex_unlock(&g_pool_mutex); mess = "port is not given"; goto err;
+		pthread_mutex_unlock(&g_pool_mutex); mess = "port is not given"; 
+		goto err;
 	}
 	peeraddr.sin_port = htons(atoi(s));
 
@@ -915,7 +919,8 @@ static void *miner_net_thread(void *arg)
 	}
 
 	if (send_to_pool(b.field, XDAG_BLOCK_FIELDS) < 0) {
-		mess = "socket is closed"; goto err;
+		mess = "socket is closed"; 
+		goto err;
 	}
 
 	for (;;) {
@@ -932,15 +937,21 @@ static void *miner_net_thread(void *arg)
 		p.events = POLLIN | (tt - t0 >= SEND_PERIOD && tt - t00 <= 64 ? POLLOUT : 0);
 		
 		if (!poll(&p, 1, 0)) {
-			pthread_mutex_unlock(&g_pool_mutex); sleep(1); continue;
+			pthread_mutex_unlock(&g_pool_mutex); 
+			sleep(1);
+			continue;
 		}
 
 		if (p.revents & POLLHUP) {
-			pthread_mutex_unlock(&g_pool_mutex); mess = "socket hangup"; goto err;
+			pthread_mutex_unlock(&g_pool_mutex);
+			mess = "socket hangup"; 
+			goto err;
 		}
 
 		if (p.revents & POLLERR) {
-			pthread_mutex_unlock(&g_pool_mutex); mess = "socket error"; goto err;
+			pthread_mutex_unlock(&g_pool_mutex);
+			mess = "socket error"; 
+			goto err;
 		}
 
 		if (p.revents & POLLIN) {
