@@ -300,9 +300,7 @@ static void check_new_main(void)
 
 static void unwind_main(struct block_internal *b)
 {
-	struct block_internal *t;
-
-	for (t = top_main_chain; t != b; t = t->link[t->max_diff_link]) {
+	for (struct block_internal *t = top_main_chain; t != b; t = t->link[t->max_diff_link]) {
 		t->flags &= ~BI_MAIN_CHAIN;
 		if (t->flags & BI_MAIN) {
 			unset_main(t);
@@ -1324,12 +1322,9 @@ static int bi_compar(const void *l, const void *r)
 /* prints detailed information about block */
 int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 {
-	struct block_internal *bi, **ba, **ba1, *ri;
-	struct block_backrefs *br;
+	struct block_internal *bi, **ba;
 	struct tm tm;
 	char tbuf[64];
-	uint64_t *h;
-	time_t t;
 	int i, j, n, N;
 
 	pthread_mutex_lock(&block_mutex);
@@ -1340,8 +1335,8 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 		return -1;
 	}
 	
-	h = bi->hash;
-	t = bi->time >> 10;
+	uint64_t *h = bi->hash;
+	time_t t = bi->time >> 10;
 	localtime_r(&t, &tm);
 	strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
 	fprintf(out, "      time: %s.%03d\n", tbuf, (int)((bi->time & 0x3ff) * 1000) >> 10);
@@ -1380,7 +1375,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	
 	if (!ba) return -1;
 
-	for (br = bi->backrefs; br; br = br->next) {
+	for (struct block_backrefs *br = bi->backrefs; br; br = br->next) {
 		for (i = N_BACKREFS; i && !br->backrefs[i - 1]; i--);
 			
 		if (!i) {
@@ -1389,7 +1384,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 
 		if (n + i > N) {
 			N *= 2;
-			ba1 = realloc(ba, N * sizeof(struct block_internal *));
+			struct block_internal **ba1 = realloc(ba, N * sizeof(struct block_internal *));
 			if (!ba1) {
 				free(ba);
 				return -1;
@@ -1411,7 +1406,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 
 	for (i = 0; i < n; ++i) {
 		if (!i || ba[i] != ba[i - 1]) {
-			ri = ba[i];
+			struct block_internal *ri = ba[i];
 			if (ri->flags & BI_APPLIED) {
 				for (j = 0; j < ri->nlinks; j++) {
 					if (ri->link[j] == bi && ri->linkamount[j]) {
@@ -1430,4 +1425,17 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	free(ba);
 	
 	return 0;
+}
+
+// retrieves addresses of N last main blocks
+int xdagGetLastMainBlocks(int count, char** addressArray)
+{
+	int i = 0;
+	for (struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
+		if (b->flags & BI_MAIN) {
+			strcpy(addressArray[i], xdag_hash2address(b->hash));
+			++i;
+		}
+	}
+	return i;
 }
