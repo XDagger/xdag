@@ -49,7 +49,8 @@ static int add_key(xdag_hash_t priv)
 		xdag_user_crypt_action(priv32, nkeys, sizeof(xdag_hash_t) / sizeof(uint32_t), 1);
 		
 		if (fwrite(priv32, sizeof(xdag_hash_t), 1, f) != 1) {
-			fclose(f); goto fail;
+			fclose(f);
+			goto fail;
 		}
 
 		fclose(f);
@@ -62,10 +63,11 @@ static int add_key(xdag_hash_t priv)
 	
 	if (nkeys == maxnkeys) {
 		struct xdag_public_key *newarr = (struct xdag_public_key *)
-											  realloc(keys_arr, ((maxnkeys | 0xff) + 1) * sizeof(struct xdag_public_key));
+			realloc(keys_arr, ((maxnkeys | 0xff) + 1) * sizeof(struct xdag_public_key));
 		if (!newarr) goto fail;
-
-		maxnkeys |= 0xff, maxnkeys++;
+		
+		maxnkeys |= 0xff;
+		maxnkeys++;
 		keys_arr = newarr;
 	}
 

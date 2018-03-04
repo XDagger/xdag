@@ -222,6 +222,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
   <ItemGroup>
     <ClInclude Include="..\..\client\address.h" />
     <ClInclude Include="..\..\client\block.h" />
+    <ClInclude Include="..\..\client\commands.h" />
     <ClInclude Include="..\..\client\crypt.h" />
     <ClInclude Include="..\..\client\hash.h" />
     <ClInclude Include="..\..\client\log.h" />
@@ -234,6 +235,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
     <ClInclude Include="..\..\client\storage.h" />
     <ClInclude Include="..\..\client\sync.h" />
     <ClInclude Include="..\..\client\system.h" />
+    <ClInclude Include="..\..\client\terminal.h" />
     <ClInclude Include="..\..\client\transport.h" />
     <ClInclude Include="..\..\client\version.h" />
     <ClInclude Include="..\..\client\wallet.h" />
@@ -279,6 +281,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
   <ItemGroup>
     <ClCompile Include="..\..\client\address.c" />
     <ClCompile Include="..\..\client\block.c" />
+    <ClCompile Include="..\..\client\commands.c" />
     <ClCompile Include="..\..\client\crypt.c" />
     <ClCompile Include="..\..\client\hash.c" />
     <ClCompile Include="..\..\client\log.c" />
@@ -289,6 +292,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
     <ClCompile Include="..\..\client\sha256.c" />
     <ClCompile Include="..\..\client\storage.c" />
     <ClCompile Include="..\..\client\sync.c" />
+    <ClCompile Include="..\..\client\terminal.c" />
     <ClCompile Include="..\..\client\transport.c" />
     <ClCompile Include="..\..\client\wallet.c" />
     <ClCompile Include="..\..\dnet\dnet_command.c" />

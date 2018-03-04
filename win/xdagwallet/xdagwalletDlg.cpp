@@ -1,4 +1,3 @@
-
 // cheatcoinwalletDlg.cpp : implementation file
 //
 
@@ -6,8 +5,9 @@
 #include "xdagwallet.h"
 #include "xdagwalletDlg.h"
 #include "afxdialogex.h"
-#include "../../client/main.h"
 #include "PasswordDlg.h"
+#include "../../client/main.h"
+#include "../../client/commands.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

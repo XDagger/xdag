@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\client\address.c" />
     <ClCompile Include="..\..\client\block.c" />
+    <ClCompile Include="..\..\client\commands.c" />
     <ClCompile Include="..\..\client\crypt.c" />
     <ClCompile Include="..\..\client\hash.c" />
     <ClCompile Include="..\..\client\log.c" />
@@ -31,6 +32,7 @@
     <ClCompile Include="..\..\client\sha256.c" />
     <ClCompile Include="..\..\client\storage.c" />
     <ClCompile Include="..\..\client\sync.c" />
+    <ClCompile Include="..\..\client\terminal.c" />
     <ClCompile Include="..\..\client\transport.c" />
     <ClCompile Include="..\..\client\wallet.c" />
     <ClCompile Include="..\..\dnet\dnet_command.c" />
@@ -54,6 +56,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\client\address.h" />
     <ClInclude Include="..\..\client\block.h" />
+    <ClInclude Include="..\..\client\commands.h" />
     <ClInclude Include="..\..\client\crypt.h" />
     <ClInclude Include="..\..\client\hash.h" />
     <ClInclude Include="..\..\client\log.h" />
@@ -66,6 +69,7 @@
     <ClInclude Include="..\..\client\storage.h" />
     <ClInclude Include="..\..\client\sync.h" />
     <ClInclude Include="..\..\client\system.h" />
+    <ClInclude Include="..\..\client\terminal.h" />
     <ClInclude Include="..\..\client\transport.h" />
     <ClInclude Include="..\..\client\version.h" />
     <ClInclude Include="..\..\client\wallet.h" />
@@ -105,6 +109,12 @@
   <ItemGroup>
     <None Include="..\..\client\sha256-mb-x86_64.s" />
     <None Include="..\..\client\x86_64cpuid.s" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\client\netdb-testnet.txt" />
+    <Text Include="..\..\client\netdb-white-testnet.txt" />
+    <Text Include="..\..\client\netdb-white.txt" />
+    <Text Include="..\..\client\netdb.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -208,6 +218,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;DFSTOOLS;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <PreprocessToFile>false</PreprocessToFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -218,7 +229,11 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
     </Link>
     <PostBuildEvent>
       <Command>copy $(PTHREAD_ROOT)dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
-copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Command>
+copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y
+copy $(SolutionDir)..\client\netdb.txt "$(OutDir)netdb.txt" /Y
+copy $(SolutionDir)..\client\netdb-testnet.txt "$(OutDir)netdb-testnet.txt" /Y
+copy $(SolutionDir)..\client\netdb-white.txt "$(OutDir)netdb-white.txt" /Y
+copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testnet.txt" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

@@ -20,13 +20,14 @@
 #include "pool.h"
 #include "memory.h"
 #include "address.h"
+#include "commands.h"
 
 #define MAIN_CHAIN_PERIOD       (64 << 10)
 #define MAX_WAITING_MAIN        1
 #define DEF_TIME_LIMIT          0 // (MAIN_CHAIN_PERIOD / 2)
-#define XDAG_TEST_ERA      0x16900000000ll
-#define XDAG_MAIN_ERA      0x16940000000ll
-#define XDAG_ERA           xdag_era
+#define XDAG_TEST_ERA           0x16900000000ll
+#define XDAG_MAIN_ERA           0x16940000000ll
+#define XDAG_ERA                xdag_era
 #define MAIN_START_AMOUNT       (1ll << 42)
 #define MAIN_BIG_PERIOD_LOG     21
 #define MAIN_TIME(t)            ((t) >> 16)
@@ -113,7 +114,7 @@ static struct block_internal *block_by_hash(const xdag_hashlow_t hash)
 static void log_block(const char *mess, xdag_hash_t h, xdag_time_t t, uint64_t pos)
 {
 	xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess,
-				   ((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t, pos);
+		((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t, pos);
 }
 
 static inline void accept_amount(struct block_internal *bi, xdag_amount_t sum)
@@ -330,9 +331,9 @@ static inline xdag_diff_t hash_difficulty(xdag_hash_t hash)
 	return xdag_diff_div(max, res);
 }
 
-// returns a number of public key from keys array with lengh nkeys, which conforms to the signature starting from field signo_r of the block b
+// returns a number of public key from 'keys' array with lengh 'keysLength', which conforms to the signature starting from field signo_r of the block b
 // returns -1 if nothing is found
-static int valid_signature(const struct xdag_block *b, int signo_r, int nkeys, struct xdag_public_key *keys)
+static int valid_signature(const struct xdag_block *b, int signo_r, int keysLength, struct xdag_public_key *keys)
 {
 	struct xdag_block buf[2];
 	xdag_hash_t hash;
@@ -350,7 +351,7 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int nkeys, s
 	}
 
 	if (signo_s >= 0) {
-		for (i = 0; i < nkeys; ++i) {
+		for (i = 0; i < keysLength; ++i) {
 			hash_for_signature(buf, keys + i, hash);
 			if (!xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data)) {
 				return i;
@@ -362,7 +363,7 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int nkeys, s
 }
 
 #define set_pretop(b) if ((b) && MAIN_TIME((b)->time) < MAIN_TIME(timestamp) && \
-						  (!pretop_main_chain || xdag_diff_gt((b)->difficulty, pretop_main_chain->difficulty))) { \
+		(!pretop_main_chain || xdag_diff_gt((b)->difficulty, pretop_main_chain->difficulty))) { \
 		pretop_main_chain = (b); \
 		log_block("Pretop", (b)->hash, (b)->time, (b)->storage_pos); \
 }
@@ -373,31 +374,37 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int nkeys, s
  *		0  = block exists
  *		<0 = error
  */
-static int add_block_nolock(struct xdag_block *b, xdag_time_t limit)
+static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 {
-	uint64_t timestamp = get_timestamp(), sum_in = 0, sum_out = 0, *psum, theader = b->field[0].transport_header;
+	const uint64_t timestamp = get_timestamp();
+	uint64_t sum_in = 0, sum_out = 0, *psum;
+	const uint64_t transportHeader = newBlock->field[0].transport_header;
 	struct xdag_public_key public_keys[16], *our_keys = 0;
-	int i, j, k, nkeys = 0, nourkeys = 0, nsignin = 0, nsignout = 0, signinmask = 0, signoutmask = 0, inmask = 0, outmask = 0,
-		verified_keys_mask = 0, err, type, nkey;
-	struct block_internal bi, *ref, *bsaved, *ref0;
+	int i, j, k;
+	int keysCount = 0, ourKeysCount = 0;
+	int signInCount = 0, signOutCount = 0;
+	int signinmask = 0, signoutmask = 0;
+	int inmask = 0, outmask = 0;
+	int verified_keys_mask = 0, err, type;
+	struct block_internal tmpNodeBlock, *blockRef, *blockRef0;
 	xdag_diff_t diff0, diff;
 
-	memset(&bi, 0, sizeof(struct block_internal));
-	b->field[0].transport_header = 0;
-	xdag_hash(b, sizeof(struct xdag_block), bi.hash);
+	memset(&tmpNodeBlock, 0, sizeof(struct block_internal));
+	newBlock->field[0].transport_header = 0;
+	xdag_hash(newBlock, sizeof(struct xdag_block), tmpNodeBlock.hash);
 
-	if (block_by_hash(bi.hash)) return 0;
+	if (block_by_hash(tmpNodeBlock.hash)) return 0;
 	
-	if (xdag_type(b, 0) != XDAG_FIELD_HEAD) {
-		i = xdag_type(b, 0);
+	if (xdag_type(newBlock, 0) != XDAG_FIELD_HEAD) {
+		i = xdag_type(newBlock, 0);
 		err = 1;
 		goto end;
 	}
 
-	bi.time = b->field[0].time;
+	tmpNodeBlock.time = newBlock->field[0].time;
 
-	if (bi.time > timestamp + MAIN_CHAIN_PERIOD / 4 || bi.time < XDAG_ERA
-		|| (limit && timestamp - bi.time > limit)) {
+	if (tmpNodeBlock.time > timestamp + MAIN_CHAIN_PERIOD / 4 || tmpNodeBlock.time < XDAG_ERA
+		|| (limit && timestamp - tmpNodeBlock.time > limit)) {
 		i = 0;
 		err = 2;
 		goto end;
@@ -408,7 +415,7 @@ static int add_block_nolock(struct xdag_block *b, xdag_time_t limit)
 	}
 
 	for (i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
-		switch ((type = xdag_type(b, i))) {
+		switch ((type = xdag_type(newBlock, i))) {
 		case XDAG_FIELD_NONCE:
 			break;
 		case XDAG_FIELD_IN:
@@ -418,22 +425,24 @@ static int add_block_nolock(struct xdag_block *b, xdag_time_t limit)
 			outmask |= 1 << i;
 			break;
 		case XDAG_FIELD_SIGN_IN:
-			if (++nsignin & 1) {
+			if (++signInCount & 1) {
 				signinmask |= 1 << i;
 			}
 			break;
 		case XDAG_FIELD_SIGN_OUT:
-			if (++nsignout & 1) {
+			if (++signOutCount & 1) {
 				signoutmask |= 1 << i;
 			}
 			break;
 		case XDAG_FIELD_PUBLIC_KEY_0:
 		case XDAG_FIELD_PUBLIC_KEY_1:
-			if ((public_keys[nkeys].key = xdag_public_to_key(b->field[i].data, type - XDAG_FIELD_PUBLIC_KEY_0))) {
-				public_keys[nkeys++].pub = (uint64_t*)((uintptr_t)&b->field[i].data | (type - XDAG_FIELD_PUBLIC_KEY_0));
+			if ((public_keys[keysCount].key = xdag_public_to_key(newBlock->field[i].data, type - XDAG_FIELD_PUBLIC_KEY_0))) {
+				public_keys[keysCount++].pub = (uint64_t*)((uintptr_t)&newBlock->field[i].data | (type - XDAG_FIELD_PUBLIC_KEY_0));
 			}
 			break;
-		default: err = 3; goto end;
+		default:
+			err = 3;
+			goto end;
 		}
 	}
 
@@ -441,29 +450,30 @@ static int add_block_nolock(struct xdag_block *b, xdag_time_t limit)
 		outmask = 0;
 	}
 
-	if (nsignout & 1) {
-		i = nsignout;
+	if (signOutCount & 1) {
+		i = signOutCount;
 		err = 4;
 		goto end;
 	}
 
-	if (nsignout) {
-		our_keys = xdag_wallet_our_keys(&nourkeys);
+	if (signOutCount) {
+		our_keys = xdag_wallet_our_keys(&ourKeysCount);
 	}
 
 	for (i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
 		if (1 << i & (signinmask | signoutmask)) {
-			nkey = valid_signature(b, i, nkeys, public_keys);
-			if (nkey >= 0) {
-				verified_keys_mask |= 1 << nkey;
+			int keyNumber = valid_signature(newBlock, i, keysCount, public_keys);
+			if (keyNumber >= 0) {
+				verified_keys_mask |= 1 << keyNumber;
 			}
-			if (1 << i & signoutmask && !(bi.flags & BI_OURS) && (nkey = valid_signature(b, i, nourkeys, our_keys)) >= 0) {
-				bi.flags |= BI_OURS, bi.n_our_key = nkey;
+			if (1 << i & signoutmask && !(tmpNodeBlock.flags & BI_OURS) && (keyNumber = valid_signature(newBlock, i, ourKeysCount, our_keys)) >= 0) {
+				tmpNodeBlock.flags |= BI_OURS;
+				tmpNodeBlock.n_our_key = keyNumber;
 			}
 		}
 	}
 
-	for (i = j = 0; i < nkeys; ++i) {
+	for (i = j = 0; i < keysCount; ++i) {
 		if (1 << i & verified_keys_mask) {
 			if (i != j) {
 				xdag_free_key(public_keys[j].key);
@@ -472,35 +482,38 @@ static int add_block_nolock(struct xdag_block *b, xdag_time_t limit)
 		}
 	}
 
-	nkeys = j;
-	bi.difficulty = diff0 = hash_difficulty(bi.hash);
-	sum_out += b->field[0].amount;
-	bi.fee = b->field[0].amount;
+	keysCount = j;
+	tmpNodeBlock.difficulty = diff0 = hash_difficulty(tmpNodeBlock.hash);
+	sum_out += newBlock->field[0].amount;
+	tmpNodeBlock.fee = newBlock->field[0].amount;
 
 	for (i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
 		if (1 << i & (inmask | outmask)) {
-			if (!(ref = block_by_hash(b->field[i].hash))) {
+			blockRef = block_by_hash(newBlock->field[i].hash);
+			if (!blockRef) {
 				err = 5;
 				goto end;
 			}
-			if (ref->time >= bi.time) {
+			if (blockRef->time >= tmpNodeBlock.time) {
 				err = 6;
 				goto end;
 			}
-			if (bi.nlinks >= MAX_LINKS) {
+			if (tmpNodeBlock.nlinks >= MAX_LINKS) {
 				err = 7;
 				goto end;
 			}
 			if (1 << i & inmask) {
-				if (b->field[i].amount) {
-					struct xdag_block buf, *bref = xdag_storage_load(ref->hash, ref->time, ref->storage_pos, &buf);
+				if (newBlock->field[i].amount) {
+					struct xdag_block buf;
+					struct xdag_block *bref = xdag_storage_load(blockRef->hash, blockRef->time, blockRef->storage_pos, &buf);
 					if (!bref) {
-						err = 8; goto end;
+						err = 8;
+						goto end;
 					}
 
 					for (j = k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
 						if (xdag_type(bref, j) == XDAG_FIELD_SIGN_OUT && (++k & 1)
-							&& valid_signature(bref, j, nkeys, public_keys) >= 0) {
+							&& valid_signature(bref, j, keysCount, public_keys) >= 0) {
 							break;
 						}
 					}
@@ -510,156 +523,158 @@ static int add_block_nolock(struct xdag_block *b, xdag_time_t limit)
 					}
 				}
 				psum = &sum_in;
-				bi.in_mask |= 1 << bi.nlinks;
+				tmpNodeBlock.in_mask |= 1 << tmpNodeBlock.nlinks;
 			} else {
 				psum = &sum_out;
 			}
 
-			if (*psum + b->field[i].amount < *psum) {
+			if (*psum + newBlock->field[i].amount < *psum) {
 				err = 0xA;
 				goto end;
 			}
 
-			*psum += b->field[i].amount;
-			bi.link[bi.nlinks] = ref;
-			bi.linkamount[bi.nlinks] = b->field[i].amount;
+			*psum += newBlock->field[i].amount;
+			tmpNodeBlock.link[tmpNodeBlock.nlinks] = blockRef;
+			tmpNodeBlock.linkamount[tmpNodeBlock.nlinks] = newBlock->field[i].amount;
 
-			if (MAIN_TIME(ref->time) < MAIN_TIME(bi.time)) {
-				diff = xdag_diff_add(diff0, ref->difficulty);
+			if (MAIN_TIME(blockRef->time) < MAIN_TIME(tmpNodeBlock.time)) {
+				diff = xdag_diff_add(diff0, blockRef->difficulty);
 			} else {
-				diff = ref->difficulty;
+				diff = blockRef->difficulty;
 
-				while (ref && MAIN_TIME(ref->time) == MAIN_TIME(bi.time)) {
-					ref = ref->link[ref->max_diff_link];
+				while (blockRef && MAIN_TIME(blockRef->time) == MAIN_TIME(tmpNodeBlock.time)) {
+					blockRef = blockRef->link[blockRef->max_diff_link];
 				}
-				if (ref && xdag_diff_gt(xdag_diff_add(diff0, ref->difficulty), diff)) {
-					diff = xdag_diff_add(diff0, ref->difficulty);
+				if (blockRef && xdag_diff_gt(xdag_diff_add(diff0, blockRef->difficulty), diff)) {
+					diff = xdag_diff_add(diff0, blockRef->difficulty);
 				}
 			}
 
-			if (xdag_diff_gt(diff, bi.difficulty)) {
-				bi.difficulty = diff, bi.max_diff_link = bi.nlinks;
+			if (xdag_diff_gt(diff, tmpNodeBlock.difficulty)) {
+				tmpNodeBlock.difficulty = diff;
+				tmpNodeBlock.max_diff_link = tmpNodeBlock.nlinks;
 			}
 
-			bi.nlinks++;
+			tmpNodeBlock.nlinks++;
 		}
 	}
 
-	if (bi.in_mask ? sum_in < sum_out : sum_out != b->field[0].amount) {
+	if (tmpNodeBlock.in_mask ? sum_in < sum_out : sum_out != newBlock->field[0].amount) {
 		err = 0xB;
 		goto end;
 	}
 
-	bsaved = xdag_malloc(sizeof(struct block_internal));
+	struct block_internal *nodeBlock = xdag_malloc(sizeof(struct block_internal));
 
-	if (!bsaved) {
-		err = 0xC; goto end;
+	if (!nodeBlock) {
+		err = 0xC; 
+		goto end;
 	}
 
-	if (!(theader & (sizeof(struct xdag_block) - 1))) {
-		bi.storage_pos = theader;
+	if (!(transportHeader & (sizeof(struct xdag_block) - 1))) {
+		tmpNodeBlock.storage_pos = transportHeader;
 	} else {
-		bi.storage_pos = xdag_storage_save(b);
+		tmpNodeBlock.storage_pos = xdag_storage_save(newBlock);
 	}
 	
-	memcpy(bsaved, &bi, sizeof(struct block_internal));
-	ldus_rbtree_insert(&root, &bsaved->node);
+	memcpy(nodeBlock, &tmpNodeBlock, sizeof(struct block_internal));
+	ldus_rbtree_insert(&root, &nodeBlock->node);
 	g_xdag_stats.nblocks++;
 	
 	if (g_xdag_stats.nblocks > g_xdag_stats.total_nblocks) {
 		g_xdag_stats.total_nblocks = g_xdag_stats.nblocks;
 	}
 	
-	set_pretop(bsaved);
+	set_pretop(nodeBlock);
 	set_pretop(top_main_chain);
 	
-	if (xdag_diff_gt(bi.difficulty, g_xdag_stats.difficulty)) {
-		xdag_info("Diff  : %llx%016llx (+%llx%016llx)", xdag_diff_args(bi.difficulty), xdag_diff_args(diff0));
+	if (xdag_diff_gt(tmpNodeBlock.difficulty, g_xdag_stats.difficulty)) {
+		xdag_info("Diff  : %llx%016llx (+%llx%016llx)", xdag_diff_args(tmpNodeBlock.difficulty), xdag_diff_args(diff0));
 
-		for (ref = bsaved, ref0 = 0; ref && !(ref->flags & BI_MAIN_CHAIN); ref = ref->link[ref->max_diff_link]) {
-			if ((!ref->link[ref->max_diff_link] || xdag_diff_gt(ref->difficulty, ref->link[ref->max_diff_link]->difficulty))
-				&& (!ref0 || MAIN_TIME(ref0->time) > MAIN_TIME(ref->time))) {
-				ref->flags |= BI_MAIN_CHAIN; ref0 = ref;
+		for (blockRef = nodeBlock, blockRef0 = 0; blockRef && !(blockRef->flags & BI_MAIN_CHAIN); blockRef = blockRef->link[blockRef->max_diff_link]) {
+			if ((!blockRef->link[blockRef->max_diff_link] || xdag_diff_gt(blockRef->difficulty, blockRef->link[blockRef->max_diff_link]->difficulty))
+				&& (!blockRef0 || MAIN_TIME(blockRef0->time) > MAIN_TIME(blockRef->time))) {
+				blockRef->flags |= BI_MAIN_CHAIN; 
+				blockRef0 = blockRef;
 			}
 		}
 
-		if (ref && ref0 && ref != ref0 && MAIN_TIME(ref->time) == MAIN_TIME(ref0->time)) {
-			ref = ref->link[ref->max_diff_link];
+		if (blockRef && blockRef0 && blockRef != blockRef0 && MAIN_TIME(blockRef->time) == MAIN_TIME(blockRef0->time)) {
+			blockRef = blockRef->link[blockRef->max_diff_link];
 		}
 
-		unwind_main(ref);
-		top_main_chain = bsaved;
-		g_xdag_stats.difficulty = bi.difficulty;
+		unwind_main(blockRef);
+		top_main_chain = nodeBlock;
+		g_xdag_stats.difficulty = tmpNodeBlock.difficulty;
 
 		if (xdag_diff_gt(g_xdag_stats.difficulty, g_xdag_stats.max_difficulty)) {
-
 			g_xdag_stats.max_difficulty = g_xdag_stats.difficulty;
 		}
 	}
 
-	if (bi.flags & BI_OURS) {
-		bsaved->ourprev = ourlast;
-		*(ourlast ? &ourlast->ournext : &ourfirst) = bsaved;
-		ourlast = bsaved;
+	if (tmpNodeBlock.flags & BI_OURS) {
+		nodeBlock->ourprev = ourlast;
+		*(ourlast ? &ourlast->ournext : &ourfirst) = nodeBlock;
+		ourlast = nodeBlock;
 	}
 
-	for (i = 0; i < bi.nlinks; ++i) {
-		if (!(bi.link[i]->flags & BI_REF)) {
-			for (ref0 = 0, ref = noref_first; ref != bi.link[i]; ref0 = ref, ref = ref->ref) {
+	for (i = 0; i < tmpNodeBlock.nlinks; ++i) {
+		if (!(tmpNodeBlock.link[i]->flags & BI_REF)) {
+			for (blockRef0 = 0, blockRef = noref_first; blockRef != tmpNodeBlock.link[i]; blockRef0 = blockRef, blockRef = blockRef->ref) {
 				;
 			}
 
-			*(ref0 ? &ref0->ref : &noref_first) = ref->ref;
+			*(blockRef0 ? &blockRef0->ref : &noref_first) = blockRef->ref;
 
-			if (ref == noref_last) {
-				noref_last = ref0;
+			if (blockRef == noref_last) {
+				noref_last = blockRef0;
 			}
 
-			bi.link[i]->flags |= BI_REF;
+			tmpNodeBlock.link[i]->flags |= BI_REF;
 			g_xdag_extstats.nnoref--;
 		}
 
-		if (bi.linkamount[i]) {
-			ref = bi.link[i];
-			if (!ref->backrefs || ref->backrefs->backrefs[N_BACKREFS - 1]) {
+		if (tmpNodeBlock.linkamount[i]) {
+			blockRef = tmpNodeBlock.link[i];
+			if (!blockRef->backrefs || blockRef->backrefs->backrefs[N_BACKREFS - 1]) {
 				struct block_backrefs *back = xdag_malloc(sizeof(struct block_backrefs));
 				if (!back) continue;
 				memset(back, 0, sizeof(struct block_backrefs));
-				back->next = ref->backrefs;
-				ref->backrefs = back;
+				back->next = blockRef->backrefs;
+				blockRef->backrefs = back;
 			}
 
-			for (j = 0; ref->backrefs->backrefs[j]; ++j);
+			for (j = 0; blockRef->backrefs->backrefs[j]; ++j);
 
-			ref->backrefs->backrefs[j] = bsaved;
+			blockRef->backrefs->backrefs[j] = nodeBlock;
 		}
 	}
 
-	*(noref_last ? &noref_last->ref : &noref_first) = bsaved;
-	noref_last = bsaved;
+	*(noref_last ? &noref_last->ref : &noref_first) = nodeBlock;
+	noref_last = nodeBlock;
 	g_xdag_extstats.nnoref++;
 	
-	log_block((bi.flags & BI_OURS ? "Good +" : "Good  "), bi.hash, bi.time, bi.storage_pos);
+	log_block((tmpNodeBlock.flags & BI_OURS ? "Good +" : "Good  "), tmpNodeBlock.hash, tmpNodeBlock.time, tmpNodeBlock.storage_pos);
 	
-	i = MAIN_TIME(bsaved->time) & (HASHRATE_LAST_MAX_TIME - 1);
-	if (MAIN_TIME(bsaved->time) > MAIN_TIME(g_xdag_extstats.hashrate_last_time)) {
+	i = MAIN_TIME(nodeBlock->time) & (HASHRATE_LAST_MAX_TIME - 1);
+	if (MAIN_TIME(nodeBlock->time) > MAIN_TIME(g_xdag_extstats.hashrate_last_time)) {
 		memset(g_xdag_extstats.hashrate_total + i, 0, sizeof(xdag_diff_t));
 		memset(g_xdag_extstats.hashrate_ours + i, 0, sizeof(xdag_diff_t));
-		g_xdag_extstats.hashrate_last_time = bsaved->time;
+		g_xdag_extstats.hashrate_last_time = nodeBlock->time;
 	}
 	
 	if (xdag_diff_gt(diff0, g_xdag_extstats.hashrate_total[i])) {
 		g_xdag_extstats.hashrate_total[i] = diff0;
 	}
 	
-	if (bi.flags & BI_OURS && xdag_diff_gt(diff0, g_xdag_extstats.hashrate_ours[i])) {
+	if (tmpNodeBlock.flags & BI_OURS && xdag_diff_gt(diff0, g_xdag_extstats.hashrate_ours[i])) {
 		g_xdag_extstats.hashrate_ours[i] = diff0;
 	}
 	
 	err = -1;
  
 end:
-	for (j = 0; j < nkeys; ++j) {
+	for (j = 0; j < keysCount; ++j) {
 		xdag_free_key(public_keys[j].key);
 	}
 
@@ -667,7 +682,7 @@ end:
 		char buf[32];
 		err |= i << 4;
 		sprintf(buf, "Err %2x", err & 0xff);
-		log_block(buf, bi.hash, bi.time, theader);
+		log_block(buf, tmpNodeBlock.hash, tmpNodeBlock.time, transportHeader);
 	}
 
 	return -err;

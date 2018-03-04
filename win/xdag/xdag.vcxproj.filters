@@ -94,6 +94,12 @@
     <ClCompile Include="..\system.c">
       <Filter>win</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\client\commands.c">
+      <Filter>client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\terminal.c">
+      <Filter>client</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client\address.h">
@@ -243,6 +249,12 @@
     <ClInclude Include="..\sys\time.h">
       <Filter>win\sys</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\client\commands.h">
+      <Filter>client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\terminal.h">
+      <Filter>client</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="client">
@@ -275,6 +287,9 @@
     <Filter Include="win\sys">
       <UniqueIdentifier>{c2469ccc-f122-4af6-9190-d4f5731a7e51}</UniqueIdentifier>
     </Filter>
+    <Filter Include="client\pool_lists">
+      <UniqueIdentifier>{824c0028-26c9-441c-a921-22a265b6ebc7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\client\sha256-mb-x86_64.s">
@@ -283,5 +298,19 @@
     <None Include="..\..\client\x86_64cpuid.s">
       <Filter>client</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\client\netdb.txt">
+      <Filter>client\pool_lists</Filter>
+    </Text>
+    <Text Include="..\..\client\netdb-testnet.txt">
+      <Filter>client\pool_lists</Filter>
+    </Text>
+    <Text Include="..\..\client\netdb-white.txt">
+      <Filter>client\pool_lists</Filter>
+    </Text>
+    <Text Include="..\..\client\netdb-white-testnet.txt">
+      <Filter>client\pool_lists</Filter>
+    </Text>
   </ItemGroup>
 </Project>
