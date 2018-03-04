@@ -7,7 +7,7 @@
 #include <sys/time.h>
 #include "system.h"
 #include "log.h"
-#include "main.h"
+#include "init.h"
 
 #define XDAG_LOG_FILE "%s.log"
 

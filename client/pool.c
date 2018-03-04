@@ -28,7 +28,7 @@
 #include "../dus/programs/dar/source/include/crc.h"
 #include "address.h"
 #include "block.h"
-#include "main.h"
+#include "init.h"
 #include "pool.h"
 #include "storage.h"
 #include "sync.h"

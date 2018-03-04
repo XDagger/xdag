@@ -1,36 +1,60 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2010
+VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xdag", "xdag\xdag.vcxproj", "{8F05F6FF-AA25-4D79-AB2D-886BA8976393}"
+	ProjectSection(ProjectDependencies) = postProject
+		{49C6CE86-04E0-4431-B55F-A6CE88268996} = {49C6CE86-04E0-4431-B55F-A6CE88268996}
+	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DaggerWallet", "xdagwallet\xdagwallet.vcxproj", "{EDACF749-CA11-48F7-806A-D39748389856}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xdagwallet", "xdagwallet\xdagwallet.vcxproj", "{EDACF749-CA11-48F7-806A-D39748389856}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8F05F6FF-AA25-4D79-AB2D-886BA8976393} = {8F05F6FF-AA25-4D79-AB2D-886BA8976393}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xdaglib", "xdaglib\xdaglib.vcxproj", "{49C6CE86-04E0-4431-B55F-A6CE88268996}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8F05F6FF-AA25-4D79-AB2D-886BA8976393}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{8F05F6FF-AA25-4D79-AB2D-886BA8976393}.Debug|x64.ActiveCfg = Debug|x64
 		{8F05F6FF-AA25-4D79-AB2D-886BA8976393}.Debug|x64.Build.0 = Debug|x64
 		{8F05F6FF-AA25-4D79-AB2D-886BA8976393}.Debug|x86.ActiveCfg = Debug|Win32
 		{8F05F6FF-AA25-4D79-AB2D-886BA8976393}.Debug|x86.Build.0 = Debug|Win32
+		{8F05F6FF-AA25-4D79-AB2D-886BA8976393}.Release|Any CPU.ActiveCfg = Release|Win32
 		{8F05F6FF-AA25-4D79-AB2D-886BA8976393}.Release|x64.ActiveCfg = Release|x64
 		{8F05F6FF-AA25-4D79-AB2D-886BA8976393}.Release|x64.Build.0 = Release|x64
 		{8F05F6FF-AA25-4D79-AB2D-886BA8976393}.Release|x86.ActiveCfg = Release|Win32
 		{8F05F6FF-AA25-4D79-AB2D-886BA8976393}.Release|x86.Build.0 = Release|Win32
+		{EDACF749-CA11-48F7-806A-D39748389856}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{EDACF749-CA11-48F7-806A-D39748389856}.Debug|x64.ActiveCfg = Debug|x64
 		{EDACF749-CA11-48F7-806A-D39748389856}.Debug|x64.Build.0 = Debug|x64
 		{EDACF749-CA11-48F7-806A-D39748389856}.Debug|x86.ActiveCfg = Debug|Win32
 		{EDACF749-CA11-48F7-806A-D39748389856}.Debug|x86.Build.0 = Debug|Win32
+		{EDACF749-CA11-48F7-806A-D39748389856}.Release|Any CPU.ActiveCfg = Release|Win32
 		{EDACF749-CA11-48F7-806A-D39748389856}.Release|x64.ActiveCfg = Release|x64
 		{EDACF749-CA11-48F7-806A-D39748389856}.Release|x64.Build.0 = Release|x64
 		{EDACF749-CA11-48F7-806A-D39748389856}.Release|x86.ActiveCfg = Release|Win32
 		{EDACF749-CA11-48F7-806A-D39748389856}.Release|x86.Build.0 = Release|Win32
+		{49C6CE86-04E0-4431-B55F-A6CE88268996}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{49C6CE86-04E0-4431-B55F-A6CE88268996}.Debug|x64.ActiveCfg = Debug|x64
+		{49C6CE86-04E0-4431-B55F-A6CE88268996}.Debug|x64.Build.0 = Debug|x64
+		{49C6CE86-04E0-4431-B55F-A6CE88268996}.Debug|x86.ActiveCfg = Debug|Win32
+		{49C6CE86-04E0-4431-B55F-A6CE88268996}.Debug|x86.Build.0 = Debug|Win32
+		{49C6CE86-04E0-4431-B55F-A6CE88268996}.Release|Any CPU.ActiveCfg = Release|Win32
+		{49C6CE86-04E0-4431-B55F-A6CE88268996}.Release|x64.ActiveCfg = Release|x64
+		{49C6CE86-04E0-4431-B55F-A6CE88268996}.Release|x64.Build.0 = Release|x64
+		{49C6CE86-04E0-4431-B55F-A6CE88268996}.Release|x86.ActiveCfg = Release|Win32
+		{49C6CE86-04E0-4431-B55F-A6CE88268996}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -8,7 +8,7 @@
 #include "storage.h"
 #include "block.h"
 #include "netdb.h"
-#include "main.h"
+#include "init.h"
 #include "sync.h"
 #include "pool.h"
 #include "version.h"

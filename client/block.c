@@ -15,7 +15,7 @@
 #include "storage.h"
 #include "transport.h"
 #include "log.h"
-#include "main.h"
+#include "init.h"
 #include "sync.h"
 #include "pool.h"
 #include "memory.h"
