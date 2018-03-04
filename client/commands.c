@@ -335,8 +335,8 @@ void processLastBlocksCommand(char *nextParam, FILE *out)
 			blocksCount = 100;
 		}
 		char** addressList = xdagCreateStringArray(blocksCount, 40);	//lets assume max address length as 39 symbols + null terminator
-		xdagGetLastMainBlocks(blocksCount, addressList);
-		for (int i = 0; i < blocksCount; ++i) {
+		const int retrievedBlocks = xdagGetLastMainBlocks(blocksCount, addressList);
+		for (int i = 0; i < retrievedBlocks; ++i) {
 			fprintf(out, "%s\n", addressList[i]);
 		}
 		xdagFreeStringArray(addressList, blocksCount);

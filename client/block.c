@@ -1428,7 +1428,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 }
 
 // retrieves addresses of N last main blocks
-void xdagGetLastMainBlocks(int count, char** addressArray)
+int xdagGetLastMainBlocks(int count, char** addressArray)
 {
 	int i = 0;
 	for (struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
@@ -1437,4 +1437,5 @@ void xdagGetLastMainBlocks(int count, char** addressArray)
 			++i;
 		}
 	}
+	return i;
 }
