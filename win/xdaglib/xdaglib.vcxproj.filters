@@ -292,14 +292,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\client\sha256-mb-x86_64.s">
-      <Filter>client</Filter>
-    </None>
-    <None Include="..\..\client\x86_64cpuid.s">
-      <Filter>client</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <Text Include="..\..\client\netdb-testnet.txt">
       <Filter>client\pool_lists</Filter>
     </Text>
