@@ -212,6 +212,10 @@ LRESULT CXDagWalletDlg::OnUpdateState(WPARAM wParam, LPARAM lParam)
 void CXDagWalletDlg::OnClickedButtonConnect()
 {
 	UpdateData(true);
+	if (_poolAddress.IsEmpty()) {
+		MessageBox("Pool address must be set", "Dagger wallet", MB_OK | MB_ICONSTOP);
+		return;
+	}
 	char buf[10];
 	char *argv[] = { "xdag.exe", "-m", _itoa(_miningThreadsCount, buf, 10), (char*)(LPCTSTR)_poolAddress };
 	xdag_set_password_callback(&InputPassword);
@@ -229,6 +233,14 @@ void CXDagWalletDlg::OnClickedButtonConnect()
 void CXDagWalletDlg::OnClickedButtonXfer()
 {
 	UpdateData(TRUE);
+	if (_transferAmount.IsEmpty()) {
+		MessageBox("Transfer amount must be set", "Dagger wallet", MB_OK | MB_ICONSTOP);
+		return;
+	}
+	if (_transferAddress.IsEmpty()) {
+		MessageBox("Transfer address must be set", "Dagger wallet", MB_OK | MB_ICONSTOP);
+		return;
+	}
 	xdag_do_xfer(0, (char*)(LPCTSTR)_transferAmount, (char*)(LPCTSTR)_transferAddress, 1);
 }
 
