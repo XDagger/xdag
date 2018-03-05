@@ -3,7 +3,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "main.h"
+#include "init.h"
 #include "address.h"
 #include "wallet.h"
 #include "log.h"
@@ -317,7 +317,7 @@ void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd)
 		sleep(3);
 		fprintf(out, "Password incorrect.\n");
 	} else {
-		xdag_do_xfer(out, amount, address);
+		xdag_do_xfer(out, amount, address, 0);
 	}
 }
 
@@ -424,15 +424,16 @@ static int make_block(struct xfer_callback_data *d)
 	return 0;
 }
 
-int xdag_do_xfer(void *outv, const char *amount, const char *address)
+int xdag_do_xfer(void *outv, const char *amount, const char *address, int isGui)
 {
 	struct xfer_callback_data xfer;
 	FILE *out = (FILE *)outv;
-#ifdef XDAG_GUI_WALLET
-	if (xdag_user_crypt_action(0, 0, 0, 3)) {
-		sleep(3); return 1;
+	
+	if (isGui && xdag_user_crypt_action(0, 0, 0, 3)) {
+		sleep(3); 
+		return 1;
 	}
-#endif
+
 	memset(&xfer, 0, sizeof(xfer));
 	xfer.remains = xdags2amount(amount);
 	if (!xfer.remains) {

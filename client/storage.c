@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include "storage.h"
 #include "log.h"
-#include "main.h"
+#include "init.h"
 #include "hash.h"
 
 #if defined(_WIN32) || defined(_WIN64)

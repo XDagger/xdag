@@ -11,6 +11,7 @@ sources = \
 	block.c						\
 	crypt.c						\
 	hash.c						\
+	init.c						\
 	log.c						\
 	main.c						\
 	memory.c					\
@@ -49,7 +50,7 @@ headers = \
 	crypt.h							\
 	hash.h							\
 	log.h							\
-	main.h							\
+	init.h							\
 	memory.h						\
 	netdb.h							\
 	pool.h							\

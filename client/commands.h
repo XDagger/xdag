@@ -12,7 +12,7 @@ extern "C" {
 
 /* time of last transfer */
 extern time_t g_xdag_xfer_last;
-extern int xdag_do_xfer(void *outv, const char *amount, const char *address);
+extern int xdag_do_xfer(void *outv, const char *amount, const char *address, int isGui);
 extern void xdagSetCountMiningTread(int miningThreadsCount);
 extern double xdagGetHashRate(void);
 
