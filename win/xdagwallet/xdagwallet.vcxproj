@@ -221,6 +221,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="PasswordDlg.h" />
+    <ClInclude Include="version.h" />
     <ClInclude Include="xdagwallet.h" />
     <ClInclude Include="xdagwalletDlg.h" />
     <ClInclude Include="resource.h" />

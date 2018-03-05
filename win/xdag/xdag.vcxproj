@@ -21,6 +21,13 @@
   <ItemGroup>
     <ClCompile Include="..\..\client\main.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="version.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="version.rc" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{8F05F6FF-AA25-4D79-AB2D-886BA8976393}</ProjectGuid>
@@ -81,8 +88,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(OPENSSL_ROOT)\include;$(PTHREAD_ROOT)\Include;$(SolutionDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(OPENSSL_ROOT)\lib\VC\static;$(PTHREAD_ROOT)\lib\x64;$(OutDir);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(OPENSSL_ROOT)\include;$(PTHREAD_ROOT)\Include;$(SolutionDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
