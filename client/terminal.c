@@ -10,7 +10,7 @@
 #endif
 #include <sys/socket.h>
 #include "commands.h"
-#include "main.h"
+#include "init.h"
 #include "transport.h"
 #include "log.h"
 

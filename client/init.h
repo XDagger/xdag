@@ -56,7 +56,7 @@ extern char *g_coinname, *g_progname;
 //defines if client runs as miner or pool
 extern int g_is_miner;
 
-extern int xdag_main(int argc, char **argv);
+extern int xdag_init(int argc, char **argv, int isGui);
 
 extern int xdag_set_password_callback(int(*callback)(const char *prompt, char *buf, unsigned size));
 

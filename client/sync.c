@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include "sync.h"
 #include "hash.h"
-#include "main.h"
+#include "init.h"
 #include "transport.h"
 #include "log.h"
 

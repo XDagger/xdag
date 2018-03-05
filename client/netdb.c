@@ -10,7 +10,7 @@
 #include "transport.h"
 #include "netdb.h"
 #include "log.h"
-#include "main.h"
+#include "init.h"
 #include "block.h"
 #include "sync.h"
 

@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "resource.h"
 #include "PasswordDlg.h"
-#include "../../client/main.h"
+#include "../../client/init.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

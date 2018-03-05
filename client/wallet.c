@@ -7,7 +7,7 @@
 #include "crypt.h"
 #include "wallet.h"
 #include "log.h"
-#include "main.h"
+#include "init.h"
 #include "transport.h"
 
 #define WALLET_FILE (g_xdag_testnet ? "wallet-testnet.dat" : "wallet.dat")

@@ -6,7 +6,7 @@
 #include "xdagwalletDlg.h"
 #include "afxdialogex.h"
 #include "PasswordDlg.h"
-#include "../../client/main.h"
+#include "../../client/init.h"
 #include "../../client/commands.h"
 
 #ifdef _DEBUG
@@ -220,7 +220,7 @@ void CXDagWalletDlg::OnClickedButtonConnect()
 	char *argv[] = { "xdag.exe", "-m", _itoa(_miningThreadsCount, buf, 10), (char*)(LPCTSTR)_poolAddress };
 	xdag_set_password_callback(&InputPassword);
 	g_xdag_show_state = &ShowState;
-	xdag_main(4, argv);
+	xdag_init(4, argv, 1);
 
 	_applyButton.EnableWindow(TRUE);
 	_transferAmountEdit.EnableWindow(TRUE);
@@ -241,7 +241,7 @@ void CXDagWalletDlg::OnClickedButtonXfer()
 		MessageBox("Transfer address must be set", "Dagger wallet", MB_OK | MB_ICONSTOP);
 		return;
 	}
-	xdag_do_xfer(0, (char*)(LPCTSTR)_transferAmount, (char*)(LPCTSTR)_transferAddress);
+	xdag_do_xfer(0, (char*)(LPCTSTR)_transferAmount, (char*)(LPCTSTR)_transferAddress, 1);
 }
 
 void CXDagWalletDlg::OnBnClickedButtonApply()
