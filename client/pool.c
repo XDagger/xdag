@@ -37,17 +37,18 @@
 #include "log.h"
 #include "commands.h"
 
-#define N_MINERS        4096
-#define START_N_MINERS  256
-#define START_N_MINERS_IP 8
-#define N_CONFIRMATIONS XDAG_POOL_N_CONFIRMATIONS   /*16*/
-#define MINERS_PWD      "minersgonnamine"
-#define SECTOR0_BASE    0x1947f3acu
-#define SECTOR0_OFFSET  0x82e9d1b5u
-#define HEADER_WORD     0x3fca9e2bu
-#define DATA_SIZE       (sizeof(struct xdag_field) / sizeof(uint32_t))
-#define SEND_PERIOD     10                                  /* период в секундах, с которым майнер посылает пулу результаты */
-#define FUND_ADDRESS    "FQglVQtb60vQv2DOWEUL7yh3smtj7g1s"  /* адрес фонда сообщества */
+#define N_MINERS               4096
+#define START_N_MINERS         256
+#define START_N_MINERS_IP      8
+#define N_CONFIRMATIONS        XDAG_POOL_N_CONFIRMATIONS   /*16*/
+#define MINERS_PWD             "minersgonnamine"
+#define SECTOR0_BASE           0x1947f3acu
+#define SECTOR0_OFFSET         0x82e9d1b5u
+#define HEADER_WORD            0x3fca9e2bu
+#define DATA_SIZE              (sizeof(struct xdag_field) / sizeof(uint32_t))
+#define SEND_PERIOD            10                                  /* share period of sending shares */
+#define FUND_ADDRESS           "FQglVQtb60vQv2DOWEUL7yh3smtj7g1s"  /* community fund */
+#define SHARES_PER_TASK_LIMIT  20                                  /* maximum count of shares per task */
 
 enum miner_state {
 	MINER_BLOCK     = 1,
@@ -73,6 +74,7 @@ struct miner {
 	uint16_t state;
 	uint8_t data_size;
 	uint8_t block_size;
+	uint32_t shares_count;
 };
 
 struct xdag_pool_task g_xdag_pool_task[2];
@@ -97,10 +99,9 @@ static const char *g_miner_address;
 /* poiter to mutex for optimal share  */
 void *g_ptr_share_mutex = &g_share_mutex;
 
-static inline void set_share(struct miner *m, struct xdag_pool_task *task, xdag_hash_t last, xdag_hash_t hash)
+//function sets minimal share for the task, miner side
+static inline void miner_set_share(struct xdag_pool_task *task, xdag_hash_t last, xdag_hash_t hash)
 {
-	const xdag_time_t task_time = task->task_time;
-
 	if (xdag_cmphash(hash, task->minhash.data) < 0) {
 		pthread_mutex_lock(&g_share_mutex);
 		
@@ -109,6 +110,23 @@ static inline void set_share(struct miner *m, struct xdag_pool_task *task, xdag_
 			memcpy(task->lastfield.data, last, sizeof(xdag_hash_t));
 		}
 		
+		pthread_mutex_unlock(&g_share_mutex);
+	}
+}
+
+//function sets minimal share for the task and calculates share difficulty for further payment calculations, pool side
+static void pool_set_share(struct miner *m, struct xdag_pool_task *task, xdag_hash_t last, xdag_hash_t hash)
+{
+	const xdag_time_t task_time = task->task_time;
+
+	if (xdag_cmphash(hash, task->minhash.data) < 0) {
+		pthread_mutex_lock(&g_share_mutex);
+
+		if (xdag_cmphash(hash, task->minhash.data) < 0) {
+			memcpy(task->minhash.data, hash, sizeof(xdag_hash_t));
+			memcpy(task->lastfield.data, last, sizeof(xdag_hash_t));
+		}
+
 		pthread_mutex_unlock(&g_share_mutex);
 	}
 
@@ -250,6 +268,10 @@ static void *pool_main_thread(void *arg)
 						task_index = g_xdag_pool_task_index;
 						task = &g_xdag_pool_task[task_index & 1];
 
+						if (++m->shares_count > SHARES_PER_TASK_LIMIT) {   //if shares count limit is exceded it is considered as spamming and current connection is disconnected
+							goto disconnect;	//TODO: get rid of gotos
+						}
+
 						if (!(m->state & MINER_ADDRESS) || memcmp(m->id.data, m->data, sizeof(xdag_hashlow_t))) {
 							xdag_time_t t;
 
@@ -266,7 +288,7 @@ static void *pool_main_thread(void *arg)
 						}
 
 						xdag_hash_final(task->ctx0, m->data, sizeof(struct xdag_field), hash);
-						set_share(m, task, m->id.data, hash);
+						pool_set_share(m, task, m->id.data, hash);
 					}
 				}
 			}
@@ -280,6 +302,7 @@ static void *pool_main_thread(void *arg)
 
 				if (m->task_index < task_index) {
 					m->task_index = task_index;
+					m->shares_count = 0;
 					nfld = 2;
 					memcpy(data, task->task, nfld * sizeof(struct xdag_field));
 				} else if (!(m->state & MINER_BALANCE) && time(0) >= (m->task_time << 6) + 4) {
@@ -299,13 +322,16 @@ static void *pool_main_thread(void *arg)
 					todo = write(p->fd, data, nfld * sizeof(struct xdag_field));
 					
 					if (todo != nfld * sizeof(struct xdag_field)) {
-						mess = "write error"; goto disconnect;
+						mess = "write error"; 
+						goto disconnect;
 					}
 				}
 			}
 		}
 
-		if (!done) sleep(1);
+		if (!done) {
+			sleep(1);
+		}
 	}
 
 	return 0;
@@ -1096,7 +1122,7 @@ static void *mining_thread(void *arg)
 		last.amount = xdag_hash_final_multi(task->ctx, &nonce, 4096, g_xdag_mining_threads, hash);
 		g_xdag_extstats.nhashes += 4096;
 		
-		set_share(&g_local_miner, task, last.data, hash);
+		miner_set_share(task, last.data, hash);
 	}
 
 	return 0;
