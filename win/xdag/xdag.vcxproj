@@ -19,92 +19,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\client\address.c" />
-    <ClCompile Include="..\..\client\block.c" />
-    <ClCompile Include="..\..\client\crypt.c" />
-    <ClCompile Include="..\..\client\hash.c" />
-    <ClCompile Include="..\..\client\log.c" />
     <ClCompile Include="..\..\client\main.c" />
-    <ClCompile Include="..\..\client\memory.c" />
-    <ClCompile Include="..\..\client\netdb.c" />
-    <ClCompile Include="..\..\client\pool.c" />
-    <ClCompile Include="..\..\client\sha256.c" />
-    <ClCompile Include="..\..\client\storage.c" />
-    <ClCompile Include="..\..\client\sync.c" />
-    <ClCompile Include="..\..\client\transport.c" />
-    <ClCompile Include="..\..\client\wallet.c" />
-    <ClCompile Include="..\..\dnet\dnet_command.c" />
-    <ClCompile Include="..\..\dnet\dnet_connection.c" />
-    <ClCompile Include="..\..\dnet\dnet_crypt.c" />
-    <ClCompile Include="..\..\dnet\dnet_database.c" />
-    <ClCompile Include="..\..\dnet\dnet_files.c" />
-    <ClCompile Include="..\..\dnet\dnet_log.c" />
-    <ClCompile Include="..\..\dnet\dnet_main.c" />
-    <ClCompile Include="..\..\dnet\dnet_packet.c" />
-    <ClCompile Include="..\..\dnet\dnet_stream.c" />
-    <ClCompile Include="..\..\dnet\dnet_tap.c" />
-    <ClCompile Include="..\..\dnet\dnet_threads.c" />
-    <ClCompile Include="..\..\dus\programs\dar\source\lib\crc_c.c" />
-    <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_crypt.c" />
-    <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_random.c" />
-    <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_string.c" />
-    <ClCompile Include="..\..\dus\programs\dfstools\source\lib\dfsrsa.c" />
-    <ClCompile Include="..\system.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\client\address.h" />
-    <ClInclude Include="..\..\client\block.h" />
-    <ClInclude Include="..\..\client\crypt.h" />
-    <ClInclude Include="..\..\client\hash.h" />
-    <ClInclude Include="..\..\client\log.h" />
-    <ClInclude Include="..\..\client\main.h" />
-    <ClInclude Include="..\..\client\memory.h" />
-    <ClInclude Include="..\..\client\netdb.h" />
-    <ClInclude Include="..\..\client\pool.h" />
-    <ClInclude Include="..\..\client\sha256.h" />
-    <ClInclude Include="..\..\client\state.h" />
-    <ClInclude Include="..\..\client\storage.h" />
-    <ClInclude Include="..\..\client\sync.h" />
-    <ClInclude Include="..\..\client\system.h" />
-    <ClInclude Include="..\..\client\transport.h" />
-    <ClInclude Include="..\..\client\version.h" />
-    <ClInclude Include="..\..\client\wallet.h" />
-    <ClInclude Include="..\..\dnet\dnet_command.h" />
-    <ClInclude Include="..\..\dnet\dnet_connection.h" />
-    <ClInclude Include="..\..\dnet\dnet_crypt.h" />
-    <ClInclude Include="..\..\dnet\dnet_database.h" />
-    <ClInclude Include="..\..\dnet\dnet_files.h" />
-    <ClInclude Include="..\..\dnet\dnet_history.h" />
-    <ClInclude Include="..\..\dnet\dnet_log.h" />
-    <ClInclude Include="..\..\dnet\dnet_main.h" />
-    <ClInclude Include="..\..\dnet\dnet_packet.h" />
-    <ClInclude Include="..\..\dnet\dnet_stream.h" />
-    <ClInclude Include="..\..\dnet\dnet_tap.h" />
-    <ClInclude Include="..\..\dnet\dnet_threads.h" />
-    <ClInclude Include="..\..\dnet\dthread.h" />
-    <ClInclude Include="..\..\dnet\system.h" />
-    <ClInclude Include="..\..\dus\programs\dar\source\include\crc.h" />
-    <ClInclude Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_crypt.h" />
-    <ClInclude Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_random.h" />
-    <ClInclude Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_string.h" />
-    <ClInclude Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_types.h" />
-    <ClInclude Include="..\..\dus\programs\dfstools\source\include\dfsrsa.h" />
-    <ClInclude Include="..\..\ldus\source\include\ldus\atomic.h" />
-    <ClInclude Include="..\..\ldus\source\include\ldus\list.h" />
-    <ClInclude Include="..\..\ldus\source\include\ldus\rbtree.h" />
-    <ClInclude Include="..\arpa\inet.h" />
-    <ClInclude Include="..\netdb.h" />
-    <ClInclude Include="..\netinet\in.h" />
-    <ClInclude Include="..\sys\ioctl.h" />
-    <ClInclude Include="..\sys\resource.h" />
-    <ClInclude Include="..\sys\socket.h" />
-    <ClInclude Include="..\sys\time.h" />
-    <ClInclude Include="..\termios.h" />
-    <ClInclude Include="..\unistd.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\client\sha256-mb-x86_64.s" />
-    <None Include="..\..\client\x86_64cpuid.s" />
+    <ResourceCompile Include="version.rc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -119,27 +41,27 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -161,23 +83,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>$(OPENSSL_ROOT_32)\lib\VC\static;$(PTHREAD_ROOT)\lib\x86;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(OPENSSL_ROOT_32)\lib\VC\static;$(PTHREAD_ROOT)\lib\x86;$(OutDir);$(LibraryPath)</LibraryPath>
     <IncludePath>$(OPENSSL_ROOT_32)\include;$(PTHREAD_ROOT)\Include;$(SolutionDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <LibraryPath>$(OPENSSL_ROOT)\lib\VC\static;$(PTHREAD_ROOT)\lib\x64;$(OutDir);$(LibraryPath)</LibraryPath>
     <IncludePath>$(OPENSSL_ROOT)\include;$(PTHREAD_ROOT)\Include;$(SolutionDir);$(IncludePath)</IncludePath>
-    <LibraryPath>$(OPENSSL_ROOT)\lib\VC\static;$(PTHREAD_ROOT)\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>$(OPENSSL_ROOT_32)\lib\VC\static;$(PTHREAD_ROOT)\lib\x86;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(OPENSSL_ROOT_32)\lib\VC\static;$(PTHREAD_ROOT)\lib\x86;$(OutDir);$(LibraryPath)</LibraryPath>
     <IncludePath>$(OPENSSL_ROOT_32)\include;$(PTHREAD_ROOT)\Include;$(SolutionDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(OPENSSL_ROOT)\include;$(PTHREAD_ROOT)\Include;$(SolutionDir);$(IncludePath)</IncludePath>
-    <LibraryPath>$(OPENSSL_ROOT)\lib\VC\static;$(PTHREAD_ROOT)\lib\x64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(OPENSSL_ROOT)\lib\VC\static;$(PTHREAD_ROOT)\lib\x64;$(OutDir);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -185,13 +107,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;DFSTOOLS;CHEATCOIN;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;DFSTOOLS;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;xdaglib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>40000000</StackReserveSize>
       <StackCommitSize>1000000</StackCommitSize>
     </Link>
@@ -206,19 +128,24 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;DFSTOOLS;CHEATCOIN;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;DFSTOOLS;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <PreprocessToFile>false</PreprocessToFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;xdaglib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>40000000</StackReserveSize>
       <StackCommitSize>1000000</StackCommitSize>
     </Link>
     <PostBuildEvent>
       <Command>copy $(PTHREAD_ROOT)dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
-copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Command>
+copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y
+copy $(SolutionDir)..\client\netdb.txt "$(OutDir)netdb.txt" /Y
+copy $(SolutionDir)..\client\netdb-testnet.txt "$(OutDir)netdb-testnet.txt" /Y
+copy $(SolutionDir)..\client\netdb-white.txt "$(OutDir)netdb-white.txt" /Y
+copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testnet.txt" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -229,15 +156,16 @@ copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;DFSTOOLS;CHEATCOIN;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;DFSTOOLS;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;xdaglib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>40000000</StackReserveSize>
       <StackCommitSize>1000000</StackCommitSize>
     </Link>
@@ -254,21 +182,26 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;DFSTOOLS;CHEATCOIN;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;SHA256_USE_OPENSSL_TXFM;SHA256_OPENSSL_MBLOCK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;DFSTOOLS;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;xdaglib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>40000000</StackReserveSize>
       <StackCommitSize>1000000</StackCommitSize>
     </Link>
     <PostBuildEvent>
       <Command>copy $(PTHREAD_ROOT)dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
-copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Command>
+copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y
+copy $(SolutionDir)..\client\netdb.txt "$(OutDir)netdb.txt" /Y
+copy $(SolutionDir)..\client\netdb-testnet.txt "$(OutDir)netdb-testnet.txt" /Y
+copy $(SolutionDir)..\client\netdb-white.txt "$(OutDir)netdb-white.txt" /Y
+copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testnet.txt" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

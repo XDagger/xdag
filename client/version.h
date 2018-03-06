@@ -1,10 +1,19 @@
 /* version and history */
 
-#ifndef CHEATCOIN_VERSION_H
-#define CHEATCOIN_VERSION_H
+#ifndef XDAG_VERSION_H
+#define XDAG_VERSION_H
 
-#define CHEATCOIN_VERSION "T13.654-T13.895" /* $DVS:time$ */
+#define STRINGIZE2(s) #s
+#define STRINGIZE(s) STRINGIZE2(s)
 
+#define VERSION_MAJOR               0
+#define VERSION_MINOR               2
+#define VERSION_REVISION            0
+
+#define XDAG_VERSION STRINGIZE(VERSION_MAJOR) "." STRINGIZE(VERSION_MINOR) "." STRINGIZE(VERSION_REVISION)
+
+
+//version history in russian
 /* история
 
 T13.895 более аккуратное сокращение времени прохождения транзакции (132 сек максимум);

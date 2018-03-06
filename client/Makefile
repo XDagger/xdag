@@ -11,18 +11,21 @@ sources = \
 	block.c						\
 	crypt.c						\
 	hash.c						\
+	init.c						\
 	log.c						\
 	main.c						\
 	memory.c					\
 	netdb.c						\
 	pool.c						\
 	sha256.c					\
-	sha256-mb-x86_64.s                              \
+	sha256-mb-x86_64.s			\
 	storage.c					\
 	sync.c						\
 	transport.c					\
 	wallet.c					\
-	x86_64cpuid.s					\
+	commands.c					\
+	terminal.c					\
+	x86_64cpuid.s				\
 	$(dnet)/dnet_crypt.c		\
 	$(dnet)/dnet_database.c		\
 	$(dnet)/dnet_main.c			\
@@ -47,7 +50,7 @@ headers = \
 	crypt.h							\
 	hash.h							\
 	log.h							\
-	main.h							\
+	init.h							\
 	memory.h						\
 	netdb.h							\
 	pool.h							\
@@ -57,6 +60,8 @@ headers = \
 	sync.h							\
 	transport.h						\
 	wallet.h						\
+	commands.h						\
+	terminal.h						\
 	$(dnet)/dnet_crypt.h			\
 	$(dnet)/dnet_database.h			\
 	$(dnet)/dnet_history.h			\

@@ -1,8 +1,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h> // portable: uint64_t   MSVC: __int64 
 #include <sys/time.h>
 #include <termios.h>
 
@@ -15,11 +13,10 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp)
 
     SYSTEMTIME  system_time;
     FILETIME    file_time;
-    uint64_t    time;
 
-    GetSystemTime( &system_time );
+	GetSystemTime( &system_time );
     SystemTimeToFileTime( &system_time, &file_time );
-    time =  ((uint64_t)file_time.dwLowDateTime )      ;
+    uint64_t time = ((uint64_t)file_time.dwLowDateTime );
     time += ((uint64_t)file_time.dwHighDateTime) << 32;
 
     tp->tv_sec  = (long) ((time - EPOCH) / 10000000L);
@@ -38,18 +35,16 @@ int system_init(void) {
 }
 
 int tcgetattr(int fd, struct termios *tio) {
-	HANDLE hStdin;
 	if (fd) return -1;
-	hStdin = GetStdHandle(STD_INPUT_HANDLE);
+	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	GetConsoleMode(hStdin, &tio->mode);
 	tio->c_lflag = (tio->mode & ENABLE_ECHO_INPUT ? ECHO : 0);
 	return 0;
 }
 
 int tcsetattr(int fd, int flags, struct termios *tio) {
-	HANDLE hStdin;
 	if (fd || flags) return -1;
-	hStdin = GetStdHandle(STD_INPUT_HANDLE);
+	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	tio->mode = (tio->mode & ~ENABLE_ECHO_INPUT) | (tio->c_lflag & ECHO ? ENABLE_ECHO_INPUT : 0);
 	SetConsoleMode(hStdin, tio->mode);
 	return 0;

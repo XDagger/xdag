@@ -59,19 +59,19 @@ static ssize_t dnet_conn_read(void *private_data, void *buf, size_t size) {
 
 static ssize_t dnet_conn_write(void *private_data, void *buf, size_t size) {
     struct dnet_connection *conn = (struct dnet_connection *)private_data;
-    ssize_t res = 0, done;
+    ssize_t res = 0;
 	if (conn->socket < 0) return -1l;
     while (size) {
 		struct pollfd fd;
 		fd.fd = conn->socket;
 		fd.events = POLLOUT;
 		fd.revents = 0;
-		if (poll(&fd, 1, 16000) != 1 || fd.revents != POLLOUT) {
+		if (poll(&fd, 1, 16000) != 1 || !(fd.revents & POLLOUT)) {
 			dnet_log_printf("dnet: write poll failed for socket %d\n", conn->socket);
 			shutdown(conn->socket, SHUT_RDWR);
 			return -1l;
 		}
-		done = write(conn->socket, buf, size);
+		ssize_t done = write(conn->socket, buf, size);
         if (done < 0) break;
         res += done;
         size -= done;
@@ -95,7 +95,7 @@ static inline ssize_t dnet_socket_read(int fd, void *buf, size_t size) {
 		struct pollfd pfd;
 		pfd.fd = fd;
 		pfd.events = POLLIN;
-		if (poll(&pfd, 1, (te - t) * 1000) == 1 && pfd.revents == POLLIN) {
+		if (poll(&pfd, 1, (te - t) * 1000) == 1 && (pfd.revents & POLLIN)) {
             return read(fd, buf, size);
         }
     }
@@ -130,7 +130,11 @@ int dnet_connection_main(struct dnet_connection *conn) {
 			thread->conn.socket = -1;
 			thread->type = DNET_THREAD_EXCHANGER;
 			res = dnet_thread_create(thread);
-			if (res) { thread->to_remove = 1; res = 4; goto end; }
+			if (res) {
+				thread->to_remove = 1;
+				res = 4;
+				goto end;
+			}
 		}
     }
 	res = (int)size * 10 + 4;
