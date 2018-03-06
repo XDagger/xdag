@@ -26,7 +26,7 @@ extern int xdag_mining_start(int n_mining_threads);
 extern char *xdag_pool_get_config(char *buf);
 
 /* sets pool parameters */
-extern int xdag_pool_set_config(const char *str);
+extern int xdag_pool_set_config(const char *pool_config);
 
 /* send block to network via pool */
 extern int xdag_send_block_via_pool(struct xdag_block *b);

@@ -37,9 +37,9 @@
 #include "log.h"
 #include "commands.h"
 
-#define N_MINERS               4096
-#define START_N_MINERS         256
-#define START_N_MINERS_IP      8
+#define MAX_MINERS_COUNT       4096
+#define START_MINERS_COUNT     256
+#define START_MINERS_IP_COUNT  8
 #define N_CONFIRMATIONS        XDAG_POOL_N_CONFIRMATIONS   /*16*/
 #define MINERS_PWD             "minersgonnamine"
 #define SECTOR0_BASE           0x1947f3acu
@@ -86,7 +86,7 @@ xdag_hash_t g_xdag_mined_hashes[N_CONFIRMATIONS], g_xdag_mined_nonce[N_CONFIRMAT
 /* 1 - program works as a pool */
 static int g_xdag_pool = 0;
 
-static int g_max_nminers = START_N_MINERS, g_max_nminers_ip = START_N_MINERS_IP;
+static int g_max_miners_count = START_MINERS_COUNT, g_max_miner_ip_count = START_MINERS_IP_COUNT;
 static int g_miners_count = 0, g_socket = -1, g_stop_mining = 1, g_stop_general_mining = 1;
 static double g_pool_fee = 0, g_pool_reward = 0, g_pool_direct = 0, g_pool_fund = 0;
 static struct miner *g_miners, g_local_miner, g_fund_miner;
@@ -191,13 +191,14 @@ static void *pool_main_thread(void *arg)
 				p->fd = -1;
 				
 				if (m->block) {
-					free(m->block); m->block = 0;
+					free(m->block);
+					m->block = 0;
 				}
 
-				int j = m->ip;
+				int ip = m->ip;
 				
 				xdag_info("Pool  : miner %d disconnected from %u.%u.%u.%u:%u by %s", i,
-							   j & 0xff, j >> 8 & 0xff, j >> 16 & 0xff, j >> 24 & 0xff, ntohs(m->port), mess);
+							   ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(m->port), mess);
 				
 				continue;
 			}
@@ -232,7 +233,8 @@ static void *pool_main_thread(void *arg)
 						memcpy(m->block->field, m->data, sizeof(struct xdag_field));
 						m->block_size++;
 					} else if (m->nfield_in == 1) {
-						mess = "protocol mismatch"; m->state = MINER_FREE; 
+						mess = "protocol mismatch";
+						m->state = MINER_FREE; 
 						goto disconnect_free;
 					} else if (m->block_size) {
 						memcpy(m->block->field + m->block_size, m->data, sizeof(struct xdag_field));
@@ -269,6 +271,7 @@ static void *pool_main_thread(void *arg)
 						task = &g_xdag_pool_task[task_index & 1];
 
 						if (++m->shares_count > SHARES_PER_TASK_LIMIT) {   //if shares count limit is exceded it is considered as spamming and current connection is disconnected
+							mess = "Spamming of shares";
 							goto disconnect;	//TODO: get rid of gotos
 						}
 
@@ -544,38 +547,38 @@ char *xdag_pool_get_config(char *buf)
 {
 	if (!g_xdag_pool) return 0;
 	
-	sprintf(buf, "%d:%.2lf:%.2lf:%.2lf:%d:%.2lf", g_max_nminers, g_pool_fee * 100, g_pool_reward * 100,
-			g_pool_direct * 100, g_max_nminers_ip, g_pool_fund * 100);
+	sprintf(buf, "%d:%.2lf:%.2lf:%.2lf:%d:%.2lf", g_max_miners_count, g_pool_fee * 100, g_pool_reward * 100,
+			g_pool_direct * 100, g_max_miner_ip_count, g_pool_fund * 100);
 	
 	return buf;
 }
 
 /* sets pool parameters */
-int xdag_pool_set_config(const char *str)
+int xdag_pool_set_config(const char *pool_config)
 {
 	char buf[0x100], *lasts;
 
 	if (!g_xdag_pool) return -1;
-	strcpy(buf, str);
+	strcpy(buf, pool_config);
 
-	str = strtok_r(buf, " \t\r\n:", &lasts);
+	pool_config = strtok_r(buf, " \t\r\n:", &lasts);
 	
-	if (str) {
+	if (pool_config) {
 		int open_max = sysconf(_SC_OPEN_MAX);
 
-		sscanf(str, "%d", &g_max_nminers);
+		sscanf(pool_config, "%d", &g_max_miners_count);
 
-		if (g_max_nminers < 0)
-			g_max_nminers = 0;
-		else if (g_max_nminers > N_MINERS)
-			g_max_nminers = N_MINERS;
-		else if (g_max_nminers > open_max - 64)
-			g_max_nminers = open_max - 64;
+		if (g_max_miners_count < 0)
+			g_max_miners_count = 0;
+		else if (g_max_miners_count > MAX_MINERS_COUNT)
+			g_max_miners_count = MAX_MINERS_COUNT;
+		else if (g_max_miners_count > open_max - 64)
+			g_max_miners_count = open_max - 64;
 	}
 
-	str = strtok_r(0, " \t\r\n:", &lasts);
-	if (str) {
-		sscanf(str, "%lf", &g_pool_fee);
+	pool_config = strtok_r(0, " \t\r\n:", &lasts);
+	if (pool_config) {
+		sscanf(pool_config, "%lf", &g_pool_fee);
 		
 		g_pool_fee /= 100;
 		
@@ -586,9 +589,9 @@ int xdag_pool_set_config(const char *str)
 			g_pool_fee = 1;
 	}
 
-	str = strtok_r(0, " \t\r\n:", &lasts);
-	if (str) {
-		sscanf(str, "%lf", &g_pool_reward);
+	pool_config = strtok_r(0, " \t\r\n:", &lasts);
+	if (pool_config) {
+		sscanf(pool_config, "%lf", &g_pool_reward);
 		
 		g_pool_reward /= 100;
 		
@@ -598,9 +601,9 @@ int xdag_pool_set_config(const char *str)
 			g_pool_reward = 1 - g_pool_fee;
 	}
 
-	str = strtok_r(0, " \t\r\n:", &lasts);
-	if (str) {
-		sscanf(str, "%lf", &g_pool_direct);
+	pool_config = strtok_r(0, " \t\r\n:", &lasts);
+	if (pool_config) {
+		sscanf(pool_config, "%lf", &g_pool_direct);
 		
 		g_pool_direct /= 100;
 		
@@ -610,17 +613,17 @@ int xdag_pool_set_config(const char *str)
 			g_pool_direct = 1 - g_pool_fee - g_pool_reward;
 	}
 
-	str = strtok_r(0, " \t\r\n:", &lasts);
-	if (str) {
-		sscanf(str, "%d", &g_max_nminers_ip);
+	pool_config = strtok_r(0, " \t\r\n:", &lasts);
+	if (pool_config) {
+		sscanf(pool_config, "%d", &g_max_miner_ip_count);
 		
-		if (g_max_nminers_ip <= 0)
-			g_max_nminers_ip = 1;
+		if (g_max_miner_ip_count <= 0)
+			g_max_miner_ip_count = 1;
 	}
 
-	str = strtok_r(0, " \t\r\n:", &lasts);
-	if (str) {
-		sscanf(str, "%lf", &g_pool_fund);
+	pool_config = strtok_r(0, " \t\r\n:", &lasts);
+	if (pool_config) {
+		sscanf(pool_config, "%lf", &g_pool_fund);
 		
 		g_pool_fund /= 100;
 		
@@ -635,7 +638,7 @@ int xdag_pool_set_config(const char *str)
 
 static void *pool_net_thread(void *arg)
 {
-	const char *str = (const char*)arg;
+	const char *pool_arg = (const char*)arg;
 	char buf[0x100];
 	const char *mess, *mess1 = "";
 	struct sockaddr_in peeraddr;
@@ -666,9 +669,9 @@ static void *pool_net_thread(void *arg)
 	peeraddr.sin_family = AF_INET;
 
 	// Resolve the server address (convert from symbolic name to IP number)
-	strcpy(buf, str);
-	str = strtok_r(buf, " \t\r\n:", &lasts);
-	if (!str) {
+	strcpy(buf, pool_arg);
+	pool_arg = strtok_r(buf, " \t\r\n:", &lasts);
+	if (!pool_arg) {
 		mess = "host is not given"; goto err;
 	}
 
@@ -682,15 +685,16 @@ static void *pool_net_thread(void *arg)
 //	}
 
 	// Resolve port
-	str = strtok_r(0, " \t\r\n:", &lasts);
-	if (!str) {
+	pool_arg = strtok_r(0, " \t\r\n:", &lasts);
+	if (!pool_arg) {
 		mess = "port is not given"; goto err;
 	}
-	peeraddr.sin_port = htons(atoi(str));
+	peeraddr.sin_port = htons(atoi(pool_arg));
 
 	res = bind(sock, (struct sockaddr*)&peeraddr, sizeof(peeraddr));
 	if (res) {
-		mess = "cannot bind a socket"; goto err;
+		mess = "cannot bind a socket"; 
+		goto err;
 	}
 
 	// Set the "LINGER" timeout to zero, to close the listen socket
@@ -699,13 +703,16 @@ static void *pool_net_thread(void *arg)
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&reuseaddr, sizeof(int));
 	setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char*)&rcvbufsize, sizeof(int));
 
-	str = strtok_r(0, " \t\r\n", &lasts);
-	if (str) xdag_pool_set_config(str);
+	pool_arg = strtok_r(0, " \t\r\n", &lasts);
+	if (pool_arg) {
+		xdag_pool_set_config(pool_arg);
+	}
 
 	// Now, listen for a connection
-	res = listen(sock, N_MINERS);    // "1" is the maximal length of the queue
+	res = listen(sock, MAX_MINERS_COUNT);    // "1" is the maximal length of the queue
 	if (res) {
-		mess = "cannot listen"; goto err;
+		mess = "cannot listen"; 
+		goto err;
 	}
 
 	for (;;) {
@@ -730,14 +737,14 @@ static void *pool_net_thread(void *arg)
 			} else if (m->state & MINER_ARCHIVE && t - m->task_time > N_CONFIRMATIONS) {
 				if (i0 < 0)
 					i0 = i;
-			} else if (m->ip == peeraddr.sin_addr.s_addr && ++count > g_max_nminers_ip) {
+			} else if (m->ip == peeraddr.sin_addr.s_addr && ++count > g_max_miner_ip_count) {
 				goto closefd;
 			}
 		}
 
 		if (i0 >= 0) i = i0;
 		
-		if (i >= g_max_nminers) {
+		if (i >= g_max_miners_count) {
  closefd:
 			close(fd);
 		} else {
@@ -933,7 +940,8 @@ static void *miner_net_thread(void *arg)
 	// Resolve port
 	s = strtok_r(0, " \t\r\n:", &lasts);
 	if (!s) {
-		pthread_mutex_unlock(&g_pool_mutex); mess = "port is not given"; 
+		pthread_mutex_unlock(&g_pool_mutex); 
+		mess = "port is not given"; 
 		goto err;
 	}
 	peeraddr.sin_port = htons(atoi(s));
@@ -1224,8 +1232,8 @@ int xdag_pool_start(int pool_on, const char *pool_arg, const char *miner_address
 		return 0;
 	}
 
-	g_miners = malloc(N_MINERS * sizeof(struct miner));
-	g_fds = malloc(N_MINERS * sizeof(struct pollfd));
+	g_miners = malloc(MAX_MINERS_COUNT * sizeof(struct miner));
+	g_fds = malloc(MAX_MINERS_COUNT * sizeof(struct pollfd));
 	if (!g_miners || !g_fds) return -1;
 	
 	res = pthread_create(&th, 0, pool_net_thread, (void*)pool_arg);
