@@ -1,7 +1,7 @@
 The Dagger (XDAG) cryptocurrency
 ================================
 
-- Community site: https://xdag.org
+- Community site: https://xdag.io
 - The Main net was launched January 5, 2018 at 22:45 GMT.
 
 
@@ -121,5 +121,5 @@ _A new transport layer will come in the future._
 Maintainers:
 ---------------
 
-Evgeniy ( gKNRtSL1pUaTpzMuPMznKw49ILtP6qX3 )
+Evgeniy ( XDAG: gKNRtSL1pUaTpzMuPMznKw49ILtP6qX3, BTC: 1Jonano4esJzZvqNtUY6NwfPme3EMpVs7n )  
 true ( rvKaJSbP9DE6sg6XetYtSpaK+2aDbUq8 )

@@ -3,4 +3,11 @@
   <ItemGroup>
     <ClCompile Include="..\..\client\main.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="version.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="version.rc" />
+  </ItemGroup>
 </Project>
