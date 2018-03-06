@@ -11,7 +11,7 @@
 
 struct xdag_pool_task {
 	struct xdag_field task[2], lastfield, minhash, nonce;
-	xdag_time_t main_time;
+	xdag_time_t task_time;
 	void *ctx0, *ctx;
 };
 
@@ -35,7 +35,7 @@ extern int xdag_send_block_via_pool(struct xdag_block *b);
 extern int xdag_print_miners(FILE *out);
 
 extern struct xdag_pool_task g_xdag_pool_task[2];
-extern uint64_t g_xdag_pool_ntask;
+extern uint64_t g_xdag_pool_task_index;
 extern xdag_hash_t g_xdag_mined_hashes[XDAG_POOL_N_CONFIRMATIONS],
 						g_xdag_mined_nonce[XDAG_POOL_N_CONFIRMATIONS];
 /* a number of mining threads */
