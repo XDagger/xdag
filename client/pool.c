@@ -74,7 +74,7 @@ struct miner {
 	uint16_t state;
 	uint8_t data_size;
 	uint8_t block_size;
-	uint32_t shares_count;
+	//uint32_t shares_count;
 };
 
 struct xdag_pool_task g_xdag_pool_task[2];
@@ -270,10 +270,10 @@ static void *pool_main_thread(void *arg)
 						task_index = g_xdag_pool_task_index;
 						task = &g_xdag_pool_task[task_index & 1];
 
-						if (++m->shares_count > SHARES_PER_TASK_LIMIT) {   //if shares count limit is exceded it is considered as spamming and current connection is disconnected
-							mess = "Spamming of shares";
-							goto disconnect;	//TODO: get rid of gotos
-						}
+						//if (++m->shares_count > SHARES_PER_TASK_LIMIT) {   //if shares count limit is exceded it is considered as spamming and current connection is disconnected
+						//	mess = "Spamming of shares";
+						//	goto disconnect;	//TODO: get rid of gotos
+						//}
 
 						if (!(m->state & MINER_ADDRESS) || memcmp(m->id.data, m->data, sizeof(xdag_hashlow_t))) {
 							xdag_time_t t;
@@ -305,7 +305,7 @@ static void *pool_main_thread(void *arg)
 
 				if (m->task_index < task_index) {
 					m->task_index = task_index;
-					m->shares_count = 0;
+					//m->shares_count = 0;
 					nfld = 2;
 					memcpy(data, task->task, nfld * sizeof(struct xdag_field));
 				} else if (!(m->state & MINER_BALANCE) && time(0) >= (m->task_time << 6) + 4) {
