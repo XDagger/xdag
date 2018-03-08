@@ -1,14 +1,15 @@
-#ifndef _SYSTEM_H
-#define _SYSTEM_H
+#ifndef _SYSTEM_DNET_H
+#define _SYSTEM_DNET_H
 
 #if defined(_WIN32) || defined(_WIN64)
+#include <Windows.h>
 #include <pthread.h>
 #define inline __inline
 #define __attribute__(x) 
 typedef long ssize_t;
 #define fcntl(a,b,c) 0
 #define close closesocket
-#ifdef _WIN64
+#ifdef _WIN32
 #define sleep(x)			Sleep((x)*1000)
 #else
 #define sleep(x)			_sleep(x)
@@ -21,6 +22,9 @@ typedef long ssize_t;
 static pthread_t pthread_invalid;
 extern int system_init(void);
 #define strdup(x) _strdup(x)
+#if defined(_MSC_VER)
+#define SHUT_RDWR SD_BOTH
+#endif
 #else
 #define pthread_invalid -1
 #define system_init()	0
