@@ -823,12 +823,12 @@ int xdag_create_block(struct xdag_field *fields, int ninput, int noutput, xdag_a
 	}
 	
 	if (mining) {
-		int ntask = g_xdag_pool_ntask + 1;
+		int ntask = g_xdag_pool_task_index + 1;
 		struct xdag_pool_task *task = &g_xdag_pool_task[ntask & 1];
 		
 		xdag_generate_random_array(b[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
 		
-		task->main_time = MAIN_TIME(send_time);
+		task->task_time = MAIN_TIME(send_time);
 		
 		xdag_hash_init(task->ctx0);
 		xdag_hash_update(task->ctx0, b, sizeof(struct xdag_block) - 2 * sizeof(struct xdag_field));
@@ -842,7 +842,7 @@ int xdag_create_block(struct xdag_field *fields, int ninput, int noutput, xdag_a
 		memcpy(task->lastfield.data, b[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(struct xdag_field));
 		
 		xdag_hash_final(task->ctx, &task->nonce.amount, sizeof(uint64_t), task->minhash.data);
-		g_xdag_pool_ntask = ntask;
+		g_xdag_pool_task_index = ntask;
 
 		while (get_timestamp() <= send_time) {
 			sleep(1);
