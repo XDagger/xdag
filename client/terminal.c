@@ -14,6 +14,10 @@
 #include "transport.h"
 #include "log.h"
 
+#if defined (_APPLE) || defined (_MACOS)
+#include <string.h>
+#endif
+
 #include "../dnet/system.h"
 
 #if defined(_WIN32) || defined(_WIN64)

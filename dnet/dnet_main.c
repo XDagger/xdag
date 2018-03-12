@@ -19,6 +19,10 @@
 #include "dnet_command.h"
 #include "dnet_main.h"
 
+#if defined (_MACOS) || defined (_APPLE)
+#define SIGPOLL SIGIO
+#endif
+
 //#define NO_DNET_FORK
 
 extern int getdtablesize(void);

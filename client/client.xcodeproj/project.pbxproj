@@ -1,0 +1,226 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 48;
+	objects = {
+
+/* Begin PBXFileReference section */
+		38A15DAF20544F3E00598EC2 /* address.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = address.c; sourceTree = "<group>"; };
+		38A15DB020544F3E00598EC2 /* address.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = address.h; sourceTree = "<group>"; };
+		38A15DB120544F3E00598EC2 /* balance.cgi.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = balance.cgi.c; sourceTree = "<group>"; };
+		38A15DB220544F3E00598EC2 /* block.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = block.c; sourceTree = "<group>"; };
+		38A15DB320544F3E00598EC2 /* block.cgi.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = block.cgi.c; sourceTree = "<group>"; };
+		38A15DB420544F3E00598EC2 /* block.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = block.h; sourceTree = "<group>"; };
+		38A15DB520544F3E00598EC2 /* commands.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = commands.c; sourceTree = "<group>"; };
+		38A15DB620544F3E00598EC2 /* commands.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = commands.h; sourceTree = "<group>"; };
+		38A15DB720544F3E00598EC2 /* crypt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = crypt.c; sourceTree = "<group>"; };
+		38A15DB820544F3E00598EC2 /* crypt.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = crypt.h; sourceTree = "<group>"; };
+		38A15DB920544F3E00598EC2 /* hash.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = hash.c; sourceTree = "<group>"; };
+		38A15DBA20544F3E00598EC2 /* hash.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hash.h; sourceTree = "<group>"; };
+		38A15DBB20544F3E00598EC2 /* init.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = init.c; sourceTree = "<group>"; };
+		38A15DBC20544F3E00598EC2 /* init.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = init.h; sourceTree = "<group>"; };
+		38A15DBD20544F3E00598EC2 /* log.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = log.c; sourceTree = "<group>"; };
+		38A15DBE20544F3E00598EC2 /* log.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = log.h; sourceTree = "<group>"; };
+		38A15DBF20544F3E00598EC2 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		38A15DC020544F3E00598EC2 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		38A15DC120544F3E00598EC2 /* memory.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = memory.c; sourceTree = "<group>"; };
+		38A15DC220544F3E00598EC2 /* memory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = memory.h; sourceTree = "<group>"; };
+		38A15DC320544F3E00598EC2 /* netdb-testnet.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "netdb-testnet.txt"; sourceTree = "<group>"; };
+		38A15DC420544F3E00598EC2 /* netdb-white-testnet.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "netdb-white-testnet.txt"; sourceTree = "<group>"; };
+		38A15DC520544F3E00598EC2 /* netdb-white.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "netdb-white.txt"; sourceTree = "<group>"; };
+		38A15DC620544F3E00598EC2 /* netdb.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = netdb.c; sourceTree = "<group>"; };
+		38A15DC720544F3E00598EC2 /* netdb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = netdb.h; sourceTree = "<group>"; };
+		38A15DC820544F3E00598EC2 /* netdb.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = netdb.txt; sourceTree = "<group>"; };
+		38A15DC920544F3E00598EC2 /* pool.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = pool.c; sourceTree = "<group>"; };
+		38A15DCA20544F3E00598EC2 /* pool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pool.h; sourceTree = "<group>"; };
+		38A15DCB20544F3E00598EC2 /* sha256-mb-x86_64.s */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm; path = "sha256-mb-x86_64.s"; sourceTree = "<group>"; };
+		38A15DCC20544F3E00598EC2 /* sha256.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = sha256.c; sourceTree = "<group>"; };
+		38A15DCD20544F3E00598EC2 /* sha256.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sha256.h; sourceTree = "<group>"; };
+		38A15DCE20544F3E00598EC2 /* state.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = state.h; sourceTree = "<group>"; };
+		38A15DCF20544F3E00598EC2 /* statsdaemon.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = statsdaemon.c; sourceTree = "<group>"; };
+		38A15DD020544F3E00598EC2 /* storage.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = storage.c; sourceTree = "<group>"; };
+		38A15DD120544F3E00598EC2 /* storage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = storage.h; sourceTree = "<group>"; };
+		38A15DD220544F3E00598EC2 /* sync.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = sync.c; sourceTree = "<group>"; };
+		38A15DD320544F3E00598EC2 /* sync.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sync.h; sourceTree = "<group>"; };
+		38A15DD420544F3E00598EC2 /* system.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = system.h; sourceTree = "<group>"; };
+		38A15DD520544F3E00598EC2 /* terminal.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = terminal.c; sourceTree = "<group>"; };
+		38A15DD620544F3E00598EC2 /* terminal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = terminal.h; sourceTree = "<group>"; };
+		38A15DD720544F3E00598EC2 /* transport.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = transport.c; sourceTree = "<group>"; };
+		38A15DD820544F3E00598EC2 /* transport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = transport.h; sourceTree = "<group>"; };
+		38A15DD920544F3E00598EC2 /* version.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
+		38A15DDA20544F3E00598EC2 /* wallet.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = wallet.c; sourceTree = "<group>"; };
+		38A15DDB20544F3E00598EC2 /* wallet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = wallet.h; sourceTree = "<group>"; };
+		38A15DDC20544F3E00598EC2 /* x86_64cpuid.s */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm; path = x86_64cpuid.s; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		38A15DA920544F3E00598EC2 = {
+			isa = PBXGroup;
+			children = (
+				38A15DAF20544F3E00598EC2 /* address.c */,
+				38A15DB020544F3E00598EC2 /* address.h */,
+				38A15DB120544F3E00598EC2 /* balance.cgi.c */,
+				38A15DB220544F3E00598EC2 /* block.c */,
+				38A15DB320544F3E00598EC2 /* block.cgi.c */,
+				38A15DB420544F3E00598EC2 /* block.h */,
+				38A15DB520544F3E00598EC2 /* commands.c */,
+				38A15DB620544F3E00598EC2 /* commands.h */,
+				38A15DB720544F3E00598EC2 /* crypt.c */,
+				38A15DB820544F3E00598EC2 /* crypt.h */,
+				38A15DB920544F3E00598EC2 /* hash.c */,
+				38A15DBA20544F3E00598EC2 /* hash.h */,
+				38A15DBB20544F3E00598EC2 /* init.c */,
+				38A15DBC20544F3E00598EC2 /* init.h */,
+				38A15DBD20544F3E00598EC2 /* log.c */,
+				38A15DBE20544F3E00598EC2 /* log.h */,
+				38A15DBF20544F3E00598EC2 /* main.c */,
+				38A15DC020544F3E00598EC2 /* Makefile */,
+				38A15DC120544F3E00598EC2 /* memory.c */,
+				38A15DC220544F3E00598EC2 /* memory.h */,
+				38A15DC320544F3E00598EC2 /* netdb-testnet.txt */,
+				38A15DC420544F3E00598EC2 /* netdb-white-testnet.txt */,
+				38A15DC520544F3E00598EC2 /* netdb-white.txt */,
+				38A15DC620544F3E00598EC2 /* netdb.c */,
+				38A15DC720544F3E00598EC2 /* netdb.h */,
+				38A15DC820544F3E00598EC2 /* netdb.txt */,
+				38A15DC920544F3E00598EC2 /* pool.c */,
+				38A15DCA20544F3E00598EC2 /* pool.h */,
+				38A15DCB20544F3E00598EC2 /* sha256-mb-x86_64.s */,
+				38A15DCC20544F3E00598EC2 /* sha256.c */,
+				38A15DCD20544F3E00598EC2 /* sha256.h */,
+				38A15DCE20544F3E00598EC2 /* state.h */,
+				38A15DCF20544F3E00598EC2 /* statsdaemon.c */,
+				38A15DD020544F3E00598EC2 /* storage.c */,
+				38A15DD120544F3E00598EC2 /* storage.h */,
+				38A15DD220544F3E00598EC2 /* sync.c */,
+				38A15DD320544F3E00598EC2 /* sync.h */,
+				38A15DD420544F3E00598EC2 /* system.h */,
+				38A15DD520544F3E00598EC2 /* terminal.c */,
+				38A15DD620544F3E00598EC2 /* terminal.h */,
+				38A15DD720544F3E00598EC2 /* transport.c */,
+				38A15DD820544F3E00598EC2 /* transport.h */,
+				38A15DD920544F3E00598EC2 /* version.h */,
+				38A15DDA20544F3E00598EC2 /* wallet.c */,
+				38A15DDB20544F3E00598EC2 /* wallet.h */,
+				38A15DDC20544F3E00598EC2 /* x86_64cpuid.s */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXLegacyTarget section */
+		38A15DAE20544F3E00598EC2 /* client */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(ACTION)";
+			buildConfigurationList = 38A15DDD20544F3E00598EC2 /* Build configuration list for PBXLegacyTarget "client" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/make;
+			buildWorkingDirectory = "/Volumes/HD/Development/OpenSource/xdag-1/client";
+			dependencies = (
+			);
+			name = client;
+			passBuildSettingsInEnvironment = 1;
+			productName = client;
+		};
+/* End PBXLegacyTarget section */
+
+/* Begin PBXProject section */
+		38A15DAA20544F3E00598EC2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+			};
+			buildConfigurationList = 38A15DAD20544F3E00598EC2 /* Build configuration list for PBXProject "client" */;
+			compatibilityVersion = "Xcode 8.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 38A15DA920544F3E00598EC2;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				38A15DAE20544F3E00598EC2 /* client */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin XCBuildConfiguration section */
+		38A15DAB20544F3E00598EC2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				COPY_PHASE_STRIP = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx10.6;
+			};
+			name = Debug;
+		};
+		38A15DAC20544F3E00598EC2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				COPY_PHASE_STRIP = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				SDKROOT = macosx10.6;
+			};
+			name = Release;
+		};
+		38A15DDE20544F3E00598EC2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DEBUGGING_SYMBOLS = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = client;
+			};
+			name = Debug;
+		};
+		38A15DDF20544F3E00598EC2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = client;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		38A15DAD20544F3E00598EC2 /* Build configuration list for PBXProject "client" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				38A15DAB20544F3E00598EC2 /* Debug */,
+				38A15DAC20544F3E00598EC2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		38A15DDD20544F3E00598EC2 /* Build configuration list for PBXLegacyTarget "client" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				38A15DDE20544F3E00598EC2 /* Debug */,
+				38A15DDF20544F3E00598EC2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 38A15DAA20544F3E00598EC2 /* Project object */;
+}
