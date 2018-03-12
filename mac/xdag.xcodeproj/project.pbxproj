@@ -31,7 +31,6 @@
 		38A15E8D20544F3F00598EC2 /* init.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5220544F3F00598EC2 /* init.c */; };
 		38A15E8E20544F3F00598EC2 /* log.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5420544F3F00598EC2 /* log.c */; };
 		38A15E8F20544F3F00598EC2 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5620544F3F00598EC2 /* main.c */; };
-		38A15E9020544F3F00598EC2 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5720544F3F00598EC2 /* Makefile */; };
 		38A15E9120544F3F00598EC2 /* memory.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5820544F3F00598EC2 /* memory.c */; };
 		38A15E9220544F3F00598EC2 /* netdb.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5D20544F3F00598EC2 /* netdb.c */; };
 		38A15E9320544F3F00598EC2 /* pool.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6020544F3F00598EC2 /* pool.c */; };
@@ -49,17 +48,23 @@
 		38A15EAD20545CD700598EC2 /* libssl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 38A15E9F20545CCE00598EC2 /* libssl.dylib */; };
 		38B395182056D68E004DD3EA /* x86_64cpuid-mac.s in Sources */ = {isa = PBXBuildFile; fileRef = 38B395162056D68E004DD3EA /* x86_64cpuid-mac.s */; };
 		38B395192056D68E004DD3EA /* sha256-mb-x86_64-mac.s in Sources */ = {isa = PBXBuildFile; fileRef = 38B395172056D68E004DD3EA /* sha256-mb-x86_64-mac.s */; };
+		38B3951A2056DE70004DD3EA /* netdb-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5A20544F3F00598EC2 /* netdb-testnet.txt */; };
+		38B3951B2056DE70004DD3EA /* netdb-white-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5B20544F3F00598EC2 /* netdb-white-testnet.txt */; };
+		38B3951C2056DE70004DD3EA /* netdb-white.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5C20544F3F00598EC2 /* netdb-white.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		389F043420544EDC003F3084 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
+			buildActionMask = 12;
+			dstPath = .;
+			dstSubfolderSpec = 6;
 			files = (
+				38B3951A2056DE70004DD3EA /* netdb-testnet.txt in CopyFiles */,
+				38B3951B2056DE70004DD3EA /* netdb-white-testnet.txt in CopyFiles */,
+				38B3951C2056DE70004DD3EA /* netdb-white.txt in CopyFiles */,
 			);
-			runOnlyForDeploymentPostprocessing = 1;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -104,8 +109,6 @@
 		38A15E3A20544F3F00598EC2 /* dnet_threads.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dnet_threads.c; sourceTree = "<group>"; };
 		38A15E3B20544F3F00598EC2 /* dnet_threads.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dnet_threads.h; sourceTree = "<group>"; };
 		38A15E3C20544F3F00598EC2 /* dthread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dthread.h; sourceTree = "<group>"; };
-		38A15E3E20544F3F00598EC2 /* repository.uni */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = repository.uni; sourceTree = "<group>"; };
-		38A15E3F20544F3F00598EC2 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		38A15E4020544F3F00598EC2 /* system.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = system.h; sourceTree = "<group>"; };
 		38A15E4320544F3F00598EC2 /* address.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = address.c; sourceTree = "<group>"; };
 		38A15E4420544F3F00598EC2 /* address.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = address.h; sourceTree = "<group>"; };
@@ -122,7 +125,6 @@
 		38A15E5420544F3F00598EC2 /* log.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = log.c; sourceTree = "<group>"; };
 		38A15E5520544F3F00598EC2 /* log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = log.h; sourceTree = "<group>"; };
 		38A15E5620544F3F00598EC2 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
-		38A15E5720544F3F00598EC2 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		38A15E5820544F3F00598EC2 /* memory.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = memory.c; sourceTree = "<group>"; };
 		38A15E5920544F3F00598EC2 /* memory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = memory.h; sourceTree = "<group>"; };
 		38A15E5A20544F3F00598EC2 /* netdb-testnet.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "netdb-testnet.txt"; sourceTree = "<group>"; };
@@ -360,20 +362,10 @@
 				38A15E3A20544F3F00598EC2 /* dnet_threads.c */,
 				38A15E3B20544F3F00598EC2 /* dnet_threads.h */,
 				38A15E3C20544F3F00598EC2 /* dthread.h */,
-				38A15E3D20544F3F00598EC2 /* DVS */,
-				38A15E3F20544F3F00598EC2 /* Makefile */,
 				38A15E4020544F3F00598EC2 /* system.h */,
 			);
 			name = dnet;
 			path = ../dnet;
-			sourceTree = "<group>";
-		};
-		38A15E3D20544F3F00598EC2 /* DVS */ = {
-			isa = PBXGroup;
-			children = (
-				38A15E3E20544F3F00598EC2 /* repository.uni */,
-			);
-			path = DVS;
 			sourceTree = "<group>";
 		};
 		38A15E4220544F3F00598EC2 /* client */ = {
@@ -396,7 +388,6 @@
 				38A15E5420544F3F00598EC2 /* log.c */,
 				38A15E5520544F3F00598EC2 /* log.h */,
 				38A15E5620544F3F00598EC2 /* main.c */,
-				38A15E5720544F3F00598EC2 /* Makefile */,
 				38A15E5820544F3F00598EC2 /* memory.c */,
 				38A15E5920544F3F00598EC2 /* memory.h */,
 				38A15E5A20544F3F00598EC2 /* netdb-testnet.txt */,
@@ -555,7 +546,6 @@
 				38A15E8120544F3F00598EC2 /* dnet_packet.c in Sources */,
 				38A15E7620544F3F00598EC2 /* dfslib_crypt.c in Sources */,
 				38A15E7520544F3F00598EC2 /* crc_c.c in Sources */,
-				38A15E9020544F3F00598EC2 /* Makefile in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
