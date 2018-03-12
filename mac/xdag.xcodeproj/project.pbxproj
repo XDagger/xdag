@@ -41,10 +41,8 @@
 		38A15E9A20544F3F00598EC2 /* transport.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6E20544F3F00598EC2 /* transport.c */; };
 		38A15E9B20544F3F00598EC2 /* wallet.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E7120544F3F00598EC2 /* wallet.c */; };
 		38A15EA820545CD700598EC2 /* libcrypto.1.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 38A15EA420545CCE00598EC2 /* libcrypto.1.1.dylib */; };
-		38A15EA920545CD700598EC2 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 38A15EA620545CCE00598EC2 /* libcrypto.a */; };
 		38A15EAA20545CD700598EC2 /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 38A15EA720545CCE00598EC2 /* libcrypto.dylib */; };
 		38A15EAB20545CD700598EC2 /* libssl.1.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 38A15EA320545CCE00598EC2 /* libssl.1.1.dylib */; };
-		38A15EAC20545CD700598EC2 /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 38A15EA520545CCE00598EC2 /* libssl.a */; };
 		38A15EAD20545CD700598EC2 /* libssl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 38A15E9F20545CCE00598EC2 /* libssl.dylib */; };
 		38B395182056D68E004DD3EA /* x86_64cpuid-mac.s in Sources */ = {isa = PBXBuildFile; fileRef = 38B395162056D68E004DD3EA /* x86_64cpuid-mac.s */; };
 		38B395192056D68E004DD3EA /* sha256-mb-x86_64-mac.s in Sources */ = {isa = PBXBuildFile; fileRef = 38B395172056D68E004DD3EA /* sha256-mb-x86_64-mac.s */; };
@@ -162,6 +160,8 @@
 		38A15EB020545CD700598EC2 /* capi.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = capi.dylib; sourceTree = "<group>"; };
 		38B395162056D68E004DD3EA /* x86_64cpuid-mac.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = "x86_64cpuid-mac.s"; sourceTree = "<group>"; };
 		38B395172056D68E004DD3EA /* sha256-mb-x86_64-mac.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = "sha256-mb-x86_64-mac.s"; sourceTree = "<group>"; };
+		38B3951D2056FBBA004DD3EA /* libpthread.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libpthread.tbd; path = usr/lib/libpthread.tbd; sourceTree = SDKROOT; };
+		38B3951F2056FC04004DD3EA /* libsystem_pthread.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsystem_pthread.tbd; path = usr/lib/system/introspection/libsystem_pthread.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -170,10 +170,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				38A15EA820545CD700598EC2 /* libcrypto.1.1.dylib in Frameworks */,
-				38A15EA920545CD700598EC2 /* libcrypto.a in Frameworks */,
 				38A15EAA20545CD700598EC2 /* libcrypto.dylib in Frameworks */,
 				38A15EAB20545CD700598EC2 /* libssl.1.1.dylib in Frameworks */,
-				38A15EAC20545CD700598EC2 /* libssl.a in Frameworks */,
 				38A15EAD20545CD700598EC2 /* libssl.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -421,6 +419,8 @@
 		38A15E9E20545CCE00598EC2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				38B3951F2056FC04004DD3EA /* libsystem_pthread.tbd */,
+				38B3951D2056FBBA004DD3EA /* libpthread.tbd */,
 				3895BF47205520AD00344AE0 /* bundle1.o */,
 				38A15EA020545CCE00598EC2 /* engines-1.1 */,
 				38A15EAE20545CD700598EC2 /* engines-1.1 */,
@@ -658,22 +658,32 @@
 		389F043E20544EDC003F3084 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					_MACOS,
 					SHA256_USE_OPENSSL_TXFM,
 					SHA256_OPENSSL_MBLOCK,
 					DFSTOOLS,
+					NO_DNET_FORK,
 				);
+				GCC_THREADSAFE_STATICS = YES;
+				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_UNUSED_PARAMETER = YES;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"/usr/local/Cellar/openssl@1.1/1.1.0e/lib",
+					"$(SDKROOT)/usr/lib/system/introspection",
 				);
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
 				SYSTEM_FRAMEWORK_SEARCH_PATHS = "\"/usr/local/Cellar/openssl@1.1/1.1.0e/lib/\"";
 				SYSTEM_HEADER_SEARCH_PATHS = "\"/usr/local/Cellar/openssl@1.1/1.1.0e/include/\"";
 			};
@@ -682,21 +692,31 @@
 		389F043F20544EDC003F3084 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					_MACOS,
 					SHA256_USE_OPENSSL_TXFM,
 					SHA256_OPENSSL_MBLOCK,
 					DFSTOOLS,
+					NDEBUG,
 				);
+				GCC_THREADSAFE_STATICS = YES;
+				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_UNUSED_PARAMETER = YES;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"/usr/local/Cellar/openssl@1.1/1.1.0e/lib",
+					"$(SDKROOT)/usr/lib/system/introspection",
 				);
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
 				SYSTEM_FRAMEWORK_SEARCH_PATHS = "\"/usr/local/Cellar/openssl@1.1/1.1.0e/lib/\"";
 				SYSTEM_HEADER_SEARCH_PATHS = "\"/usr/local/Cellar/openssl@1.1/1.1.0e/include/\"";
 			};
