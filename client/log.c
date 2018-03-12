@@ -94,9 +94,38 @@ extern int xdag_set_log_level(int level)
 #include <signal.h>
 #include <unistd.h>
 #include <execinfo.h>
-#include <ucontext.h>
 
+#if defined (_MACOS) || defined (_APPLE)
+#include <sys/ucontext.h>
+#define RIP_sig(context)     (*((unsigned long*)&(context)->uc_mcontext->__ss.__rip))
+#define RSP_sig(context)     (*((unsigned long*)&(context)->uc_mcontext->__ss.__rsp))
+#define TRAP_sig(context)    ((context)->uc_mcontext->__es.__trapno)
+#define ERR_sig(context)     ((context)->uc_mcontext->__es.__err)
+#define EFL_sig(context)     ((context)->uc_mcontext->__ss.__rflags)
+#define CR2_sig(context)     ((char *) info->si_addr)
+#define RAX_sig(context)     ((context)->uc_mcontext->__ss.__rax)
+#define RBX_sig(context)     ((context)->uc_mcontext->__ss.__rbx)
+#define RCX_sig(context)     ((context)->uc_mcontext->__ss.__rcx)
+#define RDX_sig(context)     ((context)->uc_mcontext->__ss.__rdx)
+#define RSI_sig(context)     ((context)->uc_mcontext->__ss.__rsi)
+#define RDI_sig(context)     ((context)->uc_mcontext->__ss.__rdi)
+#define RBP_sig(context)     ((context)->uc_mcontext->__ss.__rbp)
+#define R8_sig(context)      ((context)->uc_mcontext->__ss.__r8)
+#define R9_sig(context)      ((context)->uc_mcontext->__ss.__r9)
+#define R10_sig(context)     ((context)->uc_mcontext->__ss.__r10)
+#define R11_sig(context)     ((context)->uc_mcontext->__ss.__r11)
+#define R12_sig(context)     ((context)->uc_mcontext->__ss.__r12)
+#define R13_sig(context)     ((context)->uc_mcontext->__ss.__r13)
+#define R14_sig(context)     ((context)->uc_mcontext->__ss.__r14)
+#define R15_sig(context)     ((context)->uc_mcontext->__ss.__r15)
+
+#define REG_(name) sprintf(buf + strlen(buf), #name "=%llx, ",(unsigned long long)name##_sig(uc))
+
+#else
+#include <ucontext.h>
 #define REG_(name) sprintf(buf + strlen(buf), #name "=%llx, ", (unsigned long long)uc->uc_mcontext.gregs[REG_ ## name])
+#endif
+
 
 static void sigCatch(int signum, siginfo_t *info, void *context)
 {
