@@ -27,7 +27,7 @@ void xdag_init_path(char *path) {
     if (*n != '/' && *n != '\\') {
         char buf[PATH_MAX];
         getcwd(buf, PATH_MAX);
-        sprintf(g_xdag_current_path, "%s/%s", n, buf);
+        sprintf(g_xdag_current_path, "%s/%s", buf, n);
     } else {
         sprintf(g_xdag_current_path, "%s", n);
     }
