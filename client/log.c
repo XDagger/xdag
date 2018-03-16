@@ -96,7 +96,7 @@ extern int xdag_set_log_level(int level)
 #include <unistd.h>
 #include <execinfo.h>
 
-#if defined (_MACOS) || defined (_APPLE)
+#if defined (__MACOS__) || defined (__APPLE__)
 #include <sys/ucontext.h>
 #define RIP_sig(context)     (*((unsigned long*)&(context)->uc_mcontext->__ss.__rip))
 #define RSP_sig(context)     (*((unsigned long*)&(context)->uc_mcontext->__ss.__rsp))

@@ -14,7 +14,7 @@
 #include "transport.h"
 #include "log.h"
 
-#if defined (_APPLE) || defined (_MACOS)
+#if defined (__APPLE__) || defined (__MACOS__)
 #include <string.h>
 #endif
 
