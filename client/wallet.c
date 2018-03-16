@@ -9,7 +9,7 @@
 #include "log.h"
 #include "init.h"
 #include "transport.h"
-#include "utils.h"
+#include "../utils/utils.h"
 
 #define WALLET_FILE (g_xdag_testnet ? "wallet-testnet.dat" : "wallet.dat")
 

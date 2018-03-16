@@ -10,7 +10,7 @@
 #include "log.h"
 #include "init.h"
 #include "hash.h"
-#include "utils.h"
+#include "../utils/utils.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #define SLASH "\\"

@@ -464,7 +464,8 @@
 				38D14DB4205B9CB8007788DA /* utils.h */,
 				38D14DB5205B9CB8007788DA /* utils.c */,
 			);
-			path = utils;
+			name = utils;
+			path = ../utils;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

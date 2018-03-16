@@ -8,7 +8,7 @@
 #include "system.h"
 #include "log.h"
 #include "init.h"
-#include "utils.h"
+#include "../utils/utils.h"
 
 #define XDAG_LOG_FILE "%s.log"
 

@@ -13,7 +13,7 @@
 #include "dnet_stream.h"
 #include "dnet_files.h"
 #include "dnet_main.h"
-#include "utils.h"
+#include "../utils/utils.h"
 
 #define HISTORY_FILE "dnet_history.txt"
 
