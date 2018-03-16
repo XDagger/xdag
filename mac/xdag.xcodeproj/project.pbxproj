@@ -49,6 +49,7 @@
 		38B3951A2056DE70004DD3EA /* netdb-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5A20544F3F00598EC2 /* netdb-testnet.txt */; };
 		38B3951B2056DE70004DD3EA /* netdb-white-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5B20544F3F00598EC2 /* netdb-white-testnet.txt */; };
 		38B3951C2056DE70004DD3EA /* netdb-white.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5C20544F3F00598EC2 /* netdb-white.txt */; };
+		38D14DB6205B9CB8007788DA /* utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 38D14DB5205B9CB8007788DA /* utils.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -162,6 +163,8 @@
 		38B395172056D68E004DD3EA /* sha256-mb-x86_64-mac.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = "sha256-mb-x86_64-mac.s"; sourceTree = "<group>"; };
 		38B3951D2056FBBA004DD3EA /* libpthread.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libpthread.tbd; path = usr/lib/libpthread.tbd; sourceTree = SDKROOT; };
 		38B3951F2056FC04004DD3EA /* libsystem_pthread.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsystem_pthread.tbd; path = usr/lib/system/introspection/libsystem_pthread.tbd; sourceTree = SDKROOT; };
+		38D14DB4205B9CB8007788DA /* utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
+		38D14DB5205B9CB8007788DA /* utils.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = utils.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -182,6 +185,7 @@
 		389F042D20544EDC003F3084 = {
 			isa = PBXGroup;
 			children = (
+				38D14DB3205B9C92007788DA /* utils */,
 				38A15E4220544F3F00598EC2 /* client */,
 				38A15E2120544F3F00598EC2 /* dnet */,
 				38A15E0420544F3E00598EC2 /* dus */,
@@ -454,6 +458,15 @@
 			path = "../../../../../../usr/local/Cellar/openssl@1.1/1.1.0e/lib/engines-1.1";
 			sourceTree = "<group>";
 		};
+		38D14DB3205B9C92007788DA /* utils */ = {
+			isa = PBXGroup;
+			children = (
+				38D14DB4205B9CB8007788DA /* utils.h */,
+				38D14DB5205B9CB8007788DA /* utils.c */,
+			);
+			path = utils;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -532,6 +545,7 @@
 				38A15E9920544F3F00598EC2 /* terminal.c in Sources */,
 				38A15E9220544F3F00598EC2 /* netdb.c in Sources */,
 				38A15E8E20544F3F00598EC2 /* log.c in Sources */,
+				38D14DB6205B9CB8007788DA /* utils.c in Sources */,
 				38A15E9A20544F3F00598EC2 /* transport.c in Sources */,
 				38A15E8A20544F3F00598EC2 /* commands.c in Sources */,
 				38A15E8F20544F3F00598EC2 /* main.c in Sources */,
