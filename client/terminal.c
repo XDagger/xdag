@@ -14,7 +14,7 @@
 #include "transport.h"
 #include "log.h"
 
-#if defined (_APPLE) || defined (_MACOS)
+#if defined (__APPLE__) || defined (__MACOS__)
 #include <string.h>
 #endif
 
@@ -32,6 +32,8 @@
 const uint32_t LOCAL_HOST_IP = 0x7f000001; // 127.0.0.1
 const uint32_t APPLICATION_DOMAIN_PORT = 7676;
 #endif
+
+#include "utils.h"
 
 int terminal(void)
 {
@@ -180,7 +182,7 @@ void *terminal_thread(void *arg)
 			res = xdag_command(cmd, fd);
 
 #if !defined(_WIN32) && !defined(_WIN64)
-			fclose(fd);
+			xdag_close_file(fd);
 #else
 			rewind(fd);
 
@@ -189,7 +191,7 @@ void *terminal_thread(void *arg)
 				const int length = fread(buf, 1, 256, fd);
 				write(clientSock, buf, length);
 			}
-			fclose(fd);
+			xdag_close_file(fd);
 			close(clientSock);
 #endif
 			if (res < 0) {

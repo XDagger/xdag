@@ -10,6 +10,7 @@
 #include "log.h"
 #include "init.h"
 #include "hash.h"
+#include "utils.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #define SLASH "\\"
@@ -35,15 +36,15 @@ static int in_adding_all = 0;
 static int correct_storage_sum(const char *path, int pos, const struct xdag_storage_sum *sum, int add)
 {
 	struct xdag_storage_sum sums[256];
-	FILE *f = fopen(path, "r+b");
+	FILE *f = xdag_open_file(path, "r+b");
 
 	if (f) {
 		if (fread(sums, sizeof(struct xdag_storage_sum), 256, f) != 256) {
-			fclose(f); xdag_err("Storag: sums file %s corrupted", path); return -1;
+			xdag_close_file(f); xdag_err("Storag: sums file %s corrupted", path); return -1;
 		}
 		rewind(f);
 	} else {
-		f = fopen(path, "wb");
+		f = xdag_open_file(path, "wb");
 		if (!f) {
 			xdag_err("Storag: can't create file %s", path); return -1;
 		}
@@ -52,7 +53,7 @@ static int correct_storage_sum(const char *path, int pos, const struct xdag_stor
 
 	if (!add) {
 		if (sums[pos].size == sum->size && sums[pos].sum == sum->sum) {
-			fclose(f); return 0;
+			xdag_close_file(f); return 0;
 		}
 
 		if (sums[pos].size || sums[pos].sum) {
@@ -65,10 +66,10 @@ static int correct_storage_sum(const char *path, int pos, const struct xdag_stor
 	sums[pos].sum += sum->sum;
 	
 	if (fwrite(sums, sizeof(struct xdag_storage_sum), 256, f) != 256) {
-		fclose(f); xdag_err("Storag: can't write file %s", path); return -1;
+		xdag_close_file(f); xdag_err("Storag: can't write file %s", path); return -1;
 	}
 	
-	fclose(f);
+	xdag_close_file(f);
 	
 	return 1;
 }
@@ -124,12 +125,12 @@ int64_t xdag_storage_save(const struct xdag_block *b)
 	
 	pthread_mutex_lock(&storage_mutex);
 	
-	f = fopen(path, "ab");
+	f = xdag_open_file(path, "ab");
 	if (f) {
 		fseek(f, 0, SEEK_END);
 		res = ftell(f);
 		fwrite(b, sizeof(struct xdag_block), 1, f);
-		fclose(f);
+		xdag_close_file(f);
 		s.size = sizeof(struct xdag_block);
 		s.sum = 0;
 
@@ -157,10 +158,10 @@ struct xdag_block *xdag_storage_load(xdag_hash_t hash, xdag_time_t time, uint64_
 
 	pthread_mutex_lock(&storage_mutex);
 	
-	f = fopen(path, "rb");
+	f = xdag_open_file(path, "rb");
 	if (f) {
 		if (fseek(f, pos, SEEK_SET) < 0 || fread(buf, sizeof(struct xdag_block), 1, f) != 1) buf = 0;
-		fclose(f);
+		xdag_close_file(f);
 	} else {
 		buf = 0;
 	}
@@ -208,11 +209,11 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 
 		pthread_mutex_lock(&storage_mutex);
 		
-		f = fopen(path, "rb");
+		f = xdag_open_file(path, "rb");
 		if (f) {
 			if (fseek(f, pos, SEEK_SET) < 0) todo = 0;
 			else todo = fread(buf, sizeof(struct xdag_block), bufsize, f);
-			fclose(f);
+			xdag_close_file(f);
 		} else {
 			todo = 0;
 		}
@@ -302,9 +303,9 @@ int xdag_load_sums(xdag_time_t start_time, xdag_time_t end_time, struct xdag_sto
 		sprintf(path, STORAGE_DIR0 SLASH SUMS_FILE, STORAGE_DIR0_ARGS(start_time & 0x000000000000l));
 	}
 
-	f = fopen(path, "rb");
+	f = xdag_open_file(path, "rb");
 	if (f) {
-		fread(buf, sizeof(struct xdag_storage_sum), 256, f); fclose(f);
+		fread(buf, sizeof(struct xdag_storage_sum), 256, f); xdag_close_file(f);
 	} else {
 		memset(buf, 0, sizeof(buf));
 	}

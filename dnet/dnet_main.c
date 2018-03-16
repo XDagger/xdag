@@ -19,7 +19,7 @@
 #include "dnet_command.h"
 #include "dnet_main.h"
 
-#if defined (_MACOS) || defined (_APPLE)
+#if defined (__MACOS__) || defined (__APPLE__)
 #define SIGPOLL SIGIO
 #endif
 
