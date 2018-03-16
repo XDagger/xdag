@@ -90,8 +90,8 @@ Structure of block:
 ------------------
 
 _The on-disk format will change in the future. Consider this the network protocol._
-Each block has fixed size 512 bytes.
-Block consists of 16 fields each of whish has length 32 bytes.
+Each block has a fixed size of 512 bytes.
+Block consists of 16 fields each of which has length 32 bytes.
 Field 0 is header, it consists of 4 quadwords:
 - transport-layer header
 - types of all 16 fields, 4 bits for one type
