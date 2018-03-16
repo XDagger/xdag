@@ -6,7 +6,7 @@ int dnet_tap_open(int tap_number) {
 	return -1;
 }
 
-#elif defined(_MACOS) || defined(_APPLE)
+#elif defined(__MACOS__) || defined(__APPLE__)
 
 #include <stdio.h>
 #include <string.h>

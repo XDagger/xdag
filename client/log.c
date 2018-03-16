@@ -8,6 +8,7 @@
 #include "system.h"
 #include "log.h"
 #include "init.h"
+#include "utils.h"
 
 #define XDAG_LOG_FILE "%s.log"
 
@@ -40,7 +41,7 @@ int xdag_log(int level, const char *format, ...)
 	pthread_mutex_lock(&log_mutex);
 	sprintf(buf, XDAG_LOG_FILE, g_progname);
 	
-	f = fopen(buf, "a");
+	f = xdag_open_file(buf, "a");
 	if (!f) {
 		done = -1; goto end;
 	}
@@ -52,7 +53,7 @@ int xdag_log(int level, const char *format, ...)
 	va_end(arg);
 
 	fprintf(f, "\n");
-	fclose(f);
+	xdag_close_file(f);
 
  end:
 	pthread_mutex_unlock(&log_mutex);
@@ -95,7 +96,7 @@ extern int xdag_set_log_level(int level)
 #include <unistd.h>
 #include <execinfo.h>
 
-#if defined (_MACOS) || defined (_APPLE)
+#if defined (__MACOS__) || defined (__APPLE__)
 #include <sys/ucontext.h>
 #define RIP_sig(context)     (*((unsigned long*)&(context)->uc_mcontext->__ss.__rip))
 #define RSP_sig(context)     (*((unsigned long*)&(context)->uc_mcontext->__ss.__rsp))
