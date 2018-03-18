@@ -22,7 +22,7 @@
 #include "pool.h"
 #include "commands.h"
 #include "terminal.h"
-#include "utils.h"
+#include "../utils/utils.h"
 
 char *g_coinname, *g_progname;
 #define coinname   g_coinname

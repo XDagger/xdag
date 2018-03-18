@@ -13,7 +13,7 @@
 #include "dnet_connection.h"
 #include "dnet_stream.h"
 #include "dnet_log.h"
-#include "utils.h"
+#include "../utils/utils.h"
 
 #define DNET_LOG_PERIOD 300
 

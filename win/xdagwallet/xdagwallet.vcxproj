@@ -224,6 +224,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CEditWalletAddr.h" />
     <ClInclude Include="PasswordDlg.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="xdagwallet.h" />
@@ -233,6 +234,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CEditWalletAddr.cpp" />
     <ClCompile Include="PasswordDlg.cpp" />
     <ClCompile Include="xdagwallet.cpp" />
     <ClCompile Include="xdagwalletDlg.cpp" />

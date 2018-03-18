@@ -35,14 +35,13 @@ void xdag_init_path(char *path) {
 #elif _WIN32
     char szPath[MAX_PATH];
     char szBuffer[MAX_PATH];
-    char * pszFile;
+    char *pszFile;
     
     GetModuleFileName(NULL, (LPTCH)szPath, sizeof(szPath) / sizeof(*szPath));
     GetFullPathName((LPTSTR)szPath, sizeof(szBuffer) / sizeof(*szBuffer), (LPTSTR)szBuffer, (LPTSTR*)&pszFile);
     *pszFile = 0;
     
     sprintf(g_xdag_current_path, "%s", szBuffer);
-    
 #else
     char result[PATH_MAX];
     if (readlink("/proc/self/exe", result, PATH_MAX) > 0) {

@@ -13,7 +13,7 @@
 #include "dnet_database.h"
 #include "dnet_crypt.h"
 #include "dnet_main.h"
-#include "utils.h"
+#include "../utils/utils.h"
 
 #define KEYFILE	    "dnet_key.dat"
 #define PWDLEN	    64
