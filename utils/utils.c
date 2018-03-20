@@ -46,11 +46,13 @@ void xdag_init_path(char *path)
     
     strcpy(g_xdag_current_path, szBuffer);
 #else
-    char result[PATH_MAX];
-    if (readlink("/proc/self/exe", result, PATH_MAX) > 0) {
-		strcpy(g_xdag_current_path, result);
+    char * n = dirname(path);
+    if (*n != '/' && *n != '\\') {
+        char buf[PATH_MAX];
+        getcwd(buf, PATH_MAX);
+        sprintf(g_xdag_current_path, "%s/%s", buf, n);
     } else {
-		g_xdag_current_path[0] = 0;
+        sprintf(g_xdag_current_path, "%s", n);
     }
 #endif
 
