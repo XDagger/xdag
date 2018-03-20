@@ -8,6 +8,7 @@
 
 #include "utils.h"
 #include <sys/stat.h>
+#include <stdlib.h>
 #if defined (__APPLE__)|| defined (__MACOS__)
 #include <unistd.h>
 #include <libgen.h>
@@ -25,16 +26,17 @@ static char g_xdag_current_path[4096] = {0};
 
 void xdag_init_path(char *path) 
 {
+    char *pathcopy = strdup(path);
 #if defined (__APPLE__)|| defined (__MACOS__)
-    char * n = dirname(path);
-    if (*n != '/' && *n != '\\') {
+    char *prefix = dirname(pathcopy);
+    if (*prefix != '/' && *prefix != '\\') {
         char buf[PATH_MAX];
         getcwd(buf, PATH_MAX);
-        sprintf(g_xdag_current_path, "%s/%s", buf, n);
+        sprintf(g_xdag_current_path, "%s/%s", buf, prefix);
     } else {
-        sprintf(g_xdag_current_path, "%s", n);
+        sprintf(g_xdag_current_path, "%s", prefix);
     }
-
+    free(prefix);
 #elif _WIN32
     char szPath[MAX_PATH];
     char szBuffer[MAX_PATH];
@@ -46,21 +48,23 @@ void xdag_init_path(char *path)
     
     strcpy(g_xdag_current_path, szBuffer);
 #else
-    char * n = dirname(path);
-    if (*n != '/' && *n != '\\') {
+    char *prefix = dirname(pathcopy);
+    if (*prefix != '/' && *prefix != '\\') {
         char buf[PATH_MAX];
         getcwd(buf, PATH_MAX);
-        sprintf(g_xdag_current_path, "%s/%s", buf, n);
+        sprintf(g_xdag_current_path, "%s/%s", buf, prefix);
     } else {
-        sprintf(g_xdag_current_path, "%s", n);
+        sprintf(g_xdag_current_path, "%s", prefix);
     }
 #endif
 
-	const int pathLen = strlen(g_xdag_current_path);
+	const size_t pathLen = strlen(g_xdag_current_path);
 	if (pathLen == 0 || g_xdag_current_path[pathLen - 1] != *DELIMITER) {
 		g_xdag_current_path[pathLen] = *DELIMITER;
 		g_xdag_current_path[pathLen + 1] = 0;
 	}
+    
+    free(pathcopy);
 }
 
 FILE* xdag_open_file(const char *path, const char *mode) 
