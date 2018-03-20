@@ -5,28 +5,21 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <sys/stat.h>
 #include "storage.h"
 #include "log.h"
 #include "init.h"
 #include "hash.h"
 #include "../utils/utils.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-#define SLASH "\\"
-#else
-#define SLASH "/"
-#endif
-
 #define STORAGE_DIR0            "storage%s"
 #define STORAGE_DIR0_ARGS(t)    (g_xdag_testnet ? "-testnet" : "")
-#define STORAGE_DIR1            STORAGE_DIR0 SLASH "%02x"
+#define STORAGE_DIR1            STORAGE_DIR0 DELIMITER "%02x"
 #define STORAGE_DIR1_ARGS(t)    STORAGE_DIR0_ARGS(t), (int)((t) >> 40)
-#define STORAGE_DIR2            STORAGE_DIR1 SLASH "%02x"
+#define STORAGE_DIR2            STORAGE_DIR1 DELIMITER "%02x"
 #define STORAGE_DIR2_ARGS(t)    STORAGE_DIR1_ARGS(t), (int)((t) >> 32) & 0xff
-#define STORAGE_DIR3            STORAGE_DIR2 SLASH "%02x"
+#define STORAGE_DIR3            STORAGE_DIR2 DELIMITER "%02x"
 #define STORAGE_DIR3_ARGS(t)    STORAGE_DIR2_ARGS(t), (int)((t) >> 24) & 0xff
-#define STORAGE_FILE            STORAGE_DIR3 SLASH "%02x.dat"
+#define STORAGE_FILE            STORAGE_DIR3 DELIMITER "%02x.dat"
 #define STORAGE_FILE_ARGS(t)    STORAGE_DIR3_ARGS(t), (int)((t) >> 16) & 0xff
 #define SUMS_FILE               "sums.dat"
 
@@ -40,13 +33,15 @@ static int correct_storage_sum(const char *path, int pos, const struct xdag_stor
 
 	if (f) {
 		if (fread(sums, sizeof(struct xdag_storage_sum), 256, f) != 256) {
-			xdag_close_file(f); xdag_err("Storag: sums file %s corrupted", path); return -1;
+			xdag_close_file(f); xdag_err("Storag: sums file %s corrupted", path);
+			return -1;
 		}
 		rewind(f);
 	} else {
 		f = xdag_open_file(path, "wb");
 		if (!f) {
-			xdag_err("Storag: can't create file %s", path); return -1;
+			xdag_err("Storag: can't create file %s", path);
+			return -1;
 		}
 		memset(sums, 0, sizeof(sums));
 	}
@@ -77,21 +72,20 @@ static int correct_storage_sum(const char *path, int pos, const struct xdag_stor
 static int correct_storage_sums(xdag_time_t t, const struct xdag_storage_sum *sum, int add)
 {
 	char path[256];
-	int res;
 
-	sprintf(path, STORAGE_DIR3 SLASH SUMS_FILE, STORAGE_DIR3_ARGS(t));
-	res = correct_storage_sum(path, (t >> 16) & 0xff, sum, add);
+	sprintf(path, STORAGE_DIR3 DELIMITER SUMS_FILE, STORAGE_DIR3_ARGS(t));
+	int res = correct_storage_sum(path, (t >> 16) & 0xff, sum, add);
 	if (res <= 0) return res;
 	
-	sprintf(path, STORAGE_DIR2 SLASH SUMS_FILE, STORAGE_DIR2_ARGS(t));
+	sprintf(path, STORAGE_DIR2 DELIMITER SUMS_FILE, STORAGE_DIR2_ARGS(t));
 	res = correct_storage_sum(path, (t >> 24) & 0xff, sum, 1);
 	if (res <= 0) return res;
 	
-	sprintf(path, STORAGE_DIR1 SLASH SUMS_FILE, STORAGE_DIR1_ARGS(t));
+	sprintf(path, STORAGE_DIR1 DELIMITER SUMS_FILE, STORAGE_DIR1_ARGS(t));
 	res = correct_storage_sum(path, (t >> 32) & 0xff, sum, 1);
 	if (res <= 0) return res;
 	
-	sprintf(path, STORAGE_DIR0 SLASH SUMS_FILE, STORAGE_DIR0_ARGS(t));
+	sprintf(path, STORAGE_DIR0 DELIMITER SUMS_FILE, STORAGE_DIR0_ARGS(t));
 	res = correct_storage_sum(path, (t >> 40) & 0xff, sum, 1);
 	if (res <= 0) return res;
 	
@@ -103,11 +97,11 @@ int64_t xdag_storage_save(const struct xdag_block *b)
 {
 	struct xdag_storage_sum s;
 	char path[256];
-	FILE *f;
 	int64_t res;
-	int j;
 
-	if (in_adding_all) return -1;
+	if (in_adding_all) {
+		return -1;
+	}
 	
 	sprintf(path, STORAGE_DIR0, STORAGE_DIR0_ARGS(b->field[0].time));
 	xdag_mkdir(path);
@@ -125,7 +119,7 @@ int64_t xdag_storage_save(const struct xdag_block *b)
 	
 	pthread_mutex_lock(&storage_mutex);
 	
-	f = xdag_open_file(path, "ab");
+	FILE *f = xdag_open_file(path, "ab");
 	if (f) {
 		fseek(f, 0, SEEK_END);
 		res = ftell(f);
@@ -134,12 +128,16 @@ int64_t xdag_storage_save(const struct xdag_block *b)
 		s.size = sizeof(struct xdag_block);
 		s.sum = 0;
 
-		for (j = 0; j < sizeof(struct xdag_block) / sizeof(uint64_t); ++j) {
+		for (int j = 0; j < sizeof(struct xdag_block) / sizeof(uint64_t); ++j) {
 			s.sum += ((uint64_t*)b)[j];
 		}
 
-		if (correct_storage_sums(b->field[0].time, &s, 1)) res = -1;
-	} else res = -1;
+		if (correct_storage_sums(b->field[0].time, &s, 1)) {
+			res = -1;
+		}
+	} else {
+		res = -1;
+	}
 
 	pthread_mutex_unlock(&storage_mutex);
 	
@@ -152,15 +150,16 @@ struct xdag_block *xdag_storage_load(xdag_hash_t hash, xdag_time_t time, uint64_
 {
 	xdag_hash_t hash0;
 	char path[256];
-	FILE *f;
 
 	sprintf(path, STORAGE_FILE, STORAGE_FILE_ARGS(time));
 
 	pthread_mutex_lock(&storage_mutex);
 	
-	f = xdag_open_file(path, "rb");
+	FILE *f = xdag_open_file(path, "rb");
 	if (f) {
-		if (fseek(f, pos, SEEK_SET) < 0 || fread(buf, sizeof(struct xdag_block), 1, f) != 1) buf = 0;
+		if (fseek(f, pos, SEEK_SET) < 0 || fread(buf, sizeof(struct xdag_block), 1, f) != 1) {
+			buf = 0;
+		}
 		xdag_close_file(f);
 	} else {
 		buf = 0;
@@ -170,11 +169,14 @@ struct xdag_block *xdag_storage_load(xdag_hash_t hash, xdag_time_t time, uint64_
 	
 	if (buf) {
 		xdag_hash(buf, sizeof(struct xdag_block), hash0);
-		if (memcmp(hash, hash0, sizeof(xdag_hashlow_t))) buf = 0;
+		if (memcmp(hash, hash0, sizeof(xdag_hashlow_t))) {
+			buf = 0;
+		}
 	}
 
-	if (!buf)
+	if (!buf) {
 		xdag_blocks_reset();
+	}
 
 	return buf;
 }
@@ -197,9 +199,8 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 	struct xdag_block buf[bufsize], *pbuf[bufsize];
 	struct xdag_storage_sum s;
 	char path[256];
-	struct stat st;
-	FILE *f;
-	uint64_t sum = 0, pos = 0, pos0, mask;
+	
+	uint64_t sum = 0, pos = 0, mask;
 	int64_t i, j, k, todo;
 
 	s.size = s.sum = 0;
@@ -209,7 +210,7 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 
 		pthread_mutex_lock(&storage_mutex);
 		
-		f = xdag_open_file(path, "rb");
+		FILE *f = xdag_open_file(path, "rb");
 		if (f) {
 			if (fseek(f, pos, SEEK_SET) < 0) todo = 0;
 			else todo = fread(buf, sizeof(struct xdag_block), bufsize, f);
@@ -220,7 +221,7 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 		
 		pthread_mutex_unlock(&storage_mutex);
 		
-		pos0 = pos;
+		uint64_t pos0 = pos;
 
 		for (i = k = 0; i < todo; ++i, pos += sizeof(struct xdag_block)) {
 			if (buf[i].field[0].time >= start_time && buf[i].field[0].time < end_time) {
@@ -246,11 +247,9 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 
 		if (todo != bufsize) {
 			if (f) {
-				int res;
-		
 				pthread_mutex_lock(&storage_mutex);
 				
-				res = correct_storage_sums(start_time, &s, 0);
+				int res = correct_storage_sums(start_time, &s, 0);
 				
 				pthread_mutex_unlock(&storage_mutex);
 				
@@ -258,11 +257,11 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 				
 				s.size = s.sum = 0;
 				mask = (1l << 16) - 1;
-			} else if (sprintf(path, STORAGE_DIR3, STORAGE_DIR3_ARGS(start_time)), !stat(path, &st)) {
+			} else if (sprintf(path, STORAGE_DIR3, STORAGE_DIR3_ARGS(start_time)), xdag_file_exists(path)) {
 				mask = (1l << 16) - 1;
-			} else if (sprintf(path, STORAGE_DIR2, STORAGE_DIR2_ARGS(start_time)), !stat(path, &st)) {
+			} else if (sprintf(path, STORAGE_DIR2, STORAGE_DIR2_ARGS(start_time)), xdag_file_exists(path)) {
 				mask = (1l << 24) - 1;
-			} else if (sprintf(path, STORAGE_DIR1, STORAGE_DIR1_ARGS(start_time)), !stat(path, &st)) {
+			} else if (sprintf(path, STORAGE_DIR1, STORAGE_DIR1_ARGS(start_time)), xdag_file_exists(path)) {
 				mask = (1ll << 32) - 1;
 			} else {
 				mask = (1ll << 40) - 1;
@@ -285,7 +284,6 @@ int xdag_load_sums(xdag_time_t start_time, xdag_time_t end_time, struct xdag_sto
 {
 	struct xdag_storage_sum buf[256];
 	char path[256];
-	FILE *f;
 	int i, level;
 
 	end_time -= start_time;
@@ -294,16 +292,16 @@ int xdag_load_sums(xdag_time_t start_time, xdag_time_t end_time, struct xdag_sto
 	for (level = -6; end_time; level++, end_time >>= 4);
 
 	if (level < 2) {
-		sprintf(path, STORAGE_DIR3 SLASH SUMS_FILE, STORAGE_DIR3_ARGS(start_time & 0xffffff000000l));
+		sprintf(path, STORAGE_DIR3 DELIMITER SUMS_FILE, STORAGE_DIR3_ARGS(start_time & 0xffffff000000l));
 	} else if (level < 4) {
-		sprintf(path, STORAGE_DIR2 SLASH SUMS_FILE, STORAGE_DIR2_ARGS(start_time & 0xffff00000000l));
+		sprintf(path, STORAGE_DIR2 DELIMITER SUMS_FILE, STORAGE_DIR2_ARGS(start_time & 0xffff00000000l));
 	} else if (level < 6) {
-		sprintf(path, STORAGE_DIR1 SLASH SUMS_FILE, STORAGE_DIR1_ARGS(start_time & 0xff0000000000l));
+		sprintf(path, STORAGE_DIR1 DELIMITER SUMS_FILE, STORAGE_DIR1_ARGS(start_time & 0xff0000000000l));
 	} else {
-		sprintf(path, STORAGE_DIR0 SLASH SUMS_FILE, STORAGE_DIR0_ARGS(start_time & 0x000000000000l));
+		sprintf(path, STORAGE_DIR0 DELIMITER SUMS_FILE, STORAGE_DIR0_ARGS(start_time & 0x000000000000l));
 	}
 
-	f = xdag_open_file(path, "rb");
+	FILE *f = xdag_open_file(path, "rb");
 	if (f) {
 		fread(buf, sizeof(struct xdag_storage_sum), 256, f); xdag_close_file(f);
 	} else {
