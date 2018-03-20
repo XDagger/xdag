@@ -33,14 +33,14 @@ static int correct_storage_sum(const char *path, int pos, const struct xdag_stor
 
 	if (f) {
 		if (fread(sums, sizeof(struct xdag_storage_sum), 256, f) != 256) {
-			xdag_close_file(f); xdag_err("Storag: sums file %s corrupted", path);
+			xdag_close_file(f); xdag_err("Storage: sums file %s corrupted", path);
 			return -1;
 		}
 		rewind(f);
 	} else {
 		f = xdag_open_file(path, "wb");
 		if (!f) {
-			xdag_err("Storag: can't create file %s", path);
+			xdag_err("Storage: can't create file %s", path);
 			return -1;
 		}
 		memset(sums, 0, sizeof(sums));
@@ -53,7 +53,7 @@ static int correct_storage_sum(const char *path, int pos, const struct xdag_stor
 
 		if (sums[pos].size || sums[pos].sum) {
 			sums[pos].size = sums[pos].sum = 0;
-			xdag_err("Storag: corrupted, sums file %s, pos %x", path, pos);
+			xdag_err("Storage: corrupted, sums file %s, pos %x", path, pos);
 		}
 	}
 
@@ -61,7 +61,7 @@ static int correct_storage_sum(const char *path, int pos, const struct xdag_stor
 	sums[pos].sum += sum->sum;
 	
 	if (fwrite(sums, sizeof(struct xdag_storage_sum), 256, f) != 256) {
-		xdag_close_file(f); xdag_err("Storag: can't write file %s", path); return -1;
+		xdag_close_file(f); xdag_err("Storage: can't write file %s", path); return -1;
 	}
 	
 	xdag_close_file(f);

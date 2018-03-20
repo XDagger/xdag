@@ -8,12 +8,12 @@
 
 #include "utils.h"
 #include <sys/stat.h>
-#include <direct.h>
 #if defined (__APPLE__)|| defined (__MACOS__)
 #include <unistd.h>
 #include <libgen.h>
 #define PATH_MAX 4096
 #elif defined (_WIN32)
+#include <direct.h>
 #include <shlwapi.h>
 #else
 #include <libgen.h>
