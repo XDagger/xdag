@@ -51,6 +51,7 @@
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_random.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_string.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\lib\dfsrsa.c" />
+    <ClCompile Include="..\..\utils\utils.c" />
     <ClCompile Include="..\system.c" />
   </ItemGroup>
   <ItemGroup>
@@ -96,6 +97,7 @@
     <ClInclude Include="..\..\ldus\source\include\ldus\atomic.h" />
     <ClInclude Include="..\..\ldus\source\include\ldus\list.h" />
     <ClInclude Include="..\..\ldus\source\include\ldus\rbtree.h" />
+    <ClInclude Include="..\..\utils\utils.h" />
     <ClInclude Include="..\arpa\inet.h" />
     <ClInclude Include="..\netdb.h" />
     <ClInclude Include="..\netinet\in.h" />
@@ -124,27 +126,27 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">

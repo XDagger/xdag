@@ -4,6 +4,7 @@
 #pragma once
 
 #include "afxwin.h"
+#include "CEditWalletAddr.h"
 
 #define WM_UPDATE_STATE (WM_USER+1)
 #define ID_TIMER_HASHRATE 100
@@ -41,7 +42,7 @@ private:
 	CString _balance;
 	CEdit _balanceEdit;
 	CString _accountAddress;
-	CEdit _accountAddressEdit;
+	CEditWalletAddr _accountAddressEdit;
 	CString _transferAmount;
 	CString _transferAddress;
 	CString _state;
@@ -66,3 +67,6 @@ public:
 };
 
 extern CXDagWalletDlg *g_dlg;
+
+
+
