@@ -5,6 +5,7 @@ dfstools = ../dus/programs/dfstools/source
 dfslib	 = $(dfstools)/dfslib
 dar		 = ../dus/programs/dar/source
 ldusinc	 = ../ldus/source/include/ldus
+utils    = ../utils
 
 sources = \
 	address.c					\
@@ -42,6 +43,7 @@ sources = \
 	$(dfslib)/dfslib_string.c	\
 	$(dfstools)/lib/dfsrsa.c	\
 	$(dar)/lib/crc_c.c			\
+	$(utils)/utils.c			\
 
 
 headers = \
@@ -83,6 +85,7 @@ headers = \
 	$(ldusinc)/atomic.h				\
 	$(ldusinc)/list.h				\
 	$(ldusinc)/rbtree.h				\
+	$(utils)/utils.h				\
 
 
 flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic

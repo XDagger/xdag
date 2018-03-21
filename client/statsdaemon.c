@@ -9,6 +9,10 @@
 #include <sys/un.h>
 #include <errno.h>
 
+#if defined (_MACOS) || defined (_APPLE)
+#define SIGPOLL SIGIO
+#endif
+
 #define CHEATCOIN_COMMAND_MAX	0x1000
 #define UNIX_SOCK				"unix_sock.dat"
 #define STATS_TXT				"/home/ec2-user/cheat/stats.txt"
