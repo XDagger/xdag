@@ -1303,12 +1303,23 @@ static int bi_compar(const void *l, const void *r)
 	return (tl > tr) - (tl < tr);
 }
 
+static const char* xdag_get_block_state_info(struct block_internal *block)
+{
+	if(block->flags & BI_MAIN) {
+		return "Main";
+	}
+	if(block->flags & BI_APPLIED) {
+		return "Applied";
+	}
+	return "Pending";
+}
+
 /* prints detailed information about block */
 int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 {
 	struct tm tm;
 	char tbuf[64];
-	int i, j;
+	int i;
 
 	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
@@ -1325,6 +1336,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "      time: %s.%03d\n", tbuf, (int)((bi->time & 0x3ff) * 1000) >> 10);
 	fprintf(out, " timestamp: %llx\n", (unsigned long long)bi->time);
 	fprintf(out, "     flags: %x\n", bi->flags & ~BI_OURS);
+	fprintf(out, "     state: %s\n", xdag_get_block_state_info(bi));
 	fprintf(out, "  file pos: %llx\n", (unsigned long long)bi->storage_pos);
 	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 			(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
@@ -1392,7 +1404,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 		if (!i || ba[i] != ba[i - 1]) {
 			struct block_internal *ri = ba[i];
 			if (ri->flags & BI_APPLIED) {
-				for (j = 0; j < ri->nlinks; j++) {
+				for (int j = 0; j < ri->nlinks; j++) {
 					if (ri->link[j] == bi && ri->linkamount[j]) {
 						t = ri->time >> 10;
 						localtime_r(&t, &tm);
