@@ -475,13 +475,15 @@ static int pay_miners(xdag_time_t t)
 		xdag_log_xfer(fields[0].data, fields[nfld].data, topay);
 		
 		if (++nfld == nfields) {
-			xdag_create_block(fields, 1, nfld - 1, 0, 0);
+			xdag_create_block(fields, 1, nfld - 1, 0, 0, NULL);
 			nfld = 1;
 			fields[0].amount = 0;
 		}
 	}
 
-	if (nfld > 1) xdag_create_block(fields, 1, nfld - 1, 0, 0);
+    if(nfld > 1) {
+        xdag_create_block(fields, 1, nfld - 1, 0, 0, NULL);
+    }
 
 	return 0;
 }
@@ -1143,7 +1145,7 @@ static void *general_mining_thread(void *arg)
 	}
 
 	while (!g_stop_general_mining) {
-		xdag_create_block(0, 0, 0, 0, xdag_main_time() << 16 | 0xffff);
+		xdag_create_block(0, 0, 0, 0, xdag_main_time() << 16 | 0xffff, NULL);
 	}
 
 	xdag_mess("Stopping general mining thread...");
