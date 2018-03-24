@@ -1309,7 +1309,7 @@ static const char* xdag_get_block_state_info(struct block_internal *block)
 		return "Main";
 	}
 	if(block->flags & BI_APPLIED) {
-		return "Applied";
+		return "Accepted";
 	}
 	return "Pending";
 }
