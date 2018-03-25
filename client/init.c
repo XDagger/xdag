@@ -22,6 +22,7 @@
 #include "pool.h"
 #include "commands.h"
 #include "terminal.h"
+#include "memory.h"
 #include "../utils/utils.h"
 
 char *g_coinname, *g_progname;
@@ -132,6 +133,10 @@ int xdag_init(int argc, char **argv, int isGui)
 				return -1;
 			}
 			break;
+		case 'z':
+			if (++i < argc)
+				xdag_mem_tempfile_path(argv[i]);
+			break;
 		default:
 			printUsage(argv[0]);
 			return 0;
@@ -220,5 +225,7 @@ void printUsage(char* appName)
 		"  -s ip:port     - address of this node to bind to\n"
 		"  -t             - connect to test net (default is main net)\n"
 		"  -v N           - set loglevel to N\n"
+		"  -z <path>      - path to temp-file folder\n"
+		"  -z malloc      - use malloc RAM instead of temp-files\n"
 		, appName);
 }

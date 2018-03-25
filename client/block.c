@@ -113,8 +113,12 @@ static struct block_internal *block_by_hash(const xdag_hashlow_t hash)
 
 static void log_block(const char *mess, xdag_hash_t h, xdag_time_t t, uint64_t pos)
 {
-	xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess,
-		((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t, pos);
+	/* Do not log blocks as we are loading from local storage */
+	if(g_xdag_state != XDAG_STATE_LOAD)
+	{
+		xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess,
+			((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t, pos);
+	}
 }
 
 static inline void accept_amount(struct block_internal *bi, xdag_amount_t sum)
@@ -585,7 +589,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	set_pretop(top_main_chain);
 	
 	if (xdag_diff_gt(tmpNodeBlock.difficulty, g_xdag_stats.difficulty)) {
-		xdag_info("Diff  : %llx%016llx (+%llx%016llx)", xdag_diff_args(tmpNodeBlock.difficulty), xdag_diff_args(diff0));
+		/* Only log this if we are NOT loading state */
+		if(g_xdag_state != XDAG_STATE_LOAD)
+			xdag_info("Diff  : %llx%016llx (+%llx%016llx)", xdag_diff_args(tmpNodeBlock.difficulty), xdag_diff_args(diff0));
 
 		for (blockRef = nodeBlock, blockRef0 = 0; blockRef && !(blockRef->flags & BI_MAIN_CHAIN); blockRef = blockRef->link[blockRef->max_diff_link]) {
 			if ((!blockRef->link[blockRef->max_diff_link] || xdag_diff_gt(blockRef->difficulty, blockRef->link[blockRef->max_diff_link]->difficulty))
