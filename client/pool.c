@@ -322,7 +322,7 @@ static void *pool_main_thread(void *arg)
 						dfslib_encrypt_array(g_crypt, (uint32_t*)(data + j), DATA_SIZE, m->nfield_out++);
 					}
 
-					todo = write(p->fd, data, nfld * sizeof(struct xdag_field));
+					todo = write(p->fd, (void*)data, nfld * sizeof(struct xdag_field));
 					
 					if (todo != nfld * sizeof(struct xdag_field)) {
 						mess = "write error"; 
@@ -365,7 +365,7 @@ static int pay_miners(xdag_time_t t)
 	struct xdag_field fields[12];
 	struct xdag_block buf, *b;
 	uint64_t *h, *nonce;
-	xdag_amount_t balance, pay, reward = 0, direct = 0, fund = 0;
+	xdag_amount_t reward = 0, direct = 0, fund = 0;
 	struct miner *m;
 	int64_t pos;
 	int i, n, nminers, reward_ind = -1, key, defkey, nfields, nfld;
@@ -378,14 +378,14 @@ static int pay_miners(xdag_time_t t)
 	n = t & (N_CONFIRMATIONS - 1);
 	h = g_xdag_mined_hashes[n];
 	nonce = g_xdag_mined_nonce[n];
-	balance = xdag_get_balance(h);
+	xdag_amount_t balance = xdag_get_balance(h);
 	
 	if (!balance) return -2;
 	
-	pay = balance - g_pool_fee * balance;
+	xdag_amount_t pay = balance - (xdag_amount_t)(g_pool_fee * balance);
 	if (!pay) return -3;
 	
-	reward = balance * g_pool_reward;
+	reward = (xdag_amount_t)(balance * g_pool_reward);
 	pay -= reward;
 	
 	if (g_pool_fund) {
@@ -475,13 +475,15 @@ static int pay_miners(xdag_time_t t)
 		xdag_log_xfer(fields[0].data, fields[nfld].data, topay);
 		
 		if (++nfld == nfields) {
-			xdag_create_block(fields, 1, nfld - 1, 0, 0);
+			xdag_create_block(fields, 1, nfld - 1, 0, 0, NULL);
 			nfld = 1;
 			fields[0].amount = 0;
 		}
 	}
 
-	if (nfld > 1) xdag_create_block(fields, 1, nfld - 1, 0, 0);
+    if(nfld > 1) {
+        xdag_create_block(fields, 1, nfld - 1, 0, 0, NULL);
+    }
 
 	return 0;
 }
@@ -1147,7 +1149,7 @@ static void *general_mining_thread(void *arg)
 	}
 
 	while (!g_stop_general_mining) {
-		xdag_create_block(0, 0, 0, 0, xdag_main_time() << 16 | 0xffff);
+		xdag_create_block(0, 0, 0, 0, xdag_main_time() << 16 | 0xffff, NULL);
 	}
 
 	xdag_mess("Stopping general mining thread...");

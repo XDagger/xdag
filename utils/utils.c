@@ -24,38 +24,32 @@
 
 static char g_xdag_current_path[4096] = {0};
 
-void xdag_init_path(char *path) 
+void xdag_init_path(char *path)
 {
-    char *pathcopy = strdup(path);
-#if defined (__APPLE__)|| defined (__MACOS__)
-    char *prefix = dirname(pathcopy);
-    if (*prefix != '/' && *prefix != '\\') {
-        char buf[PATH_MAX];
-        getcwd(buf, PATH_MAX);
-        sprintf(g_xdag_current_path, "%s/%s", buf, prefix);
-    } else {
-        sprintf(g_xdag_current_path, "%s", prefix);
-    }
-    free(prefix);
-#elif _WIN32
-    char szPath[MAX_PATH];
-    char szBuffer[MAX_PATH];
-    char *pszFile;
-    
-    GetModuleFileName(NULL, (LPTCH)szPath, sizeof(szPath) / sizeof(*szPath));
-    GetFullPathName((LPTSTR)szPath, sizeof(szBuffer) / sizeof(*szBuffer), (LPTSTR)szBuffer, (LPTSTR*)&pszFile);
-    *pszFile = 0;
-    
-    strcpy(g_xdag_current_path, szBuffer);
+#ifdef _WIN32
+	char szPath[MAX_PATH];
+	char szBuffer[MAX_PATH];
+	char *pszFile;
+
+	GetModuleFileName(NULL, (LPTCH)szPath, sizeof(szPath) / sizeof(*szPath));
+	GetFullPathName((LPTSTR)szPath, sizeof(szBuffer) / sizeof(*szBuffer), (LPTSTR)szBuffer, (LPTSTR*)&pszFile);
+	*pszFile = 0;
+
+	strcpy(g_xdag_current_path, szBuffer);
 #else
-    char *prefix = dirname(pathcopy);
-    if (*prefix != '/' && *prefix != '\\') {
-        char buf[PATH_MAX];
-        getcwd(buf, PATH_MAX);
-        sprintf(g_xdag_current_path, "%s/%s", buf, prefix);
-    } else {
-        sprintf(g_xdag_current_path, "%s", prefix);
-    }
+	char pathcopy[PATH_MAX];
+	strcpy(pathcopy, path);
+	char *prefix = dirname(pathcopy);
+	if (*prefix != '/' && *prefix != '\\') {
+		char buf[PATH_MAX];
+		getcwd(buf, PATH_MAX);
+		sprintf(g_xdag_current_path, "%s/%s", buf, prefix);
+	} else {
+		sprintf(g_xdag_current_path, "%s", prefix);
+	}
+#if defined (__APPLE__)|| defined (__MACOS__)
+	free(prefix);
+#endif
 #endif
 
 	const size_t pathLen = strlen(g_xdag_current_path);
@@ -63,21 +57,19 @@ void xdag_init_path(char *path)
 		g_xdag_current_path[pathLen] = *DELIMITER;
 		g_xdag_current_path[pathLen + 1] = 0;
 	}
-    
-    free(pathcopy);
 }
 
-FILE* xdag_open_file(const char *path, const char *mode) 
+FILE* xdag_open_file(const char *path, const char *mode)
 {
-    char abspath[1024];
-    sprintf(abspath, "%s%s", g_xdag_current_path, path);
+	char abspath[1024];
+	sprintf(abspath, "%s%s", g_xdag_current_path, path);
 	FILE* f = fopen(abspath, mode);
-    return f;
+	return f;
 }
 
-void xdag_close_file(FILE *f) 
+void xdag_close_file(FILE *f)
 {
-    fclose(f);
+	fclose(f);
 }
 
 int xdag_file_exists(const char *path)
