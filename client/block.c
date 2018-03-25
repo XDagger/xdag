@@ -974,8 +974,11 @@ static void *work_thread(void *arg)
 	// loading block from the local storage
 	g_xdag_state = XDAG_STATE_LOAD;
 	xdag_mess("Loading blocks from local storage...");
+	
+	uint64_t start = get_timestamp();
 	xdag_show_state(0);
 	xdag_load_blocks(t, get_timestamp(), &t, add_block_callback);
+	xdag_mess("Finish loading blocks, time cost %ldms", get_timestamp() - start);
 
 	// waiting for command "run"
 	while (!g_xdag_run) {
