@@ -18,6 +18,7 @@
 #include "init.h"
 #include "sync.h"
 #include "pool.h"
+#include "miner.h"
 #include "memory.h"
 #include "address.h"
 #include "commands.h"

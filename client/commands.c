@@ -8,6 +8,7 @@
 #include "wallet.h"
 #include "log.h"
 #include "pool.h"
+#include "miner.h"
 #include "transport.h"
 #include "netdb.h"
 #include "memory.h"

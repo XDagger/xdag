@@ -37,6 +37,9 @@
     <Filter Include="utils">
       <UniqueIdentifier>{71f09615-b936-42fb-b99c-61c593b206be}</UniqueIdentifier>
     </Filter>
+    <Filter Include="client\mining">
+      <UniqueIdentifier>{44caefc7-4416-4100-b2e3-f6d413cc6242}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\client\address.c">
@@ -61,9 +64,6 @@
       <Filter>client</Filter>
     </ClCompile>
     <ClCompile Include="..\..\client\netdb.c">
-      <Filter>client</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\client\pool.c">
       <Filter>client</Filter>
     </ClCompile>
     <ClCompile Include="..\..\client\sha256.c">
@@ -141,6 +141,15 @@
     <ClCompile Include="..\..\utils\utils.c">
       <Filter>utils</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\client\miner.c">
+      <Filter>client\mining</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\pool.c">
+      <Filter>client\mining</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\mining_common.c">
+      <Filter>client\mining</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client\address.h">
@@ -165,9 +174,6 @@
       <Filter>client</Filter>
     </ClInclude>
     <ClInclude Include="..\..\client\netdb.h">
-      <Filter>client</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\client\pool.h">
       <Filter>client</Filter>
     </ClInclude>
     <ClInclude Include="..\..\client\sha256.h">
@@ -298,6 +304,15 @@
     </ClInclude>
     <ClInclude Include="..\..\utils\utils.h">
       <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\miner.h">
+      <Filter>client\mining</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\pool.h">
+      <Filter>client\mining</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\mining_common.h">
+      <Filter>client\mining</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
