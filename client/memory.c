@@ -22,7 +22,7 @@ void *xdag_malloc(size_t size)
 
 void xdag_free(void *mem)
 {
-	return free(mem);
+	free(mem);
 }
 
 void xdag_mem_finish(void)
