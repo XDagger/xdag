@@ -568,12 +568,16 @@ int xdag_pool_set_config(const char *pool_config)
 
 		sscanf(pool_config, "%d", &g_max_miners_count);
 
-		if (g_max_miners_count < 0)
+		if (g_max_miners_count < 0) {
 			g_max_miners_count = 0;
-		else if (g_max_miners_count > MAX_MINERS_COUNT)
+			xdag_warn("pool : wrong miner count");
+		} else if (g_max_miners_count > MAX_MINERS_COUNT) {
 			g_max_miners_count = MAX_MINERS_COUNT;
-		else if (g_max_miners_count > open_max - 64)
+			xdag_warn("pool : exceed max miners count %d", MAX_MINERS_COUNT);
+		} else if (g_max_miners_count > open_max - 64) {
 			g_max_miners_count = open_max - 64;
+			xdag_warn("pool : exceed max open files %d", open_max - 64);
+		}
 	}
 
 	pool_config = strtok_r(0, " \t\r\n:", &lasts);
