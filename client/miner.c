@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <pthread.h>
@@ -13,27 +12,17 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#if defined(_WIN32) || defined(_WIN64)
-#if defined(_WIN64)
-#define poll WSAPoll
-#else
-#define poll(a, b, c) ((a)->revents = (a)->events, (b))
-#endif
-#else
-#include <poll.h>
-#endif
 #include "system.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
-#include "../dus/programs/dfstools/source/dfslib/dfslib_string.h"
 #include "../dus/programs/dar/source/include/crc.h"
 #include "address.h"
 #include "block.h"
 #include "init.h"
-#include "pool.h"
+#include "miner.h"
 #include "storage.h"
+#include "wallet.h"
 #include "sync.h"
 #include "transport.h"
-#include "wallet.h"
 #include "log.h"
 #include "commands.h"
 
@@ -353,28 +342,6 @@ void *miner_net_thread(void *arg)
 	sleep(5);
 
 	goto begin;
-}
-
-static int crypt_start(void)
-{
-	struct dfslib_string str;
-	uint32_t sector0[128];
-	int i;
-
-	g_crypt = malloc(sizeof(struct dfslib_crypt));
-	if (!g_crypt) return -1;
-	dfslib_crypt_set_password(g_crypt, dfslib_utf8_string(&str, MINERS_PWD, strlen(MINERS_PWD)));
-
-	for (i = 0; i < 128; ++i) {
-		sector0[i] = SECTOR0_BASE + i * SECTOR0_OFFSET;
-	}
-
-	for (i = 0; i < 128; ++i) {
-		dfslib_crypt_set_sector0(g_crypt, sector0);
-		dfslib_encrypt_sector(g_crypt, sector0, SECTOR0_BASE + i * SECTOR0_OFFSET);
-	}
-
-	return 0;
 }
 
 static void *mining_thread(void *arg)

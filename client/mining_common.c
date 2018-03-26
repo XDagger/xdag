@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include "mining_common.h"
 #include "miner.h"
@@ -29,6 +30,28 @@ struct dfslib_crypt *g_crypt;
 
 /* poiter to mutex for optimal share  */
 void *g_ptr_share_mutex = &g_share_mutex;
+
+static int crypt_start(void)
+{
+	struct dfslib_string str;
+	uint32_t sector0[128];
+	int i;
+
+	g_crypt = malloc(sizeof(struct dfslib_crypt));
+	if(!g_crypt) return -1;
+	dfslib_crypt_set_password(g_crypt, dfslib_utf8_string(&str, MINERS_PWD, strlen(MINERS_PWD)));
+
+	for(i = 0; i < 128; ++i) {
+		sector0[i] = SECTOR0_BASE + i * SECTOR0_OFFSET;
+	}
+
+	for(i = 0; i < 128; ++i) {
+		dfslib_crypt_set_sector0(g_crypt, sector0);
+		dfslib_encrypt_sector(g_crypt, sector0, SECTOR0_BASE + i * SECTOR0_OFFSET);
+	}
+
+	return 0;
+}
 
 /* initialization of the pool (pool_on = 1) or connecting the miner to pool (pool_on = 0; pool_arg - pool parameters ip:port[:CFG];
 miner_addr - address of the miner, if specified */
@@ -85,24 +108,3 @@ int xdag_initialize_mining(int pool_on, const char *pool_arg, const char *miner_
 	return 0;
 }
 
-int crypt_start(void)
-{
-	struct dfslib_string str;
-	uint32_t sector0[128];
-	int i;
-
-	g_crypt = malloc(sizeof(struct dfslib_crypt));
-	if(!g_crypt) return -1;
-	dfslib_crypt_set_password(g_crypt, dfslib_utf8_string(&str, MINERS_PWD, strlen(MINERS_PWD)));
-
-	for(i = 0; i < 128; ++i) {
-		sector0[i] = SECTOR0_BASE + i * SECTOR0_OFFSET;
-	}
-
-	for(i = 0; i < 128; ++i) {
-		dfslib_crypt_set_sector0(g_crypt, sector0);
-		dfslib_encrypt_sector(g_crypt, sector0, SECTOR0_BASE + i * SECTOR0_OFFSET);
-	}
-
-	return 0;
-}

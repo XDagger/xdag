@@ -13,16 +13,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#if defined(_WIN32) || defined(_WIN64)
-#if defined(_WIN64)
-#define poll WSAPoll
-#else
-#define poll(a, b, c) ((a)->revents = (a)->events, (b))
-#endif
-#else
-#include <poll.h>
-#endif
 #include "system.h"
+#include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_string.h"
 #include "../dus/programs/dar/source/include/crc.h"
 #include "address.h"

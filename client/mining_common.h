@@ -3,6 +3,15 @@
 
 #include <pthread.h>
 #include "block.h"
+#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
+#define poll WSAPoll
+#else
+#define poll(a, b, c) ((a)->revents = (a)->events, (b))
+#endif
+#else
+#include <poll.h>
+#endif
 
 #define MAX_MINERS_COUNT               4096
 #define XDAG_POOL_CONFIRMATIONS_COUNT  16
