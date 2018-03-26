@@ -16,7 +16,7 @@ struct xdag_storage_sum {
 extern int64_t xdag_storage_save(const struct xdag_block *b);
 
 /* init storage from hard disk with two threads, one is for preload all blocks, the other one to add blocks to rbtree */
-extern uint64_t xdag_init_storage(xdag_time_t start_time, xdag_time_t end_time, void *data,
+extern void xdag_init_storage(xdag_time_t start_time, xdag_time_t end_time, void *data,
 								 void *(*callback)(void *block, void *data));
 
 /* reads a block and its number from the local repository; writes it to the buffer or returns a permanent reference, 0 in case of error */

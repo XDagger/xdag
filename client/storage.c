@@ -467,7 +467,7 @@ static void *init_storage_add_block_thread(void *data)
 	return 0;
 }
 
-uint64_t xdag_init_storage(xdag_time_t start_time, xdag_time_t end_time, void *data, void *(*callback)(void *, void *))
+void xdag_init_storage(xdag_time_t start_time, xdag_time_t end_time, void *data, void *(*callback)(void *, void *))
 {
 	simple_queue_init();
 	
@@ -476,9 +476,7 @@ uint64_t xdag_init_storage(xdag_time_t start_time, xdag_time_t end_time, void *d
 	param.end_time = end_time;
 	param.data = data;
 	param.callback = callback;
-	
-	uint64_t sum = 0;
-	
+		
 	pthread_t th_load;
 	if(pthread_create(&th_load, NULL, &init_storage_load_thread, &param)) {
 		xdag_err("create init storage thread failed!");
@@ -491,8 +489,6 @@ uint64_t xdag_init_storage(xdag_time_t start_time, xdag_time_t end_time, void *d
 	
 	pthread_join(th_load, NULL);
 	pthread_join(th_add, NULL);
-	
-	return 0;
 }
 
 /* Calls a callback for all blocks from the repository that are in specified time interval; returns the number of blocks */
