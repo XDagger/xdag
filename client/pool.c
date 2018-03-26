@@ -43,14 +43,12 @@
 #define FUND_ADDRESS           "FQglVQtb60vQv2DOWEUL7yh3smtj7g1s"  /* community fund */
 #define SHARES_PER_TASK_LIMIT  20                                  /* maximum count of shares per task */
 
-xdag_hash_t g_xdag_mined_hashes[N_CONFIRMATIONS], g_xdag_mined_nonce[N_CONFIRMATIONS];
+xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT], g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
 
 static int g_max_miners_count = START_MINERS_COUNT, g_max_miner_ip_count = START_MINERS_IP_COUNT;
-static int g_miners_count = 0, g_socket = -1, g_stop_mining = 1, g_stop_general_mining = 1;
+static int g_miners_count = 0, g_socket = -1;
 static double g_pool_fee = 0, g_pool_reward = 0, g_pool_direct = 0, g_pool_fund = 0;
 static struct xdag_block *g_firstb = 0, *g_lastb = 0;
-/* poiter to mutex for optimal share  */
-void *g_ptr_share_mutex = &g_share_mutex;
 
 //function sets minimal share for the task and calculates share difficulty for further payment calculations, pool side
 static void pool_set_share(struct miner *m, struct xdag_pool_task *task, xdag_hash_t last, xdag_hash_t hash)
@@ -70,7 +68,7 @@ static void pool_set_share(struct miner *m, struct xdag_pool_task *task, xdag_ha
 
 	if (m->task_time <= task_time) {
 		double diff = ((uint64_t*)hash)[2];
-		int i = task_time & (N_CONFIRMATIONS - 1);
+		int i = task_time & (CONFIRMATIONS_COUNT - 1);
 
 		diff = ldexp(diff, -64);
 		diff += ((uint64_t*)hash)[3];
@@ -313,7 +311,7 @@ static int pay_miners(xdag_time_t t)
 	
 	if (!nminers) return -1;
 	
-	n = t & (N_CONFIRMATIONS - 1);
+	n = t & (CONFIRMATIONS_COUNT - 1);
 	h = g_xdag_mined_hashes[n];
 	nonce = g_xdag_mined_nonce[n];
 	xdag_amount_t balance = xdag_get_balance(h);
@@ -432,7 +430,7 @@ void *pool_block_thread(void *arg)
 	struct xdag_block *b;
 	int res;
 
-	while (!g_xdag_sync_on) {
+	while(!g_xdag_sync_on) {
 		sleep(1);
 	}
 
@@ -443,15 +441,15 @@ void *pool_block_thread(void *arg)
 		xdag_time_t t = task->task_time;
 
 		if (t > t0) {
-			uint64_t *h = g_xdag_mined_hashes[(t - N_CONFIRMATIONS + 1) & (N_CONFIRMATIONS - 1)];
+			uint64_t *h = g_xdag_mined_hashes[(t - CONFIRMATIONS_COUNT + 1) & (CONFIRMATIONS_COUNT - 1)];
 
 			done = 1;
 			t0 = t;
 			
-			res = pay_miners(t - N_CONFIRMATIONS + 1);
+			res = pay_miners(t - CONFIRMATIONS_COUNT + 1);
 			
 			xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
-						   h[3], h[2], h[1], h[0], (t - N_CONFIRMATIONS + 1) << 16 | 0xffff, res);
+				h[3], h[2], h[1], h[0], (t - CONFIRMATIONS_COUNT + 1) << 16 | 0xffff, res);
 		}
 
 		pthread_mutex_lock(&g_pool_mutex);
@@ -674,7 +672,7 @@ void *pool_net_thread(void *arg)
 			if (m->state & MINER_FREE) {
 				if (i0 < 0)
 					i0 = i;
-			} else if (m->state & MINER_ARCHIVE && t - m->task_time > N_CONFIRMATIONS) {
+			} else if (m->state & MINER_ARCHIVE && t - m->task_time > CONFIRMATIONS_COUNT) {
 				if (i0 < 0)
 					i0 = i;
 			} else if (m->ip == peeraddr.sin_addr.s_addr && ++count > g_max_miner_ip_count) {
@@ -795,7 +793,7 @@ static int print_miner(FILE *out, int n, struct miner *m)
 	char buf[32], buf2[64];
 	uint32_t ip = m->ip;
 	
-	for (int j = 0; j < N_CONFIRMATIONS; ++j) {
+	for (int j = 0; j < CONFIRMATIONS_COUNT; ++j) {
 		if (m->maxdiff[j] > 0) {
 			sum += m->maxdiff[j]; 
 			count++;

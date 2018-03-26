@@ -4,10 +4,10 @@
 #include <pthread.h>
 #include "block.h"
 
-#define MAX_MINERS_COUNT           4096
-#define XDAG_POOL_N_CONFIRMATIONS  16
-#define DATA_SIZE                  (sizeof(struct xdag_field) / sizeof(uint32_t))
-#define N_CONFIRMATIONS            XDAG_POOL_N_CONFIRMATIONS   /*16*/
+#define MAX_MINERS_COUNT               4096
+#define XDAG_POOL_CONFIRMATIONS_COUNT  16
+#define DATA_SIZE                      (sizeof(struct xdag_field) / sizeof(uint32_t))
+#define CONFIRMATIONS_COUNT            XDAG_POOL_CONFIRMATIONS_COUNT   /*16*/
 
 enum miner_state {
 	MINER_BLOCK = 1,
@@ -22,7 +22,7 @@ struct miner {
 	xdag_time_t task_time;
 	double prev_diff;
 	uint32_t prev_diff_count;
-	double maxdiff[N_CONFIRMATIONS];
+	double maxdiff[CONFIRMATIONS_COUNT];
 	uint32_t data[DATA_SIZE];
 	uint64_t nfield_in;
 	uint64_t nfield_out;
@@ -65,6 +65,6 @@ extern struct dfslib_crypt *g_crypt;
 
 /* initialization of the pool (pool_on = 1) or connecting the miner to pool (pool_on = 0; pool_arg - pool parameters ip:port[:CFG];
 miner_addr - address of the miner, if specified */
-extern int xdag_pool_start(int pool_on, const char *pool_arg, const char *miner_address);
+extern int xdag_initialize_mining(int pool_on, const char *pool_arg, const char *miner_address);
 
 #endif

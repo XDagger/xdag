@@ -27,9 +27,12 @@ pthread_mutex_t g_share_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct dfslib_crypt *g_crypt;
 
+/* poiter to mutex for optimal share  */
+void *g_ptr_share_mutex = &g_share_mutex;
+
 /* initialization of the pool (pool_on = 1) or connecting the miner to pool (pool_on = 0; pool_arg - pool parameters ip:port[:CFG];
 miner_addr - address of the miner, if specified */
-int xdag_pool_start(int pool_on, const char *pool_arg, const char *miner_address)
+int xdag_initialize_mining(int pool_on, const char *pool_arg, const char *miner_address)
 {
 	pthread_t th;
 	int res;

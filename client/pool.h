@@ -8,8 +8,8 @@
 #include "hash.h"
 #include "mining_common.h"
 
-extern xdag_hash_t g_xdag_mined_hashes[XDAG_POOL_N_CONFIRMATIONS],
-	g_xdag_mined_nonce[XDAG_POOL_N_CONFIRMATIONS];
+extern xdag_hash_t g_xdag_mined_hashes[XDAG_POOL_CONFIRMATIONS_COUNT],
+	g_xdag_mined_nonce[XDAG_POOL_CONFIRMATIONS_COUNT];
 
 /* gets pool parameters as a string, 0 - if the pool is disabled */
 extern char *xdag_pool_get_config(char *buf);
