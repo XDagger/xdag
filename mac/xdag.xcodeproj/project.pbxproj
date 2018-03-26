@@ -675,7 +675,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
-				SYSTEM_HEADER_SEARCH_PATHS = "\"/usr/local/Cellar/openssl@1.1/1.1.0e/include/\"";
+				SYSTEM_HEADER_SEARCH_PATHS = "\"/usr/local/Cellar/openssl@1.1/1.1.0e/include/\" /usr/local/opt/openssl/include";
 			};
 			name = Debug;
 		};
@@ -707,7 +707,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
-				SYSTEM_HEADER_SEARCH_PATHS = "\"/usr/local/Cellar/openssl@1.1/1.1.0e/include/\"";
+				SYSTEM_HEADER_SEARCH_PATHS = "\"/usr/local/Cellar/openssl@1.1/1.1.0e/include/\" /usr/local/opt/openssl/include";
 			};
 			name = Release;
 		};
