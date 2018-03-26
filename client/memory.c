@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "memory.h"
+#include "log.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -41,6 +42,7 @@ int xdag_free_all(void)
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/mman.h>
+#include <errno.h>
 
 #define MEM_PORTION     ((size_t)1 << 25)
 
@@ -73,10 +75,10 @@ int xdag_mem_init(size_t size)
 	size++;
 
 	printf("%s , %s\n",g_tmpfile_path, g_tmpname);
-	sprintf(tmpfilename, "%s/%s", g_tmpfile_path, g_tmpname);
+	sprintf(tmpfilename, "%s%s", g_tmpfile_path, g_tmpname);
 	g_fd = mkstemp(tmpfilename);
 	if (g_fd < 0) {
-		/* - error logging to go here - */
+		xdag_fatal("Unable to create temporary file %s errno:%d", tmpfilename, errno);
 		return -1;
 	}
 
