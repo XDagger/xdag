@@ -8,11 +8,10 @@
 
 #include "utils.h"
 #include <sys/stat.h>
-#include <stdlib.h>
+#include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
 #if defined (__APPLE__)|| defined (__MACOS__)
-#include <unistd.h>
 #include <libgen.h>
 #define PATH_MAX 4096
 #elif defined (_WIN32)
@@ -21,7 +20,6 @@
 #else
 #include <libgen.h>
 #include <linux/limits.h>
-#include <unistd.h>
 #endif
 
 uint64_t get_timestamp(void)
