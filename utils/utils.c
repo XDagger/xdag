@@ -7,6 +7,8 @@
 //
 
 #include "utils.h"
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <time.h>
