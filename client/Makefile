@@ -13,7 +13,6 @@ sources = \
 	crypt.c						\
 	hash.c						\
 	init.c						\
-	log.c						\
 	main.c						\
 	memory.c					\
 	netdb.c						\
@@ -44,6 +43,7 @@ sources = \
 	$(dfstools)/lib/dfsrsa.c	\
 	$(dar)/lib/crc_c.c			\
 	$(utils)/utils.c			\
+	$(utils)/log.c			\
 
 
 headers = \
@@ -51,7 +51,6 @@ headers = \
 	block.h							\
 	crypt.h							\
 	hash.h							\
-	log.h							\
 	init.h							\
 	memory.h						\
 	netdb.h							\
@@ -86,6 +85,7 @@ headers = \
 	$(ldusinc)/list.h				\
 	$(ldusinc)/rbtree.h				\
 	$(utils)/utils.h				\
+	$(utils)/log.h					\
 
 
 flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
