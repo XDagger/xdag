@@ -198,7 +198,7 @@ static int sort_callback(const void *l, const void *r)
  One thread to preload storage files.
  The other one to add blocks to rbtree.
  */
-#define SIMPLE_QUEUE_MAX_MEM (0x100000000) /* Max memory for queue 100MB */
+#define SIMPLE_QUEUE_MAX_MEM (100000000) /* Max memory for queue 100MB */
 #define QUEUE_SIZE 2
 #define	QUEUE_WRITE 0x1
 #define	QUEUE_DONE 0x2
@@ -215,6 +215,7 @@ struct simple_queue {
 	struct queue_item *tail;
 	size_t totalsize;
 	uint8_t status;
+	size_t length;
 };
 
 static pthread_mutex_t simple_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -228,6 +229,7 @@ static void simple_queue_init()
 		g_msg_queue[i].tail = NULL;
 		g_msg_queue[i].totalsize = 0;
 		g_msg_queue[i].status = QUEUE_WRITE;
+		g_msg_queue[i].length = 0;
 	}
 }
 
@@ -263,6 +265,7 @@ static int simple_queue_push(void *data, size_t size/*, char *filename */)
 				g_msg_queue[i].tail = item;
 			}
 			g_msg_queue[i].totalsize += item->size;
+			g_msg_queue[i].length ++;
 			res = 1;
 			break;
 		}
@@ -291,6 +294,7 @@ static struct queue_item* simple_queue_splice()
 			res = g_msg_queue[i].head;
 			g_msg_queue[i].head = res->next;
 			g_msg_queue[i].totalsize -= res->size;
+			g_msg_queue[i].length --;
 			
 			if(g_msg_queue[i].tail == res) {
 				g_msg_queue[i].tail = NULL;
@@ -453,6 +457,7 @@ static void *init_storage_add_block_thread(void *data)
 			pos = 0;
 		}
 		
+		free(item->data);
 		free(item);
 	}
 	
