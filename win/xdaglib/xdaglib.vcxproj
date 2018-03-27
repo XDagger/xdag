@@ -27,6 +27,8 @@
     <ClCompile Include="..\..\client\log.c" />
     <ClCompile Include="..\..\client\init.c" />
     <ClCompile Include="..\..\client\memory.c" />
+    <ClCompile Include="..\..\client\miner.c" />
+    <ClCompile Include="..\..\client\mining_common.c" />
     <ClCompile Include="..\..\client\netdb.c" />
     <ClCompile Include="..\..\client\pool.c" />
     <ClCompile Include="..\..\client\sha256.c" />
@@ -63,6 +65,8 @@
     <ClInclude Include="..\..\client\log.h" />
     <ClInclude Include="..\..\client\init.h" />
     <ClInclude Include="..\..\client\memory.h" />
+    <ClInclude Include="..\..\client\miner.h" />
+    <ClInclude Include="..\..\client\mining_common.h" />
     <ClInclude Include="..\..\client\netdb.h" />
     <ClInclude Include="..\..\client\pool.h" />
     <ClInclude Include="..\..\client\sha256.h" />

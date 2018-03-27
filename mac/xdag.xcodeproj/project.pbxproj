@@ -38,6 +38,8 @@
 		38A15E9120544F3F00598EC2 /* memory.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5820544F3F00598EC2 /* memory.c */; };
 		38A15E9220544F3F00598EC2 /* netdb.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5D20544F3F00598EC2 /* netdb.c */; };
 		38A15E9320544F3F00598EC2 /* pool.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6020544F3F00598EC2 /* pool.c */; };
+		38A15E9320544F3F00598EC2 /* miner.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6020544F3F00598EC2 /* miner.c */; };
+		38A15E9320544F3F00598EC2 /* mining_common.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6020544F3F00598EC2 /* mining_common.c */; };
 		38A15E9520544F3F00598EC2 /* sha256.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6320544F3F00598EC2 /* sha256.c */; };
 		38A15E9720544F3F00598EC2 /* storage.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6720544F3F00598EC2 /* storage.c */; };
 		38A15E9820544F3F00598EC2 /* sync.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6920544F3F00598EC2 /* sync.c */; };
@@ -136,6 +138,10 @@
 		38A15E5F20544F3F00598EC2 /* netdb.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = netdb.txt; sourceTree = "<group>"; };
 		38A15E6020544F3F00598EC2 /* pool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pool.c; sourceTree = "<group>"; };
 		38A15E6120544F3F00598EC2 /* pool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pool.h; sourceTree = "<group>"; };
+		38A15E6020544F3F00598EC2 /* miner.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = miner.c; sourceTree = "<group>"; };
+		38A15E6120544F3F00598EC2 /* miner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = miner.h; sourceTree = "<group>"; };
+		38A15E6020544F3F00598EC2 /* mining_common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mining_common.c; sourceTree = "<group>"; };
+		38A15E6120544F3F00598EC2 /* mining_common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mining_common.h; sourceTree = "<group>"; };
 		38A15E6320544F3F00598EC2 /* sha256.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sha256.c; sourceTree = "<group>"; };
 		38A15E6420544F3F00598EC2 /* sha256.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sha256.h; sourceTree = "<group>"; };
 		38A15E6520544F3F00598EC2 /* state.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = state.h; sourceTree = "<group>"; };
@@ -390,6 +396,10 @@
 				38A15E5F20544F3F00598EC2 /* netdb.txt */,
 				38A15E6020544F3F00598EC2 /* pool.c */,
 				38A15E6120544F3F00598EC2 /* pool.h */,
+				38A15E6020544F3F00598EC2 /* miner.c */,
+				38A15E6120544F3F00598EC2 /* miner.h */,
+				38A15E6020544F3F00598EC2 /* mining_common.c */,
+				38A15E6120544F3F00598EC2 /* mining_common.h */,
 				38A15E6320544F3F00598EC2 /* sha256.c */,
 				38A15E6420544F3F00598EC2 /* sha256.h */,
 				38A15E6520544F3F00598EC2 /* state.h */,
@@ -520,6 +530,8 @@
 				38A15E8320544F3F00598EC2 /* dnet_tap.c in Sources */,
 				38A15E9720544F3F00598EC2 /* storage.c in Sources */,
 				38A15E9320544F3F00598EC2 /* pool.c in Sources */,
+				38A15E9320544F3F00598EC2 /* miner.c in Sources */,
+				38A15E9320544F3F00598EC2 /* mining_common.c in Sources */,				
 				38A15E9920544F3F00598EC2 /* terminal.c in Sources */,
 				38A15E9220544F3F00598EC2 /* netdb.c in Sources */,
 				38A15E8E20544F3F00598EC2 /* log.c in Sources */,
