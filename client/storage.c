@@ -319,8 +319,8 @@ static void *init_storage_load_thread(void *data)
 	xdag_time_t end_time = param->end_time;
 	
 	struct xdag_block readbuf[bufsize];
-	struct xdag_storage_sum s;
-	s.size = s.sum = 0;
+	struct xdag_storage_sum sum;
+	sum.size = sum.sum = 0;
 	
 	char path[256];
 	uint64_t pos = 0, mask;
@@ -342,21 +342,17 @@ static void *init_storage_load_thread(void *data)
 		
 		if(todo > 0) {
 			for (int i = 0; i < todo; ++i) {
-				s.size += sizeof(struct xdag_block);
+				sum.size += sizeof(struct xdag_block);
 				for (int j = 0; j < sizeof(struct xdag_block) / sizeof(uint64_t); ++j) {
-					s.sum += ((uint64_t*)(readbuf + i))[j];
+					sum.sum += ((uint64_t*)(readbuf + i))[j];
 				}
 			}
 			
-			struct xdag_block *bs = (struct xdag_block*)malloc(sizeof(struct xdag_block)*todo);
-			memcpy(bs, readbuf, sizeof(struct xdag_block)*todo);
+			struct xdag_block *blocks = (struct xdag_block*)malloc(sizeof(struct xdag_block)*todo);
+			memcpy(blocks, readbuf, sizeof(struct xdag_block)*todo);
 			
-			while (simple_queue_push(bs, sizeof(struct xdag_block)*todo/*, path*/) == 0) {
-#if defined (_WIN32) || defined (_WIN64)
-				sleep(1);
-#else
+			while (simple_queue_push(blocks, sizeof(struct xdag_block)*todo/*, path*/) == 0) {
 				sleep(.001);
-#endif
 			}
 		}
 		
@@ -364,7 +360,7 @@ static void *init_storage_load_thread(void *data)
 			if (f) {
 				pthread_mutex_lock(&storage_mutex);
 				
-				int res = correct_storage_sums(start_time, &s, 0);
+				int res = correct_storage_sums(start_time, &sum, 0);
 				
 				pthread_mutex_unlock(&storage_mutex);
 				
@@ -372,7 +368,7 @@ static void *init_storage_load_thread(void *data)
 					break;
 				}
 				
-				s.size = s.sum = 0;
+				sum.size = sum.sum = 0;
 				mask = (1l << 16) - 1;
 			} else if (sprintf(path, STORAGE_DIR3, STORAGE_DIR3_ARGS(start_time)), xdag_file_exists(path)) {
 				mask = (1l << 16) - 1;
@@ -423,11 +419,7 @@ static void *init_storage_add_block_thread(void *data)
 		
 		item = simple_queue_splice();
 		if(!item) {
-#if defined (_WIN32) || defined (_WIN64)
-			sleep(1);
-#else
 			sleep(.001);
-#endif
 			continue;
 		}
 				
