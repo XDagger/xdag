@@ -1,22 +1,181 @@
 /* logging, T13.670-T13.895 $DVS:time$ */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <pthread.h>
+#include <string.h>
 #include <sys/time.h>
+#include <sys/stat.h>
+#include <semaphore.h>
 #include "system.h"
 #include "log.h"
 #include "init.h"
-#include "../utils/utils.h"
+#include "utils.h"
+
+#define ASYNC_LOG 1
 
 #define XDAG_LOG_FILE "%s.log"
+#define RING_BUFFER_SIZE 2048
+#define MAX_POLL_SIZE (RING_BUFFER_SIZE - 4)
+#define SEM_LOG_WRITER "/xdaglogwritersem"
 
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int log_level = XDAG_INFO;
 
-int xdag_log(int level, const char *format, ...)
+static char g_ring_buffer[RING_BUFFER_SIZE] = {0};
+static size_t g_write_index = 0;
+static size_t g_read_index = 0;
+static boolean_t g_buffer_full = FALSE;
+static sem_t *writer_notice_sem = NULL;
+static char log_file_path[1024] = {0};
+
+size_t get_used_size(void);
+size_t get_free_size(void);
+size_t put_log(const char*, size_t);
+size_t get_log(char*, size_t);
+
+size_t get_used_size(void)
 {
+	if(g_write_index > g_read_index) {
+		return g_write_index - g_read_index;
+	} else if(g_write_index < g_read_index) {
+		return g_write_index + RING_BUFFER_SIZE - g_read_index;
+	} else {
+		return g_buffer_full?RING_BUFFER_SIZE:0;
+	}
+}
+
+size_t get_free_size(void)
+{
+	return RING_BUFFER_SIZE - get_used_size();
+}
+
+size_t put_log(const char* log, size_t size)
+{
+	pthread_mutex_lock(&log_mutex);
+	size_t freesize = get_free_size();
+	if(!freesize) {
+		size = 0;
+		g_buffer_full = TRUE;
+	}
+	
+	if(freesize < size) {
+		size = freesize;
+		g_buffer_full = TRUE;
+	}
+	
+	if(size > 0) {
+		if(g_write_index + size < RING_BUFFER_SIZE) {
+			memcpy(g_ring_buffer + g_write_index, log, size);
+			g_write_index += size;
+		} else {
+			memcpy(g_ring_buffer + g_write_index, log, RING_BUFFER_SIZE - g_write_index);
+			memcpy(g_ring_buffer, log + RING_BUFFER_SIZE - g_write_index, size + g_write_index - RING_BUFFER_SIZE);
+			g_write_index += size - RING_BUFFER_SIZE;
+		}
+	}
+	
+	pthread_mutex_unlock(&log_mutex);
+	return size;
+}
+
+size_t get_log(char* log, size_t size)
+{
+	pthread_mutex_lock(&log_mutex);
+	size_t used = get_used_size();
+	if (!used) {
+		size = 0;
+	}
+	
+	if(used < size) {
+		size = used;
+	}
+	
+	if(size > 0) {
+		if(g_read_index + size < RING_BUFFER_SIZE) {
+			memcpy(log, (const char*)g_ring_buffer + g_read_index, size);
+			g_read_index += size;
+		} else {
+			memcpy(log, (const char*)g_ring_buffer + g_read_index, RING_BUFFER_SIZE - g_read_index);
+			memcpy(log + RING_BUFFER_SIZE - g_read_index, (const char*)g_ring_buffer, size + g_read_index - RING_BUFFER_SIZE);
+			g_read_index += size - RING_BUFFER_SIZE;
+		}
+	}
+	
+	g_buffer_full = FALSE;
+	pthread_mutex_unlock(&log_mutex);
+	return size;
+}
+
+static void *xdag_log_writer_thread(void* data)
+{
+	char *poll_get_buf = (char*)malloc(MAX_POLL_SIZE);
+	memset(poll_get_buf, 0, MAX_POLL_SIZE);
+
+	size_t pollsize = 0;
+	while (1) {
+		sem_wait(writer_notice_sem);
+		
+		pollsize = get_log(poll_get_buf, MAX_POLL_SIZE);
+		if (pollsize>0) {
+			FILE *f = xdag_open_file(log_file_path, "a");
+			if (!f) {
+				// open file failed use stderr instead.
+				f = stderr;
+			}
+			
+			fwrite(poll_get_buf, 1, pollsize, f);
+			
+			xdag_close_file(f);
+		} else {
+			// ring buffer empty
+		}
+		
+	}
+}
+
+
+
+int xdag_log(int level, const char *format, ...)
+{	
+#if ASYNC_LOG && (!defined _WIN32 && !defined _WIN64)
+	if (level < 0 || level > XDAG_TRACE) {
+		level = XDAG_INTERNAL;
+	}
+	
+	if (level > log_level) {
+		return 0;
+	}
+	
+	static const char lvl[] = "NONEFATACRITINTEERROWARNMESSINFODBUGTRAC";
+	char timebuf[64];
+	struct tm tm;
+	struct timeval tv;
+	int done = 0;
+	time_t t;
+	
+	gettimeofday(&tv, 0);
+	t = tv.tv_sec;
+	localtime_r(&t, &tm);
+	strftime(timebuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
+	
+	char buffer[RING_BUFFER_SIZE] = {0};
+	char buf[RING_BUFFER_SIZE] = {0};
+	va_list arg;
+	va_start(arg, format);
+	done = vsprintf(buf, format, arg);
+	va_end(arg);
+	
+	sprintf(buffer, "%s.%03d [%012llx:%.4s]  %s\n", timebuf, (int)(tv.tv_usec / 1000), (long long)pthread_self_ptr(), lvl + 4 * level, buf);
+	
+	size_t putsize = put_log(buffer, strlen(buffer));
+	if(putsize>0) {
+		sem_post(writer_notice_sem);
+	}
+	
+#else
 	static const char lvl[] = "NONEFATACRITINTEERROWARNMESSINFODBUGTRAC";
 	char tbuf[64], buf[64];
 	struct tm tm;
@@ -25,21 +184,26 @@ int xdag_log(int level, const char *format, ...)
 	FILE *f;
 	int done;
 	time_t t;
-
+	
 	if (level < 0 || level > XDAG_TRACE) {
 		level = XDAG_INTERNAL;
 	}
-
+	
 	if (level > log_level) {
 		return 0;
 	}
-
+	
 	gettimeofday(&tv, 0);
 	t = tv.tv_sec;
 	localtime_r(&t, &tm);
 	strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
+	
 	pthread_mutex_lock(&log_mutex);
 	sprintf(buf, XDAG_LOG_FILE, g_progname);
+	
+	char buffer[RING_BUFFER_SIZE] = {0};
+	
+	sprintf(buffer, "%s.%03d [%012llx:%.4s]  ", tbuf, (int)(tv.tv_usec / 1000), (long long)pthread_self_ptr(), lvl + 4 * level);
 	
 	f = xdag_open_file(buf, "a");
 	if (!f) {
@@ -47,7 +211,7 @@ int xdag_log(int level, const char *format, ...)
 	}
 	
 	fprintf(f, "%s.%03d [%012llx:%.4s]  ", tbuf, (int)(tv.tv_usec / 1000), (long long)pthread_self_ptr(), lvl + 4 * level);
-
+	
 	va_start(arg, format);
 	done = vfprintf(f, format, arg);
 	va_end(arg);
@@ -57,6 +221,7 @@ int xdag_log(int level, const char *format, ...)
 
  end:
 	pthread_mutex_unlock(&log_mutex);
+#endif
 
 	return done;
 }
@@ -155,6 +320,11 @@ static void sigCatch(int signum, siginfo_t *info, void *context)
 	}
 	signal(signum, SIG_DFL);
 	kill(getpid(), signum);
+	
+#if ASYNC_LOG && (!defined _WIN32 && !defined _WIN64)
+	sem_unlink(SEM_LOG_WRITER);
+#endif
+	
 	exit(-1);
 }
 
@@ -172,6 +342,20 @@ int xdag_log_init(void)
 			sigaction(i, &sa, 0);
 		}
 	}
+	
+#if ASYNC_LOG && (!defined _WIN32 && !defined _WIN64)
+	sprintf(log_file_path, XDAG_LOG_FILE, g_progname);
+	
+	writer_notice_sem = sem_open(SEM_LOG_WRITER, O_CREAT, 0644, 0);
+	pthread_t writer_thread;
+	if(pthread_create(&writer_thread, NULL, xdag_log_writer_thread, NULL)) {
+		return -1;
+	}
+	pthread_detach(writer_thread);
+#endif
+	
+	xdag_mess("Initializing log system...");
+	
 	return 0;
 }
 

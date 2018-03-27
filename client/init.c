@@ -43,7 +43,7 @@ void printUsage(char* appName);
 int xdag_init(int argc, char **argv, int isGui)
 {
     xdag_init_path(argv[0]);
-    
+
 	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
 	char *ptr;
 	int transport_flags = 0, n_addrports = 0, n_mining_threads = 0, is_pool = 0, is_miner = 0, level;
@@ -64,6 +64,9 @@ int xdag_init(int argc, char **argv, int isGui)
 	if (!isGui) {
 		printf("%s client/server, version %s.\n", g_progname, XDAG_VERSION);
 	}
+	
+	/* initialize log system */
+	if (xdag_log_init()) return -1;
 
 	g_xdag_run = 1;
 	xdag_show_state(0);
@@ -164,8 +167,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	xdag_mess("Starting dnet transport...");
 	printf("Transport module: ");
 	if (xdag_transport_start(transport_flags, bindto, n_addrports, addrports)) return -1;
-	xdag_mess("Initializing log system...");
-	if (xdag_log_init()) return -1;
+	
 	if (!is_miner) {
 		xdag_mess("Reading hosts database...");
 		if (xdag_netdb_init(pubaddr, n_addrports, addrports)) return -1;
