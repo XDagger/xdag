@@ -453,6 +453,7 @@ static void *init_storage_add_block_thread(void *data)
 			pos = 0;
 		}
 		
+		free(item->data);
 		free(item);
 	}
 	
