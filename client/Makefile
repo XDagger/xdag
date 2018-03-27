@@ -17,6 +17,8 @@ sources = \
 	memory.c					\
 	netdb.c						\
 	pool.c						\
+	miner.c						\
+	mining_common.c				\
 	sha256.c					\
 	sha256-mb-x86_64.s			\
 	storage.c					\
@@ -55,6 +57,8 @@ headers = \
 	memory.h						\
 	netdb.h							\
 	pool.h							\
+	miner.h							\
+	mining_common.h					\
 	sha256.h						\
 	state.h							\
 	storage.h						\

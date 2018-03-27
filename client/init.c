@@ -181,7 +181,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	xdag_mess("Starting blocks engine...");
 	if (xdag_blocks_start((is_miner ? ~n_mining_threads : n_mining_threads), !!miner_address)) return -1;
 	xdag_mess("Starting pool engine...");
-	if (xdag_pool_start(is_pool, pool_arg, miner_address)) return -1;
+	if (xdag_initialize_mining(is_pool, pool_arg, miner_address)) return -1;
 
 	if (!isGui) {
 		if (is_pool || (transport_flags & XDAG_DAEMON) > 0) {
