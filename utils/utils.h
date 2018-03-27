@@ -10,13 +10,15 @@
 #define XDAG_UTILS_HEADER_H
 
 #include <stdio.h>
-#include <string.h>
+#include <stdint.h>
 
 #ifdef _WIN32
 #define DELIMITER "\\"
 #else
 #define DELIMITER "/"
 #endif
+
+extern uint64_t get_timestamp(void);
 
 extern void xdag_init_path(char *base);
 extern FILE* xdag_open_file(const char *path, const char *mode);

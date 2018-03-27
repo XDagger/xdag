@@ -7,10 +7,13 @@
 //
 
 #include "utils.h"
-#include <sys/stat.h>
 #include <stdlib.h>
-#if defined (__APPLE__)|| defined (__MACOS__)
+#include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
+#include <time.h>
+#include <sys/time.h>
+#if defined (__APPLE__)|| defined (__MACOS__)
 #include <libgen.h>
 #define PATH_MAX 4096
 #elif defined (_WIN32)
@@ -19,8 +22,16 @@
 #else
 #include <libgen.h>
 #include <linux/limits.h>
-#include <unistd.h>
 #endif
+
+uint64_t get_timestamp(void)
+{
+    struct timeval tp;
+    
+    gettimeofday(&tp, 0);
+    
+    return (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
+}
 
 static char g_xdag_current_path[4096] = {0};
 

@@ -3,10 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <sys/time.h>
 #include "system.h"
 #include "../ldus/source/include/ldus/rbtree.h"
 #include "block.h"
@@ -21,6 +19,7 @@
 #include "memory.h"
 #include "address.h"
 #include "commands.h"
+#include "../utils/utils.h"
 
 #define MAIN_CHAIN_PERIOD       (64 << 10)
 #define MAX_WAITING_MAIN        1
@@ -77,15 +76,6 @@ static struct block_internal * volatile top_main_chain = 0, *volatile pretop_mai
 static struct block_internal *ourfirst = 0, *ourlast = 0, *noref_first = 0, *noref_last = 0;
 static pthread_mutex_t block_mutex;
 static int g_light_mode = 0;
-
-static uint64_t get_timestamp(void)
-{
-	struct timeval tp;
-
-	gettimeofday(&tp, 0);
-
-	return (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
-}
 
 // returns a time period index, where a period is 64 seconds long
 xdag_time_t xdag_main_time(void)
@@ -974,8 +964,17 @@ static void *work_thread(void *arg)
 	// loading block from the local storage
 	g_xdag_state = XDAG_STATE_LOAD;
 	xdag_mess("Loading blocks from local storage...");
+	
+	uint64_t start = get_timestamp();
 	xdag_show_state(0);
+	
+#if MULTI_THREAD_LOADING
+	xdag_init_storage(t, get_timestamp(), &t, add_block_callback);
+#else
 	xdag_load_blocks(t, get_timestamp(), &t, add_block_callback);
+#endif
+	
+	xdag_mess("Finish loading blocks, time cost %ldms", get_timestamp() - start);
 
 	// waiting for command "run"
 	while (!g_xdag_run) {
