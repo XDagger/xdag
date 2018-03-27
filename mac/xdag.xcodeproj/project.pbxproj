@@ -33,7 +33,6 @@
 		38A15E8B20544F3F00598EC2 /* crypt.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E4E20544F3F00598EC2 /* crypt.c */; };
 		38A15E8C20544F3F00598EC2 /* hash.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5020544F3F00598EC2 /* hash.c */; };
 		38A15E8D20544F3F00598EC2 /* init.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5220544F3F00598EC2 /* init.c */; };
-		38A15E8E20544F3F00598EC2 /* log.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5420544F3F00598EC2 /* log.c */; };
 		38A15E8F20544F3F00598EC2 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5620544F3F00598EC2 /* main.c */; };
 		38A15E9120544F3F00598EC2 /* memory.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5820544F3F00598EC2 /* memory.c */; };
 		38A15E9220544F3F00598EC2 /* netdb.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5D20544F3F00598EC2 /* netdb.c */; };
@@ -44,6 +43,7 @@
 		38A15E9920544F3F00598EC2 /* terminal.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6C20544F3F00598EC2 /* terminal.c */; };
 		38A15E9A20544F3F00598EC2 /* transport.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6E20544F3F00598EC2 /* transport.c */; };
 		38A15E9B20544F3F00598EC2 /* wallet.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E7120544F3F00598EC2 /* wallet.c */; };
+		38A3CAB4206A36F6001133E9 /* log.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A3CAB3206A36F6001133E9 /* log.c */; };
 		38B395182056D68E004DD3EA /* x86_64cpuid-mac.s in Sources */ = {isa = PBXBuildFile; fileRef = 38B395162056D68E004DD3EA /* x86_64cpuid-mac.s */; };
 		38B395192056D68E004DD3EA /* sha256-mb-x86_64-mac.s in Sources */ = {isa = PBXBuildFile; fileRef = 38B395172056D68E004DD3EA /* sha256-mb-x86_64-mac.s */; };
 		38B3951A2056DE70004DD3EA /* netdb-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5A20544F3F00598EC2 /* netdb-testnet.txt */; };
@@ -123,8 +123,6 @@
 		38A15E5120544F3F00598EC2 /* hash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hash.h; sourceTree = "<group>"; };
 		38A15E5220544F3F00598EC2 /* init.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = init.c; sourceTree = "<group>"; };
 		38A15E5320544F3F00598EC2 /* init.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = init.h; sourceTree = "<group>"; };
-		38A15E5420544F3F00598EC2 /* log.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = log.c; sourceTree = "<group>"; };
-		38A15E5520544F3F00598EC2 /* log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = log.h; sourceTree = "<group>"; };
 		38A15E5620544F3F00598EC2 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		38A15E5820544F3F00598EC2 /* memory.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = memory.c; sourceTree = "<group>"; };
 		38A15E5920544F3F00598EC2 /* memory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = memory.h; sourceTree = "<group>"; };
@@ -151,6 +149,8 @@
 		38A15E7020544F3F00598EC2 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
 		38A15E7120544F3F00598EC2 /* wallet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = wallet.c; sourceTree = "<group>"; };
 		38A15E7220544F3F00598EC2 /* wallet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wallet.h; sourceTree = "<group>"; };
+		38A3CAB2206A36F5001133E9 /* log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = log.h; sourceTree = "<group>"; };
+		38A3CAB3206A36F6001133E9 /* log.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = log.c; sourceTree = "<group>"; };
 		38B395162056D68E004DD3EA /* x86_64cpuid-mac.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = "x86_64cpuid-mac.s"; sourceTree = "<group>"; };
 		38B395172056D68E004DD3EA /* sha256-mb-x86_64-mac.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = "sha256-mb-x86_64-mac.s"; sourceTree = "<group>"; };
 		38B3951D2056FBBA004DD3EA /* libpthread.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libpthread.tbd; path = usr/lib/libpthread.tbd; sourceTree = SDKROOT; };
@@ -377,8 +377,6 @@
 				38A15E5120544F3F00598EC2 /* hash.h */,
 				38A15E5220544F3F00598EC2 /* init.c */,
 				38A15E5320544F3F00598EC2 /* init.h */,
-				38A15E5420544F3F00598EC2 /* log.c */,
-				38A15E5520544F3F00598EC2 /* log.h */,
 				38A15E5620544F3F00598EC2 /* main.c */,
 				38A15E5820544F3F00598EC2 /* memory.c */,
 				38A15E5920544F3F00598EC2 /* memory.h */,
@@ -425,6 +423,8 @@
 		38D14DB3205B9C92007788DA /* utils */ = {
 			isa = PBXGroup;
 			children = (
+				38A3CAB3206A36F6001133E9 /* log.c */,
+				38A3CAB2206A36F5001133E9 /* log.h */,
 				38D14DB4205B9CB8007788DA /* utils.h */,
 				38D14DB5205B9CB8007788DA /* utils.c */,
 			);
@@ -502,6 +502,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				38A3CAB4206A36F6001133E9 /* log.c in Sources */,
 				38A15E8820544F3F00598EC2 /* block.c in Sources */,
 				38A15E7820544F3F00598EC2 /* dfslib_string.c in Sources */,
 				38A15E7E20544F3F00598EC2 /* dnet_files.c in Sources */,
@@ -522,7 +523,6 @@
 				38A15E9320544F3F00598EC2 /* pool.c in Sources */,
 				38A15E9920544F3F00598EC2 /* terminal.c in Sources */,
 				38A15E9220544F3F00598EC2 /* netdb.c in Sources */,
-				38A15E8E20544F3F00598EC2 /* log.c in Sources */,
 				38D14DB6205B9CB8007788DA /* utils.c in Sources */,
 				38A15E9A20544F3F00598EC2 /* transport.c in Sources */,
 				38A15E8A20544F3F00598EC2 /* commands.c in Sources */,
@@ -655,7 +655,7 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					__MACOS__,
