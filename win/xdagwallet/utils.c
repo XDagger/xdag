@@ -2,7 +2,7 @@
 
 
 int conversion_toInt(long double a, int* b) {
-	if (a > INT_MAX) {
+	if (a > (long double)INT_MAX) {
 		return -1;
 	}
 	*b = (int)a;
@@ -10,7 +10,7 @@ int conversion_toInt(long double a, int* b) {
 }
 
 int conversion_toLong(long double a, long* b) {
-	if (a > LONG_MAX) {
+	if (a > (long double)LONG_MAX) {
 		return -1;
 	}
 	*b = (int)a;
