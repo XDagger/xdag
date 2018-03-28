@@ -1,8 +1,6 @@
 // CEditWalletAddr.cpp : implementation file
 //
 
-#include "stdafx.h"
-#include "xdagwallet.h"
 #include "CEditWalletAddr.h"
 
 
