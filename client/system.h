@@ -2,7 +2,6 @@
 #define _SYSTEM_H
 
 #if defined(_WIN32) || defined(_WIN64)
-
 #include <Windows.h>
 #define inline              __inline
 #include "../dus/programs/dfstools/source/include/dfsrsa.h"
@@ -38,8 +37,7 @@ static inline xdag_diff_t xdag_diff_div(xdag_diff_t p, xdag_diff_t q)
 	dfsrsa_divmod(p.num, 4, q.num, 4, r.num);
 	return r;
 }
-#define xdag_diff_to64(d)  (*(uint64_t*)&d.num[0])
-#define xdag_mkdir(d)      mkdir(d)
+#define xdag_diff_to64(d)       (*(uint64_t*)&d.num[0])
 #define strdup(x)               _strdup(x)
 #define ioctl                   ioctlsocket
 #define fcntl(a, b, c)          0
@@ -63,7 +61,6 @@ typedef unsigned __int128 xdag_diff_t;
 #define xdag_diff_add(p, q) ((p) + (q))
 #define xdag_diff_div(p, q) ((p) / (q))
 #define xdag_diff_to64(d)  ((uint64_t)(d))
-#define xdag_mkdir(d)      mkdir(d, 0770)
 #define INVALID_SOCKET          -1
 
 #endif

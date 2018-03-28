@@ -37,6 +37,12 @@ Install and run (Linux):
 
         $ ./xdag -m 2 -d put.xdag.server.here:13654
         Enter random characters: [enter]
+        
+- Already have an account
+
+		Put your wallet.dat, dnet_key.dat and storage folder in this folder.
+		Then run below command
+		$./xdag -m 2 -d put.xdag.server.here:13654
 
 - Run terminal connected to the daemon in the same folder:
 
@@ -62,7 +68,51 @@ Install and run (Linux):
 - Transfer funds to another address:
 
         xdag> xfer [amount] [address]
+        
 
+Run (Mac OS):
+-----------------------
+
+- Install:
+
+		Download binary file from [release page](https://github.com/XDagger/xdag/releases).  
+		Unzip the zip file to what folder you want.
+
+- Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool put.xdag.server.here:13654
+
+		$ ./xdag -m 2 -d put.xdag.server.here:13654
+		Enter random characters: [enter]
+		
+- Already have an account
+
+		Put your wallet.dat, dnet_key.dat and storage folder in this folder.
+		Then run below command
+		$./xdag -m 2 -d put.xdag.server.here:13654
+
+- Run terminal connected to the daemon in the same folder:
+
+		$ ./xdag -i
+		xdag> help
+		[see help]
+
+- See if you are connected to the pool:
+
+		xdag> state
+		[see state]
+
+- See your balance:
+
+		xdag> balance
+		[balance]
+
+- See your address:
+
+		xdag> account
+		[address]
+
+- Transfer funds to another address:
+
+		xdag> xfer [amount] [address]
 
 Main chain idea:
 ---------------
@@ -90,8 +140,8 @@ Structure of block:
 ------------------
 
 _The on-disk format will change in the future. Consider this the network protocol._
-Each block has fixed size 512 bytes.
-Block consists of 16 fields each of whish has length 32 bytes.
+Each block has a fixed size of 512 bytes.
+Block consists of 16 fields each of which has length 32 bytes.
 Field 0 is header, it consists of 4 quadwords:
 - transport-layer header
 - types of all 16 fields, 4 bits for one type

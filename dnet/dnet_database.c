@@ -10,6 +10,7 @@
 #include "../dus/programs/dar/source/include/crc.h"
 #include "dnet_database.h"
 #include "dnet_main.h"
+#include "../utils/utils.h"
 
 #define DNET_HOST_MAX           0x1000
 #define DNET_NEW_HOST_TIMEOUT	DNET_ACTIVE_PERIOD
@@ -66,16 +67,16 @@ begin:
 	host->route_port = route_port;
 	host->route_type = route_type;
 	if (!n) {
-		FILE *f = fopen(NAME_FILE, "rb");
+		FILE *f = xdag_open_file(NAME_FILE, "rb");
 		if (f) {
 			int len = fread(host->name, 1, DNET_HOST_NAME_MAX, f);
-			fclose(f);
+			xdag_close_file(f);
 			if (len > 0) host->name_len = len;
 		}
 		host->is_local = 1;
 		host->is_trusted = 1;
 	} else {
-		FILE *f = fopen(KEYS_FILE, "rb");
+		FILE *f = xdag_open_file(KEYS_FILE, "rb");
 		if (!f) host->is_trusted = 1;
 		else {
 			struct dnet_key k;
@@ -85,7 +86,7 @@ begin:
 					break;
 				}
 			}
-			fclose(f);
+			xdag_close_file(f);
 		}
 	}
 	g_dnet_n_hosts++;
@@ -175,22 +176,22 @@ int dnet_trust_host(struct dnet_host *host) {
 	FILE *f;
     unsigned i;
 	if (host == &g_dnet_hosts[0]) return 0;
-	if (!(f = fopen(KEYS_FILE, "rb"))) {
-		f = fopen(KEYS_FILE, "wb");
+	if (!(f = xdag_open_file(KEYS_FILE, "rb"))) {
+		f = xdag_open_file(KEYS_FILE, "wb");
 		if (!f) return 1;
 		for (i = 1; i < g_dnet_n_hosts; ++i) {
 			g_dnet_hosts[i].is_trusted = 0;
 		}
 	}
-	fclose(f);
+	xdag_close_file(f);
 	if (host->is_trusted) return 0;
-	f = fopen(KEYS_FILE, "ab");
+	f = xdag_open_file(KEYS_FILE, "ab");
 	if (!f) return 2;
 	if (fwrite(&host->key, sizeof(struct dnet_key), 1, f) != 1) {
-		fclose(f);
+		xdag_close_file(f);
 		return 3;
 	}
-	fclose(f);
+	xdag_close_file(f);
 	host->is_trusted = 1;
 	return 0;
 }
@@ -210,10 +211,10 @@ int dnet_set_host_name(struct dnet_host *host, const char *name, size_t len) {
     memcpy(host->name, name, len);
     host->name_len = len;
 	if (host == g_dnet_hosts) {
-		FILE *f = fopen(NAME_FILE, "wb");
+		FILE *f = xdag_open_file(NAME_FILE, "wb");
 		if (f) {
 			fwrite(host->name, 1, host->name_len, f);
-			fclose(f);
+			xdag_close_file(f);
 		}
 	}
 	return 0;

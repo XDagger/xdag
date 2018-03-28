@@ -4,6 +4,7 @@
     <ClCompile Include="xdagwallet.cpp" />
     <ClCompile Include="xdagwalletDlg.cpp" />
     <ClCompile Include="PasswordDlg.cpp" />
+    <ClCompile Include="CEditWalletAddr.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="xdagwallet.h" />
@@ -13,6 +14,7 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="PasswordDlg.h" />
     <ClInclude Include="version.h" />
+    <ClInclude Include="CEditWalletAddr.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="xdagwallet.rc" />

@@ -23,24 +23,26 @@
 #include "../include/crc.h"
 #endif
 
-static const char version[]="CRC library, ...-T4.046-T11.609"; /* $DVS:time$ */
+static const char version[] = "CRC library, ...-T4.046-T11.609"; /* $DVS:time$ */
 
-unsigned *crc_table=NULL;
+unsigned *crc_table = NULL;
 
-int crc_makeTable(unsigned table[256]){
-	unsigned long crc; int i,j;
-	for (i = 0; i < 256; i++){
-	    crc = i;
-	    for (j = 0; j < 8; j++)
-		crc = (crc >> 1) ^ (crc & 1 ? 0xEDB88320UL : 0);
-	    table[i] = crc;
+int crc_makeTable(unsigned table[256])
+{
+	unsigned long crc; int i, j;
+	for(i = 0; i < 256; i++) {
+		crc = i;
+		for(j = 0; j < 8; j++)
+			crc = (crc >> 1) ^ (crc & 1 ? 0xEDB88320UL : 0);
+		table[i] = crc;
 	}
 	return 0;
-} 
+}
 
-int crc_init(void){
-	if(crc_table) return (long)version;
-	crc_table=malloc(256*sizeof(unsigned));
+int crc_init(void)
+{
+	if(crc_table) return 0;
+	crc_table = malloc(256 * sizeof(unsigned));
 	if(!crc_table) _errn(0);
 	crc_makeTable(crc_table);
 	return 0;
@@ -48,16 +50,17 @@ int crc_init(void){
 
 #define crc_addChar(crc,c) ((crc)=crc_table[(unsigned char)(crc)^(c)]^((crc)>>8))
 
-unsigned crc_addArray(unsigned char *buf, unsigned len, unsigned crc){
+unsigned crc_addArray(unsigned char *buf, unsigned len, unsigned crc)
+{
 	crc = ~crc;
-	while (len--) crc_addChar(crc,*buf++);
+	while(len--) crc_addChar(crc, *buf++);
 	return ~crc;
 }
 
-unsigned crc_addFile(FILE *f, unsigned len, unsigned crc){
+unsigned crc_addFile(FILE *f, unsigned len, unsigned crc)
+{
 	int c;
 	crc = ~crc;
-	while (len-- && (c=fgetc(f))!=EOF) crc_addChar(crc,c);
+	while(len-- && (c = fgetc(f)) != EOF) crc_addChar(crc, c);
 	return ~crc;
-	
 }
