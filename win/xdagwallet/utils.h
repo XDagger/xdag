@@ -1,4 +1,7 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <float.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
