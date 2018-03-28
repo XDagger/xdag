@@ -135,7 +135,7 @@ int CToolTip::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_rgnRoundRect.CreateRectRgn(t_Rect.left+30, t_Rect.top, t_Rect.right-30, t_Rect.bottom);
 
 	CRgn rgnComb;
-	rgnComb.CreateRectRgn(t_Rect.left, t_Rect.top, t_Rect.right, t_Rect.bottom);
+	rgnComb.CreateRectRgn(t_Rect.left+30, t_Rect.top, t_Rect.right-30, t_Rect.bottom);
 	SetWindowRgn(rgnComb.operator HRGN(), TRUE);
 
 	return 0;
