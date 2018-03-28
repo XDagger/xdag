@@ -13,6 +13,6 @@ int conversion_toLong(long double a, long* b) {
 	if (a > (long double)LONG_MAX) {
 		return -1;
 	}
-	*b = (int)a;
+	*b = (long)a;
 	return 0;
 }
