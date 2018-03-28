@@ -24,9 +24,9 @@ CToolTip::~CToolTip()
 CToolTip* CToolTip::Show(CPoint pt,LPRECT lpRect, 
 				int nCharWidth, int nCharHeight, CString strMessage, UINT nSecs)
 {
-    CToolTip* pToolTip = new CToolTip(strMessage);
+	CToolTip* pToolTip = new CToolTip(strMessage);
 
-    int nRectLeft;
+	int nRectLeft;
 	int nRectRight;
 	int nRectTop;  
 	int nRectBottom;
@@ -60,9 +60,9 @@ CToolTip* CToolTip::Show(CPoint pt,LPRECT lpRect,
 	nRectBottom = pt.y;
     
 	pToolTip->Create(CRect(nRectLeft, nRectTop, nRectRight, nRectBottom));    
-    pToolTip->MakeVisisble(nSecs);
+    	pToolTip->MakeVisisble(nSecs);
 
-    return pToolTip;
+    	return pToolTip;
 }
 
 
@@ -74,17 +74,17 @@ void CToolTip::MakeVisisble(UINT nSecs)
 		exit(EXIT_FAILURE);
 	}
 
-    SetTimer(ID_TIMER_POPUP, (nSecs * 1000), NULL);
+    	SetTimer(ID_TIMER_POPUP, (nSecs * 1000), NULL);
         
-    CRect rect;
-    GetWindowRect(&rect);
+    	CRect rect;
+    	GetWindowRect(&rect);
 
-    int nCaptionBarSize = ::GetSystemMetrics(SM_CYCAPTION);
-    int nVerticalBorderSize = ::GetSystemMetrics(SM_CYSIZEFRAME);
+    	int nCaptionBarSize = ::GetSystemMetrics(SM_CYCAPTION);
+    	int nVerticalBorderSize = ::GetSystemMetrics(SM_CYSIZEFRAME);
 
  
 
-    SetWindowPos(
+    	SetWindowPos(
 		&wndTopMost,
 		m_rectWindow.left, 
 		(m_rectWindow.top + nCaptionBarSize + (2 * nVerticalBorderSize)),
@@ -99,13 +99,13 @@ void CToolTip::MakeVisisble(UINT nSecs)
 int CToolTip::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
 	if (CFrameWnd::OnCreate(lpCreateStruct) == -1)
-    {
-        return -1;
-    }
+    	{
+        	return -1;
+    	}	
 	
-    ModifyStyle(WS_CAPTION , 0); 
+   	ModifyStyle(WS_CAPTION , 0); 
 
-    CRect t_Rect;
+    	CRect t_Rect;
 	GetClientRect(&t_Rect); 
 
  
@@ -126,10 +126,10 @@ int CToolTip::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		fprintf(stderr, "overflow error\n");
 		exit(EXIT_FAILURE);
 	}
-    m_rectText.left   = t_Rect.Width() * 0.10; 
-    m_rectText.right  = long_RectWidth;
-    m_rectText.top    = t_Rect.Height() * 0.10; 
-    m_rectText.bottom = long_RectHeight;
+    	m_rectText.left   = t_Rect.Width() * 0.10; 
+    	m_rectText.right  = long_RectWidth;
+    	m_rectText.top    = t_Rect.Height() * 0.10; 
+   	m_rectText.bottom = long_RectHeight;
 #pragma warning( pop ) 
             	
 	m_rgnRoundRect.CreateRectRgn(t_Rect.left+30, t_Rect.top, t_Rect.right-30, t_Rect.bottom);
@@ -145,25 +145,25 @@ void CToolTip::OnPaint()
 {
 	CPaintDC dc(this); 
 
-    CRect t_Rect;
-    GetClientRect(&t_Rect);
+    	CRect t_Rect;
+    	GetClientRect(&t_Rect);
 
 	CBrush brOutlineBrush;
-    brOutlineBrush.CreateSolidBrush(RGB(0, 0, 0)); 
+    	brOutlineBrush.CreateSolidBrush(RGB(0, 0, 0)); 
    
-    CBrush brFillBrush;
+    	CBrush brFillBrush;
 	COLORREF crBackground = ::GetSysColor(COLOR_INFOBK);
-    brFillBrush.CreateSolidBrush(crBackground);
+    	brFillBrush.CreateSolidBrush(crBackground);
 
-    dc.FillRgn(&m_rgnRoundRect, &brFillBrush);
-    dc.FrameRgn(&m_rgnRoundRect, &brOutlineBrush, 1, 1);
+    	dc.FillRgn(&m_rgnRoundRect, &brFillBrush);
+    	dc.FrameRgn(&m_rgnRoundRect, &brOutlineBrush, 1, 1);
 
-    int nBkMode = dc.SetBkMode(TRANSPARENT);
-    COLORREF clrPrevious =  dc.SetTextColor(RGB(0, 0, 0));
+    	int nBkMode = dc.SetBkMode(TRANSPARENT);
+    	COLORREF clrPrevious =  dc.SetTextColor(RGB(0, 0, 0));
 
-    dc.DrawText(m_strMessage, m_rectText, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-    dc.SetBkColor(nBkMode);
-    dc.SetTextColor(clrPrevious);
+    	dc.DrawText(m_strMessage, m_rectText, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    	dc.SetBkColor(nBkMode);
+    	dc.SetTextColor(clrPrevious);
 }
 
 BOOL CToolTip::PreCreateWindow(CREATESTRUCT& cs)
@@ -172,27 +172,26 @@ BOOL CToolTip::PreCreateWindow(CREATESTRUCT& cs)
 	// and join this one with the already existant.
 	
 	if (!CWnd::PreCreateWindow(cs))
-    {
+    	{
 		return FALSE;
-    }
+    	}
 
  	if (!::IsWindow(m_wndInvisibleParent.m_hWnd))
  	{
-        PCSTR pstrOwnerClass = ::AfxRegisterWndClass(0);
+       		PCSTR pstrOwnerClass = ::AfxRegisterWndClass(0);
        
-        BOOL bError = m_wndInvisibleParent.CreateEx(0,pstrOwnerClass,  _T(""), WS_POPUP,
+        	BOOL bError = m_wndInvisibleParent.CreateEx(0,pstrOwnerClass,  _T(""), WS_POPUP,
 			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
 			NULL, 0);
 
-        if (bError == FALSE)
-        {
+        	if (bError == FALSE)
+        	{
 			return FALSE;
-        }
+        	}
 		
  	}
 
 	cs.hwndParent = m_wndInvisibleParent.m_hWnd;
-	
 	return TRUE;
 }
 
