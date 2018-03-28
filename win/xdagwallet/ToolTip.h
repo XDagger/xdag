@@ -10,12 +10,12 @@ class CToolTip : public CFrameWnd
 public:
 
     static CToolTip* Show(
-               CPoint pt,				// point where there will be the tooltip 
-			   LPRECT lpRect,		// rect of the parent
-               int nWidth,				// mean character width
-			   int nHeight,			// mean character height
-               CString strMessage,
-               UINT nSecs
+    		CPoint pt,				// point where there will be the tooltip 
+		LPRECT lpRect,		// rect of the parent
+		int nWidth,				// mean character width
+		int nHeight,			// mean character height
+		CString strMessage,
+		UINT nSecs
             );
 	    
 	static CWnd	* pParentWindow;
