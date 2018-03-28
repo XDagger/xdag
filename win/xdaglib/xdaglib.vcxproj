@@ -27,6 +27,8 @@
     <ClCompile Include="..\..\client\log.c" />
     <ClCompile Include="..\..\client\init.c" />
     <ClCompile Include="..\..\client\memory.c" />
+    <ClCompile Include="..\..\client\miner.c" />
+    <ClCompile Include="..\..\client\mining_common.c" />
     <ClCompile Include="..\..\client\netdb.c" />
     <ClCompile Include="..\..\client\pool.c" />
     <ClCompile Include="..\..\client\sha256.c" />
@@ -51,6 +53,7 @@
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_random.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_string.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\lib\dfsrsa.c" />
+    <ClCompile Include="..\..\utils\utils.c" />
     <ClCompile Include="..\system.c" />
   </ItemGroup>
   <ItemGroup>
@@ -62,6 +65,8 @@
     <ClInclude Include="..\..\client\log.h" />
     <ClInclude Include="..\..\client\init.h" />
     <ClInclude Include="..\..\client\memory.h" />
+    <ClInclude Include="..\..\client\miner.h" />
+    <ClInclude Include="..\..\client\mining_common.h" />
     <ClInclude Include="..\..\client\netdb.h" />
     <ClInclude Include="..\..\client\pool.h" />
     <ClInclude Include="..\..\client\sha256.h" />
@@ -96,6 +101,7 @@
     <ClInclude Include="..\..\ldus\source\include\ldus\atomic.h" />
     <ClInclude Include="..\..\ldus\source\include\ldus\list.h" />
     <ClInclude Include="..\..\ldus\source\include\ldus\rbtree.h" />
+    <ClInclude Include="..\..\utils\utils.h" />
     <ClInclude Include="..\arpa\inet.h" />
     <ClInclude Include="..\netdb.h" />
     <ClInclude Include="..\netinet\in.h" />
@@ -124,27 +130,27 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
