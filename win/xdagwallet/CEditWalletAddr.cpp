@@ -26,6 +26,5 @@ void CEditWalletAddr::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
 
 	CEdit::SetSel(0,-1);
-	CEdit::Copy();
 
 }
