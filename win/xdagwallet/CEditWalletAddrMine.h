@@ -15,12 +15,9 @@ public:
 protected:
 
 	CToolTip* ToolTip;
-
-
+	
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
-
-
-
+	
 	DECLARE_MESSAGE_MAP()
 };
 
