@@ -27,6 +27,8 @@ esac
 AC_SUBST([HOST_OS])
 AC_SUBST([HOST_SUFFIX])
 
+AC_CONFIG_SRCDIR([../client/version.h])
+
 # config.h
 AC_CONFIG_HEADERS([config.h])
 
