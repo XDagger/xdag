@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		383256BB206BF099006CAE67 /* miner.c in Sources */ = {isa = PBXBuildFile; fileRef = 383256B7206BF098006CAE67 /* miner.c */; };
+		383256BC206BF099006CAE67 /* pool.c in Sources */ = {isa = PBXBuildFile; fileRef = 383256B8206BF098006CAE67 /* pool.c */; };
+		38439AFB206BF6D100D563A8 /* mining_common.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6020544F3F00598EC2 /* mining_common.c */; };
 		384A29DE2062194800DD9D3B /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 384A29DC2062194700DD9D3B /* libcrypto.a */; };
 		384A29DF2062194800DD9D3B /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 384A29DD2062194800DD9D3B /* libssl.a */; };
 		384A29E12062195400DD9D3B /* libcrypto.a in Resources */ = {isa = PBXBuildFile; fileRef = 384A29DC2062194700DD9D3B /* libcrypto.a */; };
@@ -36,9 +39,6 @@
 		38A15E8F20544F3F00598EC2 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5620544F3F00598EC2 /* main.c */; };
 		38A15E9120544F3F00598EC2 /* memory.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5820544F3F00598EC2 /* memory.c */; };
 		38A15E9220544F3F00598EC2 /* netdb.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E5D20544F3F00598EC2 /* netdb.c */; };
-		38A15E9320544F3F00598EC2 /* pool.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6020544F3F00598EC2 /* pool.c */; };
-		38A15E9320544F3F00598EC2 /* miner.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6020544F3F00598EC2 /* miner.c */; };
-		38A15E9320544F3F00598EC2 /* mining_common.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6020544F3F00598EC2 /* mining_common.c */; };
 		38A15E9520544F3F00598EC2 /* sha256.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6320544F3F00598EC2 /* sha256.c */; };
 		38A15E9720544F3F00598EC2 /* storage.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6720544F3F00598EC2 /* storage.c */; };
 		38A15E9820544F3F00598EC2 /* sync.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6920544F3F00598EC2 /* sync.c */; };
@@ -70,6 +70,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		383256B7206BF098006CAE67 /* miner.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = miner.c; sourceTree = "<group>"; };
+		383256B8206BF098006CAE67 /* pool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pool.c; sourceTree = "<group>"; };
+		383256B9206BF098006CAE67 /* miner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = miner.h; sourceTree = "<group>"; };
+		383256BA206BF099006CAE67 /* pool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pool.h; sourceTree = "<group>"; };
 		384A29DC2062194700DD9D3B /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = lib/libcrypto.a; sourceTree = "<group>"; };
 		384A29DD2062194800DD9D3B /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libssl.a; path = lib/libssl.a; sourceTree = "<group>"; };
 		3895BF47205520AD00344AE0 /* bundle1.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; name = bundle1.o; path = usr/lib/bundle1.o; sourceTree = SDKROOT; };
@@ -134,10 +138,6 @@
 		38A15E5D20544F3F00598EC2 /* netdb.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = netdb.c; sourceTree = "<group>"; };
 		38A15E5E20544F3F00598EC2 /* netdb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = netdb.h; sourceTree = "<group>"; };
 		38A15E5F20544F3F00598EC2 /* netdb.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = netdb.txt; sourceTree = "<group>"; };
-		38A15E6020544F3F00598EC2 /* pool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pool.c; sourceTree = "<group>"; };
-		38A15E6120544F3F00598EC2 /* pool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pool.h; sourceTree = "<group>"; };
-		38A15E6020544F3F00598EC2 /* miner.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = miner.c; sourceTree = "<group>"; };
-		38A15E6120544F3F00598EC2 /* miner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = miner.h; sourceTree = "<group>"; };
 		38A15E6020544F3F00598EC2 /* mining_common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mining_common.c; sourceTree = "<group>"; };
 		38A15E6120544F3F00598EC2 /* mining_common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mining_common.h; sourceTree = "<group>"; };
 		38A15E6320544F3F00598EC2 /* sha256.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sha256.c; sourceTree = "<group>"; };
@@ -369,6 +369,10 @@
 		38A15E4220544F3F00598EC2 /* client */ = {
 			isa = PBXGroup;
 			children = (
+				383256B7206BF098006CAE67 /* miner.c */,
+				383256B9206BF098006CAE67 /* miner.h */,
+				383256B8206BF098006CAE67 /* pool.c */,
+				383256BA206BF099006CAE67 /* pool.h */,
 				38B395172056D68E004DD3EA /* sha256-mb-x86_64-mac.s */,
 				38B395162056D68E004DD3EA /* x86_64cpuid-mac.s */,
 				38A15E4320544F3F00598EC2 /* address.c */,
@@ -392,10 +396,6 @@
 				38A15E5D20544F3F00598EC2 /* netdb.c */,
 				38A15E5E20544F3F00598EC2 /* netdb.h */,
 				38A15E5F20544F3F00598EC2 /* netdb.txt */,
-				38A15E6020544F3F00598EC2 /* pool.c */,
-				38A15E6120544F3F00598EC2 /* pool.h */,
-				38A15E6020544F3F00598EC2 /* miner.c */,
-				38A15E6120544F3F00598EC2 /* miner.h */,
 				38A15E6020544F3F00598EC2 /* mining_common.c */,
 				38A15E6120544F3F00598EC2 /* mining_common.h */,
 				38A15E6320544F3F00598EC2 /* sha256.c */,
@@ -530,21 +530,21 @@
 				38A15E7B20544F3F00598EC2 /* dnet_connection.c in Sources */,
 				38A15E8320544F3F00598EC2 /* dnet_tap.c in Sources */,
 				38A15E9720544F3F00598EC2 /* storage.c in Sources */,
-				38A15E9320544F3F00598EC2 /* pool.c in Sources */,
-				38A15E9320544F3F00598EC2 /* miner.c in Sources */,
-				38A15E9320544F3F00598EC2 /* mining_common.c in Sources */,				
 				38A15E9920544F3F00598EC2 /* terminal.c in Sources */,
 				38A15E9220544F3F00598EC2 /* netdb.c in Sources */,
 				38D14DB6205B9CB8007788DA /* utils.c in Sources */,
 				38A15E9A20544F3F00598EC2 /* transport.c in Sources */,
+				383256BC206BF099006CAE67 /* pool.c in Sources */,
 				38A15E8A20544F3F00598EC2 /* commands.c in Sources */,
 				38A15E8F20544F3F00598EC2 /* main.c in Sources */,
 				38A15E9820544F3F00598EC2 /* sync.c in Sources */,
 				38A15E8020544F3F00598EC2 /* dnet_main.c in Sources */,
 				38A15E9120544F3F00598EC2 /* memory.c in Sources */,
+				38439AFB206BF6D100D563A8 /* mining_common.c in Sources */,
 				38B395182056D68E004DD3EA /* x86_64cpuid-mac.s in Sources */,
 				38A15E8B20544F3F00598EC2 /* crypt.c in Sources */,
 				38A15E8620544F3F00598EC2 /* address.c in Sources */,
+				383256BB206BF099006CAE67 /* miner.c in Sources */,
 				38A15E9520544F3F00598EC2 /* sha256.c in Sources */,
 				38A15E9B20544F3F00598EC2 /* wallet.c in Sources */,
 				38A15E8120544F3F00598EC2 /* dnet_packet.c in Sources */,
