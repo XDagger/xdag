@@ -9,9 +9,9 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <semaphore.h>
-#include "system.h"
+#include "client/system.h"
 #include "log.h"
-#include "init.h"
+#include "client/init.h"
 #include "utils.h"
 
 #define ASYNC_LOG 1
@@ -21,13 +21,21 @@
 #define MAX_POLL_SIZE (RING_BUFFER_SIZE - 4)
 #define SEM_LOG_WRITER "/xdaglogwritersem"
 
+typedef unsigned char boolean;
+#ifndef FALSE
+#   define FALSE (0x0)
+#endif
+#ifndef TRUE
+#   define TRUE (0x1)
+#endif
+
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int log_level = XDAG_INFO;
 
 static char g_ring_buffer[RING_BUFFER_SIZE] = {0};
 static size_t g_write_index = 0;
 static size_t g_read_index = 0;
-static boolean_t g_buffer_full = FALSE;
+static boolean g_buffer_full = FALSE;
 static sem_t *writer_notice_sem = NULL;
 static char log_file_path[1024] = {0};
 
