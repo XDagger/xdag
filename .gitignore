@@ -14,3 +14,7 @@ Debug/
 #mac project
 xcuserdata
 mac/xdag.xcodeproj/project.xcworkspace
+
+#autotools
+.deps
+autoscan.log
