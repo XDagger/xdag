@@ -9,6 +9,7 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <semaphore.h>
+#include <fcntl.h>
 #include "client/system.h"
 #include "log.h"
 #include "client/init.h"
