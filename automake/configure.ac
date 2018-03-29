@@ -32,7 +32,7 @@ AC_CONFIG_SRCDIR([../client/version.h])
 # config.h
 AC_CONFIG_HEADERS([config.h])
 
-AM_INIT_AUTOMAKE([foreign subdir-objects -Wall])
+AM_INIT_AUTOMAKE([foreign subdir-objects no-dependencies -Wall])
 
 # Checks for programs.
 AC_PROG_CC

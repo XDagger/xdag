@@ -18,3 +18,5 @@ mac/xdag.xcodeproj/project.xcworkspace
 #autotools
 .deps
 autoscan.log
+*.o
+.dirstamp
