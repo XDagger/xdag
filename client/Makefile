@@ -1,5 +1,6 @@
 # cheatcoin: Makefile; T13.656-T13.844; $DVS:time$
 
+SRCROOT  = ..
 dnet	 = ../dnet
 dfstools = ../dus/programs/dfstools/source
 dfslib	 = $(dfstools)/dfslib
@@ -98,7 +99,7 @@ flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -ls
 all: xdag
 
 xdag: $(sources) $(headers) Makefile
-	gcc -o xdag $(sources) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK $(flags)
+	gcc -o xdag $(sources) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) $(flags)
 
 clean:
 	rm xdag
