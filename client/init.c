@@ -24,6 +24,7 @@
 #include "terminal.h"
 #include "memory.h"
 #include "../utils/utils.h"
+#include "../utils/json-rpc/rpc_service.h"
 
 char *g_coinname, *g_progname;
 #define coinname   g_coinname
@@ -67,6 +68,9 @@ int xdag_init(int argc, char **argv, int isGui)
 	
 	/* initialize log system */
 	if (xdag_log_init()) return -1;
+	
+	/* initialize json rpc */
+	if (xdag_rpc_service_init()) return -1;
 
 	g_xdag_run = 1;
 	xdag_show_state(0);
