@@ -6,7 +6,7 @@
 //  Copyright © 2018 xrdavies. All rights reserved.
 //
 
-#include "rpc_wrapper.h"
+#include "rpc_service.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -42,85 +42,62 @@ const uint32_t LOCAL_HOST_IP = 0x7f000001; // 127.0.0.1
 const uint32_t APPLICATION_DOMAIN_PORT = 7676;
 #endif
 
-void rpc_processor(const char*, char*);
-
-void rpc_processor(const char* request, char *response)
+void rpc_call_dnet_command(const char *method, const char *params, char **result)
 {
-	strcpy(response, request);
-	return;
-}
-
-const uint32_t RPC_SERVER_PORT = 7677;
-
-#define BUFFER_SIZE 2048
-static void *rpc_thread(void *arg)
-{
-	int rcvbufsize = BUFFER_SIZE;
-	char req_buffer[BUFFER_SIZE];
-	char resp_buffer[BUFFER_SIZE];
+	char *lasts;
+	int sock;
 	
-	struct sockaddr_in peeraddr;
-	socklen_t peeraddr_len = sizeof(peeraddr);
+	char cmd[XDAG_COMMAND_MAX];
 	
-	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (sock == INVALID_SOCKET) {
-		xdag_err("rpc server  : can't create socket %s\n", strerror(errno));
+	strcpy(cmd, method);
+	char *ptr = strtok_r(cmd, " \t\r\n", &lasts);
+	if (!ptr) {
+		return;
 	}
-	
-	if (fcntl(sock, F_SETFD, FD_CLOEXEC) == -1) {
-		xdag_err("rpc server   : can't set FD_CLOEXEC flag on socket %d, %s\n", sock, strerror(errno));
+
+#if !defined(_WIN32) && !defined(_WIN64)
+	if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+		printf("Can't open unix domain socket errno:%d.\n", errno);
+		return;
 	}
-	
-	memset(&peeraddr, 0, sizeof(peeraddr));
-	peeraddr.sin_family = AF_INET;
-	peeraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	peeraddr.sin_port = htons(RPC_SERVER_PORT);
-	
-	if (bind(sock, (struct sockaddr*)&peeraddr, sizeof(peeraddr))) {
-		xdag_err("rpc server : socket bind failed. %s", strerror(errno));
+	struct sockaddr_un addr;
+	memset(&addr, 0, sizeof(addr));
+	addr.sun_family = AF_UNIX;
+	strcpy(addr.sun_path, UNIX_SOCK);
+	if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+		printf("Can't connect to unix domain socket errno:%d\n", errno);
+		return;
+	}
+#else
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		printf("Can't create domain socket errno:%d", WSAGetLastError());
 		return 0;
 	}
-	
-	if (listen(sock, 100) == -1) {
-		xdag_err("rpc server : socket listen failed. %s", strerror(errno));
+	struct sockaddr_in addrLocal;
+	addrLocal.sin_family = AF_INET;
+	addrLocal.sin_port = htons(APPLICATION_DOMAIN_PORT);
+	addrLocal.sin_addr.s_addr = htonl(LOCAL_HOST_IP);
+	if (connect(sock, (struct sockadr*)&addrLocal, sizeof(addrLocal)) == -1) {
+		printf("Can't connect to domain socket errno:%d", errno);
 		return 0;
 	}
+#endif
+	write(sock, cmd, strlen(cmd) + 1);
+	if (!strcmp(ptr, "terminate") || !strcmp(ptr, "exit")) {
+		return;
+	}
 	
-	while (1) {
-		int client_fd = accept(sock, (struct sockaddr*)&peeraddr, &peeraddr_len);
-		if (client_fd < 0) {
-			xdag_err("rpc server : accept failed on socket %d, %s\n", sock, strerror(errno));
+	*result = (char*)malloc(128);
+	memset(*result, 0, 128);
+	char c = 0;
+	while (read(sock, &c, 1) == 1 && c) {
+		size_t len = strlen(*result);
+		if(len>=128) {
+			*result = realloc(*result, len+128);
+			memset(*result, len, 128);
 		}
-		
-		setsockopt(client_fd, SOL_SOCKET, SO_RCVBUF, (char*)&rcvbufsize, sizeof(int));
-		memset(req_buffer, 0, sizeof(req_buffer));
-		memset(resp_buffer, 0, sizeof(resp_buffer));
-		size_t len = recv(client_fd, req_buffer, sizeof(req_buffer), 0);
-		if (len > BUFFER_SIZE) {
-			xdag_err("rpc server : request lenght exceed!!");
-			send(client_fd, "error", 6, 0);
-		} else {
-			rpc_processor(req_buffer, resp_buffer);
-			send(client_fd, resp_buffer, strlen(resp_buffer), 0);
-		}
-		
-		close(client_fd);
+//		strcat(*result, &c);
+		sprintf(*result, "%s%c", *result, c);
 	}
-
-	return 0;
-}
-
-
-int xdag_rpc_init(void)
-{
-	pthread_t th;
-	if(pthread_create(&th, NULL, rpc_thread, NULL)) {
-		return 1;
-	}
-	
-	if(pthread_detach(th)) {
-		return 1;
-	}
-	
-	return 0;
+	close(sock);
 }
