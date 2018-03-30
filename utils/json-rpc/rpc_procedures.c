@@ -23,9 +23,6 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
-#include "commands.h"
-#include "log.h"
-#include "utils.h"
 #include "cJSON.h"
 #include "cJSON_Utils.h"
 #include "rpc_wrapper.h"

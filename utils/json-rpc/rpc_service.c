@@ -23,8 +23,8 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
-#include "log.h"
-#include "system.h"
+#include "../log.h"
+#include "../../client/system.h"
 #include "rpc_procedures.h"
 
 /*
