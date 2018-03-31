@@ -16,10 +16,10 @@ struct xdag_rpc_context{
 	void *data;
 	int error_code;
 	char * error_message;
-	int rpc_version;
+	char rpc_version[8];
 } ;
 
-typedef cJSON* (*xdag_rpc_function)(struct xdag_rpc_context *context, cJSON *params, cJSON* id);
+typedef cJSON* (*xdag_rpc_function)(struct xdag_rpc_context *context, cJSON *params, cJSON *id, char *version);
 
 struct xdag_rpc_procedure {
 	char * name;

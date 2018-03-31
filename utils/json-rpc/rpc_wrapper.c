@@ -41,18 +41,12 @@ const uint32_t LOCAL_HOST_IP = 0x7f000001; // 127.0.0.1
 const uint32_t APPLICATION_DOMAIN_PORT = 7676;
 #endif
 
+#define RESULT_SHIT_SIZE 128
 void rpc_call_dnet_command(const char *method, const char *params, char **result)
 {
-	char *lasts;
 	int sock;
-	
 	char cmd[XDAG_COMMAND_MAX];
-	
-	strcpy(cmd, method);
-	char *ptr = strtok_r(cmd, " \t\r\n", &lasts);
-	if (!ptr) {
-		return;
-	}
+	sprintf(cmd, "%s %s", method, params);
 
 #if !defined(_WIN32) && !defined(_WIN64)
 	if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
@@ -82,18 +76,15 @@ void rpc_call_dnet_command(const char *method, const char *params, char **result
 	}
 #endif
 	write(sock, cmd, strlen(cmd) + 1);
-	if (!strcmp(ptr, "terminate") || !strcmp(ptr, "exit")) {
-		return;
-	}
 	
-	*result = (char*)malloc(128);
-	memset(*result, 0, 128);
+	*result = (char*)malloc(RESULT_SHIT_SIZE);
+	memset(*result, 0, RESULT_SHIT_SIZE);
 	char c = 0;
 	while (read(sock, &c, 1) == 1 && c) {
 		size_t len = strlen(*result);
-		if(len>=128) {
-			*result = realloc(*result, len+128);
-			memset(*result, len, 128);
+		if(len>=RESULT_SHIT_SIZE) {
+			*result = realloc(*result, len+RESULT_SHIT_SIZE);
+			memset(*result, len, RESULT_SHIT_SIZE);
 		}
 		sprintf(*result, "%s%c", *result, c);
 	}

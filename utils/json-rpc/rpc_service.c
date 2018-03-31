@@ -80,9 +80,9 @@ static int send_error(struct xdag_rpc_connection * conn, int code, char* message
 	cJSON_AddItemToObject(result_root, "id", id);
 	
 	if(strcmp(version, "2.0")==0) {
-		cJSON_AddItemToObject(result_root, "jsonrpc", version);
+		cJSON_AddItemToObject(result_root, "jsonrpc", cJSON_CreateString(version));
 	} else if (strcmp(version, "1.1")==0) {
-		cJSON_AddItemToObject(result_root, "version", version);
+		cJSON_AddItemToObject(result_root, "version", cJSON_CreateString(version));
 	}
 	
 	char * str_result = cJSON_Print(result_root);
@@ -103,9 +103,9 @@ static int send_result(struct xdag_rpc_connection * conn, cJSON * result, cJSON 
 	cJSON_AddItemToObject(result_root, "id", id);
 	
 	if(strcmp(version, "2.0")==0) {
-		cJSON_AddItemToObject(result_root, "jsonrpc", version);
+		cJSON_AddItemToObject(result_root, "jsonrpc", cJSON_CreateString(version));
 	} else if (strcmp(version, "1.1")==0) {
-		cJSON_AddItemToObject(result_root, "version", version);
+		cJSON_AddItemToObject(result_root, "version", cJSON_CreateString(version));
 	}
 	
 	char * str_result = cJSON_Print(result_root);
@@ -193,7 +193,7 @@ static int invoke_procedure(struct xdag_rpc_connection * conn, char *name, cJSON
 		if (!strcmp(g_procedures[i].name, name)) {
 			procedure_found = 1;
 			ctx.data = g_procedures[i].data;
-			returned = g_procedures[i].function(&ctx, params, id);
+			returned = g_procedures[i].function(&ctx, params, id, version);
 			break;
 		}
 	}
