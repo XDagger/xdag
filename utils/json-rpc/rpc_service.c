@@ -70,7 +70,7 @@ static int send_response(struct xdag_rpc_connection * conn, char *response) {
 	return 0;
 }
 
-static int send_error(struct xdag_rpc_connection * conn, int code, char* message, cJSON * id) {
+static int send_error(struct xdag_rpc_connection * conn, int code, char* message, cJSON * id, char *version) {
 	int return_value = 0;
 	cJSON *result_root = cJSON_CreateObject();
 	cJSON *error_root = cJSON_CreateObject();
@@ -78,6 +78,13 @@ static int send_error(struct xdag_rpc_connection * conn, int code, char* message
 	cJSON_AddStringToObject(error_root, "message", message);
 	cJSON_AddItemToObject(result_root, "error", error_root);
 	cJSON_AddItemToObject(result_root, "id", id);
+	
+	if(strcmp(version, "2.0")==0) {
+		cJSON_AddItemToObject(result_root, "jsonrpc", version);
+	} else if (strcmp(version, "1.1")==0) {
+		cJSON_AddItemToObject(result_root, "version", version);
+	}
+	
 	char * str_result = cJSON_Print(result_root);
 	return_value = send_response(conn, str_result);
 	free(str_result);
@@ -86,13 +93,20 @@ static int send_error(struct xdag_rpc_connection * conn, int code, char* message
 	return return_value;
 }
 
-static int send_result(struct xdag_rpc_connection * conn, cJSON * result, cJSON * id) {
+static int send_result(struct xdag_rpc_connection * conn, cJSON * result, cJSON * id, char *version) {
 	int return_value = 0;
 	cJSON *result_root = cJSON_CreateObject();
 	if (result) {
 		cJSON_AddItemToObject(result_root, "result", result);
 	}
+	cJSON_AddItemToObject(result_root, "error", NULL);
 	cJSON_AddItemToObject(result_root, "id", id);
+	
+	if(strcmp(version, "2.0")==0) {
+		cJSON_AddItemToObject(result_root, "jsonrpc", version);
+	} else if (strcmp(version, "1.1")==0) {
+		cJSON_AddItemToObject(result_root, "version", version);
+	}
 	
 	char * str_result = cJSON_Print(result_root);
 	return_value = send_response(conn, str_result);
@@ -168,7 +182,7 @@ int xdag_rpc_service_unregister_procedure(char *name) {
 	return 0;
 }
 
-static int invoke_procedure(struct xdag_rpc_connection * conn, char *name, cJSON *params, cJSON *id) {
+static int invoke_procedure(struct xdag_rpc_connection * conn, char *name, cJSON *params, cJSON *id, char *version) {
 	cJSON *returned = NULL;
 	int procedure_found = 0;
 	struct xdag_rpc_context ctx;
@@ -184,12 +198,12 @@ static int invoke_procedure(struct xdag_rpc_connection * conn, char *name, cJSON
 		}
 	}
 	if (!procedure_found) {
-		return send_error(conn, RPC_METHOD_NOT_FOUND, strdup("Method not found."), id);
+		return send_error(conn, RPC_METHOD_NOT_FOUND, strdup("Method not found."), id, version);
 	} else {
 		if (ctx.error_code) {
-			return send_error(conn, ctx.error_code, ctx.error_message, id);
+			return send_error(conn, ctx.error_code, ctx.error_message, id, version);
 		} else {
-			return send_result(conn, returned, id);
+			return send_result(conn, returned, id, version);
 		}
 	}
 }
@@ -229,8 +243,19 @@ static int rpc_handle_connection(struct xdag_rpc_connection* conn)
 		free(str_result);
 		
 		if (root->type == cJSON_Object) {
-			cJSON *method, *params, *id;
+			cJSON *method, *params, *id, *verjson;
+			char version[8] = "1.0";
 			method = cJSON_GetObjectItem(root, "method");
+			
+			verjson = cJSON_GetObjectItem(root, "jsonrpc"); /* rpc 2.0 */
+			if(!verjson) {
+				verjson = cJSON_GetObjectItem(root, "version"); /* rpc 1.1 */
+			}
+			
+			if(verjson) {
+				strcpy(version, verjson->valuestring);
+			}
+			
 			if (method != NULL && method->type == cJSON_String) {
 				params = cJSON_GetObjectItem(root, "params");
 				if (params == NULL|| params->type == cJSON_Array || params->type == cJSON_Object) {
@@ -242,7 +267,7 @@ static int rpc_handle_connection(struct xdag_rpc_connection* conn)
 							id_copy = (id->type == cJSON_String) ? cJSON_CreateString(id->valuestring):cJSON_CreateNumber(id->valueint);
 						}
 						xdag_debug("Method Invoked: %s\n", method->valuestring);
-						ret = invoke_procedure(conn, method->valuestring, params, id_copy);
+						ret = invoke_procedure(conn, method->valuestring, params, id_copy, version);
 						close_connection(conn);
 						return ret;
 					}
@@ -250,11 +275,11 @@ static int rpc_handle_connection(struct xdag_rpc_connection* conn)
 			}
 		}
 		cJSON_Delete(root);
-		ret = send_error(conn, RPC_PARSE_ERROR, strdup("Method not found."), 0);
+		ret = send_error(conn, RPC_PARSE_ERROR, strdup("Request parse error."), 0, "2.0"); //use rpc 2.0 as default version
 		close_connection(conn);
 		return ret;
 	} else {
-		ret = send_error(conn, RPC_PARSE_ERROR, strdup("Request parse error."), 0);
+		ret = send_error(conn, RPC_PARSE_ERROR, strdup("Request parse error."), 0, "2.0"); //use rpc 2.0 as default version
 		close_connection(conn);
 		return ret;
 	}
