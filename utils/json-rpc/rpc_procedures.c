@@ -113,8 +113,8 @@ int rpc_account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xda
 	return 0;
 }
 
-cJSON * method_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version);
-cJSON * method_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version)
+cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version);
+cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version)
 {
 	xdag_debug("rpc call method get_account, version %s",version);
 	struct rpc_account_callback_data cbdata;
@@ -164,8 +164,8 @@ cJSON * method_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJSON *i
  "jsonrpc":"2.0", "result":[{"balance":"10.111111"}], "error":null, "id":1
  "version":"1.1", "result":[{"balance":"10.111111"}], "error":null, "id":1
  */
-cJSON * method_get_balance(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version);
-cJSON * method_get_balance(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version)
+cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version);
+cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version)
 {
 	xdag_debug("rpc call method get_balance, version %s", version);
 	char address[128] = {0};
@@ -183,44 +183,46 @@ cJSON * method_get_balance(struct xdag_rpc_context * ctx, cJSON * params, cJSON 
 		} else {
 			ctx->error_code = 1;
 			ctx->error_message = strdup("Invalid parameters.");
+			return NULL;
 		}
 	}
 	
-	cJSON * ret = NULL;
-	if(ctx->error_code == 0) {
-		if(g_xdag_state < XDAG_STATE_XFER) {
-			ctx->error_code = 1;
-			ctx->error_message = strdup("Not ready to show a balance.");
+	if(g_xdag_state < XDAG_STATE_XFER) {
+		ctx->error_code = 1;
+		ctx->error_message = strdup("Not ready to show a balance.");
+		return NULL;
+	} else {
+		cJSON * ret = NULL;
+		cJSON* item = cJSON_CreateObject();
+		xdag_hash_t hash;
+		xdag_amount_t balance;
+		
+		if(strlen(address)) {
+			xdag_address2hash(address, hash);
+			balance = xdag_get_balance(hash);
 		} else {
-			cJSON* item = cJSON_CreateObject();
-			xdag_hash_t hash;
-			xdag_amount_t balance;
-			if(strlen(address)) {
-				xdag_address2hash(address, hash);
-				balance = xdag_get_balance(hash);
-			} else {
-				balance = xdag_get_balance(0);
-			}
-			
-			char str[128] = {0};
-			sprintf(str, "%.9Lf",  xdag_amount2xdag(balance) + (long double)xdag_amount2cheato(balance) / 1000000000);
-			cJSON_AddItemToObject(item, "balance", cJSON_CreateString(str));
-			
-			ret = cJSON_CreateArray();
-			cJSON_AddItemToArray(ret, item);
+			balance = xdag_get_balance(0);
 		}
+		
+		char str[128] = {0};
+		sprintf(str, "%.9Lf",  xdag_amount2xdag(balance) + (long double)xdag_amount2cheato(balance) / 1000000000);
+		cJSON_AddItemToObject(item, "balance", cJSON_CreateString(str));
+		
+		ret = cJSON_CreateArray();
+		cJSON_AddItemToArray(ret, item);
+		return ret;
 	}
 	
-	return ret;
+	return NULL;
 }
 
 
 /* xfer */
 /*
  request:
- "method":"xfer", "params":["S","A","sign", "raw"], "id":1
- "jsonrpc":"2.0", "method":"xfer", "params":["S","A","sign"], "id":1
- "version":"1.1", "method":"xfer", "params":["S","A","sign"], "id":1
+ "method":"do_xfer", "params":[{"amount":"1.0", "address":"AAAAAAAAAAAAAAAAA"}], "id":1
+ "jsonrpc":"2.0", "method":"do_xfer", "params":["S","A","sign"], "id":1
+ "version":"1.1", "method":"do_xfer", "params":["S","A","sign"], "id":1
  
  reponse:
  "result":[{"block":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}], "error":null, "id":1
@@ -228,114 +230,80 @@ cJSON * method_get_balance(struct xdag_rpc_context * ctx, cJSON * params, cJSON 
  "version":"1.1", "result":[{"block":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}], "error":null, "id":1
  */
 
-cJSON * method_do_xfer(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version);
-cJSON * method_do_xfer(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version)
+cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version);
+cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version)
 {
+	//todo: need password or not?
 	xdag_debug("rpc call method do_xfer, version %s", version);
 	
 	char amount[128] = {0};
 	char address[128] = {0};
-	char password[128] = {0}, signature[256] = {0};
 	
 	if (params) {
-		if (cJSON_IsArray(params)) {
-			size_t size = cJSON_GetArraySize(params);
-			if (size < 3 || size > 4) { /* use password */
+		if (cJSON_IsArray(params) && cJSON_GetArraySize(params) == 1) {
+			cJSON* param = cJSON_GetArrayItem(params, 0);
+			if (!param || !cJSON_IsObject(param)) {
 				ctx->error_code = 1;
 				ctx->error_message = strdup("Invalid parameters.");
-			} else {
-				cJSON * p0 = cJSON_GetArrayItem(params, 0);
-				if (cJSON_IsString(p0)) {
-					strcpy(amount, p0->valuestring);
-				}
-				
-				cJSON * p1 = cJSON_GetArrayItem(params, 1);
-				if (cJSON_IsString(p1)) {
-					strcpy(address, p1->valuestring);
-				}
-				
-				cJSON * p2 = cJSON_GetArrayItem(params, 2);
-				if (size == 4) {
-					if (cJSON_IsString(p2)) {
-						strcpy(password, p2->valuestring);
-					}
-				} else {
-					if (cJSON_IsString(p2)) {
-						strcpy(signature, p2->valuestring);
-					}
-				}
+				return NULL;
+			}
+			
+			cJSON * json_amount = cJSON_GetObjectItem(param, "amount");
+			if (cJSON_IsString(json_amount)) {
+				strcpy(amount, json_amount->valuestring);
+			}
+			
+			cJSON * json_address = cJSON_GetObjectItem(param, "address");
+			if (cJSON_IsString(json_address)) {
+				strcpy(address, json_address->valuestring);
 			}
 		} else {
 			ctx->error_code = 1;
 			ctx->error_message = strdup("Invalid parameters.");
+			return NULL;
 		}
 	} else {
 		ctx->error_code = 1;
 		ctx->error_message = strdup("Invalid parameters.");
+		return NULL;
 	}
 	
-	cJSON * ret = NULL;
-	if(ctx->error_code == 0) {
-		if(g_xdag_state < XDAG_STATE_XFER) {
+	if(g_xdag_state < XDAG_STATE_XFER) {
+		ctx->error_code = 1;
+		ctx->error_message = strdup("Not ready to transfer.");
+		return NULL;
+	} else {					
+		struct xfer_callback_data xfer;
+		
+		memset(&xfer, 0, sizeof(xfer));
+		xfer.remains = xdags2amount(amount);
+		if(!xfer.remains) {
 			ctx->error_code = 1;
-			ctx->error_message = strdup("Not ready to transfer.");
+			ctx->error_message = strdup("Xfer: nothing to transfer.");
+		} else if(xfer.remains > xdag_get_balance(0)) {
+			ctx->error_code = 1;
+			ctx->error_message = strdup("Xfer: balance too small.");
+		} else if(xdag_address2hash(address, xfer.fields[XFER_MAX_IN].hash)) {
+			ctx->error_code = 1;
+			ctx->error_message = strdup("Xfer: incorrect address.");
 		} else {
+			xdag_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
+			xfer.outsig = 1;
+			g_xdag_state = XDAG_STATE_XFER;
+			g_xdag_xfer_last = time(0);
+			xdag_traverse_our_blocks(&xfer, &xfer_callback);
 			
-			int res = 0;
-			if (strlen(password)) {
-				struct dfslib_crypt *crypt = malloc(sizeof(struct dfslib_crypt));
-				struct dfslib_string str;
-				char pwd[256];
-				memset(pwd, 0, 256);
-				memset(&str, 0, sizeof(struct dfslib_string));
-				strcpy(pwd, password);
-				dfslib_utf8_string(&str, pwd, strlen(pwd));
-				memset(crypt->pwd, 0, sizeof(crypt->pwd));
-				crypt->ispwd = 0;
-				dfslib_crypt_set_password(crypt, &str);
-				res = dnet_user_crypt_action(crypt->pwd,0,0,5);
-				free(crypt);
-			} else {
-				//todo: check signature
-				
-			}
+			cJSON * ret = NULL;
+			cJSON* item = cJSON_CreateObject();				
+			cJSON_AddItemToObject(item, "block", cJSON_CreateString(xdag_hash2address(xfer.transactionBlockHash)));
 			
-			if (res == 0) {
-				
-				struct xfer_callback_data xfer;
-				
-				memset(&xfer, 0, sizeof(xfer));
-				xfer.remains = xdags2amount(amount);
-				if(!xfer.remains) {
-					ctx->error_code = 1;
-					ctx->error_message = strdup("Xfer: nothing to transfer.");
-				} else if(xfer.remains > xdag_get_balance(0)) {
-					ctx->error_code = 1;
-					ctx->error_message = strdup("Xfer: balance too small.");
-				} else if(xdag_address2hash(address, xfer.fields[XFER_MAX_IN].hash)) {
-					ctx->error_code = 1;
-					ctx->error_message = strdup("Xfer: incorrect address.");
-				} else {
-					xdag_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
-					xfer.outsig = 1;
-					g_xdag_state = XDAG_STATE_XFER;
-					g_xdag_xfer_last = time(0);
-					xdag_traverse_our_blocks(&xfer, &xfer_callback);
-					
-					cJSON* item = cJSON_CreateObject();				
-					cJSON_AddItemToObject(item, "block", cJSON_CreateString(xdag_hash2address(xfer.transactionBlockHash)));
-					
-					ret = cJSON_CreateArray();
-					cJSON_AddItemToArray(ret, item);
-				}
-			} else {
-				ctx->error_code = 1;
-				ctx->error_message = strdup("Password incorrect.");
-			}
+			ret = cJSON_CreateArray();
+			cJSON_AddItemToArray(ret, item);
+			return ret;
 		}
+		
+		return NULL;
 	}
-	
-	return ret;
 }
 
 #define rpc_register_func(command) xdag_rpc_service_register_procedure(&method_##command, #command, NULL);
@@ -352,9 +320,9 @@ int xdag_rpc_init_procedures(void)
 	rpc_register_func(pool);
 	rpc_register_func(block);
 	
-	/* register get_account, get_balance, do_xfer */
-	rpc_register_func(get_account);
-	rpc_register_func(get_balance);
-	rpc_register_func(do_xfer);
+	/* register xdag_get_account, xdag_get_balance, xdag_do_xfer */
+	rpc_register_func(xdag_get_account);
+	rpc_register_func(xdag_get_balance);
+	rpc_register_func(xdag_do_xfer);
 	return 0;
 }

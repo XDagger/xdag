@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <pthread.h>
 
 #include "../log.h"
@@ -52,12 +53,7 @@
 #include <poll.h>
 #endif
 
-#if !defined(_WIN32) && !defined(_WIN64)
-#define UNIX_SOCK  "unix_sock.dat"
-#else
-const uint32_t LOCAL_HOST_IP = 0x7f000001; // 127.0.0.1
-const uint32_t APPLICATION_DOMAIN_PORT = 7676;
-#endif
+const uint32_t RPC_SERVER_PORT = 7677; //default http json-rpc port 7677
 
 static struct xdag_rpc_procedure *g_procedures;
 static int g_procedure_count = 0;
@@ -285,12 +281,12 @@ static int rpc_handle_connection(struct xdag_rpc_connection* conn)
 	}
 }
 
-const uint32_t RPC_SERVER_PORT = 7677;
 #define BUFFER_SIZE 2048
 
 /* rpc service thread */
 static void *rpc_service_thread(void *arg)
 {
+	uint16_t rpc_port = *(uint16_t*)arg;
 	int rcvbufsize = BUFFER_SIZE;
 	char req_buffer[BUFFER_SIZE];
 	
@@ -308,8 +304,9 @@ static void *rpc_service_thread(void *arg)
 	
 	memset(&peeraddr, 0, sizeof(peeraddr));
 	peeraddr.sin_family = AF_INET;
-	peeraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	peeraddr.sin_port = htons(RPC_SERVER_PORT);
+//	peeraddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	peeraddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	peeraddr.sin_port = htons(rpc_port);
 	
 	if (bind(sock, (struct sockaddr*)&peeraddr, sizeof(peeraddr))) {
 		xdag_err("rpc server : socket bind failed. %s", strerror(errno));
@@ -341,7 +338,7 @@ static void *rpc_service_thread(void *arg)
 int xdag_rpc_service_init(void)
 {
 	pthread_t th;
-	if(pthread_create(&th, NULL, rpc_service_thread, NULL)) {
+	if(pthread_create(&th, NULL, rpc_service_thread, (void*)&RPC_SERVER_PORT)) {
 		return 1;
 	}
 	
