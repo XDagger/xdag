@@ -3,18 +3,17 @@
 #ifndef XDAG_LOG_H
 #define XDAG_LOG_H
 
-enum xdag_debug_levels
-{
-    XDAG_NOERROR,
-    XDAG_FATAL,
-    XDAG_CRITICAL,
-    XDAG_INTERNAL,
-    XDAG_ERROR,
-    XDAG_WARNING,
-    XDAG_MESSAGE,
-    XDAG_INFO,
-    XDAG_DEBUG,
-    XDAG_TRACE,
+enum xdag_debug_levels {
+	XDAG_NOERROR,
+	XDAG_FATAL,
+	XDAG_CRITICAL,
+	XDAG_INTERNAL,
+	XDAG_ERROR,
+	XDAG_WARNING,
+	XDAG_MESSAGE,
+	XDAG_INFO,
+	XDAG_DEBUG,
+	XDAG_TRACE,
 };
 
 extern int xdag_log(int level, const char *format, ...);

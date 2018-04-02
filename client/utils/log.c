@@ -52,7 +52,7 @@ size_t get_used_size(void)
 	} else if(g_write_index < g_read_index) {
 		return g_write_index + RING_BUFFER_SIZE - g_read_index;
 	} else {
-		return g_buffer_full?RING_BUFFER_SIZE:0;
+		return g_buffer_full ? RING_BUFFER_SIZE : 0;
 	}
 }
 
@@ -69,7 +69,7 @@ size_t put_log(const char* log, size_t size)
 		size = 0;
 		g_buffer_full = TRUE;
 	}
-	
+
 	if(freesize < size) {
 		size = freesize;
 		g_buffer_full = TRUE;
