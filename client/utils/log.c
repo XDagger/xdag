@@ -141,11 +141,10 @@ static void *xdag_log_writer_thread(void* data)
 		} else {
 			// ring buffer empty
 		}
-		
 	}
+
+	return 0;
 }
-
-
 
 int xdag_log(int level, const char *format, ...)
 {	
