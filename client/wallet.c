@@ -6,10 +6,10 @@
 #include <pthread.h>
 #include "crypt.h"
 #include "wallet.h"
-#include "log.h"
 #include "init.h"
 #include "transport.h"
-#include "../utils/utils.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 #define WALLET_FILE (g_xdag_testnet ? "wallet-testnet.dat" : "wallet.dat")
 

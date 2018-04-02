@@ -23,7 +23,7 @@
 #include "wallet.h"
 #include "sync.h"
 #include "transport.h"
-#include "log.h"
+#include "utils/log.h"
 #include "commands.h"
 
 #define MINERS_PWD             "minersgonnamine"

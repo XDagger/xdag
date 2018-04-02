@@ -34,11 +34,11 @@
     <Filter Include="win\sys">
       <UniqueIdentifier>{874b2b63-f358-4dea-b109-a761875c2512}</UniqueIdentifier>
     </Filter>
-    <Filter Include="utils">
-      <UniqueIdentifier>{71f09615-b936-42fb-b99c-61c593b206be}</UniqueIdentifier>
-    </Filter>
     <Filter Include="client\mining">
       <UniqueIdentifier>{44caefc7-4416-4100-b2e3-f6d413cc6242}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="client\utils">
+      <UniqueIdentifier>{71f09615-b936-42fb-b99c-61c593b206be}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -55,9 +55,6 @@
       <Filter>client</Filter>
     </ClCompile>
     <ClCompile Include="..\..\client\hash.c">
-      <Filter>client</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\client\log.c">
       <Filter>client</Filter>
     </ClCompile>
     <ClCompile Include="..\..\client\memory.c">
@@ -138,9 +135,6 @@
     <ClCompile Include="..\..\client\init.c">
       <Filter>client</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\utils\utils.c">
-      <Filter>utils</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\client\miner.c">
       <Filter>client\mining</Filter>
     </ClCompile>
@@ -149,6 +143,12 @@
     </ClCompile>
     <ClCompile Include="..\..\client\mining_common.c">
       <Filter>client\mining</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\utils\log.c">
+      <Filter>client\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\utils\utils.c">
+      <Filter>client\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -165,9 +165,6 @@
       <Filter>client</Filter>
     </ClInclude>
     <ClInclude Include="..\..\client\hash.h">
-      <Filter>client</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\client\log.h">
       <Filter>client</Filter>
     </ClInclude>
     <ClInclude Include="..\..\client\memory.h">
@@ -302,9 +299,6 @@
     <ClInclude Include="..\..\client\init.h">
       <Filter>client</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\utils\utils.h">
-      <Filter>utils</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\client\miner.h">
       <Filter>client\mining</Filter>
     </ClInclude>
@@ -313,6 +307,12 @@
     </ClInclude>
     <ClInclude Include="..\..\client\mining_common.h">
       <Filter>client\mining</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\utils\log.h">
+      <Filter>client\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\utils\utils.h">
+      <Filter>client\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

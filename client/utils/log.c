@@ -10,9 +10,9 @@
 #include <sys/stat.h>
 #include <semaphore.h>
 #include <fcntl.h>
-#include "client/system.h"
+#include "../system.h"
 #include "log.h"
-#include "client/init.h"
+#include "../init.h"
 #include "utils.h"
 
 #define ASYNC_LOG 1

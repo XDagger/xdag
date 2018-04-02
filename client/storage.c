@@ -6,10 +6,10 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "storage.h"
-#include "log.h"
 #include "init.h"
 #include "hash.h"
-#include "../utils/utils.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 #define STORAGE_DIR0            "storage%s"
 #define STORAGE_DIR0_ARGS(t)    (g_xdag_testnet ? "-testnet" : "")
@@ -405,7 +405,8 @@ static void *init_storage_add_block_thread(void *data)
 	struct init_storage_param *param = (struct init_storage_param *)data;
 	struct queue_item *item = NULL;
 	struct xdag_block *pbuffer[bufsize];
-	struct xdag_storage_sum s;
+	struct xdag_storage_sum storageSum;
+	storageSum.size = storageSum.sum = 0;
 	
 	uint64_t sum = 0, pos = 0;
 	int64_t i, j, k;
@@ -434,10 +435,10 @@ static void *init_storage_add_block_thread(void *data)
 		struct xdag_block *buffer = item->data;
 		
 		for (i = k = 0; i < todo; ++i, pos += sizeof(struct xdag_block)) {
-			s.size += sizeof(struct xdag_block);
+			storageSum.size += sizeof(struct xdag_block);
 //			if (buf[i].field[0].time >= start_time && buf[i].field[0].time < end_time) {
 				for (j = 0; j < sizeof(struct xdag_block) / sizeof(uint64_t); ++j) {
-					s.sum += ((uint64_t*)(buffer + i))[j];
+					storageSum.sum += ((uint64_t*)(buffer + i))[j];
 				}
 				pbuffer[k++] = buffer + i;
 //			}
