@@ -6,7 +6,7 @@
 #include "init.h"
 #include "address.h"
 #include "wallet.h"
-#include "log.h"
+#include "utils/log.h"
 #include "pool.h"
 #include "miner.h"
 #include "transport.h"

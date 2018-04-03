@@ -12,7 +12,6 @@
 #include "address.h"
 #include "block.h"
 #include "crypt.h"
-#include "log.h"
 #include "transport.h"
 #include "version.h"
 #include "wallet.h"
@@ -23,8 +22,9 @@
 #include "commands.h"
 #include "terminal.h"
 #include "memory.h"
-#include "../utils/utils.h"
-#include "../utils/json-rpc/rpc_service.h"
+#include "utils/log.h"
+#include "utils/utils.h"
+#include "json-rpc/rpc_service.h"
 
 char *g_coinname, *g_progname;
 #define coinname   g_coinname

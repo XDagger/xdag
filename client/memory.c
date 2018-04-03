@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "memory.h"
-#include "log.h"
+#include "utils/log.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 
