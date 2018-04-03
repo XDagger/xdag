@@ -24,8 +24,8 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
-#include "../log.h"
-#include "../../client/system.h"
+#include "../utils/log.h"
+#include "../system.h"
 #include "rpc_procedures.h"
 
 /*

@@ -28,16 +28,16 @@
 #include "cJSON_Utils.h"
 #include "rpc_wrapper.h"
 #include "rpc_service.h"
-#include "../../client/init.h"
-#include "../../client/block.h"
-#include "../../client/address.h"
-#include "../../client/commands.h"
-#include "../../client/wallet.h"
+#include "../init.h"
+#include "../block.h"
+#include "../address.h"
+#include "../commands.h"
+#include "../wallet.h"
 #include "../../dus/programs/dfstools/source/dfslib/dfslib_random.h"
 #include "../../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
 #include "../../dus/programs/dfstools/source/dfslib/dfslib_string.h"
 #include "../../dnet/dnet_main.h"
-#include "../log.h"
+#include "../utils/log.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #define poll WSAPoll

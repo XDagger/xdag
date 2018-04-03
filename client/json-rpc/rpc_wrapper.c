@@ -23,8 +23,8 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
-#include "../../client/commands.h"
-#include "../log.h"
+#include "../commands.h"
+#include "../utils/log.h"
 #include "cJSON.h"
 #include "cJSON_Utils.h"
 
