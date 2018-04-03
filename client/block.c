@@ -12,7 +12,7 @@
 #include "wallet.h"
 #include "storage.h"
 #include "transport.h"
-#include "log.h"
+#include "utils/log.h"
 #include "init.h"
 #include "sync.h"
 #include "pool.h"
@@ -20,7 +20,7 @@
 #include "memory.h"
 #include "address.h"
 #include "commands.h"
-#include "../utils/utils.h"
+#include "utils/utils.h"
 
 #define MAIN_CHAIN_PERIOD       (64 << 10)
 #define MAX_WAITING_MAIN        1

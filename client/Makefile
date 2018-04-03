@@ -6,7 +6,7 @@ dfstools = ../dus/programs/dfstools/source
 dfslib	 = $(dfstools)/dfslib
 dar		 = ../dus/programs/dar/source
 ldusinc	 = ../ldus/source/include/ldus
-utils    = ../utils
+utils    = ./utils
 
 sources = \
 	address.c					\

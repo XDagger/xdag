@@ -10,9 +10,9 @@
 #include <sys/stat.h>
 #include <semaphore.h>
 #include <fcntl.h>
-#include "client/system.h"
+#include "../system.h"
 #include "log.h"
-#include "client/init.h"
+#include "../init.h"
 #include "utils.h"
 
 #define ASYNC_LOG 1
@@ -52,7 +52,7 @@ size_t get_used_size(void)
 	} else if(g_write_index < g_read_index) {
 		return g_write_index + RING_BUFFER_SIZE - g_read_index;
 	} else {
-		return g_buffer_full?RING_BUFFER_SIZE:0;
+		return g_buffer_full ? RING_BUFFER_SIZE : 0;
 	}
 }
 
@@ -69,7 +69,7 @@ size_t put_log(const char* log, size_t size)
 		size = 0;
 		g_buffer_full = TRUE;
 	}
-	
+
 	if(freesize < size) {
 		size = freesize;
 		g_buffer_full = TRUE;
@@ -141,11 +141,10 @@ static void *xdag_log_writer_thread(void* data)
 		} else {
 			// ring buffer empty
 		}
-		
 	}
+
+	return 0;
 }
-
-
 
 int xdag_log(int level, const char *format, ...)
 {	

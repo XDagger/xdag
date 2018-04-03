@@ -25,7 +25,7 @@
 #include "sync.h"
 #include "transport.h"
 #include "wallet.h"
-#include "log.h"
+#include "utils/log.h"
 #include "commands.h"
 #include "mining_common.h"
 
