@@ -17,20 +17,11 @@
 #include <unistd.h>
 #endif
 
-#define XFER_MAX_IN				11
 #define Nfields(d) (2 + d->fieldsCount + 3 * d->keysCount + 2 * d->outsig)
 
 struct account_callback_data {
 	FILE *out;
 	int count;
-};
-
-struct xfer_callback_data {
-	struct xdag_field fields[XFER_MAX_IN + 1];
-	int keys[XFER_MAX_IN + 1];
-	xdag_amount_t todo, done, remains;
-	int fieldsCount, keysCount, outsig;
-	xdag_hash_t transactionBlockHash;
 };
 
 struct out_balances_data {
@@ -41,8 +32,6 @@ struct out_balances_data {
 // Function declarations
 void printHelp(FILE *out);
 int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
-int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
-long double amount2xdags(xdag_amount_t amount);
 long double hashrate(xdag_diff_t *diff);
 const char *get_state(void);
 void processAccountCommand(char *nextParam, FILE *out);
@@ -376,7 +365,7 @@ const char *get_state()
 	return states[g_xdag_state];
 }
 
-static xdag_amount_t xdags2amount(const char *str)
+xdag_amount_t xdags2amount(const char *str)
 {
 	long double sum;
 	if(sscanf(str, "%Lf", &sum) != 1 || sum <= 0) {

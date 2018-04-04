@@ -46,7 +46,12 @@ sources = \
 	$(dfstools)/lib/dfsrsa.c	\
 	$(dar)/lib/crc_c.c			\
 	$(utils)/utils.c			\
-	$(utils)/log.c			\
+	$(utils)/log.c				\
+	./json-rpc/cJSON.c	\
+	./json-rpc/cJSON_Utils.c		\
+	./json-rpc/rpc_procedures.c	\
+	./json-rpc/rpc_service.c		\
+	./json-rpc/rpc_wrapper.c		\
 
 
 headers = \
@@ -91,6 +96,11 @@ headers = \
 	$(ldusinc)/rbtree.h				\
 	$(utils)/utils.h				\
 	$(utils)/log.h					\
+	./json-rpc/cJSON.h	\
+	./json-rpc/cJSON_Utils.h		\
+	./json-rpc/rpc_procedures.h	\
+	./json-rpc/rpc_service.h		\
+	./json-rpc/rpc_wrapper.h		\
 
 
 flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
