@@ -3,11 +3,8 @@
 
 #include "CEditWalletAddrMine.h"
 
-
-
 CEditWalletAddrMine::CEditWalletAddrMine()
 {
-
 }
 
 BEGIN_MESSAGE_MAP(CEditWalletAddrMine, CEditWalletAddr)
@@ -16,8 +13,6 @@ BEGIN_MESSAGE_MAP(CEditWalletAddrMine, CEditWalletAddr)
 END_MESSAGE_MAP()
 
 // CEditWalletAddrMine message handlers
-
-
 LRESULT CEditWalletAddrMine::HideTooltip(WPARAM wParam, LPARAM lParam)
 {
 	if (ToolTip != NULL)
@@ -48,4 +43,3 @@ void CEditWalletAddrMine::OnLButtonDblClk(UINT nFlags, CPoint point)
 	GetClientRect(&rect);
 	ToolTip->Show(pt, &rect, Width, Height, "Copied!", 2);
 }
-
