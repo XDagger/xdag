@@ -19,12 +19,8 @@ protected:
     BOOL Create();
 	int CalculateRectSizeAndPosition(CPoint pt, int CharWidth, int CharHeight);
 
-    //void MakeVisisble();	
 	void CToolTip::OnLButtonDown(UINT nFlags, CPoint point);
 	void CToolTip::OnRButtonDown(UINT nFlags, CPoint point);
-
-
-
 
 // Overrides messages
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
