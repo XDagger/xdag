@@ -228,7 +228,6 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
     <ClInclude Include="CEditWalletAddrMine.h" />
     <ClInclude Include="PasswordDlg.h" />
     <ClInclude Include="ToolTip.h" />
-    <ClInclude Include="utils.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="xdagwallet.h" />
     <ClInclude Include="xdagwalletDlg.h" />
@@ -241,7 +240,6 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
     <ClCompile Include="CEditWalletAddrMine.cpp" />
     <ClCompile Include="PasswordDlg.cpp" />
     <ClCompile Include="ToolTip.cpp" />
-    <ClCompile Include="utils.c" />
     <ClCompile Include="xdagwallet.cpp" />
     <ClCompile Include="xdagwalletDlg.cpp" />
   </ItemGroup>
