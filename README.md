@@ -1,9 +1,8 @@
-The cheatcoin cryptocurrency
-============================
+The Dagger (XDAG) cryptocurrency
+================================
 
-- Official site: http://cheatcoin.atwebpages.com
-- Test net is running.
-- The launch of the main net is scheduled for January 5, 2018 at 22:45 GMT. 
+- Community site: https://xdag.io
+- The Main net was launched January 5, 2018 at 22:45 GMT.
 
 
 Principles:
@@ -11,7 +10,7 @@ Principles:
 
 - Directed acyclic graph (DAG), not blockchain
 - Block = transaction = address
-- Original main chain idea
+- Original idea and implementation
 - Mineable, no premine, no ICO
 - Mining new money every 64 seconds
 
@@ -27,39 +26,93 @@ Install and run (Linux):
 
 - Clone from the git repository:
 
-        $ git clone https://github.com/cheatoshin/cheatcoin.git
+        $ git clone https://github.com/XDagger/xdag
 
 - Make:
 
-        $ cd cheatcoin/cheatcoin
+        $ cd xdag/client
         $ make
 
-- Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool 52.5.32.68:13654
-  (for testnet the -t flag is also to be added):
+- Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool put.xdag.server.here:13654
 
-        $ ./cheatcoin -m 2 -d 52.5.32.68:13654
+        $ ./xdag -m 2 -d put.xdag.server.here:13654
         Enter random characters: [enter]
+        
+- Already have an account
+
+		Put your wallet.dat, dnet_key.dat and storage folder in this folder.
+		Then run below command
+		$./xdag -m 2 -d put.xdag.server.here:13654
 
 - Run terminal connected to the daemon in the same folder:
 
-        $ cheatcoin -i
-        cheatcoin> help
+        $ ./xdag -i
+        xdag> help
         [see help]
+
+- See if you are connected to the pool:
+
+        xdag> state
+        [see state]
 
 - See your balance:
 
-        cheatcoin> balance
+        xdag> balance
         [balance]
 
 - See your address:
 
-        cheatcoin> account
+        xdag> account
         [address]
 
 - Transfer funds to another address:
 
-        cheatcoin> xfer [amount] [address]
+        xdag> xfer [amount] [address]
+        
 
+Run (Mac OS):
+-----------------------
+
+- Install:
+
+		Download binary file from [release page](https://github.com/XDagger/xdag/releases).  
+		Unzip the zip file to what folder you want.
+
+- Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool put.xdag.server.here:13654
+
+		$ ./xdag -m 2 -d put.xdag.server.here:13654
+		Enter random characters: [enter]
+		
+- Already have an account
+
+		Put your wallet.dat, dnet_key.dat and storage folder in this folder.
+		Then run below command
+		$./xdag -m 2 -d put.xdag.server.here:13654
+
+- Run terminal connected to the daemon in the same folder:
+
+		$ ./xdag -i
+		xdag> help
+		[see help]
+
+- See if you are connected to the pool:
+
+		xdag> state
+		[see state]
+
+- See your balance:
+
+		xdag> balance
+		[balance]
+
+- See your address:
+
+		xdag> account
+		[address]
+
+- Transfer funds to another address:
+
+		xdag> xfer [amount] [address]
 
 Main chain idea:
 ---------------
@@ -73,11 +126,11 @@ _Difficulty_of_chain_ is sum of difficulties of blocks.
 _Main_chain_ is the distinct chain with maximum difficulty.
 Blocks in main chain are called _main_blocks_.
 
-Cheatcoins are mined in every main block.
-For first 4 years 1024 cheatcoins are mined in each main block.
-For second 4 years - 512 cheatcoins, and so on.
-So, maximum cheatcoins supply is approximately power(2,32).
-Each cheatcoin is equal to power(2,32) cheatoshi.
+Daggers are mined in every main block.
+For first 4 years 1024 XDAG are mined in each main block.
+For second 4 years - 512 XDAG, and so on.
+So, maximum XDAG supply is approximately power(2,32).
+Each dagger is equal to power(2,32) cheatoshino.
 Transaction is _valid_ if it is referenced by a main block.
 Valid transactions are strictly ordered depending on main chain and links order.
 Double spending is prohibited because only first concurrent transaction (by this order) is applied.
@@ -86,8 +139,9 @@ Double spending is prohibited because only first concurrent transaction (by this
 Structure of block:
 ------------------
 
-Each block has fixed size 512 bytes.
-Block consists of 16 fields each of whish has length 32 bytes.
+_The on-disk format will change in the future. Consider this the network protocol._
+Each block has a fixed size of 512 bytes.
+Block consists of 16 fields each of which has length 32 bytes.
 Field 0 is header, it consists of 4 quadwords:
 - transport-layer header
 - types of all 16 fields, 4 bits for one type
@@ -111,3 +165,11 @@ Transport layer:
 ---------------
 
 The dnet network is used as transport layer.
+_A new transport layer will come in the future._
+
+
+Maintainers:
+---------------
+
+Evgeniy ( XDAG: gKNRtSL1pUaTpzMuPMznKw49ILtP6qX3, BTC: 1Jonano4esJzZvqNtUY6NwfPme3EMpVs7n )  
+true ( rvKaJSbP9DE6sg6XetYtSpaK+2aDbUq8 )

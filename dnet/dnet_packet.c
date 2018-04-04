@@ -21,7 +21,7 @@
 #include "dnet_main.h"
 
 #define SENT_COMMANDS_MAX		256
-#define CHEATCOIN_PACKET_LEN	512
+#define XDAG_PACKET_LEN	512
 
 struct dnet_sent_command {
 	struct dnet_stream_id id;
@@ -31,9 +31,9 @@ struct dnet_sent_command {
 
 struct dnet_stream_id g_last_received_command_id  =  { { 0, 0, 0, 0} };
 struct dnet_sent_command *g_last_sent_command = 0;
-static int (*cheatcoin_callback)(void *packet, void *connection) = 0;
+static int (*xdag_callback)(void *packet, void *connection) = 0;
 
-int dnet_set_cheatcoin_callback(int (*callback)(void *, void *)) { cheatcoin_callback = callback; return 0; }
+int dnet_set_xdag_callback(int (*callback)(void *, void *)) { xdag_callback = callback; return 0; }
 
 int dnet_send_packet(struct dnet_packet *p, struct dnet_connection *conn) {
     char buf[512];
@@ -52,14 +52,14 @@ int dnet_send_packet(struct dnet_packet *p, struct dnet_connection *conn) {
     return 0;
 }
 
-struct cheatcoin_data {
+struct xdag_data {
 	struct dnet_packet *p;
 	struct dnet_connection *conn;
 	int nconn;
 };
 
-static int dnet_send_cheatcoin_callback(struct dnet_connection *conn, void *data) {
-	struct cheatcoin_data *d = (struct cheatcoin_data *)data;
+static int dnet_send_xdag_callback(struct dnet_connection *conn, void *data) {
+	struct xdag_data *d = (struct xdag_data *)data;
 	if (d->nconn < 0) {
 		if (conn != d->conn) dnet_send_packet(d->p, conn);
 	} else {
@@ -68,12 +68,12 @@ static int dnet_send_cheatcoin_callback(struct dnet_connection *conn, void *data
 	return 0;
 }
 
-void *dnet_send_cheatcoin_packet(void *block, void *connection_to) {
-	struct cheatcoin_data d;
+void *dnet_send_xdag_packet(void *block, void *connection_to) {
+	struct xdag_data d;
 	d.conn = (struct dnet_connection *)connection_to;
 	d.p = (struct dnet_packet *)block;
-	d.p->header.type = DNET_PKT_CHEATCOIN;
-	d.p->header.length = CHEATCOIN_PACKET_LEN;
+	d.p->header.type = DNET_PKT_XDAG;
+	d.p->header.length = XDAG_PACKET_LEN;
 	if (!d.conn) {
 		d.p->header.ttl = 1;
 		d.nconn = 0;
@@ -90,7 +90,7 @@ void *dnet_send_cheatcoin_packet(void *block, void *connection_to) {
 		d.p->header.ttl = 1;
 		d.nconn = INT_MAX;
 	}
-	if (d.nconn <= 0) dnet_traverse_connections(dnet_send_cheatcoin_callback, &d);
+	if (d.nconn <= 0) dnet_traverse_connections(dnet_send_xdag_callback, &d);
 	if (d.nconn > 0) dnet_send_packet(d.p, d.conn);
 	return (d.nconn > 0 && d.nconn < INT_MAX ? d.conn : 0);
 }
@@ -170,17 +170,17 @@ int dnet_process_packet(struct dnet_packet *p, struct dnet_connection *conn) {
 	case DNET_PKT_FORWARDED_UDP:
 	case DNET_PKT_FILE_OP:
 	    break;
-	case DNET_PKT_CHEATCOIN:
+	case DNET_PKT_XDAG:
 		{
 			uint8_t ttl = p->header.ttl;
 			int res;
-			if (p->header.length != CHEATCOIN_PACKET_LEN) return 0x19;
-			if (!cheatcoin_callback) return 0x29;
-			res = (*cheatcoin_callback)(p, conn);
+			if (p->header.length != XDAG_PACKET_LEN) return 0x19;
+			if (!xdag_callback) return 0x29;
+			res = (*xdag_callback)(p, conn);
 			if (res < 0) return 0x39;
 			if (res > 0 && ttl > 2) {
 				p->header.ttl = ttl;
-				dnet_send_cheatcoin_packet(p, (void *)((uintptr_t)conn | 1));
+				dnet_send_xdag_packet(p, (void *)((uintptr_t)conn | 1));
 			}
 		}
 		break;

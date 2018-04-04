@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\client\address.c" />
+    <ClCompile Include="..\..\client\block.c" />
+    <ClCompile Include="..\..\client\commands.c" />
+    <ClCompile Include="..\..\client\crypt.c" />
+    <ClCompile Include="..\..\client\hash.c" />
+    <ClCompile Include="..\..\client\log.c" />
+    <ClCompile Include="..\..\client\init.c" />
+    <ClCompile Include="..\..\client\memory.c" />
+    <ClCompile Include="..\..\client\netdb.c" />
+    <ClCompile Include="..\..\client\pool.c" />
+    <ClCompile Include="..\..\client\sha256.c" />
+    <ClCompile Include="..\..\client\storage.c" />
+    <ClCompile Include="..\..\client\sync.c" />
+    <ClCompile Include="..\..\client\terminal.c" />
+    <ClCompile Include="..\..\client\transport.c" />
+    <ClCompile Include="..\..\client\wallet.c" />
+    <ClCompile Include="..\..\dnet\dnet_command.c" />
+    <ClCompile Include="..\..\dnet\dnet_connection.c" />
+    <ClCompile Include="..\..\dnet\dnet_crypt.c" />
+    <ClCompile Include="..\..\dnet\dnet_database.c" />
+    <ClCompile Include="..\..\dnet\dnet_files.c" />
+    <ClCompile Include="..\..\dnet\dnet_log.c" />
+    <ClCompile Include="..\..\dnet\dnet_main.c" />
+    <ClCompile Include="..\..\dnet\dnet_packet.c" />
+    <ClCompile Include="..\..\dnet\dnet_stream.c" />
+    <ClCompile Include="..\..\dnet\dnet_tap.c" />
+    <ClCompile Include="..\..\dnet\dnet_threads.c" />
+    <ClCompile Include="..\..\dus\programs\dar\source\lib\crc_c.c" />
+    <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_crypt.c" />
+    <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_random.c" />
+    <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_string.c" />
+    <ClCompile Include="..\..\dus\programs\dfstools\source\lib\dfsrsa.c" />
+    <ClCompile Include="..\..\utils\utils.c" />
+    <ClCompile Include="..\system.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\client\address.h" />
+    <ClInclude Include="..\..\client\block.h" />
+    <ClInclude Include="..\..\client\commands.h" />
+    <ClInclude Include="..\..\client\crypt.h" />
+    <ClInclude Include="..\..\client\hash.h" />
+    <ClInclude Include="..\..\client\log.h" />
+    <ClInclude Include="..\..\client\init.h" />
+    <ClInclude Include="..\..\client\memory.h" />
+    <ClInclude Include="..\..\client\netdb.h" />
+    <ClInclude Include="..\..\client\pool.h" />
+    <ClInclude Include="..\..\client\sha256.h" />
+    <ClInclude Include="..\..\client\state.h" />
+    <ClInclude Include="..\..\client\storage.h" />
+    <ClInclude Include="..\..\client\sync.h" />
+    <ClInclude Include="..\..\client\system.h" />
+    <ClInclude Include="..\..\client\terminal.h" />
+    <ClInclude Include="..\..\client\transport.h" />
+    <ClInclude Include="..\..\client\version.h" />
+    <ClInclude Include="..\..\client\wallet.h" />
+    <ClInclude Include="..\..\dnet\dnet_command.h" />
+    <ClInclude Include="..\..\dnet\dnet_connection.h" />
+    <ClInclude Include="..\..\dnet\dnet_crypt.h" />
+    <ClInclude Include="..\..\dnet\dnet_database.h" />
+    <ClInclude Include="..\..\dnet\dnet_files.h" />
+    <ClInclude Include="..\..\dnet\dnet_history.h" />
+    <ClInclude Include="..\..\dnet\dnet_log.h" />
+    <ClInclude Include="..\..\dnet\dnet_main.h" />
+    <ClInclude Include="..\..\dnet\dnet_packet.h" />
+    <ClInclude Include="..\..\dnet\dnet_stream.h" />
+    <ClInclude Include="..\..\dnet\dnet_tap.h" />
+    <ClInclude Include="..\..\dnet\dnet_threads.h" />
+    <ClInclude Include="..\..\dnet\dthread.h" />
+    <ClInclude Include="..\..\dnet\system.h" />
+    <ClInclude Include="..\..\dus\programs\dar\source\include\crc.h" />
+    <ClInclude Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_crypt.h" />
+    <ClInclude Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_random.h" />
+    <ClInclude Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_string.h" />
+    <ClInclude Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_types.h" />
+    <ClInclude Include="..\..\dus\programs\dfstools\source\include\dfsrsa.h" />
+    <ClInclude Include="..\..\ldus\source\include\ldus\atomic.h" />
+    <ClInclude Include="..\..\ldus\source\include\ldus\list.h" />
+    <ClInclude Include="..\..\ldus\source\include\ldus\rbtree.h" />
+    <ClInclude Include="..\..\utils\utils.h" />
+    <ClInclude Include="..\arpa\inet.h" />
+    <ClInclude Include="..\netdb.h" />
+    <ClInclude Include="..\netinet\in.h" />
+    <ClInclude Include="..\sys\ioctl.h" />
+    <ClInclude Include="..\sys\resource.h" />
+    <ClInclude Include="..\sys\socket.h" />
+    <ClInclude Include="..\sys\time.h" />
+    <ClInclude Include="..\termios.h" />
+    <ClInclude Include="..\unistd.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\client\netdb-testnet.txt" />
+    <Text Include="..\..\client\netdb-white-testnet.txt" />
+    <Text Include="..\..\client\netdb-white.txt" />
+    <Text Include="..\..\client\netdb.txt" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{49C6CE86-04E0-4431-B55F-A6CE88268996}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>xdaglib</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(OPENSSL_ROOT)\include;$(PTHREAD_ROOT)\Include;$(SolutionDir);$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(OPENSSL_ROOT_32)\include;$(PTHREAD_ROOT)\Include;$(SolutionDir);$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(OPENSSL_ROOT_32)\include;$(PTHREAD_ROOT)\Include;$(SolutionDir);$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(OPENSSL_ROOT)\include;$(PTHREAD_ROOT)\Include;$(SolutionDir);$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_LIB;DFSTOOLS;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;SHA256_USE_OPENSSL_TXFM;SHA256_OPENSSL_MBLOCK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_LIB;DFSTOOLS;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_LIB;DFSTOOLS;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <DebugInformationFormat>None</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_LIB;DFSTOOLS;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;SHA256_USE_OPENSSL_TXFM;SHA256_OPENSSL_MBLOCK;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <DebugInformationFormat>None</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
