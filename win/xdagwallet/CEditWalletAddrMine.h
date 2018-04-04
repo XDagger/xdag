@@ -14,10 +14,10 @@ public:
 
 protected:
 
-	CToolTip* ToolTip;
-	
+	CToolTip* ToolTip = NULL;
+	afx_msg LRESULT CEditWalletAddrMine::HideTooltip(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
-	
+
 	DECLARE_MESSAGE_MAP()
 };
 
