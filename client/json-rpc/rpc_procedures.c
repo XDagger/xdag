@@ -53,8 +53,8 @@ const uint32_t APPLICATION_DOMAIN_PORT = 7676;
 #endif
 
 #define rpc_query_func(command) \
-cJSON * method_##command (struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version); \
-cJSON * method_##command (struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version) { \
+cJSON * method_xdag_##command (struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version); \
+cJSON * method_xdag_##command (struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version) { \
 	xdag_debug("rpc call method %s, version %s", #command, version); \
 	char *result = NULL; \
 	rpc_call_dnet_command(#command, "", &result); \
@@ -65,20 +65,15 @@ cJSON * method_##command (struct xdag_rpc_context * ctx, cJSON * params, cJSON *
 	return ret; \
 }
 
-rpc_query_func(account)
-rpc_query_func(balance)
 rpc_query_func(state)
 rpc_query_func(stats)
-rpc_query_func(miners)
-rpc_query_func(pool)
-rpc_query_func(block)
 
 /* account */
 /*
  request:
- "method":"get_account", "params":["N"], "id":1
- "jsonrpc":"2.0", "method":"get_account", "params":["N"], "id":1
- "version":"1.1", "method":"get_account", "params":["N"], "id":1
+ "method":"xdag_get_account", "params":["N"], "id":1
+ "jsonrpc":"2.0", "method":"xdag_get_account", "params":["N"], "id":1
+ "version":"1.1", "method":"xdag_get_account", "params":["N"], "id":1
  
  reponse:
  "result":[{"address":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "balance":"10.111111", "key":"0"}], "error":null, "id":1
@@ -155,9 +150,9 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
 /* balance */
 /*
  request:
- "method":"get_balance", "params":["A"], "id":1
- "jsonrpc":"2.0", "method":"account", "params":["A"], "id":1
- "version":"1.1", "method":"account", "params":["A"], "id":1
+ "method":"xdag_get_balance", "params":["A"], "id":1
+ "jsonrpc":"2.0", "method":"xdag_get_balance", "params":["A"], "id":1
+ "version":"1.1", "method":"xdag_get_balance", "params":["A"], "id":1
  
  reponse:
  "result":[{"balance":"10.111111"}], "error":null, "id":1
@@ -220,9 +215,9 @@ cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON * params, c
 /* xfer */
 /*
  request:
- "method":"do_xfer", "params":[{"amount":"1.0", "address":"AAAAAAAAAAAAAAAAA"}], "id":1
- "jsonrpc":"2.0", "method":"do_xfer", "params":["S","A","sign"], "id":1
- "version":"1.1", "method":"do_xfer", "params":["S","A","sign"], "id":1
+ "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"AAAAAAAAAAAAAAAAA"}], "id":1
+ "jsonrpc":"2.0", "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"AAAAAAAAAAAAAAAAA"}], "id":1
+ "version":"1.1", "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"AAAAAAAAAAAAAAAAA"}], "id":1
  
  reponse:
  "result":[{"block":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}], "error":null, "id":1
@@ -312,13 +307,8 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON * params, cJSON
 int xdag_rpc_init_procedures(void)
 {
 	/* register query func */
-	rpc_register_func(account);
-	rpc_register_func(balance);
-	rpc_register_func(state);
-	rpc_register_func(stats);
-	rpc_register_func(miners);
-	rpc_register_func(pool);
-	rpc_register_func(block);
+	rpc_register_func(xdag_state);
+	rpc_register_func(xdag_stats);
 	
 	/* register xdag_get_account, xdag_get_balance, xdag_do_xfer */
 	rpc_register_func(xdag_get_account);
