@@ -9,9 +9,10 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <semaphore.h>
-#include "system.h"
+#include <fcntl.h>
+#include "../system.h"
 #include "log.h"
-#include "init.h"
+#include "../init.h"
 #include "utils.h"
 
 #define ASYNC_LOG 1
@@ -21,13 +22,21 @@
 #define MAX_POLL_SIZE (RING_BUFFER_SIZE - 4)
 #define SEM_LOG_WRITER "/xdaglogwritersem"
 
+typedef unsigned char boolean;
+#ifndef FALSE
+#   define FALSE (0x0)
+#endif
+#ifndef TRUE
+#   define TRUE (0x1)
+#endif
+
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int log_level = XDAG_INFO;
 
 static char g_ring_buffer[RING_BUFFER_SIZE] = {0};
 static size_t g_write_index = 0;
 static size_t g_read_index = 0;
-static boolean_t g_buffer_full = FALSE;
+static boolean g_buffer_full = FALSE;
 static sem_t *writer_notice_sem = NULL;
 static char log_file_path[1024] = {0};
 
@@ -43,7 +52,7 @@ size_t get_used_size(void)
 	} else if(g_write_index < g_read_index) {
 		return g_write_index + RING_BUFFER_SIZE - g_read_index;
 	} else {
-		return g_buffer_full?RING_BUFFER_SIZE:0;
+		return g_buffer_full ? RING_BUFFER_SIZE : 0;
 	}
 }
 
@@ -60,7 +69,7 @@ size_t put_log(const char* log, size_t size)
 		size = 0;
 		g_buffer_full = TRUE;
 	}
-	
+
 	if(freesize < size) {
 		size = freesize;
 		g_buffer_full = TRUE;
@@ -132,11 +141,10 @@ static void *xdag_log_writer_thread(void* data)
 		} else {
 			// ring buffer empty
 		}
-		
 	}
+
+	return 0;
 }
-
-
 
 int xdag_log(int level, const char *format, ...)
 {	

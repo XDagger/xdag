@@ -24,7 +24,6 @@
     <ClCompile Include="..\..\client\commands.c" />
     <ClCompile Include="..\..\client\crypt.c" />
     <ClCompile Include="..\..\client\hash.c" />
-    <ClCompile Include="..\..\client\log.c" />
     <ClCompile Include="..\..\client\init.c" />
     <ClCompile Include="..\..\client\memory.c" />
     <ClCompile Include="..\..\client\miner.c" />
@@ -36,6 +35,8 @@
     <ClCompile Include="..\..\client\sync.c" />
     <ClCompile Include="..\..\client\terminal.c" />
     <ClCompile Include="..\..\client\transport.c" />
+    <ClCompile Include="..\..\client\utils\log.c" />
+    <ClCompile Include="..\..\client\utils\utils.c" />
     <ClCompile Include="..\..\client\wallet.c" />
     <ClCompile Include="..\..\dnet\dnet_command.c" />
     <ClCompile Include="..\..\dnet\dnet_connection.c" />
@@ -53,7 +54,6 @@
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_random.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_string.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\lib\dfsrsa.c" />
-    <ClCompile Include="..\..\utils\utils.c" />
     <ClCompile Include="..\system.c" />
   </ItemGroup>
   <ItemGroup>
@@ -62,7 +62,6 @@
     <ClInclude Include="..\..\client\commands.h" />
     <ClInclude Include="..\..\client\crypt.h" />
     <ClInclude Include="..\..\client\hash.h" />
-    <ClInclude Include="..\..\client\log.h" />
     <ClInclude Include="..\..\client\init.h" />
     <ClInclude Include="..\..\client\memory.h" />
     <ClInclude Include="..\..\client\miner.h" />
@@ -76,6 +75,8 @@
     <ClInclude Include="..\..\client\system.h" />
     <ClInclude Include="..\..\client\terminal.h" />
     <ClInclude Include="..\..\client\transport.h" />
+    <ClInclude Include="..\..\client\utils\log.h" />
+    <ClInclude Include="..\..\client\utils\utils.h" />
     <ClInclude Include="..\..\client\version.h" />
     <ClInclude Include="..\..\client\wallet.h" />
     <ClInclude Include="..\..\dnet\dnet_command.h" />
@@ -101,7 +102,6 @@
     <ClInclude Include="..\..\ldus\source\include\ldus\atomic.h" />
     <ClInclude Include="..\..\ldus\source\include\ldus\list.h" />
     <ClInclude Include="..\..\ldus\source\include\ldus\rbtree.h" />
-    <ClInclude Include="..\..\utils\utils.h" />
     <ClInclude Include="..\arpa\inet.h" />
     <ClInclude Include="..\netdb.h" />
     <ClInclude Include="..\netinet\in.h" />

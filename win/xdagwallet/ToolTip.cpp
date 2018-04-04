@@ -1,8 +1,6 @@
 #include "ToolTip.h"
 
 BEGIN_MESSAGE_MAP(CToolTip, CFrameWnd)
-	ON_WM_LBUTTONDOWN()
-	ON_WM_RBUTTONDOWN()
 	ON_WM_TIMER()
 	ON_WM_CREATE()
 	ON_WM_PAINT()

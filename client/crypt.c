@@ -12,7 +12,7 @@
 #include <openssl/ecdsa.h>
 #include "crypt.h"
 #include "transport.h"
-#include "log.h"
+#include "utils/log.h"
 #include "system.h"
 
 static EC_GROUP *group;
