@@ -10,15 +10,10 @@ CEditWalletAddrMine::CEditWalletAddrMine()
 
 }
 
-
 BEGIN_MESSAGE_MAP(CEditWalletAddrMine, CEditWalletAddr)
 	ON_WM_LBUTTONDBLCLK()
 	ON_MESSAGE(WM_HIDE_TOOLTIP, &CEditWalletAddrMine::HideTooltip)
 END_MESSAGE_MAP()
-
-
-
-
 
 // CEditWalletAddrMine message handlers
 
