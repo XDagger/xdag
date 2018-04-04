@@ -94,7 +94,7 @@ int rpc_account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xda
 	
 	cJSON* address = cJSON_CreateString(xdag_hash2address(hash));
 	char str[128] = {0};
-	sprintf(str, "%.9Lf",  xdag_amount2xdag(amount) + (long double)xdag_amount2cheato(amount) / 1000000000);
+	sprintf(str, "%.9Lf",  amount2xdags(amount));
 	cJSON* balance = cJSON_CreateString(str);
 	sprintf(str, "%d", n_our_key);
 	cJSON* key = cJSON_CreateString(str);
