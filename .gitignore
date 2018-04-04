@@ -1,0 +1,22 @@
+# MSVC build stuff
+Release/
+Debug/
+.vs/
+
+/win/xdag.VC.db
+/win/xdag.VC.VC.opendb
+/win/xdag/xdag.vcxproj.user
+/win/xdagwallet/xdagwallet.vcxproj.user
+/win/ipch
+/win/xdagwallet/xdagwallet.aps
+/win/xdaglib/xdaglib.vcxproj.user
+
+#mac project
+xcuserdata
+mac/xdag.xcodeproj/project.xcworkspace
+
+#autotools
+.deps
+autoscan.log
+*.o
+.dirstamp

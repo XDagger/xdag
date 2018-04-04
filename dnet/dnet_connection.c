@@ -1,4 +1,4 @@
-/* dnet: connections; T11.253-T13.778; $DVS:time$ */
+/* dnet: connections; T11.253-T13.852; $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <sys/socket.h>
 #if defined(_WIN32) || defined(_WIN64)
 #include <sys/socket.h>
 #if defined(_WIN64)
@@ -58,20 +59,19 @@ static ssize_t dnet_conn_read(void *private_data, void *buf, size_t size) {
 
 static ssize_t dnet_conn_write(void *private_data, void *buf, size_t size) {
     struct dnet_connection *conn = (struct dnet_connection *)private_data;
-    ssize_t res = 0, done;
+    ssize_t res = 0;
 	if (conn->socket < 0) return -1l;
     while (size) {
 		struct pollfd fd;
 		fd.fd = conn->socket;
 		fd.events = POLLOUT;
 		fd.revents = 0;
-		if (poll(&fd, 1, 16000) != 1 || fd.revents != POLLOUT) {
-			dnet_log_printf("dnet: poll failed for socket %d\n", conn->socket);
-			close(conn->socket);
-			conn->socket = -1;
+		if (poll(&fd, 1, 16000) != 1 || !(fd.revents & POLLOUT)) {
+			dnet_log_printf("dnet: write poll failed for socket %d\n", conn->socket);
+			shutdown(conn->socket, SHUT_RDWR);
 			return -1l;
 		}
-		done = write(conn->socket, buf, size);
+		ssize_t done = write(conn->socket, buf, size);
         if (done < 0) break;
         res += done;
         size -= done;
@@ -90,19 +90,17 @@ static inline ssize_t dnet_socket_read(int fd, void *buf, size_t size) {
 #ifdef __LDuS__
     return read(fd, buf, size);
 #else
-    struct timeval timeout = { DNET_UPDATE_PERIOD * 3 / 2, 0 };
-    while (timeout.tv_sec || timeout.tv_usec) {
-        fd_set rset;
-        FD_ZERO(&rset);
-        FD_SET(fd, &rset);
-        if (select(fd + 1, &rset, 0, 0, &timeout) < 0) {
-            dnet_log_printf("dnet: select returns an error, %s", strerror(errno));
-        }
-        if (FD_ISSET(fd, &rset)) {
+	time_t te = time(0) + DNET_UPDATE_PERIOD * 3 / 2, t;
+	while ((t = time(0)) < te) {
+		struct pollfd pfd;
+		pfd.fd = fd;
+		pfd.events = POLLIN;
+		if (poll(&pfd, 1, (te - t) * 1000) == 1 && (pfd.revents & POLLIN)) {
             return read(fd, buf, size);
         }
     }
-    return -1;
+	dnet_log_printf("dnet: read poll failed for socket %d\n", fd);
+	return -1;
 #endif
 }
 
@@ -132,7 +130,11 @@ int dnet_connection_main(struct dnet_connection *conn) {
 			thread->conn.socket = -1;
 			thread->type = DNET_THREAD_EXCHANGER;
 			res = dnet_thread_create(thread);
-			if (res) { thread->to_remove = 1; res = 4; goto end; }
+			if (res) {
+				thread->to_remove = 1;
+				res = 4;
+				goto end;
+			}
 		}
     }
 	res = (int)size * 10 + 4;

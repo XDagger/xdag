@@ -19,6 +19,10 @@
 #include "dnet_command.h"
 #include "dnet_main.h"
 
+#if defined (__MACOS__) || defined (__APPLE__)
+#define SIGPOLL SIGIO
+#endif
+
 //#define NO_DNET_FORK
 
 extern int getdtablesize(void);
@@ -88,23 +92,12 @@ static void angelize(void) {
 #endif
 }
 
-#if defined(QDNET) || defined(CHEATCOIN)
 int dnet_init(int argc, char **argv) {
-#else
-int main(int argc, char **argv) {
-#endif
 	char command[DNET_COMMAND_MAX];
     struct dnet_output out;
     struct dnet_thread *thread;
     int i = 0, err = 0, res, is_daemon = 0, is_server = 0;
     const char *mess = 0;
-
-#if !defined(CHEATCOIN)
-	if (argc <= 1 || (argv[1][0] == '-' && argv[1][1] != 'd' && argv[1][1] != 's')) {
-		printf("Usage: %s [-d] [-s our_addr:our_port] [remote_addr:remote_port...]\n", argv[0]);
-		return 1;
-	}
-#endif
 
     if (system_init() || dnet_threads_init() || dnet_hosts_init()) {
 		err = 4; mess = "initializing error"; goto end;
@@ -117,14 +110,8 @@ int main(int argc, char **argv) {
 #endif
 			printf("%s %s%s.\n", argv[0], DNET_VERSION, (is_daemon ? ", running as daemon" : ""));
 			if ((err = dnet_crypt_init(DNET_VERSION))) {
-#ifdef CHEATCOIN
 				sleep(3); printf("Password incorrect.\n");
 				return err;
-#else
-				err *= 10;
-				if (err < 0) mess = "private and public keys do not match, running in blind mode";
-				goto end;
-#endif
 			}
 		work:
 			if (is_daemon) daemonize();
@@ -169,19 +156,10 @@ int main(int argc, char **argv) {
 			}
 			strcpy(command, argv[i++]);
 		} else if (is_daemon) {
-#if defined(CHEATCOIN)
 			return 0;
-#else
-			sleep(100);
-			continue;
-#endif
+
 		} else {
-#if defined(QDNET) || defined(CHEATCOIN)
             return 0;
-#else
-			printf("dnet> "); fflush(stdout);
-			fgets(command, DNET_COMMAND_MAX, stdin);
-#endif
 		}
     	if (dnet_command(command, &out) < 0) break;
     }
