@@ -41,7 +41,7 @@ int CToolTip::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	LONG RectWidth = rect.right;
 	/****!!	 Possible overflow	!!****/
-	LONG RectHeight = (LONG)(rect.bottom * 0.5);
+	LONG RectHeight = (LONG)(rect.bottom * 1.1);
 	/*********************************/
 
 	rectText.left = 0;
@@ -115,18 +115,14 @@ BOOL CToolTip::Create()
 		PCSTR pstrOwnerClass = ::AfxRegisterWndClass(0);
 		BOOL bResult = CFrameWnd::Create(pstrOwnerClass, NULL, WS_OVERLAPPED, rect);
 	}
-	else 
-	{
-		ShowWindow(SW_HIDE);
-	}
 
 	int CaptionBarSize = ::GetSystemMetrics(SM_CYCAPTION);
-	int nVerticalBorderSize = ::GetSystemMetrics(SM_CYSIZEFRAME);
+	int VerticalBorderSize = ::GetSystemMetrics(SM_CYSIZEFRAME);
 	
 	SetWindowPos(
 		&wndTopMost,
 		rect.left,
-		(rect.top -CaptionBarSize -nVerticalBorderSize),
+		(rect.top -CaptionBarSize -VerticalBorderSize),
 		rect.right,		//Width
 		rect.bottom,	//Height
 		SWP_SHOWWINDOW | SWP_NOACTIVATE
@@ -142,9 +138,9 @@ int CToolTip::CalculateRectSizeAndPosition(CPoint pt, int CharWidth, int CharHei
 
 	/****!!	 Possible overflow	!!****/
 	int TextLength = strMessage.GetLength() * CharWidth;
-	int Height = (int)(CharHeight*2.5);
+	int Height = (int)(CharHeight);
 	RectLeft = (int)pt.x;
-	RectWidth = (int)(TextLength * 1.2);
+	RectWidth = (int)(TextLength * 1.1);
 	RectTop = (int)pt.y;
 	/*********************************/
 
@@ -153,7 +149,7 @@ int CToolTip::CalculateRectSizeAndPosition(CPoint pt, int CharWidth, int CharHei
 	return 0;
 }
 
-
+//Entry Point
 int CToolTip::Show(CPoint pt, LPRECT lpRect,
 	int CharWidth, int CharHeight, CString strMessage, UINT Secs)
 {
@@ -174,36 +170,27 @@ int CToolTip::Show(CPoint pt, LPRECT lpRect,
 
 void CToolTip::OnRButtonDown(UINT nFlags, CPoint point)
 {
-	KillTimer(ID_TIMER_POPUP);
-	ShowWindow(SW_HIDE);
-	UpdateWindow();
+	Hide();
 }
 
 void CToolTip::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	KillTimer(ID_TIMER_POPUP);
-	ShowWindow(SW_HIDE);
-	UpdateWindow();
+	Hide();
 }
 
 void CToolTip::OnActivateApp(BOOL bActive, DWORD hTask)
 {
-	KillTimer(ID_TIMER_POPUP);
-	ShowWindow(SW_HIDE);
-	UpdateWindow();
+	Hide();
 }
 
 void CToolTip::OnTimer(UINT_PTR nIDEvent)
 {
-	KillTimer(ID_TIMER_POPUP);
-	ShowWindow(SW_HIDE);
-	UpdateWindow();
+	Hide();
 }
 
 void CToolTip::Hide()
 {
 	KillTimer(ID_TIMER_POPUP);
 	ShowWindow(SW_HIDE);
-	UpdateWindow();
 }
 
