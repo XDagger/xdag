@@ -40,9 +40,7 @@ int CToolTip::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	GetClientRect(&t_Rect);
 
 	LONG RectWidth = rect.right;
-	/****!!	 Possible overflow	!!****/
-	LONG RectHeight = (LONG)(rect.bottom * 1.1);
-	/*********************************/
+	LONG RectHeight = rect.bottom;
 
 	rectText.left = 0;
 	rectText.right = RectWidth;
@@ -138,7 +136,7 @@ int CToolTip::CalculateRectSizeAndPosition(CPoint pt, int CharWidth, int CharHei
 
 	/****!!	 Possible overflow	!!****/
 	int TextLength = strMessage.GetLength() * CharWidth;
-	int Height = (int)(CharHeight);
+	int Height = (int)(CharHeight*1.1);
 	RectLeft = (int)pt.x;
 	RectWidth = (int)(TextLength * 1.1);
 	RectTop = (int)pt.y;
