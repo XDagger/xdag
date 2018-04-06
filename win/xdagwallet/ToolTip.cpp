@@ -16,11 +16,6 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 ***************************************************************************/
 
-/********* Overflows checking will not be stressed ********/
-/********* since the applications are not critical.  ******/
-
-
-
 #include "ToolTip.h"
 
 BEGIN_MESSAGE_MAP(CToolTip, CFrameWnd)
