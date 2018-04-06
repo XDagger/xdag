@@ -30,8 +30,8 @@
 #if !defined(_WIN32) && !defined(_WIN64)
 #define UNIX_SOCK  "unix_sock.dat"
 #else
-const uint32_t LOCAL_HOST_IP = 0x7f000001; // 127.0.0.1
-const uint32_t APPLICATION_DOMAIN_PORT = 7676;
+#define LOCAL_HOST_IP           0x7f000001 // 127.0.0.1
+#define APPLICATION_DOMAIN_PORT 7676
 #endif
 
 
