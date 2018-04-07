@@ -33,7 +33,7 @@ END_MESSAGE_MAP()
 // Constructor
 CToolTip::CToolTip()
 {
-	rgnRect.CreateRectRgn(0,0,0,0);
+	_rgnRect.CreateRectRgn(0,0,0,0);
 }
 
 //Destructor
@@ -51,16 +51,16 @@ int CToolTip::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	
 	ModifyStyle(WS_CAPTION, 0);
 
-	LONG RectWidth = rect.right;
-	LONG RectHeight = rect.bottom;
+	LONG rectWidth = _rect.right;
+	LONG rectHeight = _rect.bottom;
 
-	rectText.left = 0;
-	rectText.right = RectWidth;
-	rectText.top = 0;
-	rectText.bottom = RectHeight;
+	_rectText.left = 0;
+	_rectText.right = rectWidth;
+	_rectText.top = 0;
+	_rectText.bottom = rectHeight;
 
 	/****!!	 Possible overflow	!!****/
-	rgnRect.SetRectRgn(0, 0, (int)RectWidth, (int)RectHeight);
+	_rgnRect.SetRectRgn(0, 0, (int)rectWidth, (int)rectHeight);
 	/*********************************/
 
 	return 0;
@@ -77,13 +77,13 @@ void CToolTip::OnPaint()
 	COLORREF crBackground = ::GetSysColor(COLOR_INFOBK);
     	brFillBrush.CreateSolidBrush(crBackground);
 
-    	dc.FillRgn(&rgnRect, &brFillBrush);
-    	dc.FrameRgn(&rgnRect, &brOutlineBrush, 1, 1);
+    	dc.FillRgn(&_rgnRect, &brFillBrush);
+    	dc.FrameRgn(&_rgnRect, &brOutlineBrush, 1, 1);
 
    	int nBkMode = dc.SetBkMode(TRANSPARENT);
     	COLORREF clrPrevious =  dc.SetTextColor(RGB(0, 0, 0));
 
-    	dc.DrawText(strMessage, rectText, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    	dc.DrawText(_strMessage, _rectText, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
     	dc.SetBkColor(nBkMode);
     	dc.SetTextColor(clrPrevious);
 	
@@ -122,7 +122,7 @@ BOOL CToolTip::Create()
 {
 	if (GetSafeHwnd() == NULL) {
 		PCSTR pstrOwnerClass = ::AfxRegisterWndClass(0);
-		BOOL bResult = CFrameWnd::Create(pstrOwnerClass, NULL, WS_OVERLAPPED, rect);
+		BOOL bResult = CFrameWnd::Create(pstrOwnerClass, NULL, WS_OVERLAPPED, _rect);
 	}
 
 	int CaptionBarSize = ::GetSystemMetrics(SM_CYCAPTION);
@@ -130,10 +130,10 @@ BOOL CToolTip::Create()
 	
 	SetWindowPos(
 		&wndTopMost,
-		rect.left,
-		(rect.top -CaptionBarSize -VerticalBorderSize),
-		rect.right,		//Width
-		rect.bottom,	//Height
+		_rect.left,
+		(_rect.top -CaptionBarSize -VerticalBorderSize),
+		_rect.right,	//Width
+		_rect.bottom,	//Height
 		SWP_SHOWWINDOW | SWP_NOACTIVATE
 	);
 	
@@ -146,7 +146,7 @@ int CToolTip::CalculateRectSizeAndPosition(CPoint pt, int CharWidth, int CharHei
 	int RectLeft, RectWidth, RectTop, RectHeight;
 
 	/****!!	 Possible overflow	!!****/
-	int TextLength = strMessage.GetLength() * CharWidth;
+	int TextLength = _strMessage.GetLength() * CharWidth;
 	int Height = (int)(CharHeight*1.1);
 	RectLeft = (int)pt.x;
 	RectWidth = (int)(TextLength * 1.1);
@@ -154,7 +154,7 @@ int CToolTip::CalculateRectSizeAndPosition(CPoint pt, int CharWidth, int CharHei
 	/*********************************/
 
 	RectHeight = Height;
-	rect=CRect(RectLeft, RectTop, RectWidth, RectHeight);
+	_rect=CRect(RectLeft, RectTop, RectWidth, RectHeight);
 	return 0;
 }
 
@@ -168,7 +168,7 @@ int CToolTip::Show(CPoint pt, LPRECT lpRect,
 		return -1;
 	}
 
-	this->strMessage = strMessage;
+	_strMessage = strMessage;
 	CalculateRectSizeAndPosition(pt, CharWidth, CharHeight);
 	Create();
 

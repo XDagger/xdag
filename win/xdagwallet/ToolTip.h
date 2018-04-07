@@ -51,9 +51,9 @@ protected:
     virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 
 // Attributes
-	CRect   rectText; 
-    CString strMessage;
-	CRgn    rgnRect;   // The region of the rectangle  
-	CRect	rect;
+	CRect   _rectText; 
+    CString _strMessage;
+	CRgn    _rgnRect;   // The region of the rectangle  
+	CRect	_rect;
     CWnd    m_wndInvisibleParent; // invisible taskbar window to contain the tooltip
 };

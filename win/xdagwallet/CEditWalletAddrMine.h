@@ -14,8 +14,8 @@ public:
 
 protected:
 
-	CToolTip* ToolTip = NULL;
-	afx_msg LRESULT CEditWalletAddrMine::HideTooltip(WPARAM wParam, LPARAM lParam);
+	CToolTip* _ToolTip = NULL;
+	afx_msg LRESULT HideTooltip(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 
 	DECLARE_MESSAGE_MAP()
