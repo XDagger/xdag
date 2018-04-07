@@ -68,19 +68,19 @@ int CToolTip::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void CToolTip::OnPaint() 
 {
-	CPaintDC dc(this); 
+		CPaintDC dc(this); 
 
-	CBrush brOutlineBrush;
+		CBrush brOutlineBrush;
     	brOutlineBrush.CreateSolidBrush(RGB(0, 0, 0)); 
    
     	CBrush brFillBrush;
-	COLORREF crBackground = ::GetSysColor(COLOR_INFOBK);
+		COLORREF crBackground = ::GetSysColor(COLOR_INFOBK);
     	brFillBrush.CreateSolidBrush(crBackground);
 
     	dc.FillRgn(&_rgnRect, &brFillBrush);
     	dc.FrameRgn(&_rgnRect, &brOutlineBrush, 1, 1);
 
-   	int nBkMode = dc.SetBkMode(TRANSPARENT);
+   		int nBkMode = dc.SetBkMode(TRANSPARENT);
     	COLORREF clrPrevious =  dc.SetTextColor(RGB(0, 0, 0));
 
     	dc.DrawText(_strMessage, _rectText, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
@@ -104,8 +104,7 @@ BOOL CToolTip::PreCreateWindow(CREATESTRUCT& cs)
         PCSTR pstrOwnerClass = ::AfxRegisterWndClass(0);
        
         BOOL bError = m_wndInvisibleParent.CreateEx(0,pstrOwnerClass,  _T(""), WS_POPUP,
-			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-			NULL, 0);
+			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, 0);
 
         if (bError == FALSE)
         {
@@ -120,9 +119,10 @@ BOOL CToolTip::PreCreateWindow(CREATESTRUCT& cs)
 
 BOOL CToolTip::Create()
 {
+	BOOL bResult = TRUE;
 	if (GetSafeHwnd() == NULL) {
 		PCSTR pstrOwnerClass = ::AfxRegisterWndClass(0);
-		BOOL bResult = CFrameWnd::Create(pstrOwnerClass, NULL, WS_OVERLAPPED, _rect);
+		bResult = CFrameWnd::Create(pstrOwnerClass, NULL, WS_OVERLAPPED, _rect);
 	}
 
 	int CaptionBarSize = ::GetSystemMetrics(SM_CYCAPTION);
@@ -137,7 +137,7 @@ BOOL CToolTip::Create()
 		SWP_SHOWWINDOW | SWP_NOACTIVATE
 	);
 	
-    return TRUE;
+    return bResult;
 }
 
 
@@ -170,9 +170,18 @@ int CToolTip::Show(CPoint pt, LPRECT lpRect,
 
 	_strMessage = strMessage;
 	CalculateRectSizeAndPosition(pt, CharWidth, CharHeight);
-	Create();
 
-	SetTimer(ID_TIMER_POPUP, (Secs * 1000), NULL);
+	if (Create() != TRUE) 
+	{
+		fprintf(stderr, "Cannot create the frame window associated with the CFrameWnd\n");
+		return -1;
+	}
+
+	if (SetTimer(ID_TIMER_POPUP, (Secs * 1000), NULL) == NULL)
+	{
+		fprintf(stderr, "Cannot set the timer to hide the tooltip\n");
+		return -1;
+	}
 
 	return 0;
 }
