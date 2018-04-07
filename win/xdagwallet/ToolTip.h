@@ -40,8 +40,8 @@ protected:
     BOOL Create();
 	int CalculateRectSizeAndPosition(CPoint pt, int CharWidth, int CharHeight);
 
-	void CToolTip::OnLButtonDown(UINT nFlags, CPoint point);
-	void CToolTip::OnRButtonDown(UINT nFlags, CPoint point);
+	void OnLButtonDown(UINT nFlags, CPoint point);
+	void OnRButtonDown(UINT nFlags, CPoint point);
 
 // Overrides messages
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
@@ -52,8 +52,8 @@ protected:
 
 // Attributes
 	CRect   _rectText; 
-    	CString _strMessage;
+    CString _strMessage;
 	CRgn    _rgnRect;   // The region of the rectangle  
 	CRect	_rect;
-    	CWnd    m_wndInvisibleParent; // invisible taskbar window to contain the tooltip
+    CWnd    m_wndInvisibleParent; // invisible taskbar window to contain the tooltip
 };
