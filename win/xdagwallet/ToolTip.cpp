@@ -51,9 +51,6 @@ int CToolTip::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	
 	ModifyStyle(WS_CAPTION, 0);
 
-	CRect t_Rect;
-	GetClientRect(&t_Rect);
-
 	LONG RectWidth = rect.right;
 	LONG RectHeight = rect.bottom;
 
@@ -71,25 +68,24 @@ int CToolTip::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void CToolTip::OnPaint() 
 {
-	
 	CPaintDC dc(this); 
 
 	CBrush brOutlineBrush;
-    brOutlineBrush.CreateSolidBrush(RGB(0, 0, 0)); 
+    	brOutlineBrush.CreateSolidBrush(RGB(0, 0, 0)); 
    
-    CBrush brFillBrush;
+    	CBrush brFillBrush;
 	COLORREF crBackground = ::GetSysColor(COLOR_INFOBK);
-    brFillBrush.CreateSolidBrush(crBackground);
+    	brFillBrush.CreateSolidBrush(crBackground);
 
-    dc.FillRgn(&rgnRect, &brFillBrush);
-    dc.FrameRgn(&rgnRect, &brOutlineBrush, 1, 1);
+    	dc.FillRgn(&rgnRect, &brFillBrush);
+    	dc.FrameRgn(&rgnRect, &brOutlineBrush, 1, 1);
 
-    int nBkMode = dc.SetBkMode(TRANSPARENT);
-    COLORREF clrPrevious =  dc.SetTextColor(RGB(0, 0, 0));
+   	int nBkMode = dc.SetBkMode(TRANSPARENT);
+    	COLORREF clrPrevious =  dc.SetTextColor(RGB(0, 0, 0));
 
-    dc.DrawText(strMessage, rectText, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-    dc.SetBkColor(nBkMode);
-    dc.SetTextColor(clrPrevious);
+    	dc.DrawText(strMessage, rectText, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    	dc.SetBkColor(nBkMode);
+    	dc.SetTextColor(clrPrevious);
 	
 }
 
