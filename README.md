@@ -83,9 +83,9 @@ Unzip the zip file to what folder you want.
 		Enter random characters: [enter]
 		
 - Already have an account
-
-		Put your wallet.dat, dnet_key.dat and storage folder in this folder.
-		Then run below command
+Put your wallet.dat, dnet_key.dat and storage folder in this folder.
+Then run below command
+		
 		$./xdag -m 2 -d put.xdag.server.here:13654
 
 - Run terminal connected to the daemon in the same folder:
