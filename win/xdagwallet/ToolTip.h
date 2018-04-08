@@ -32,7 +32,7 @@ public:
 	CToolTip();
 	void Hide();
 	int Show(CPoint pt, LPRECT lpRect,
-		int charWidth, int charHeight, CString strMessage,UINT Secs);
+		int charWidth, int charHeight, CString strMessage,UINT secs);
 
 protected:
 
