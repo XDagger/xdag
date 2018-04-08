@@ -74,9 +74,8 @@ Run (Mac OS):
 -----------------------
 
 - Install:
-
-		Download binary file from [release page](https://github.com/XDagger/xdag/releases).  
-		Unzip the zip file to what folder you want.
+Download binary file from [release page](https://github.com/XDagger/xdag/releases).  
+Unzip the zip file to what folder you want.
 
 - Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool put.xdag.server.here:13654
 
