@@ -14,7 +14,7 @@ public:
 
 protected:
 
-	CToolTip* _ToolTip = NULL;
+	CToolTip* _toolTip = NULL;
 	afx_msg LRESULT HideTooltip(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 

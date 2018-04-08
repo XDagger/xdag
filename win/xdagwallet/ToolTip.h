@@ -32,13 +32,13 @@ public:
 	CToolTip();
 	void Hide();
 	int Show(CPoint pt, LPRECT lpRect,
-		int CharWidth, int nCharHeight, CString strMessage,UINT Secs);
+		int charWidth, int charHeight, CString strMessage,UINT Secs);
 
 protected:
 
     ~CToolTip();
     BOOL Create();
-	int CalculateRectSizeAndPosition(CPoint pt, int CharWidth, int CharHeight);
+	int CalculateRectSizeAndPosition(CPoint pt, int charWidth, int charHeight);
 
 	void OnLButtonDown(UINT nFlags, CPoint point);
 	void OnRButtonDown(UINT nFlags, CPoint point);
@@ -52,8 +52,8 @@ protected:
 
 // Attributes
 	CRect   _rectText; 
-   	CString _strMessage;
+    CString _strMessage;
 	CRgn    _rgnRect;   // The region of the rectangle  
 	CRect	_rect;
-    	CWnd    m_wndInvisibleParent; // invisible taskbar window to contain the tooltip
+    CWnd    m_wndInvisibleParent; // invisible taskbar window to contain the tooltip
 };

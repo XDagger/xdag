@@ -15,8 +15,8 @@ END_MESSAGE_MAP()
 // CEditWalletAddrMine message handlers
 LRESULT CEditWalletAddrMine::HideTooltip(WPARAM wParam, LPARAM lParam)
 {
-	if (_ToolTip != NULL)
-		_ToolTip->Hide();
+	if (_toolTip != NULL)
+		_toolTip->Hide();
 	return 0;
 }
 
@@ -25,8 +25,8 @@ void CEditWalletAddrMine::OnLButtonDblClk(UINT nFlags, CPoint point)
 	CEditWalletAddr::OnLButtonDblClk(nFlags, point);
 	CEdit::Copy();
 
-	if (_ToolTip == NULL)
-		_ToolTip = new CToolTip();
+	if (_toolTip == NULL)
+		_toolTip = new CToolTip();
 
 	CRect rect;
 	this->GetWindowRect(&rect);
@@ -37,9 +37,9 @@ void CEditWalletAddrMine::OnLButtonDblClk(UINT nFlags, CPoint point)
 	TEXTMETRIC tm;
 	GetTextMetrics(hdc, &tm);
 
-	int Width = tm.tmAveCharWidth;
-	int Height = tm.tmHeight;
+	int width = tm.tmAveCharWidth;
+	int height = tm.tmHeight;
 
 	GetClientRect(&rect);
-	_ToolTip->Show(pt, &rect, Width, Height, "Copied!", 2);
+	_toolTip->Show(pt, &rect, width, height, "Copied!", 2);
 }

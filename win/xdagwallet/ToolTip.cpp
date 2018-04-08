@@ -68,19 +68,19 @@ int CToolTip::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void CToolTip::OnPaint() 
 {
-	CPaintDC dc(this); 
+		CPaintDC dc(this); 
 
-	CBrush brOutlineBrush;
+		CBrush brOutlineBrush;
     	brOutlineBrush.CreateSolidBrush(RGB(0, 0, 0)); 
    
     	CBrush brFillBrush;
-	COLORREF crBackground = ::GetSysColor(COLOR_INFOBK);
+		COLORREF crBackground = ::GetSysColor(COLOR_INFOBK);
     	brFillBrush.CreateSolidBrush(crBackground);
 
     	dc.FillRgn(&_rgnRect, &brFillBrush);
     	dc.FrameRgn(&_rgnRect, &brOutlineBrush, 1, 1);
 
-   	int nBkMode = dc.SetBkMode(TRANSPARENT);
+   		int nBkMode = dc.SetBkMode(TRANSPARENT);
     	COLORREF clrPrevious =  dc.SetTextColor(RGB(0, 0, 0));
 
     	dc.DrawText(_strMessage, _rectText, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
@@ -125,13 +125,13 @@ BOOL CToolTip::Create()
 		bResult = CFrameWnd::Create(pstrOwnerClass, NULL, WS_OVERLAPPED, _rect);
 	}
 
-	int CaptionBarSize = ::GetSystemMetrics(SM_CYCAPTION);
-	int VerticalBorderSize = ::GetSystemMetrics(SM_CYSIZEFRAME);
+	int captionBarSize = ::GetSystemMetrics(SM_CYCAPTION);
+	int verticalBorderSize = ::GetSystemMetrics(SM_CYSIZEFRAME);
 	
 	SetWindowPos(
 		&wndTopMost,
 		_rect.left,
-		(_rect.top -CaptionBarSize -VerticalBorderSize),
+		(_rect.top -captionBarSize -verticalBorderSize),
 		_rect.right,	//Width
 		_rect.bottom,	//Height
 		SWP_SHOWWINDOW | SWP_NOACTIVATE
@@ -141,35 +141,35 @@ BOOL CToolTip::Create()
 }
 
 
-int CToolTip::CalculateRectSizeAndPosition(CPoint pt, int CharWidth, int CharHeight)
+int CToolTip::CalculateRectSizeAndPosition(CPoint pt, int charWidth, int charHeight)
 {
-	int RectLeft, RectWidth, RectTop, RectHeight;
+	int rectLeft, rectWidth, rectTop, rectHeight;
 
 	/****!!	 Possible overflow	!!****/
-	int TextLength = _strMessage.GetLength() * CharWidth;
-	int Height = (int)(CharHeight*1.1);
-	RectLeft = (int)pt.x;
-	RectWidth = (int)(TextLength * 1.1);
-	RectTop = (int)pt.y;
+	int textLength = _strMessage.GetLength() * charWidth;
+	int height = (int)(charHeight*1.1);
+	rectLeft = (int)pt.x;
+	rectWidth = (int)(textLength * 1.1);
+	rectTop = (int)pt.y;
 	/*********************************/
 
-	RectHeight = Height;
-	_rect=CRect(RectLeft, RectTop, RectWidth, RectHeight);
+	rectHeight = height;
+	_rect=CRect(rectLeft, rectTop, rectWidth, rectHeight);
 	return 0;
 }
 
 //Entry Point
 int CToolTip::Show(CPoint pt, LPRECT lpRect,
-	int CharWidth, int CharHeight, CString strMessage, UINT Secs)
+	int charWidth, int charHeight, CString strMessage, UINT secs)
 {
-	if (Secs <= 0)
+	if (secs <= 0)
 	{
 		fprintf(stderr, "ToolTip timer need nSec > 0\n");
 		return -1;
 	}
 
 	_strMessage = strMessage;
-	CalculateRectSizeAndPosition(pt, CharWidth, CharHeight);
+	CalculateRectSizeAndPosition(pt, charWidth, charHeight);
 
 	if (Create() != TRUE) 
 	{
@@ -177,7 +177,7 @@ int CToolTip::Show(CPoint pt, LPRECT lpRect,
 		return -1;
 	}
 
-	if (SetTimer(ID_TIMER_POPUP, (Secs * 1000), NULL) == NULL)
+	if (SetTimer(ID_TIMER_POPUP, (secs * 1000), NULL) == NULL)
 	{
 		fprintf(stderr, "Cannot set the timer to hide the tooltip\n");
 		return -1;
