@@ -1,6 +1,29 @@
+/***************************************************************************
+This software will show a squared tooltip.
+OVERFLOWS CHECKING WILL NOT BE STRESSED
+since the applications are not critical.
+
+Copyright (C) 2018  Marco Scarlino <marco.scarlino@students-live.uniroma2.it>.
+
+ToolTip (consisting of ToolTip.cpp and ToolTip.h) is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 3
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+***************************************************************************/
+
 #include "ToolTip.h"
 
 BEGIN_MESSAGE_MAP(CToolTip, CFrameWnd)
+	ON_WM_LBUTTONDOWN()
+	ON_WM_RBUTTONDOWN()
 	ON_WM_TIMER()
 	ON_WM_CREATE()
 	ON_WM_PAINT()
@@ -8,9 +31,9 @@ BEGIN_MESSAGE_MAP(CToolTip, CFrameWnd)
 END_MESSAGE_MAP()
 
 // Constructor
-CToolTip::CToolTip(CString strMessage)
+CToolTip::CToolTip()
 {
-    m_strMessage       = strMessage;
+	_rgnRect.CreateRectRgn(0,0,0,0);
 }
 
 //Destructor
@@ -18,123 +41,27 @@ CToolTip::~CToolTip()
 {
 }
 
-//Contructor
-CToolTip* CToolTip::Show(CPoint pt,LPRECT lpRect, 
-				int nCharWidth, int nCharHeight, CString strMessage, UINT nSecs)
+int CToolTip::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
-	CToolTip* pToolTip = new CToolTip(strMessage);
-
-	int nRectLeft;
-	int nRectRight;
-	int nRectTop;  
-	int nRectBottom;
-
-	int nTextLength = strMessage.GetLength() * nCharWidth;
-	int nHeight = 0;
-
-#pragma warning( push )
-#pragma warning( disable : 4244)
-	if (conversion_toInt(((nCharHeight) *3.5), &nHeight)) 
-	{
-		fprintf(stderr, "overflow error\n");
-		exit(EXIT_FAILURE);
-	}
-#pragma warning( pop ) 
-
-	int int_nTextLength = 0;
-#pragma warning( push )
-#pragma warning( disable : 4244)
-	if (conversion_toInt((nTextLength * 0.6), &int_nTextLength)) 
-	{
-		fprintf(stderr, "overflow error\n");
-		exit(EXIT_FAILURE);
-	}
-#pragma warning( pop ) 
-
-	nRectLeft = pt.x - int_nTextLength;
-	nRectRight  = pt.x + int_nTextLength;
-
-	nRectTop    = pt.y - nHeight;
-	nRectBottom = pt.y;
-    
-	pToolTip->Create(CRect(nRectLeft, nRectTop, nRectRight, nRectBottom));    
-    	pToolTip->MakeVisisble(nSecs);
-
-    	return pToolTip;
-}
-
-
-void CToolTip::MakeVisisble(UINT nSecs)
-{
-	if (nSecs<=0)
-	{
-		fprintf(stderr, "ToolTip timer need nSec > 0\n");
-		exit(EXIT_FAILURE);
-	}
-
-    	SetTimer(ID_TIMER_POPUP, (nSecs * 1000), NULL);
-        
-    	CRect rect;
-    	GetWindowRect(&rect);
-
-    	int nCaptionBarSize = ::GetSystemMetrics(SM_CYCAPTION);
-    	int nVerticalBorderSize = ::GetSystemMetrics(SM_CYSIZEFRAME);
-
- 
-
-    	SetWindowPos(
-		&wndTopMost,
-		m_rectWindow.left, 
-		(m_rectWindow.top + nCaptionBarSize + (2 * nVerticalBorderSize)),
-		m_rectWindow.right,
-		m_rectWindow.bottom, 
-		SWP_SHOWWINDOW  | SWP_NOACTIVATE
-        );
-    
-
-}	
-
-int CToolTip::OnCreate(LPCREATESTRUCT lpCreateStruct) 
-{
-	if (CFrameWnd::OnCreate(lpCreateStruct) == -1)
-    	{
-        	return -1;
-    	}	
 	
-   	ModifyStyle(WS_CAPTION , 0); 
-
-    	CRect t_Rect;
-	GetClientRect(&t_Rect); 
-
- 
-
-	long long_RectWidth = 0;
-	long long_RectHeight = 0;
-
-
-#pragma warning( push )
-#pragma warning( disable : 4244)
-	if (conversion_toLong((t_Rect.Width() * 0.90), &long_RectWidth)) 
+	if (CFrameWnd::OnCreate(lpCreateStruct) == -1)
 	{
-		fprintf(stderr, "overflow error\n");
-		exit(EXIT_FAILURE);
+		return -1;
 	}
-	if (conversion_toLong((t_Rect.Height()* 0.90), &long_RectHeight)) 
-	{
-		fprintf(stderr, "overflow error\n");
-		exit(EXIT_FAILURE);
-	}
-    	m_rectText.left   = t_Rect.Width() * 0.10; 
-    	m_rectText.right  = long_RectWidth;
-    	m_rectText.top    = t_Rect.Height() * 0.10; 
-   	m_rectText.bottom = long_RectHeight;
-#pragma warning( pop ) 
-            	
-	m_rgnRoundRect.CreateRectRgn(t_Rect.left+30, t_Rect.top, t_Rect.right-30, t_Rect.bottom);
+	
+	ModifyStyle(WS_CAPTION, 0);
 
-	CRgn rgnComb;
-	rgnComb.CreateRectRgn(t_Rect.left+30, t_Rect.top, t_Rect.right-30, t_Rect.bottom);
-	SetWindowRgn(rgnComb.operator HRGN(), TRUE);
+	LONG rectWidth = _rect.right;
+	LONG rectHeight = _rect.bottom;
+
+	_rectText.left = 0;
+	_rectText.right = rectWidth;
+	_rectText.top = 0;
+	_rectText.bottom = rectHeight;
+
+	/****!!	 Possible overflow	!!****/
+	_rgnRect.SetRectRgn(0, 0, (int)rectWidth, (int)rectHeight);
+	/*********************************/
 
 	return 0;
 }
@@ -143,9 +70,6 @@ void CToolTip::OnPaint()
 {
 	CPaintDC dc(this); 
 
-    	CRect t_Rect;
-    	GetClientRect(&t_Rect);
-
 	CBrush brOutlineBrush;
     	brOutlineBrush.CreateSolidBrush(RGB(0, 0, 0)); 
    
@@ -153,15 +77,16 @@ void CToolTip::OnPaint()
 	COLORREF crBackground = ::GetSysColor(COLOR_INFOBK);
     	brFillBrush.CreateSolidBrush(crBackground);
 
-    	dc.FillRgn(&m_rgnRoundRect, &brFillBrush);
-    	dc.FrameRgn(&m_rgnRoundRect, &brOutlineBrush, 1, 1);
+    	dc.FillRgn(&_rgnRect, &brFillBrush);
+    	dc.FrameRgn(&_rgnRect, &brOutlineBrush, 1, 1);
 
-    	int nBkMode = dc.SetBkMode(TRANSPARENT);
+   	int nBkMode = dc.SetBkMode(TRANSPARENT);
     	COLORREF clrPrevious =  dc.SetTextColor(RGB(0, 0, 0));
 
-    	dc.DrawText(m_strMessage, m_rectText, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    	dc.DrawText(_strMessage, _rectText, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
     	dc.SetBkColor(nBkMode);
     	dc.SetTextColor(clrPrevious);
+	
 }
 
 BOOL CToolTip::PreCreateWindow(CREATESTRUCT& cs)
@@ -170,65 +95,120 @@ BOOL CToolTip::PreCreateWindow(CREATESTRUCT& cs)
 	// and join this one with the already existant.
 	
 	if (!CWnd::PreCreateWindow(cs))
-    	{
+    {
 		return FALSE;
-    	}
-
+    }
+	
  	if (!::IsWindow(m_wndInvisibleParent.m_hWnd))
  	{
-       		PCSTR pstrOwnerClass = ::AfxRegisterWndClass(0);
+        PCSTR pstrOwnerClass = ::AfxRegisterWndClass(0);
        
-        	BOOL bError = m_wndInvisibleParent.CreateEx(0,pstrOwnerClass,  _T(""), WS_POPUP,
-			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-			NULL, 0);
+        BOOL bError = m_wndInvisibleParent.CreateEx(0,pstrOwnerClass,  _T(""), WS_POPUP,
+			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, 0);
 
-        	if (bError == FALSE)
-        	{
+        if (bError == FALSE)
+        {
 			return FALSE;
-        	}
+        }
 		
  	}
-
 	cs.hwndParent = m_wndInvisibleParent.m_hWnd;
+	
 	return TRUE;
 }
 
-BOOL CToolTip::Create(CRect rect)
+BOOL CToolTip::Create()
 {
-    m_rectWindow = rect;
+	BOOL bResult = TRUE;
+	if (GetSafeHwnd() == NULL) {
+		PCSTR pstrOwnerClass = ::AfxRegisterWndClass(0);
+		bResult = CFrameWnd::Create(pstrOwnerClass, NULL, WS_OVERLAPPED, _rect);
+	}
 
-    PCSTR pstrOwnerClass = ::AfxRegisterWndClass(0);
-    BOOL bResult = CFrameWnd::Create(pstrOwnerClass, NULL, WS_OVERLAPPED, m_rectWindow);
-    
+	int captionBarSize = ::GetSystemMetrics(SM_CYCAPTION);
+	int verticalBorderSize = ::GetSystemMetrics(SM_CYSIZEFRAME);
+	
+	SetWindowPos(
+		&wndTopMost,
+		_rect.left,
+		(_rect.top -captionBarSize -verticalBorderSize),
+		_rect.right,	//Width
+		_rect.bottom,	//Height
+		SWP_SHOWWINDOW | SWP_NOACTIVATE
+	);
+	
     return bResult;
 }
 
-void CToolTip::OnActivateApp(BOOL bActive, DWORD hTask) 
-{
-	if(KillTimer(ID_TIMER_POPUP))
-	{
-		try
-		{
-			DestroyWindow();
-		}
-		catch (...)
-		{
 
-		}
+int CToolTip::CalculateRectSizeAndPosition(CPoint pt, int charWidth, int charHeight)
+{
+	int rectLeft, rectWidth, rectTop, rectHeight;
+
+	/****!!	 Possible overflow	!!****/
+	int textLength = _strMessage.GetLength() * charWidth;
+	int height = (int)(charHeight*1.1);
+	rectLeft = (int)pt.x;
+	rectWidth = (int)(textLength * 1.1);
+	rectTop = (int)pt.y;
+	/*********************************/
+
+	rectHeight = height;
+	_rect=CRect(rectLeft, rectTop, rectWidth, rectHeight);
+	return 0;
+}
+
+//Entry Point
+int CToolTip::Show(CPoint pt, LPRECT lpRect,
+	int charWidth, int charHeight, CString strMessage, UINT secs)
+{
+	if (secs <= 0)
+	{
+		fprintf(stderr, "ToolTip timer need nSec > 0\n");
+		return -1;
 	}
+
+	_strMessage = strMessage;
+	CalculateRectSizeAndPosition(pt, charWidth, charHeight);
+
+	if (Create() != TRUE) 
+	{
+		fprintf(stderr, "Cannot create the frame window associated with the CFrameWnd\n");
+		return -1;
+	}
+
+	if (SetTimer(ID_TIMER_POPUP, (secs * 1000), NULL) == NULL)
+	{
+		fprintf(stderr, "Cannot set the timer to hide the tooltip\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+void CToolTip::OnRButtonDown(UINT nFlags, CPoint point)
+{
+	Hide();
+}
+
+void CToolTip::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	Hide();
+}
+
+void CToolTip::OnActivateApp(BOOL bActive, DWORD hTask)
+{
+	Hide();
 }
 
 void CToolTip::OnTimer(UINT_PTR nIDEvent)
 {
-	if (KillTimer(ID_TIMER_POPUP))
-	{
-		try
-		{
-			DestroyWindow();
-		}
-		catch (...)
-		{
-
-		}
-	}
+	Hide();
 }
+
+void CToolTip::Hide()
+{
+	KillTimer(ID_TIMER_POPUP);
+	ShowWindow(SW_HIDE);
+}
+
