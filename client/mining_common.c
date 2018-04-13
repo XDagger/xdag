@@ -108,3 +108,17 @@ int xdag_initialize_mining(int pool_on, const char *pool_arg, const char *miner_
 	return 0;
 }
 
+//function sets minimal share for the task
+static void xdag_set_min_share(struct xdag_pool_task *task, xdag_hash_t last, xdag_hash_t hash)
+{
+	if(xdag_cmphash(hash, task->minhash.data) < 0) {
+		pthread_mutex_lock(&g_share_mutex);
+
+		if(xdag_cmphash(hash, task->minhash.data) < 0) {
+			memcpy(task->minhash.data, hash, sizeof(xdag_hash_t));
+			memcpy(task->lastfield.data, last, sizeof(xdag_hash_t));
+		}
+
+		pthread_mutex_unlock(&g_share_mutex);
+	}
+}

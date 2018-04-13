@@ -76,4 +76,7 @@ extern struct dfslib_crypt *g_crypt;
 miner_addr - address of the miner, if specified */
 extern int xdag_initialize_mining(int pool_on, const char *pool_arg, const char *miner_address);
 
+//function sets minimal share for the task
+extern void xdag_set_min_share(struct xdag_pool_task *task, xdag_hash_t last, xdag_hash_t hash);
+
 #endif

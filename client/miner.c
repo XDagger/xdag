@@ -37,21 +37,6 @@ int g_xdag_mining_threads = 0;
 
 static int g_socket = -1, g_stop_mining = 1, g_stop_general_mining = 1;
 
-//function sets minimal share for the task, miner side
-static inline void miner_set_share(struct xdag_pool_task *task, xdag_hash_t last, xdag_hash_t hash)
-{
-	if (xdag_cmphash(hash, task->minhash.data) < 0) {
-		pthread_mutex_lock(&g_share_mutex);
-		
-		if (xdag_cmphash(hash, task->minhash.data) < 0) {
-			memcpy(task->minhash.data, hash, sizeof(xdag_hash_t));
-			memcpy(task->lastfield.data, last, sizeof(xdag_hash_t));
-		}
-		
-		pthread_mutex_unlock(&g_share_mutex);
-	}
-}
-
 static int send_to_pool(struct xdag_field *fld, int nfld)
 {
 	struct xdag_field f[XDAG_BLOCK_FIELDS];
@@ -374,7 +359,7 @@ static void *mining_thread(void *arg)
 		last.amount = xdag_hash_final_multi(task->ctx, &nonce, 4096, g_xdag_mining_threads, hash);
 		g_xdag_extstats.nhashes += 4096;
 		
-		miner_set_share(task, last.data, hash);
+		xdag_set_min_share(task, last.data, hash);
 	}
 
 	return 0;
