@@ -6,6 +6,7 @@
 #include <math.h>
 #include "block.h"
 #include "sync.h"
+#include "mining_common.h"
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
@@ -59,8 +60,11 @@ xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT], g_xdag_mined_nonce[CONFIRM
 
 static int g_max_miners_count = START_MINERS_COUNT, g_max_miner_ip_count = START_MINERS_IP_COUNT;
 static int g_miners_count = 0;
+static double g_pool_fee = 0, g_pool_reward = 0, g_pool_direct = 0, g_pool_fund = 0;
+static struct xdag_block *g_firstb = 0, *g_lastb = 0;
 
 connection_list_element *g_connection_list_head = NULL;
+pthread_mutex_t g_descriptors_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int open_pool_connection(char *pool_arg)
 {
@@ -150,6 +154,15 @@ int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 	return 1;
 }
 
+void rebuild_descriptors_array() {
+	connection_list_element *elt;
+	int index = 0;	
+	LL_FOREACH(g_connection_list_head, elt)	{
+		memcpy(g_fds + index, &elt->connection_data.connection_descriptor, sizeof(struct pollfd));
+		++index;
+	}	
+}
+
 void *pool_net_thread(void *arg)
 {
 	const char *pool_arg = (const char*)arg;
@@ -199,10 +212,206 @@ void *pool_net_thread(void *arg)
 		new_connection->connection_data.port = peeraddr.sin_port;
 
 		LL_APPEND(g_connection_list_head, new_connection);
+
+		pthread_mutex_lock(&g_descriptors_mutex);
 		++g_miners_count;
+		rebuild_descriptors_array();
+		pthread_mutex_unlock(&g_descriptors_mutex);
 
 		xdag_info("Pool  : miner %d connected from %u.%u.%u.%u:%u", g_miners_count,
 			ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(new_connection->connection_data.port));
+	}
+
+	return 0;
+}
+
+void close_connection(connection_list_element *connection, int index, const char *message)
+{
+	close(connection->connection_data.connection_descriptor.fd);
+
+	if(connection->connection_data.block) {
+		free(connection->connection_data.block);
+	}
+
+	uint32_t ip = connection->connection_data.ip;
+	uint16_t port = connection->connection_data.port;
+
+	LL_DELETE(g_connection_list_head, connection);
+	free(connection);
+
+	xdag_info("Pool  : miner %d disconnected from %u.%u.%u.%u:%u by %s", index,
+		ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port), message);
+}
+
+int recieve_data_from_connection(connection_list_element *connection, int index)
+{
+	struct connection_pool_data *data = &connection->connection_data;
+	int data_size = sizeof(struct xdag_field) - data->data_size;
+	data_size = read(data->connection_descriptor.fd, (uint8_t*)data->data + data->data_size, data_size);
+
+	if(data_size <= 0) {
+		close_connection(connection, index, "read error");
+		return 0;
+	}
+
+	data->data_size += data_size;
+
+	if(data->data_size == sizeof(struct xdag_field)) {
+		data->data_size = 0;
+		dfslib_uncrypt_array(g_crypt, data->data, DATA_SIZE, data->nfield_in++);
+
+		if(!data->block_size && data->data[0] == HEADER_WORD) {
+			data->block = malloc(sizeof(struct xdag_block));
+
+			if(!data->block) return 1;
+
+			memcpy(data->block->field, data->data, sizeof(struct xdag_field));
+			data->block_size++;
+		} else if(data->nfield_in == 1) {
+			close_connection(connection, index, "protocol mismatch");
+			return 0;
+		} else if(data->block_size) {
+			memcpy(data->block->field + data->block_size, data->data, sizeof(struct xdag_field));
+			data->block_size++;
+			if(data->block_size == XDAG_BLOCK_FIELDS) {
+				uint32_t crc = data->block->field[0].transport_header >> 32;
+
+				data->block->field[0].transport_header &= (uint64_t)0xffffffffu;
+
+				if(crc == crc_of_array((uint8_t*)data->block, sizeof(struct xdag_block))) {
+					data->block->field[0].transport_header = 0;
+
+					pthread_mutex_lock(&g_pool_mutex);
+
+					if(!g_firstb) {
+						g_firstb = g_lastb = data->block;
+					} else {
+						g_lastb->field[0].transport_header = (uintptr_t)data->block;
+						g_lastb = data->block;
+					}
+
+					pthread_mutex_unlock(&g_pool_mutex);
+				} else {
+					free(data->block);
+				}
+
+				data->block = 0;
+				data->block_size = 0;
+			}
+		} else {
+			xdag_hash_t hash;
+
+			uint64_t task_index = g_xdag_pool_task_index;
+			struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
+
+			//if (++m->shares_count > SHARES_PER_TASK_LIMIT) {   //if shares count limit is exceded it is considered as spamming and current connection is disconnected
+			//	mess = "Spamming of shares";
+			//	goto disconnect;	//TODO: get rid of gotos
+			//}
+
+			/*if(!(data->state & MINER_ADDRESS) || memcmp(data->id.data, data->data, sizeof(xdag_hashlow_t))) {
+				xdag_time_t t;
+
+				memcpy(data->id.data, data->data, sizeof(struct xdag_field));
+				const int64_t pos = xdag_get_block_pos(data->id.data, &t);
+
+				if(pos < 0) {
+					data->state &= ~MINER_ADDRESS;
+				} else {
+					data->state |= MINER_ADDRESS;
+				}
+			} else {
+				memcpy(data->id.data, data->data, sizeof(struct xdag_field));
+			}
+
+			xdag_hash_final(task->ctx0, data->data, sizeof(struct xdag_field), hash);
+			xdag_set_min_share(task, data->id.data, hash);*/
+			//calculate nopaid shares
+		}
+	}
+}
+
+int send_data_to_connection(connection_list_element *connection, int index)
+{
+	struct xdag_field data[2];
+	int nfld = 0;
+	struct connection_pool_data *conn_data = &connection->connection_data;
+
+	uint64_t task_index = g_xdag_pool_task_index;
+	struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
+
+	if(conn_data->task_index < task_index) {
+		conn_data->task_index = task_index;
+		//m->shares_count = 0;
+		nfld = 2;
+		memcpy(data, task->task, nfld * sizeof(struct xdag_field));
+	} else if(!(conn_data->state & MINER_BALANCE) && time(0) >= (conn_data->task_time << 6) + 4) {
+		conn_data->state |= MINER_BALANCE;
+		//memcpy(data[0].data, conn_data->id.data, sizeof(xdag_hash_t));
+		data[0].amount = xdag_get_balance(data[0].data);
+		nfld = 1;
+	}
+
+	if(nfld) {
+		for(int j = 0; j < nfld; ++j) {
+			dfslib_encrypt_array(g_crypt, (uint32_t*)(data + j), DATA_SIZE, conn_data->nfield_out++);
+		}
+
+		int length = write(conn_data->connection_descriptor.fd, (void*)data, nfld * sizeof(struct xdag_field));
+
+		if(length != nfld * sizeof(struct xdag_field)) {
+			close_connection(connection, index, "write error");
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+void *pool_main_thread(void *arg)
+{
+	connection_list_element *elt, *eltmp;
+
+	while(!g_xdag_sync_on) {
+		sleep(1);
+	}
+
+	for(;;) {
+		pthread_mutex_lock(&g_descriptors_mutex);
+		const int miners_count = g_miners_count;
+		int res = poll(g_fds, miners_count, 1000);
+		pthread_mutex_unlock(&g_descriptors_mutex);
+
+		if(!res) continue;
+		
+		int index = 0;
+		LL_FOREACH_SAFE(g_connection_list_head, elt, eltmp) {
+			struct pollfd *p = g_fds + index++;
+
+			if(p->revents & POLLNVAL) continue;
+
+			if(p->revents & POLLHUP) {
+				close_connection(elt, index, "socket hangup");
+				continue;
+			}
+
+			if(p->revents & POLLERR) {
+				close_connection(elt, index, "socket error");
+				continue;
+			}
+
+			if(p->revents & POLLIN) {
+				if(!recieve_data_from_connection(elt, index)) {
+					continue;
+				}
+			}
+
+			if(p->revents & POLLOUT) {
+
+			}
+		}
+
+		sleep(1);
 	}
 
 	return 0;
