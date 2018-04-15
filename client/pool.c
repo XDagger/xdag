@@ -407,11 +407,216 @@ void *pool_main_thread(void *arg)
 			}
 
 			if(p->revents & POLLOUT) {
-
+				if(!send_data_to_connection(elt, index)) {
+					continue;
+				}
 			}
 		}
 
 		sleep(1);
+	}
+
+	return 0;
+}
+
+void *pool_block_thread(void *arg)
+{
+	xdag_time_t t0 = 0;
+	struct xdag_block *b;
+	int res;
+
+	while(!g_xdag_sync_on) {
+		sleep(1);
+	}
+
+	for(;;) {
+		int done = 0;
+		uint64_t ntask = g_xdag_pool_task_index;
+		struct xdag_pool_task *task = &g_xdag_pool_task[ntask & 1];
+		xdag_time_t t = task->task_time;
+
+		if(t > t0) {
+			uint64_t *h = g_xdag_mined_hashes[(t - CONFIRMATIONS_COUNT + 1) & (CONFIRMATIONS_COUNT - 1)];
+
+			done = 1;
+			t0 = t;
+
+			res = pay_miners(t - CONFIRMATIONS_COUNT + 1);
+
+			xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
+				h[3], h[2], h[1], h[0], (t - CONFIRMATIONS_COUNT + 1) << 16 | 0xffff, res);
+		}
+
+		pthread_mutex_lock(&g_pool_mutex);
+
+		if(g_firstb) {
+			b = g_firstb;
+			g_firstb = (struct xdag_block *)(uintptr_t)b->field[0].transport_header;
+			if(!g_firstb) g_lastb = 0;
+		} else {
+			b = 0;
+		}
+
+		pthread_mutex_unlock(&g_pool_mutex);
+
+		if(b) {
+			done = 1;
+			b->field[0].transport_header = 2;
+
+			res = xdag_add_block(b);
+			if(res > 0) {
+				xdag_send_new_block(b);
+			}
+		}
+
+		if(!done) sleep(1);
+	}
+
+	return 0;
+}
+
+#define diff2pay(d, n) ((n) ? exp((d) / (n) - 20) * (n) : 0)
+
+static double countpay(struct miner *m, int i, double *pay)
+{
+	double sum = 0;
+	int n = 0;
+
+	if(m->maxdiff[i] > 0) {
+		sum += m->maxdiff[i]; m->maxdiff[i] = 0; n++;
+	}
+
+	*pay = diff2pay(sum, n);
+	sum += m->prev_diff;
+	n += m->prev_diff_count;
+	m->prev_diff = 0;
+	m->prev_diff_count = 0;
+
+	return diff2pay(sum, n);
+}
+
+static int pay_miners(xdag_time_t time)
+{
+	struct xdag_field fields[12];
+	struct xdag_block buf, *b;
+	xdag_amount_t direct = 0, fund = 0;
+	struct miner *m;
+	int64_t pos;
+	int i, reward_ind = -1, key, defkey, nfields, nfld;
+	double *diff, *prev_diff, sum, prev_sum, topay;
+
+	int miners_count = g_miners_count;
+
+	if(!miners_count) return -1;
+
+	int n = time & (CONFIRMATIONS_COUNT - 1);
+	uint64_t *h = g_xdag_mined_hashes[n];
+	uint64_t *nonce = g_xdag_mined_nonce[n];
+	xdag_amount_t balance = xdag_get_balance(h);
+
+	if(!balance) return -2;
+
+	xdag_amount_t pay = balance - (xdag_amount_t)(g_pool_fee * balance);
+	if(!pay) return -3;
+
+	xdag_amount_t reward = (xdag_amount_t)(balance * g_pool_reward);
+	pay -= reward;
+
+	if(g_pool_fund) {
+		if(!(g_fund_miner.state & MINER_ADDRESS)) {
+			xdag_time_t t;
+			if(!xdag_address2hash(FUND_ADDRESS, g_fund_miner.id.hash) && xdag_get_block_pos(g_fund_miner.id.hash, &t) >= 0) {
+				g_fund_miner.state |= MINER_ADDRESS;
+			}
+		}
+
+		if(g_fund_miner.state & MINER_ADDRESS) {
+			fund = balance * g_pool_fund;
+			pay -= fund;
+		}
+	}
+
+	key = xdag_get_key(h);
+	if(key < 0) return -4;
+
+	if(!xdag_wallet_default_key(&defkey)) return -5;
+
+	nfields = (key == defkey ? 12 : 10);
+
+	pos = xdag_get_block_pos(h, &time);
+	if(pos < 0) return -6;
+
+	b = xdag_storage_load(h, time, pos, &buf);
+	if(!b) return -7;
+
+	diff = malloc(2 * miners_count * sizeof(double));
+	if(!diff) return -8;
+
+	prev_diff = diff + miners_count;
+	prev_sum = countpay(&g_local_miner, n, &sum);
+
+	for(i = 0; i < miners_count; ++i) {
+		m = g_miners + i;
+
+		if(m->state & MINER_FREE || !(m->state & MINER_ADDRESS)) continue;
+
+		prev_diff[i] = countpay(m, n, &diff[i]);
+		sum += diff[i];
+		prev_sum += prev_diff[i];
+
+		if(reward_ind < 0 && !memcmp(nonce, m->id.data, sizeof(xdag_hashlow_t))) {
+			reward_ind = i;
+		}
+	}
+
+	if(!prev_sum) return -9;
+
+	if(sum > 0) {
+		direct = balance * g_pool_direct;
+		pay -= direct;
+	}
+
+	memcpy(fields[0].data, h, sizeof(xdag_hashlow_t));
+	fields[0].amount = 0;
+
+	for(nfld = 1, i = 0; i <= miners_count; ++i) {
+		if(i < miners_count) {
+			m = g_miners + i;
+
+			if(m->state & MINER_FREE || !(m->state & MINER_ADDRESS)) continue;
+
+			topay = pay * (prev_diff[i] / prev_sum);
+
+			if(sum > 0) {
+				topay += direct * (diff[i] / sum);
+			}
+
+			if(i == reward_ind) {
+				topay += reward;
+			}
+		} else {
+			m = &g_fund_miner;
+			if(!(m->state & MINER_ADDRESS)) continue;
+			topay = fund;
+		}
+
+		if(!topay) continue;
+
+		memcpy(fields[nfld].data, m->id.data, sizeof(xdag_hashlow_t));
+		fields[nfld].amount = topay;
+		fields[0].amount += topay;
+
+		xdag_log_xfer(fields[0].data, fields[nfld].data, topay);
+
+		if(++nfld == nfields) {
+			xdag_create_block(fields, 1, nfld - 1, 0, 0, NULL);
+			nfld = 1;
+			fields[0].amount = 0;
+		}
+	}
+
+	if(nfld > 1) {
+		xdag_create_block(fields, 1, nfld - 1, 0, 0, NULL);
 	}
 
 	return 0;
