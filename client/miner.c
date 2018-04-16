@@ -32,6 +32,12 @@
 #define HEADER_WORD            0x3fca9e2bu
 #define SEND_PERIOD            10                                  /* share period of sending shares */
 
+struct miner {
+	struct xdag_field id;
+	uint64_t nfield_in;
+	uint64_t nfield_out;
+};
+
 /* a number of mining threads */
 int g_xdag_mining_threads = 0;
 
@@ -421,7 +427,7 @@ int xdag_mining_start(int n_mining_threads)
 
 	xdag_get_our_block(g_local_miner.id.data);
 	
-	g_local_miner.state = (g_xdag_mining_threads ? 0 : MINER_ARCHIVE);
+	//g_local_miner.state = (g_xdag_mining_threads ? 0 : MINER_ARCHIVE);
 	
 	return 0;
 }
