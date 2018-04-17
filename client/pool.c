@@ -40,6 +40,11 @@ struct miner_pool_data {
 	//uint32_t shares_count;
 };
 
+typedef struct miner_list_element {
+	struct miner_pool_data miner_data;
+	struct miner_list_element *next;
+} miner_list_element;
+
 enum connection_state {
 	UNKNOWN_ADDRESS = 0,
 	ACTIVE_CONNECTION = 1
@@ -78,6 +83,7 @@ static double g_pool_fee = 0, g_pool_reward = 0, g_pool_direct = 0, g_pool_fund 
 static struct xdag_block *g_firstb = 0, *g_lastb = 0;
 
 connection_list_element *g_connection_list_head = NULL;
+connection_list_element *g_miner_list_head = NULL;
 pthread_mutex_t g_descriptors_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int open_pool_connection(char *pool_arg)
@@ -174,7 +180,7 @@ void rebuild_descriptors_array() {
 	LL_FOREACH(g_connection_list_head, elt)	{
 		memcpy(g_fds + index, &elt->connection_data.connection_descriptor, sizeof(struct pollfd));
 		++index;
-	}	
+	}
 }
 
 void *pool_net_thread(void *arg)
@@ -311,6 +317,33 @@ static void calculate_nopaid_shares(connection_list_element *connection, struct 
 	}
 }
 
+int register_new_miner(connection_list_element *connection, int index)
+{
+	miner_list_element *elt;
+	struct connection_pool_data *conn_data = &connection->connection_data;
+
+	int exists = 0;
+	LL_FOREACH(g_miner_list_head, elt) {
+		if(memcmp(elt->miner_data.id.data, conn_data->data, sizeof(xdag_hashlow_t))) {
+			conn_data->miner = &elt->miner_data;
+			++conn_data->miner->connections_count;
+			conn_data->miner->state = MINER_ACTIVE;
+			exists = 1;
+			break;
+		}
+	}
+
+	if(!exists) {
+		struct miner_list_element *new_miner = (struct miner_list_element*)malloc(sizeof(miner_list_element));
+		memset(new_miner, 0, sizeof(miner_list_element));
+		memcpy(new_miner->miner_data.id.data, conn_data->data, sizeof(struct xdag_field));
+		new_miner->miner_data.connections_count = 1;
+		new_miner->miner_data.state = MINER_ACTIVE;
+		conn_data->miner = &elt->miner_data;
+		LL_APPEND(g_miner_list_head, new_miner);
+	}
+}
+
 int recieve_data_from_connection(connection_list_element *connection, int index)
 {
 	struct connection_pool_data *conn_data = &connection->connection_data;
@@ -367,8 +400,7 @@ int recieve_data_from_connection(connection_list_element *connection, int index)
 				conn_data->block_size = 0;
 			}
 		} else {
-			xdag_hash_t hash;
-
+			//share is received
 			uint64_t task_index = g_xdag_pool_task_index;
 			struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
 
@@ -378,20 +410,18 @@ int recieve_data_from_connection(connection_list_element *connection, int index)
 			//}
 
 			if(conn_data->state == UNKNOWN_ADDRESS) {
-				xdag_time_t t;
-
-				memcpy(data->id.data, data->data, sizeof(struct xdag_field));
-				const int64_t pos = xdag_get_block_pos(data->id.data, &t);
-
-				if(pos < 0) {
-					data->state &= ~MINER_ADDRESS;
-				} else {
-					data->state |= MINER_ADDRESS;
-				}
+				register_new_miner(connection, index);
 			} else {
-				memcpy(data->id.data, data->data, sizeof(struct xdag_field));
+				if(!conn_data->miner) {
+					close_connection(connection, index, "Miner is unregistered");
+				}
+				if(!memcmp(conn_data->miner->id.data, conn_data->data, sizeof(xdag_hashlow_t))) {
+					close_connection(connection, index, "Wallet address was unexpectedly changed");
+				}
+				memcpy(conn_data->miner->id.data, conn_data->data, sizeof(struct xdag_field));	//TODO:do I need to copy whole field?
 			}
 
+			xdag_hash_t hash;
 			xdag_hash_final(task->ctx0, conn_data->data, sizeof(struct xdag_field), hash);
 			xdag_set_min_share(task, conn_data->miner->id.data, hash);
 			calculate_nopaid_shares(conn_data, task, hash);
