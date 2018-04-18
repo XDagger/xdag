@@ -6,7 +6,7 @@
 //  Copyright © 2018 xrdavies. All rights reserved.
 //
 
-#include "rpc_service.h"
+#include "rpc_wrapper.h"
 #include <stdlib.h>
 #include <string.h>
 
