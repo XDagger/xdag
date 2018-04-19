@@ -102,6 +102,7 @@ int xdag_init(int argc, char **argv, int isGui)
 #endif
 		} else if (ARG_EQUAL(argv[i], "-h", "")) { /* help */
 			printUsage(argv[0]);
+			return 0;
 		} else if (ARG_EQUAL(argv[i], "-i", "")) { /* interactive mode */
 			return terminal();
 		} else if (ARG_EQUAL(argv[i], "-l", "")) { /* list balance */
