@@ -38,10 +38,27 @@ struct miner {
 	uint64_t nfield_out;
 };
 
+static struct miner g_local_miner;
+
 /* a number of mining threads */
 int g_xdag_mining_threads = 0;
 
 static int g_socket = -1, g_stop_mining = 1, g_stop_general_mining = 1;
+
+/* initialization of connection the miner to pool */
+extern int xdag_initialize_miner(const char *pool_address)
+{
+	pthread_t th;
+
+	memset(&g_local_miner, 0, sizeof(struct miner));
+
+	int res = pthread_create(&th, 0, miner_net_thread, (void*)pool_address);
+	if(res) return -1;
+
+	pthread_detach(th);
+
+	return 0;
+}
 
 static int send_to_pool(struct xdag_field *fld, int nfld)
 {
@@ -101,7 +118,7 @@ static int send_to_pool(struct xdag_field *fld, int nfld)
 	
 	if (nfld == XDAG_BLOCK_FIELDS) {
 		xdag_info("Sent  : %016llx%016llx%016llx%016llx t=%llx res=%d",
-					   h[3], h[2], h[1], h[0], fld[0].time, 0);
+			h[3], h[2], h[1], h[0], fld[0].time, 0);
 	}
 
 	return 0;
@@ -430,4 +447,14 @@ int xdag_mining_start(int n_mining_threads)
 	//g_local_miner.state = (g_xdag_mining_threads ? 0 : MINER_ARCHIVE);
 	
 	return 0;
+}
+
+/* send block to network via pool */
+int xdag_send_block_via_pool(struct xdag_block *b)
+{
+	if(g_socket < 0) return -1;
+
+	pthread_mutex_lock(&g_pool_mutex);
+
+	return send_to_pool(b->field, XDAG_BLOCK_FIELDS);
 }

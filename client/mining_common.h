@@ -35,11 +35,6 @@ extern int g_xdag_pool;
 
 extern const char *g_miner_address;
 
-extern struct miner g_local_miner;
-extern struct miner g_fund_miner;
-extern struct miner *g_miners;
-extern struct pollfd *g_fds;
-
 extern pthread_mutex_t g_pool_mutex;
 extern pthread_mutex_t g_share_mutex;
 
