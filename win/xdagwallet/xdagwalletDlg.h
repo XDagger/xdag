@@ -22,6 +22,8 @@ public:
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
+	LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+
 
 // Implementation
 protected:
