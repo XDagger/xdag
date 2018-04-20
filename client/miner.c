@@ -179,7 +179,8 @@ void *miner_net_thread(void *arg)
 	// Create a socket
 	g_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (g_socket == INVALID_SOCKET) {
-		pthread_mutex_unlock(&g_pool_mutex); mess = "cannot create a socket"; 
+		pthread_mutex_unlock(&g_pool_mutex);
+		mess = "cannot create a socket"; 
 		goto err;
 	}
 	if (fcntl(g_socket, F_SETFD, FD_CLOEXEC) == -1) {
@@ -194,7 +195,9 @@ void *miner_net_thread(void *arg)
 	strcpy(buf, str);
 	const char *s = strtok_r(buf, " \t\r\n:", &lasts);
 	if (!s) {
-		pthread_mutex_unlock(&g_pool_mutex); mess = "host is not given"; goto err;
+		pthread_mutex_unlock(&g_pool_mutex); 
+		mess = "host is not given"; 
+		goto err;
 	}
 	if (!strcmp(s, "any")) {
 		peeraddr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -228,7 +231,9 @@ void *miner_net_thread(void *arg)
 	// Now, connect to a pool
 	res = connect(g_socket, (struct sockaddr*)&peeraddr, sizeof(peeraddr));
 	if (res) {
-		pthread_mutex_unlock(&g_pool_mutex); mess = "cannot connect to the pool"; goto err;
+		pthread_mutex_unlock(&g_pool_mutex); 
+		mess = "cannot connect to the pool"; 
+		goto err;
 	}
 
 	if (send_to_pool(b.field, XDAG_BLOCK_FIELDS) < 0) {
@@ -242,7 +247,9 @@ void *miner_net_thread(void *arg)
 		pthread_mutex_lock(&g_pool_mutex);
 		
 		if (g_socket < 0) {
-			pthread_mutex_unlock(&g_pool_mutex); mess = "socket is closed"; goto err;
+			pthread_mutex_unlock(&g_pool_mutex);
+			mess = "socket is closed"; 
+			goto err;
 		}
 
 		p.fd = g_socket;
@@ -263,7 +270,7 @@ void *miner_net_thread(void *arg)
 
 		if (p.revents & POLLERR) {
 			pthread_mutex_unlock(&g_pool_mutex);
-			mess = "socket error"; 
+			mess = "socket error";
 			goto err;
 		}
 

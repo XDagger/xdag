@@ -8,6 +8,10 @@
 #include "hash.h"
 #include "mining_common.h"
 
+#define MAX_MINERS_COUNT               4096
+#define XDAG_POOL_CONFIRMATIONS_COUNT  16
+#define CONFIRMATIONS_COUNT            XDAG_POOL_CONFIRMATIONS_COUNT   /*16*/
+
 extern xdag_hash_t g_xdag_mined_hashes[XDAG_POOL_CONFIRMATIONS_COUNT];
 extern xdag_hash_t g_xdag_mined_nonce[XDAG_POOL_CONFIRMATIONS_COUNT];
 

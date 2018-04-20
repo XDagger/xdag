@@ -4,22 +4,31 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
 #include "block.h"
 #include "sync.h"
 #include "mining_common.h"
 #include "pool.h"
-#include <sys/socket.h>
-#include <sys/ioctl.h>
+#include "address.h"
+#include "commands.h"
+#include "storage.h"
+#include "transport.h"
+#include "wallet.h"
+#include "utils/log.h"
+#include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
+#include "../dus/programs/dar/source/include/crc.h"
+#include "uthash/utlist.h"
 
-#include "uthash\utlist.h"
-
-#define MAX_MINERS_COUNT               4096
+#define MAX_MINERS_COUNT               16384
 #define XDAG_POOL_CONFIRMATIONS_COUNT  16
 #define DATA_SIZE                      (sizeof(struct xdag_field) / sizeof(uint32_t))
 #define CONFIRMATIONS_COUNT            XDAG_POOL_CONFIRMATIONS_COUNT   /* 16 */
 
+//TODO: why do we need these two definitions?
 #define START_MINERS_COUNT     256
 #define START_MINERS_IP_COUNT  8
+
 #define HEADER_WORD            0x3fca9e2bu
 #define FUND_ADDRESS           "FQglVQtb60vQv2DOWEUL7yh3smtj7g1s"  /* community fund */
 #define SHARES_PER_TASK_LIMIT  20                                  /* maximum count of shares per task */
@@ -100,11 +109,13 @@ static struct miner_pool_data g_fund_miner;
 struct pollfd *g_fds;
 
 connection_list_element *g_connection_list_head = NULL;
-connection_list_element *g_miner_list_head = NULL;
+miner_list_element *g_miner_list_head = NULL;
 pthread_mutex_t g_descriptors_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+int pay_miners(xdag_time_t time);
+
 /* initialization of the pool */
-int xdag_initialize_miner(const char *pool_arg)
+int xdag_initialize_pool(const char *pool_arg)
 {
 	pthread_t th;
 
@@ -229,7 +240,7 @@ char *xdag_pool_get_config(char *buf)
 	return buf;
 }
 
-int open_pool_connection(char *pool_arg)
+static int open_pool_connection(char *pool_arg)
 {
 	struct linger linger_opt = { 1, 0 }; // Linger active, timeout 0
 	struct sockaddr_in peeraddr;
@@ -293,7 +304,7 @@ int open_pool_connection(char *pool_arg)
 	return sock;
 }
 
-int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
+static int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 {
 	connection_list_element *elt;
 	int count;
@@ -318,7 +329,7 @@ int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 	return 1;
 }
 
-void rebuild_descriptors_array()
+static void rebuild_descriptors_array()
 {
 	connection_list_element *elt;
 	int index = 0;
@@ -334,7 +345,6 @@ void *pool_net_thread(void *arg)
 	const char *pool_arg = (const char*)arg;
 	struct sockaddr_in peeraddr;
 	socklen_t peeraddr_len = sizeof(peeraddr);
-	struct miner *m;
 	int rcvbufsize = 1024;
 
 	while(!g_xdag_sync_on) {
@@ -391,7 +401,7 @@ void *pool_net_thread(void *arg)
 	return 0;
 }
 
-void close_connection(connection_list_element *connection, int index, const char *message)
+static void close_connection(connection_list_element *connection, int index, const char *message)
 {
 	struct connection_pool_data *conn_data = &connection->connection_data;
 
@@ -418,9 +428,8 @@ void close_connection(connection_list_element *connection, int index, const char
 		ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port), message);
 }
 
-static void calculate_nopaid_shares(connection_list_element *connection, struct xdag_pool_task *task, xdag_hash_t hash)
+static void calculate_nopaid_shares(struct connection_pool_data *conn_data, struct xdag_pool_task *task, xdag_hash_t hash)
 {
-	struct connection_pool_data *conn_data = &connection->connection_data;
 	const xdag_time_t task_time = task->task_time;
 
 	if(conn_data->task_time <= task_time) {
@@ -463,7 +472,7 @@ static void calculate_nopaid_shares(connection_list_element *connection, struct 
 	}
 }
 
-int register_new_miner(connection_list_element *connection, int index)
+static void register_new_miner(connection_list_element *connection, int index)
 {
 	miner_list_element *elt;
 	struct connection_pool_data *conn_data = &connection->connection_data;
@@ -491,7 +500,7 @@ int register_new_miner(connection_list_element *connection, int index)
 	}
 }
 
-int recieve_data_from_connection(connection_list_element *connection, int index)
+static int recieve_data_from_connection(connection_list_element *connection, int index)
 {
 	struct connection_pool_data *conn_data = &connection->connection_data;
 	int data_size = sizeof(struct xdag_field) - conn_data->data_size;
@@ -574,9 +583,11 @@ int recieve_data_from_connection(connection_list_element *connection, int index)
 			calculate_nopaid_shares(conn_data, task, hash);
 		}
 	}
+
+	return 0;
 }
 
-int send_data_to_connection(connection_list_element *connection, int index)
+static int send_data_to_connection(connection_list_element *connection, int index)
 {
 	struct xdag_field data[2];
 	int nfld = 0;
@@ -743,7 +754,7 @@ static double countpay(struct miner_pool_data *miner, int confirmation_index, do
 	return diff2pay(sum, diff_count);
 }
 
-static int precalculate_payment(uint64_t *hash, int confirmation_index, struct payment_data *data, double *diff, double *prev_diff, uint64_t *nonce)
+static int precalculate_payments(uint64_t *hash, int confirmation_index, struct payment_data *data, double *diff, double *prev_diff, uint64_t *nonce)
 {
 	miner_list_element *elt;
 
@@ -795,7 +806,7 @@ static int precalculate_payment(uint64_t *hash, int confirmation_index, struct p
 	return 0;
 }
 
-static void transfer_payment(struct miner_pool_data *miner, double payment_sum, struct xdag_field *fields, int fields_count, int *field_index)
+static void transfer_payment(struct miner_pool_data *miner, xdag_amount_t payment_sum, struct xdag_field *fields, int fields_count, int *field_index)
 {
 	if(!payment_sum) return;
 
@@ -812,11 +823,11 @@ static void transfer_payment(struct miner_pool_data *miner, double payment_sum, 
 	}
 }
 
-static int do_payments(uint64_t *hash, int fields_count, struct payment_data *data, double *diff, double *prev_diff)
+static void do_payments(uint64_t *hash, int fields_count, struct payment_data *data, double *diff, double *prev_diff)
 {
 	miner_list_element *elt;
 	struct xdag_field fields[12];
-	double payment_sum;
+	xdag_amount_t payment_sum;
 	
 	memcpy(fields[0].data, hash, sizeof(xdag_hashlow_t));
 	fields[0].amount = 0;
@@ -837,12 +848,12 @@ static int do_payments(uint64_t *hash, int fields_count, struct payment_data *da
 			payment_sum += data->reward;
 		}
 
-		transfer_payment(miner, payment_sum, fields, fields_count, field_index);
+		transfer_payment(miner, payment_sum, fields, fields_count, &field_index);
 	}
 	
 	if(g_fund_miner.state != MINER_UNKNOWN)
 	{
-		transfer_payment(&g_fund_miner, data->fund, fields, fields_count, field_index);
+		transfer_payment(&g_fund_miner, data->fund, fields, fields_count, &field_index);
 	}
 
 	if(field_index > 1) {
@@ -887,7 +898,7 @@ static int pay_miners(xdag_time_t time)
 	if(!diff) return -8;
 	prev_diff = diff + miners_count;
 
-	double prev_sum = precalculate_payments(confirmation_index, &data, diff, prev_diff, nonce);
+	double prev_sum = precalculate_payments(hash, confirmation_index, &data, diff, prev_diff, nonce);
 	if(!prev_sum) {
 		free(diff);
 		return -9;

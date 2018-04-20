@@ -13,10 +13,7 @@
 #include <poll.h>
 #endif
 
-#define MAX_MINERS_COUNT               4096
-#define XDAG_POOL_CONFIRMATIONS_COUNT  16
-#define DATA_SIZE                      (sizeof(struct xdag_field) / sizeof(uint32_t))
-#define CONFIRMATIONS_COUNT            XDAG_POOL_CONFIRMATIONS_COUNT   /*16*/
+#define DATA_SIZE     (sizeof(struct xdag_field) / sizeof(uint32_t))
 
 struct xdag_pool_task {
 	struct xdag_field task[2], lastfield, minhash, nonce;
