@@ -207,8 +207,15 @@ static int invoke_procedure(struct xdag_rpc_connection * conn, char *name, cJSON
 /* create xdag connection */
 static struct xdag_rpc_connection* create_connection(int fd, const char* req_buffer, size_t len)
 {
-	char *req = (char*)malloc(len);
-	memcpy(req, req_buffer, len);
+	const char *body = strstr(req_buffer, "\r\n\r\n");
+	if(body) {
+		body += 4;
+	} else {
+		body = req_buffer;
+	}
+	
+	char *req = (char*)malloc(strlen(body));
+	memcpy(req, body, strlen(body));
 	
 	struct xdag_rpc_connection *conn = (struct xdag_rpc_connection*)malloc(sizeof(struct xdag_rpc_connection));
 	conn->buffer = req;
