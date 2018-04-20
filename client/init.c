@@ -213,7 +213,7 @@ void printUsage(char* appName)
 		"If pool_ip:port argument is given, then the node operates as a miner.\n"
 		"Flags:\n"
 		"  -a address     - specify your address to use in the miner\n"
-		"  -c ip:port     - address of another cheatcoin full node to connect\n"
+		"  -c ip:port     - address of another xdag full node to connect\n"
 		"  -d             - run as daemon (default is interactive mode)\n"
 		"  -h             - print this help\n"
 		"  -i             - run as interactive terminal for daemon running in this folder\n"
