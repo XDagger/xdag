@@ -20,11 +20,6 @@
 #include "../dus/programs/dar/source/include/crc.h"
 #include "uthash/utlist.h"
 
-#define MAX_MINERS_COUNT               16384
-#define XDAG_POOL_CONFIRMATIONS_COUNT  16
-#define DATA_SIZE                      (sizeof(struct xdag_field) / sizeof(uint32_t))
-#define CONFIRMATIONS_COUNT            XDAG_POOL_CONFIRMATIONS_COUNT   /* 16 */
-
 //TODO: why do we need these two definitions?
 #define START_MINERS_COUNT     256
 #define START_MINERS_IP_COUNT  8
@@ -240,14 +235,13 @@ char *xdag_pool_get_config(char *buf)
 	return buf;
 }
 
-static int open_pool_connection(char *pool_arg)
+static int open_pool_connection(const char *pool_arg)
 {
 	struct linger linger_opt = { 1, 0 }; // Linger active, timeout 0
 	struct sockaddr_in peeraddr;
 	socklen_t peeraddr_len = sizeof(peeraddr);
 	int rcvbufsize = 1024;
 	int reuseaddr = 1;
-	const char *message;
 	char buf[0x100];
 	char *nextParam;
 
@@ -457,7 +451,7 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 			conn_data->maxdiff[i] = diff;
 		}
 
-		if(!conn_data->miner && conn_data->miner->task_time < task_time) {
+		if(conn_data->miner && conn_data->miner->task_time < task_time) {
 			conn_data->miner->task_time = task_time;
 
 			if(conn_data->miner->maxdiff[i] > 0) {
@@ -495,8 +489,9 @@ static void register_new_miner(connection_list_element *connection, int index)
 		memcpy(new_miner->miner_data.id.data, conn_data->data, sizeof(struct xdag_field));
 		new_miner->miner_data.connections_count = 1;
 		new_miner->miner_data.state = MINER_ACTIVE;
-		conn_data->miner = &elt->miner_data;
 		LL_APPEND(g_miner_list_head, new_miner);
+		conn_data->miner = &new_miner->miner_data;
+		conn_data->state = ACTIVE_CONNECTION;
 	}
 }
 
@@ -520,7 +515,7 @@ static int recieve_data_from_connection(connection_list_element *connection, int
 		if(!conn_data->block_size && conn_data->data[0] == HEADER_WORD) {
 			conn_data->block = malloc(sizeof(struct xdag_block));
 
-			if(!conn_data->block) return 1;
+			if(!conn_data->block) return 0;
 
 			memcpy(conn_data->block->field, conn_data->data, sizeof(struct xdag_field));
 			conn_data->block_size++;
@@ -570,9 +565,11 @@ static int recieve_data_from_connection(connection_list_element *connection, int
 			} else {
 				if(!conn_data->miner) {
 					close_connection(connection, index, "Miner is unregistered");
+					return 0;
 				}
-				if(!memcmp(conn_data->miner->id.data, conn_data->data, sizeof(xdag_hashlow_t))) {
+				if(memcmp(conn_data->miner->id.data, conn_data->data, sizeof(xdag_hashlow_t)) != 0) {
 					close_connection(connection, index, "Wallet address was unexpectedly changed");
+					return 0;
 				}
 				memcpy(conn_data->miner->id.data, conn_data->data, sizeof(struct xdag_field));	//TODO:do I need to copy whole field?
 			}
@@ -584,7 +581,7 @@ static int recieve_data_from_connection(connection_list_element *connection, int
 		}
 	}
 
-	return 0;
+	return 1;
 }
 
 static int send_data_to_connection(connection_list_element *connection, int index)
@@ -601,7 +598,7 @@ static int send_data_to_connection(connection_list_element *connection, int inde
 		//m->shares_count = 0;
 		nfld = 2;
 		memcpy(data, task->task, nfld * sizeof(struct xdag_field));
-	} else if(!conn_data->balance_sent && !conn_data->miner && time(0) >= (conn_data->task_time << 6) + 4) {
+	} else if(!conn_data->balance_sent && conn_data->miner && time(0) >= (conn_data->task_time << 6) + 4) {
 		conn_data->balance_sent = 1;
 		memcpy(data[0].data, conn_data->miner->id.data, sizeof(xdag_hash_t));
 		data[0].amount = xdag_get_balance(data[0].data);
