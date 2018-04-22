@@ -368,7 +368,7 @@ void *pool_net_thread(void *arg)
 
 		if(!connection_can_be_accepted(sock, &peeraddr)) {
 			close(fd);
-			return 0;
+			continue;
 		}
 
 		setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char*)&rcvbufsize, sizeof(int));
