@@ -755,12 +755,6 @@ static int precalculate_payments(uint64_t *hash, int confirmation_index, struct 
 {
 	miner_list_element *elt;
 
-	data->balance = xdag_get_balance(hash);
-	if(!data->balance) return -2;
-
-	data->pay = data->balance - (xdag_amount_t)(g_pool_fee * data->balance);
-	if(!data->pay) return -3;
-
 	data->reward = (xdag_amount_t)(data->balance * g_pool_reward);
 	data->pay -= data->reward;
 
@@ -800,7 +794,7 @@ static int precalculate_payments(uint64_t *hash, int confirmation_index, struct 
 		data->pay -= data->direct;
 	}
 
-	return 0;
+	return data->prev_sum;
 }
 
 static void transfer_payment(struct miner_pool_data *miner, xdag_amount_t payment_sum, struct xdag_field *fields, int fields_count, int *field_index)
@@ -877,6 +871,12 @@ static int pay_miners(xdag_time_t time)
 	uint64_t *hash = g_xdag_mined_hashes[confirmation_index];
 	uint64_t *nonce = g_xdag_mined_nonce[confirmation_index];
 
+	data.balance = xdag_get_balance(hash);
+	if(!data.balance) return -2;
+
+	data.pay = data.balance - (xdag_amount_t)(g_pool_fee * data.balance);
+	if(!data.pay) return -3;
+
 	key = xdag_get_key(hash);
 	if(key < 0) return -4;
 
@@ -895,8 +895,7 @@ static int pay_miners(xdag_time_t time)
 	if(!diff) return -8;
 	prev_diff = diff + miners_count;
 
-	double prev_sum = precalculate_payments(hash, confirmation_index, &data, diff, prev_diff, nonce);
-	if(!prev_sum) {
+	if(!precalculate_payments(hash, confirmation_index, &data, diff, prev_diff, nonce)) {
 		free(diff);
 		return -9;
 	}
