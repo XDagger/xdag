@@ -399,6 +399,12 @@ static void close_connection(connection_list_element *connection, int index, con
 {
 	struct connection_pool_data *conn_data = &connection->connection_data;
 
+	pthread_mutex_lock(&g_descriptors_mutex);
+	LL_DELETE(g_connection_list_head, connection);
+	--g_connections_count;
+	rebuild_descriptors_array();
+	pthread_mutex_unlock(&g_descriptors_mutex);
+
 	close(conn_data->connection_descriptor.fd);
 
 	if(conn_data->block) {
@@ -415,7 +421,6 @@ static void close_connection(connection_list_element *connection, int index, con
 	uint32_t ip = conn_data->ip;
 	uint16_t port = conn_data->port;
 
-	LL_DELETE(g_connection_list_head, connection);
 	free(connection);
 
 	xdag_info("Pool: miner %d disconnected from %u.%u.%u.%u:%u by %s", index,
@@ -474,10 +479,11 @@ static void register_new_miner(connection_list_element *connection, int index)
 	int exists = 0;
 	LL_FOREACH(g_miner_list_head, elt)
 	{
-		if(memcmp(elt->miner_data.id.data, conn_data->data, sizeof(xdag_hashlow_t))) {
+		if(memcmp(elt->miner_data.id.data, conn_data->data, sizeof(xdag_hashlow_t)) == 0) {
 			conn_data->miner = &elt->miner_data;
 			++conn_data->miner->connections_count;
 			conn_data->miner->state = MINER_ACTIVE;
+			conn_data->state = ACTIVE_CONNECTION;
 			exists = 1;
 			break;
 		}
@@ -819,7 +825,7 @@ static void do_payments(uint64_t *hash, int fields_count, struct payment_data *d
 	miner_list_element *elt;
 	struct xdag_field fields[12];
 	xdag_amount_t payment_sum;
-	
+
 	memcpy(fields[0].data, hash, sizeof(xdag_hashlow_t));
 	fields[0].amount = 0;
 	int field_index = 1;
@@ -841,9 +847,8 @@ static void do_payments(uint64_t *hash, int fields_count, struct payment_data *d
 
 		transfer_payment(miner, payment_sum, fields, fields_count, &field_index);
 	}
-	
-	if(g_fund_miner.state != MINER_UNKNOWN)
-	{
+
+	if(g_fund_miner.state != MINER_UNKNOWN) {
 		transfer_payment(&g_fund_miner, data->fund, fields, fields_count, &field_index);
 	}
 
@@ -901,7 +906,7 @@ static int pay_miners(xdag_time_t time)
 	}
 
 	do_payments(hash, fields_count, &data, diff, prev_diff);
-	
+
 	free(diff);
 
 	return 0;
