@@ -7,7 +7,6 @@
     <ClCompile Include="CEditWalletAddr.cpp" />
     <ClCompile Include="CEditWalletAddrMine.cpp" />
     <ClCompile Include="ToolTip.cpp" />
-    <ClCompile Include="utils.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="xdagwallet.h" />
@@ -20,7 +19,6 @@
     <ClInclude Include="CEditWalletAddr.h" />
     <ClInclude Include="CEditWalletAddrMine.h" />
     <ClInclude Include="ToolTip.h" />
-    <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="xdagwallet.rc" />
