@@ -29,7 +29,7 @@
 char *g_coinname, *g_progname;
 #define coinname   g_coinname
 
-#define ARG_EQUAL(a,b,c) strcmp(c, "")==0?strcmp(a, b) == 0:(strcmp(a, b)==0 || strcmp(a, c) == 0)
+#define ARG_EQUAL(a, b, c) strcmp(c, "") == 0?strcmp(a, b) == 0:(strcmp(a, b)==0 || strcmp(a, c) == 0)
 
 int g_xdag_state = XDAG_STATE_INIT;
 int g_xdag_testnet = 0;
@@ -49,7 +49,7 @@ int xdag_init(int argc, char **argv, int isGui)
 
 	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
 	char *ptr;
-	int transport_flags = 0, n_addrports = 0, n_mining_threads = 0, is_pool = 0, is_miner = 0, level, is_rpc = 0;
+	int transport_flags = 0, n_addrports = 0, n_mining_threads = 0, is_pool = 0, is_miner = 0, level, is_rpc = 0, rpc_port = 0;
 #if !defined(_WIN32) && !defined(_WIN64)
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
@@ -93,52 +93,59 @@ int xdag_init(int argc, char **argv, int isGui)
 		
 		if (ARG_EQUAL(argv[i], "-a", "")) { /* miner address */
 			if (++i < argc) miner_address = argv[i];
-		} else if (ARG_EQUAL(argv[i], "-c", "")) { /* another full node address */
+		} else if(ARG_EQUAL(argv[i], "-c", "")) { /* another full node address */
 			if (++i < argc && n_addrports < 256)
 				addrports[n_addrports++] = argv[i];
-		} else if (ARG_EQUAL(argv[i], "-d", "")) { /* daemon mode */
+		} else if(ARG_EQUAL(argv[i], "-d", "")) { /* daemon mode */
 #if !defined(_WIN32) && !defined(_WIN64)
 			transport_flags |= XDAG_DAEMON;
 #endif
-		} else if (ARG_EQUAL(argv[i], "-h", "")) { /* help */
+		} else if(ARG_EQUAL(argv[i], "-h", "")) { /* help */
 			printUsage(argv[0]);
 			return 0;
-		} else if (ARG_EQUAL(argv[i], "-i", "")) { /* interactive mode */
+		} else if(ARG_EQUAL(argv[i], "-i", "")) { /* interactive mode */
 			return terminal();
-		} else if (ARG_EQUAL(argv[i], "-l", "")) { /* list balance */
+		} else if(ARG_EQUAL(argv[i], "-l", "")) { /* list balance */
 			return out_balances();
-		} else if (ARG_EQUAL(argv[i], "-m", "")) { /* mining thread number */
+		} else if(ARG_EQUAL(argv[i], "-m", "")) { /* mining thread number */
 			if (++i < argc) {
 				sscanf(argv[i], "%d", &n_mining_threads);
 				if (n_mining_threads < 0) n_mining_threads = 0;
 			}
-		} else if (ARG_EQUAL(argv[i], "-p", "")) { /* public address & port */
+		} else if(ARG_EQUAL(argv[i], "-p", "")) { /* public address & port */
 			if (++i < argc)
 				pubaddr = argv[i];
-		} else if (ARG_EQUAL(argv[i], "-P", "")) { /* pool config */
+		} else if(ARG_EQUAL(argv[i], "-P", "")) { /* pool config */
 			if (++i < argc) {
 				is_pool = 1;
 				pool_arg = argv[i];
 			}
-		} else if (ARG_EQUAL(argv[i], "-r", "")) { /* load blocks and wait for run command */
+		} else if(ARG_EQUAL(argv[i], "-r", "")) { /* load blocks and wait for run command */
 			g_xdag_run = 0;
-		} else if (ARG_EQUAL(argv[i], "-s", "")) { /* address of this node */
+		} else if(ARG_EQUAL(argv[i], "-s", "")) { /* address of this node */
 			if (++i < argc)
 				bindto = argv[i];
-		} else if (ARG_EQUAL(argv[i], "-t", "")) { /* connect test net */
+		} else if(ARG_EQUAL(argv[i], "-t", "")) { /* connect test net */
 			g_xdag_testnet = 1;
-		} else if (ARG_EQUAL(argv[i], "-v", "")) { /* log level */
+		} else if(ARG_EQUAL(argv[i], "-v", "")) { /* log level */
 			if (++i < argc && sscanf(argv[i], "%d", &level) == 1) {
 				xdag_set_log_level(level);
 			} else {
 				printf("Illevel use of option -v\n");
 				return -1;
 			}
-		} else if (ARG_EQUAL(argv[i], "-z", "")) { /* memory map  */
+		} else if(ARG_EQUAL(argv[i], "-z", "")) { /* memory map  */
 			if (++i < argc)
 				xdag_mem_tempfile_path(argv[i]);
-		} else if (ARG_EQUAL(argv[i], "", "-rpc-enable")) { /* enable JSON-RPC service */
+		} else if(ARG_EQUAL(argv[i], "", "-rpc-enable")) { /* enable JSON-RPC service */
 			is_rpc = 1;
+		} else if(ARG_EQUAL(argv[i], "", "-rpc-port")) { /* set JSON-RPC service port */
+			if(++i < argc && sscanf(argv[i], "%d", &rpc_port) == 1) {
+				if(rpc_port < 0 || rpc_port > 65535) {
+					printf("RPC port is invalid, set to default.\n");
+					rpc_port = 0;
+				}
+			}
 		} else {
 			printUsage(argv[0]);
 			return 0;
@@ -151,7 +158,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	}
 		
 	/* initialize json rpc */
-	if(is_rpc && xdag_rpc_service_init()) return -1;
+	if(is_rpc && xdag_rpc_service_init(rpc_port)) return -1;
 		
 	g_is_miner = is_miner;
 	g_is_pool = is_pool;
@@ -234,5 +241,6 @@ void printUsage(char* appName)
 		"  -z <path>      - path to temp-file folder\n"
 		"  -z malloc      - use malloc RAM instead of temp-files\n"
 		"  -rpc-enable    - enable JSON-RPC service\n"
+		"  -rpc-port      - set HTTP JSON-RPC port (default is 7677)\n"
 		, appName);
 }

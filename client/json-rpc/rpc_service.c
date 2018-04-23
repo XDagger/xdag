@@ -342,10 +342,13 @@ static void *rpc_service_thread(void *arg)
 }
 
 /* init xdag rpc service */
-int xdag_rpc_service_init(void)
+int xdag_rpc_service_init(int port)
 {
+	if (!port) {
+		port = RPC_SERVER_PORT;
+	}
 	pthread_t th;
-	if(pthread_create(&th, NULL, rpc_service_thread, (void*)&RPC_SERVER_PORT)) {
+	if(pthread_create(&th, NULL, rpc_service_thread, (void*)&port)) {
 		return 1;
 	}
 	
