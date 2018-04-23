@@ -29,7 +29,7 @@
 char *g_coinname, *g_progname;
 #define coinname   g_coinname
 
-#define ARG_EQUAL(a,b,c) strcmp(c, "")==0?strcmp(a, b) == 0:(strcmp(a, b)==0 || strcmp(a, c) == 0)
+#define ARG_EQUAL(a,b,c) strcmp(c, "") == 0 ? strcmp(a, b) == 0 : (strcmp(a, b) == 0 || strcmp(a, c) == 0)
 
 int g_xdag_state = XDAG_STATE_INIT;
 int g_xdag_testnet = 0;
