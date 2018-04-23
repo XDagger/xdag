@@ -31,7 +31,8 @@
 enum miner_state {
 	MINER_UNKNOWN = 0,
 	MINER_ACTIVE = 1,
-	MINER_ARCHIVE = 2
+	MINER_ARCHIVE = 2,
+	MINER_SERVICE = 3
 };
 
 struct miner_pool_data {
@@ -118,6 +119,7 @@ int xdag_initialize_pool(const char *pool_arg)
 	memset(&g_fund_miner, 0, sizeof(struct miner_pool_data));
 
 	xdag_get_our_block(g_pool_miner.id.data);
+	g_pool_miner.state = MINER_SERVICE;
 
 	g_fds = malloc(MAX_MINERS_COUNT * sizeof(struct pollfd));
 	if(!g_fds) return -1;
@@ -590,10 +592,10 @@ static int recieve_data_from_connection(connection_list_element *connection, int
 	return 1;
 }
 
-static int send_data_to_connection(connection_list_element *connection, int index)
+static int send_data_to_connection(connection_list_element *connection, int index, int *processed)
 {
 	struct xdag_field data[2];
-	int nfld = 0;
+	int fields_count = 0;
 	struct connection_pool_data *conn_data = &connection->connection_data;
 
 	uint64_t task_index = g_xdag_pool_task_index;
@@ -602,23 +604,24 @@ static int send_data_to_connection(connection_list_element *connection, int inde
 	if(conn_data->task_index < task_index) {
 		conn_data->task_index = task_index;
 		//m->shares_count = 0;
-		nfld = 2;
-		memcpy(data, task->task, nfld * sizeof(struct xdag_field));
+		fields_count = 2;
+		memcpy(data, task->task, fields_count * sizeof(struct xdag_field));
 	} else if(!conn_data->balance_sent && conn_data->miner && time(0) >= (conn_data->task_time << 6) + 4) {
 		conn_data->balance_sent = 1;
 		memcpy(data[0].data, conn_data->miner->id.data, sizeof(xdag_hash_t));
 		data[0].amount = xdag_get_balance(data[0].data);
-		nfld = 1;
+		fields_count = 1;
 	}
 
-	if(nfld) {
-		for(int j = 0; j < nfld; ++j) {
+	if(fields_count) {
+		*processed = 1;
+		for(int j = 0; j < fields_count; ++j) {
 			dfslib_encrypt_array(g_crypt, (uint32_t*)(data + j), DATA_SIZE, conn_data->nfield_out++);
 		}
 
-		int length = write(conn_data->connection_descriptor.fd, (void*)data, nfld * sizeof(struct xdag_field));
+		int length = write(conn_data->connection_descriptor.fd, (void*)data, fields_count * sizeof(struct xdag_field));
 
-		if(length != nfld * sizeof(struct xdag_field)) {
+		if(length != fields_count * sizeof(struct xdag_field)) {
 			close_connection(connection, index, "write error");
 			return 0;
 		}
@@ -644,6 +647,7 @@ void *pool_main_thread(void *arg)
 		if(!res) continue;
 
 		int index = 0;
+		int processed = 0;
 		LL_FOREACH_SAFE(g_connection_list_head, elt, eltmp)
 		{
 			struct pollfd *p = g_fds + index++;
@@ -651,29 +655,34 @@ void *pool_main_thread(void *arg)
 			if(p->revents & POLLNVAL) continue;
 
 			if(p->revents & POLLHUP) {
+				processed = 1;
 				close_connection(elt, index, "socket hangup");
 				continue;
 			}
 
 			if(p->revents & POLLERR) {
+				processed = 1;
 				close_connection(elt, index, "socket error");
 				continue;
 			}
 
 			if(p->revents & POLLIN) {
+				processed = 1;
 				if(!recieve_data_from_connection(elt, index)) {
 					continue;
 				}
 			}
 
 			if(p->revents & POLLOUT) {
-				if(!send_data_to_connection(elt, index)) {
+				if(!send_data_to_connection(elt, index, &processed)) {
 					continue;
 				}
 			}
 		}
 
-		sleep(1);
+		if(!processed) {
+			sleep(1);
+		}
 	}
 
 	return 0;
@@ -768,7 +777,7 @@ static int precalculate_payments(uint64_t *hash, int confirmation_index, struct 
 		if(g_fund_miner.state == MINER_UNKNOWN) {
 			xdag_time_t t;
 			if(!xdag_address2hash(FUND_ADDRESS, g_fund_miner.id.hash) && xdag_get_block_pos(g_fund_miner.id.hash, &t) >= 0) {
-				g_fund_miner.state = MINER_ARCHIVE;
+				g_fund_miner.state = MINER_SERVICE;
 			}
 		}
 
