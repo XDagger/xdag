@@ -145,8 +145,7 @@ int64_t xdag_storage_save(const struct xdag_block *b)
 }
 
 /* reads a block and its number from the local repository; writes it to the buffer or returns a permanent reference, 0 in case of error */
-struct xdag_block *xdag_storage_load(xdag_hash_t hash, xdag_time_t time, uint64_t pos,
-											   struct xdag_block *buf)
+struct xdag_block *xdag_storage_load(xdag_hash_t hash, xdag_time_t time, uint64_t pos, struct xdag_block *buf)
 {
 	xdag_hash_t hash0;
 	char path[256];
