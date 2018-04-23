@@ -18,10 +18,6 @@ struct xdag_pool_task g_xdag_pool_task[2];
 uint64_t g_xdag_pool_task_index;
 
 const char *g_miner_address;
-struct miner g_local_miner;
-struct miner g_fund_miner;
-struct miner *g_miners;
-struct pollfd *g_fds;
 
 pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_share_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -76,35 +72,25 @@ int xdag_initialize_mining(int pool_on, const char *pool_arg, const char *miner_
 
 	if(crypt_start()) return -1;
 
-	memset(&g_local_miner, 0, sizeof(struct miner));
-	memset(&g_fund_miner, 0, sizeof(struct miner));
-
 	if(!pool_on) {
-		res = pthread_create(&th, 0, miner_net_thread, (void*)pool_arg);
-		if(res) return -1;
-
-		pthread_detach(th);
-
-		return 0;
+		return xdag_initialize_miner(pool_arg);
 	}
-
-	g_miners = malloc(MAX_MINERS_COUNT * sizeof(struct miner));
-	g_fds = malloc(MAX_MINERS_COUNT * sizeof(struct pollfd));
-	if(!g_miners || !g_fds) return -1;
-
-	res = pthread_create(&th, 0, pool_net_thread, (void*)pool_arg);
-	if(res) return -1;
-
-	pthread_detach(th);
-	res = pthread_create(&th, 0, pool_main_thread, 0);
-	if(res) return -1;
-
-	pthread_detach(th);
-	res = pthread_create(&th, 0, pool_block_thread, 0);
-	if(res) return -1;
-
-	pthread_detach(th);
-
-	return 0;
+	else {
+		return xdag_initialize_pool(pool_arg);
+	}
 }
 
+//function sets minimal share for the task
+void xdag_set_min_share(struct xdag_pool_task *task, xdag_hash_t last, xdag_hash_t hash)
+{
+	if(xdag_cmphash(hash, task->minhash.data) < 0) {
+		pthread_mutex_lock(&g_share_mutex);
+
+		if(xdag_cmphash(hash, task->minhash.data) < 0) {
+			memcpy(task->minhash.data, hash, sizeof(xdag_hash_t));
+			memcpy(task->lastfield.data, last, sizeof(xdag_hash_t));
+		}
+
+		pthread_mutex_unlock(&g_share_mutex);
+	}
+}
