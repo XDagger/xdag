@@ -16,7 +16,7 @@ extern xdag_hash_t g_xdag_mined_hashes[XDAG_POOL_CONFIRMATIONS_COUNT];
 extern xdag_hash_t g_xdag_mined_nonce[XDAG_POOL_CONFIRMATIONS_COUNT];
 
 /* initialization of the pool */
-extern int xdag_initialize_miner(const char *pool_arg);
+extern int xdag_initialize_pool(const char *pool_arg);
 
 /* gets pool parameters as a string, 0 - if the pool is disabled */
 extern char *xdag_pool_get_config(char *buf);

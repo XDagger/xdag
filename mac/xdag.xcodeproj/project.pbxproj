@@ -95,6 +95,8 @@
 		385827B120737CC6009C83CB /* rpc_service.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_service.h; sourceTree = "<group>"; };
 		385827B220737CC6009C83CB /* rpc_wrapper.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rpc_wrapper.c; sourceTree = "<group>"; };
 		385827B320737CC6009C83CB /* rpc_wrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_wrapper.h; sourceTree = "<group>"; };
+		388CB2CC208E328B00F2AA96 /* uthash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uthash.h; sourceTree = "<group>"; };
+		388CB2CD208E328B00F2AA96 /* utlist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utlist.h; sourceTree = "<group>"; };
 		3895BF47205520AD00344AE0 /* bundle1.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; name = bundle1.o; path = usr/lib/bundle1.o; sourceTree = SDKROOT; };
 		389F043620544EDC003F3084 /* xdag */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xdag; sourceTree = BUILT_PRODUCTS_DIR; };
 		38A15E0920544F3E00598EC2 /* crc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crc.h; sourceTree = "<group>"; };
@@ -219,6 +221,15 @@
 				385827B320737CC6009C83CB /* rpc_wrapper.h */,
 			);
 			path = "json-rpc";
+			sourceTree = "<group>";
+		};
+		388CB2CB208E328B00F2AA96 /* uthash */ = {
+			isa = PBXGroup;
+			children = (
+				388CB2CC208E328B00F2AA96 /* uthash.h */,
+				388CB2CD208E328B00F2AA96 /* utlist.h */,
+			);
+			path = uthash;
 			sourceTree = "<group>";
 		};
 		389F042D20544EDC003F3084 = {
@@ -411,6 +422,7 @@
 		38A15E4220544F3F00598EC2 /* client */ = {
 			isa = PBXGroup;
 			children = (
+				388CB2CB208E328B00F2AA96 /* uthash */,
 				385827A920737CC6009C83CB /* json-rpc */,
 				385827A420737CC6009C83CB /* utils */,
 				383256B7206BF098006CAE67 /* miner.c */,

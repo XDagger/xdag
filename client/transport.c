@@ -10,6 +10,7 @@
 #include "netdb.h"
 #include "init.h"
 #include "sync.h"
+#include "miner.h"
 #include "pool.h"
 #include "version.h"
 #include "../dnet/dnet_main.h"
