@@ -6,6 +6,13 @@
 #include <math.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#if defined(_WIN32) || defined(_WIN64)
+#else
+#include <netinet/in.h>
+#include <unistd.h>
+#include <sys/fcntl.h>
+#include <errno.h>
+#endif
 #include "block.h"
 #include "sync.h"
 #include "mining_common.h"
@@ -866,7 +873,7 @@ static void do_payments(uint64_t *hash, int fields_count, struct payment_data *d
 	}
 }
 
-static int pay_miners(xdag_time_t time)
+int pay_miners(xdag_time_t time)
 {
 	int64_t pos;
 	int key, defkey, fields_count;
