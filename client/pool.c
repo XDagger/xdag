@@ -31,9 +31,10 @@
 #define START_MINERS_COUNT     256
 #define START_MINERS_IP_COUNT  8
 
-#define HEADER_WORD            0x3fca9e2bu
-#define FUND_ADDRESS           "FQglVQtb60vQv2DOWEUL7yh3smtj7g1s"  /* community fund */
-#define SHARES_PER_TASK_LIMIT  20                                  /* maximum count of shares per task */
+#define HEADER_WORD                        0x3fca9e2bu
+#define FUND_ADDRESS                       "FQglVQtb60vQv2DOWEUL7yh3smtj7g1s" /* community fund */
+#define SHARES_PER_TASK_LIMIT              20                                 /* maximum count of shares per task */
+#define DEFAUL_CONNECTIONS_PER_MINER_LIMIT 100
 
 enum miner_state {
 	MINER_UNKNOWN = 0,
@@ -101,7 +102,8 @@ struct payment_data {
 
 xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT], g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
 
-static int g_max_miners_count = START_MINERS_COUNT, g_max_miner_ip_count = START_MINERS_IP_COUNT;
+static int g_max_connections_count = START_MINERS_COUNT, g_max_miner_ip_count = START_MINERS_IP_COUNT;
+static int g_connections_per_miner_limit = DEFAUL_CONNECTIONS_PER_MINER_LIMIT;
 static int g_connections_count = 0;
 static double g_pool_fee = 0, g_pool_reward = 0, g_pool_direct = 0, g_pool_fund = 0;
 static struct xdag_block *g_firstb = 0, *g_lastb = 0;
@@ -158,18 +160,34 @@ int xdag_pool_set_config(const char *pool_config)
 	if(pool_config) {
 		int open_max = sysconf(_SC_OPEN_MAX);
 
-		sscanf(pool_config, "%d", &g_max_miners_count);
+		sscanf(pool_config, "%d", &g_max_connections_count);
 
-		if(g_max_miners_count < 0) {
-			g_max_miners_count = 0;
-			xdag_warn("pool : wrong miner count");
-		} else if(g_max_miners_count > MAX_MINERS_COUNT) {
-			g_max_miners_count = MAX_MINERS_COUNT;
+		if(g_max_connections_count < 0) {
+			g_max_connections_count = 0;
+			xdag_warn("pool : wrong miners count");
+		} else if(g_max_connections_count > MAX_MINERS_COUNT) {
+			g_max_connections_count = MAX_MINERS_COUNT;
 			xdag_warn("pool : exceed max miners count %d", MAX_MINERS_COUNT);
-		} else if(g_max_miners_count > open_max - 64) {
-			g_max_miners_count = open_max - 64;
+		} else if(g_max_connections_count > open_max - 64) {
+			g_max_connections_count = open_max - 64;
 			xdag_warn("pool : exceed max open files %d", open_max - 64);
 		}
+	}
+
+	pool_config = strtok_r(0, " \t\r\n:", &lasts);
+	if(pool_config) {
+		sscanf(pool_config, "%d", &g_max_miner_ip_count);
+
+		if(g_max_miner_ip_count <= 0)
+			g_max_miner_ip_count = 1;
+	}
+
+	pool_config = strtok_r(0, " \t\r\n:", &lasts);
+	if(pool_config) {
+		sscanf(pool_config, "%d", &g_connections_per_miner_limit);
+
+		if(g_connections_per_miner_limit <= 0)
+			g_connections_per_miner_limit = 1;
 	}
 
 	pool_config = strtok_r(0, " \t\r\n:", &lasts);
@@ -211,14 +229,6 @@ int xdag_pool_set_config(const char *pool_config)
 
 	pool_config = strtok_r(0, " \t\r\n:", &lasts);
 	if(pool_config) {
-		sscanf(pool_config, "%d", &g_max_miner_ip_count);
-
-		if(g_max_miner_ip_count <= 0)
-			g_max_miner_ip_count = 1;
-	}
-
-	pool_config = strtok_r(0, " \t\r\n:", &lasts);
-	if(pool_config) {
 		sscanf(pool_config, "%lf", &g_pool_fund);
 
 		g_pool_fund /= 100;
@@ -237,8 +247,8 @@ char *xdag_pool_get_config(char *buf)
 {
 	if(!g_xdag_pool) return 0;
 
-	sprintf(buf, "%d:%.2lf:%.2lf:%.2lf:%d:%.2lf", g_max_miners_count, g_pool_fee * 100, g_pool_reward * 100,
-		g_pool_direct * 100, g_max_miner_ip_count, g_pool_fund * 100);
+	sprintf(buf, "%d:%d:%d:%.2lf:%.2lf:%.2lf:%.2lf", g_max_connections_count, g_max_miner_ip_count, g_connections_per_miner_limit,
+		g_pool_fee * 100, g_pool_reward * 100, g_pool_direct * 100, g_pool_fund * 100);
 
 	return buf;
 }
@@ -313,7 +323,7 @@ static int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 
 	//firstly we check that total count of connection did not exceed max count of connection
 	LL_COUNT(g_connection_list_head, elt, count);
-	if(count >= g_max_miners_count) {
+	if(count >= g_max_connections_count) {
 		return 0;
 	}
 
@@ -479,7 +489,7 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 	}
 }
 
-static void register_new_miner(connection_list_element *connection, int index)
+static int register_new_miner(connection_list_element *connection, int index)
 {
 	miner_list_element *elt;
 	struct connection_pool_data *conn_data = &connection->connection_data;
@@ -488,6 +498,11 @@ static void register_new_miner(connection_list_element *connection, int index)
 	LL_FOREACH(g_miner_list_head, elt)
 	{
 		if(memcmp(elt->miner_data.id.data, conn_data->data, sizeof(xdag_hashlow_t)) == 0) {
+			if(elt->miner_data.connections_count >= g_connections_per_miner_limit) {
+				close_connection(connection, index, "Max count of connections per miner is exceeded");
+				return 0;
+			}
+
 			conn_data->miner = &elt->miner_data;
 			++conn_data->miner->connections_count;
 			conn_data->miner->state = MINER_ACTIVE;
@@ -507,6 +522,8 @@ static void register_new_miner(connection_list_element *connection, int index)
 		conn_data->miner = &new_miner->miner_data;
 		conn_data->state = ACTIVE_CONNECTION;
 	}
+
+	return 1;
 }
 
 static int recieve_data_from_connection(connection_list_element *connection, int index)
@@ -575,7 +592,9 @@ static int recieve_data_from_connection(connection_list_element *connection, int
 			}
 
 			if(conn_data->state == UNKNOWN_ADDRESS) {
-				register_new_miner(connection, index);
+				if(!register_new_miner(connection, index)) {
+					return 0;
+				}
 			} else {
 				if(!conn_data->miner) {
 					close_connection(connection, index, "Miner is unregistered");
