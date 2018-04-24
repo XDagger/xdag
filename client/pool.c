@@ -450,9 +450,9 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 		// diff value is equal to 0xFFFFFFFFFFFFFFFF (can't be higher by definition).
 		// But because of the approximation from double to int
 		// even when diff is "around" 0xFFFFFFFFFFFFFFFF diff will be 1.
-		// Test: for diff >= FFFFFFDFFFFFFC00 (18446743936270597120) ldexp(diff, -64)=1
-		// Test_ for diff <= FFFFFFFFFFFFFBFF (18446744073709550591) ldexp(diff, -64)=0
-		// Still need to investigate the purpose of using a so heavy(?) function to do it.
+		// Test: for diff >= FFFFFFFFFFFFFC00 (18446744073709550592) ldexp(diff, -64)=1
+		// Test: for diff <= FFFFFFFFFFFFFBFF (18446744073709550591) ldexp(diff, -64)=0
+		// Still need to investigate the purpose of using ldexp function to do it.
 		
 		// %%%%%% 		diff += ((uint64_t*)hash)[3];			     %%%%%%
 		// Given that hash[3] is the most significant part of the 256 bit number
