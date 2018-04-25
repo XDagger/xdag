@@ -17,6 +17,8 @@
 
 #define ASYNC_LOG 1
 
+//#define LOG_PRINT // print log to stdout
+
 #define XDAG_LOG_FILE "%s.log"
 #define RING_BUFFER_SIZE 2048
 #define MAX_POLL_SIZE (RING_BUFFER_SIZE - 4)
@@ -121,23 +123,27 @@ size_t get_log(char* log, size_t size)
 static void *xdag_log_writer_thread(void* data)
 {
 	char *poll_get_buf = (char*)malloc(MAX_POLL_SIZE);
-	memset(poll_get_buf, 0, MAX_POLL_SIZE);
 
 	size_t pollsize = 0;
 	while (1) {
 		sem_wait(writer_notice_sem);
 		
+		memset(poll_get_buf, 0, MAX_POLL_SIZE);
 		pollsize = get_log(poll_get_buf, MAX_POLL_SIZE);
 		if (pollsize>0) {
 			FILE *f = xdag_open_file(log_file_path, "a");
 			if (!f) {
 				// open file failed use stderr instead.
+				printf("[ERROR] open file %s failed, use stderr\n", log_file_path);
 				f = stderr;
 			}
 			
 			fwrite(poll_get_buf, 1, pollsize, f);
 			
-			xdag_close_file(f);
+			if(f != stderr) {
+				xdag_close_file(f);
+			}
+			
 		} else {
 			// ring buffer empty
 		}
@@ -178,6 +184,9 @@ int xdag_log(int level, const char *format, ...)
 	
 	sprintf(buffer, "%s.%03d [%012llx:%.4s]  %s\n", timebuf, (int)(tv.tv_usec / 1000), (long long)pthread_self_ptr(), lvl + 4 * level, buf);
 	
+#ifdef LOG_PRINT
+	printf("%s", buffer);
+#endif
 	size_t putsize = put_log(buffer, strlen(buffer));
 	if(putsize>0) {
 		sem_post(writer_notice_sem);
@@ -190,7 +199,7 @@ int xdag_log(int level, const char *format, ...)
 	va_list arg;
 	struct timeval tv;
 	FILE *f;
-	int done;
+	int done = 0;
 	time_t t;
 	
 	if (level < 0 || level > XDAG_TRACE) {
@@ -209,22 +218,34 @@ int xdag_log(int level, const char *format, ...)
 	pthread_mutex_lock(&log_mutex);
 	sprintf(buf, XDAG_LOG_FILE, g_progname);
 	
-	char buffer[RING_BUFFER_SIZE] = {0};
-	
-	sprintf(buffer, "%s.%03d [%012llx:%.4s]  ", tbuf, (int)(tv.tv_usec / 1000), (long long)pthread_self_ptr(), lvl + 4 * level);
-	
 	f = xdag_open_file(buf, "a");
 	if (!f) {
 		done = -1; goto end;
 	}
 	
+#ifdef LOG_PRINT
+	printf("%s.%03d [%012llx:%.4s]  ", tbuf, (int)(tv.tv_usec / 1000), (long long)pthread_self_ptr(), lvl + 4 * level);
+#else
 	fprintf(f, "%s.%03d [%012llx:%.4s]  ", tbuf, (int)(tv.tv_usec / 1000), (long long)pthread_self_ptr(), lvl + 4 * level);
+#endif
 	
 	va_start(arg, format);
+	
+	
+#ifdef LOG_PRINT
+	vprintf(format, arg);
+#else
 	done = vfprintf(f, format, arg);
+#endif
+
 	va_end(arg);
 
+#ifdef LOG_PRINT
+	printf("\n");
+#else
 	fprintf(f, "\n");
+#endif
+	
 	xdag_close_file(f);
 
  end:
@@ -356,10 +377,16 @@ int xdag_log_init(void)
 	
 	writer_notice_sem = sem_open(SEM_LOG_WRITER, O_CREAT, 0644, 0);
 	pthread_t writer_thread;
-	if(pthread_create(&writer_thread, NULL, xdag_log_writer_thread, NULL)) {
+	int err = pthread_create(&writer_thread, NULL, xdag_log_writer_thread, NULL);
+	if(err != 0) {
+		printf("create xdag_log_writer_thread failed, error : %s\n", strerror(err));
 		return -1;
 	}
-	pthread_detach(writer_thread);
+	err = pthread_detach(writer_thread);
+	if (err != 0) {
+		printf("detach xdag_log_writer_thread failed, error : %s\n", strerror(err));
+		return -1;
+	}
 #endif
 	
 	xdag_mess("Initializing log system...");
