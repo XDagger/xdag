@@ -117,6 +117,7 @@ miner_list_element *g_miner_list_head = NULL;
 pthread_mutex_t g_descriptors_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int pay_miners(xdag_time_t time);
+void remove_inactive_miners();
 
 /* initialization of the pool */
 int xdag_initialize_pool(const char *pool_arg)
@@ -736,6 +737,7 @@ void *pool_block_thread(void *arg)
 			prev_task_time = current_task_time;
 
 			res = pay_miners(current_task_time - CONFIRMATIONS_COUNT + 1);
+			remove_inactive_miners();
 
 			xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
 				hash[3], hash[2], hash[1], hash[0], (current_task_time - CONFIRMATIONS_COUNT + 1) << 16 | 0xffff, res);
@@ -974,6 +976,23 @@ int pay_miners(xdag_time_t time)
 	free(diff);
 
 	return 0;
+}
+
+void remove_inactive_miners()
+{
+	miner_list_element *elt, *eltmp;	
+
+	LL_FOREACH_SAFE(g_miner_list_head, elt, eltmp)
+	{
+		if(elt->miner_data.state == MINER_ARCHIVE && miner_calculate_unpaid_shares(&elt->miner_data) == 0.0) {
+			const char *address = xdag_hash2address(elt->miner_data.id.data);
+			
+			LL_DELETE(g_miner_list_head, elt);
+			free(elt);
+
+			xdag_info("Pool: miner %s is removed from miners list", address);
+		}
+	}
 }
 
 static const char* miner_state_to_string(int miner_state)
