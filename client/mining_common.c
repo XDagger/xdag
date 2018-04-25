@@ -53,10 +53,7 @@ static int crypt_start(void)
 miner_addr - address of the miner, if specified */
 int xdag_initialize_mining(int pool_on, const char *pool_arg, const char *miner_address)
 {
-	pthread_t th;
-	int res;
-
-	g_xdag_pool = pool_on;
+//	g_xdag_pool = pool_on; //move to init.c to avoid data race.
 	g_miner_address = miner_address;
 
 	for(int i = 0; i < 2; ++i) {
@@ -74,8 +71,7 @@ int xdag_initialize_mining(int pool_on, const char *pool_arg, const char *miner_
 
 	if(!pool_on) {
 		return xdag_initialize_miner(pool_arg);
-	}
-	else {
+	} else {
 		return xdag_initialize_pool(pool_arg);
 	}
 }

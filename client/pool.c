@@ -131,17 +131,41 @@ int xdag_initialize_pool(const char *pool_arg)
 	g_fds = malloc(MAX_MINERS_COUNT * sizeof(struct pollfd));
 	if(!g_fds) return -1;
 
-	int res = pthread_create(&th, 0, pool_net_thread, (void*)pool_arg);
-	if(res) return -1;
-	pthread_detach(th);
+	int err = pthread_create(&th, 0, pool_net_thread, (void*)pool_arg);
+	if(err != 0) {
+		printf("create pool_net_thread failed, error : %s\n", strerror(err));
+		return -1;
+	}
+	
+	err = pthread_detach(th);
+	if(err != 0) {
+		printf("detach pool_net_thread failed, error : %s\n", strerror(err));
+		return -1;
+	}
 
-	res = pthread_create(&th, 0, pool_main_thread, 0);
-	if(res) return -1;
-	pthread_detach(th);
+	err = pthread_create(&th, 0, pool_main_thread, 0);
+	if(err != 0) {
+		printf("create pool_main_thread failed, error : %s\n", strerror(err));
+		return -1;
+	}
+	
+	err = pthread_detach(th);
+	if(err != 0) {
+		printf("detach pool_main_thread failed, error : %s\n", strerror(err));
+		return -1;
+	}
 
-	res = pthread_create(&th, 0, pool_block_thread, 0);
-	if(res) return -1;
-	pthread_detach(th);
+	err = pthread_create(&th, 0, pool_block_thread, 0);
+	if(err != 0) {
+		printf("create pool_block_thread failed: %s\n", strerror(err));
+		return -1;
+	}
+	
+	err = pthread_detach(th);
+	if(err != 0) {
+		printf("detach pool_block_thread failed: %s\n", strerror(err));
+		return -1;
+	}
 
 	return 0;
 }

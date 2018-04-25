@@ -156,7 +156,9 @@ int xdag_init(int argc, char **argv, int isGui)
 		printf("Miner can't be a pool or have directly connected to the xdag network.\n");
 		return -1;
 	}
-		
+	
+	g_xdag_pool = is_pool; // move to here to avoid Data Race
+
 	/* initialize json rpc */
 	if(is_rpc && xdag_rpc_service_init(rpc_port)) return -1;
 		
@@ -198,7 +200,9 @@ int xdag_init(int argc, char **argv, int isGui)
 		if (is_pool || (transport_flags & XDAG_DAEMON) > 0) {
 			xdag_mess("Starting terminal server...");
 			pthread_t th;
-			if (pthread_create(&th, 0, &terminal_thread, 0)) {
+			int err = pthread_create(&th, 0, &terminal_thread, 0);
+			if(err != 0) {
+				printf("create terminal_thread failed, error : %s\n", strerror(err));
 				return -1;
 			}
 		}

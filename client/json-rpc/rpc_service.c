@@ -8,6 +8,7 @@
 
 #include "rpc_service.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -347,12 +348,17 @@ int xdag_rpc_service_init(int port)
 	if (!port) {
 		port = RPC_SERVER_PORT;
 	}
+	
 	pthread_t th;
-	if(pthread_create(&th, NULL, rpc_service_thread, (void*)&port)) {
+	int err = pthread_create(&th, NULL, rpc_service_thread, (void*)&port);
+	if(err != 0) {
+		printf("create rpc_service_thread failed, error : %s\n", strerror(err));
 		return 1;
 	}
 	
-	if(pthread_detach(th)) {
+	err = pthread_detach(th);
+	if(err != 0) {
+		printf("detach rpc_service_thread failed, error : %s\n", strerror(err));
 		return 1;
 	}
 	
