@@ -466,11 +466,11 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 
 		diff = ldexp(diff, -64);
 		diff += ((uint64_t*)hash)[3];
-
-		if(diff < 1) diff = 1; 	// since diff is unsigned, diff < 1 implies diff=0
-					// and log(diff) function is not defined for diff=0.
-		diff = 46 - log(diff);
-
+					// Since diff is unsigned, diff < 1 implies diff=0 and log(diff) function is not defined for diff=0.
+		if(diff < 1) diff = 1; 	// The "difficultiest" hash sent by miner implies diff=1 (since this is the case of hash[3] is 0) and
+					// log(1)=0, thus maximum diff value, at this point, is 46. 
+		diff = 46 - log(diff);	// 
+					//
 		if(conn_data->task_time < task_time) {
 			conn_data->task_time = task_time;
 
