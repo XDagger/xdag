@@ -467,6 +467,26 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 	if(conn_data->task_time <= task_time) {
 		double diff = ((uint64_t*)hash)[2];
 		int i = task_time & (CONFIRMATIONS_COUNT - 1);
+		
+		// %%%%%% ldexp(double a, int b) -> ldexp(diff, -64) will return [diff/2^64] %%%%%%
+		// Since max value of diff is 0xFFFFFFFFFFFFFFFF (it is a 64bit unsigned integer variable)
+		// and 2^64 is 0xFFFFFFFFFFFFFFFF, ldexp(diff, -64) will return exactly 1 iff
+		// diff value is equal to 0xFFFFFFFFFFFFFFFF (can't be higher by definition).
+		// But because of the approximation from double to int
+		// even when diff is "around" 0xFFFFFFFFFFFFFFFF diff will be 1.
+		// Test: for diff >= FFFFFFFFFFFFFC00 (18446744073709550592) ldexp(diff, -64)=1
+		// Test: for diff <= FFFFFFFFFFFFFBFF (18446744073709550591) ldexp(diff, -64)=0
+		// Still need to investigate the purpose of using ldexp function to do it.
+		
+		// %%%%%% 		diff += ((uint64_t*)hash)[3];			     %%%%%%
+		// Given that hash[3] is the most significant part of the 256 bit number
+		// hash[3] || hash[2] || hash[1] || hash[0]
+		// If, as explained previously, hash[2] is near its possible maximum value
+		// then diff will be equal to hash[3]+1.
+		
+		// %%%%%% 		           diff 			     %%%%%%
+		// At this point, diff, seems to be a condensate approximated representation 
+		// of the 256 bit number hash[3] || hash[2] || hash[1] || hash[0].
 
 		diff = ldexp(diff, -64);
 		diff += ((uint64_t*)hash)[3];
