@@ -467,8 +467,8 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 		diff = ldexp(diff, -64);
 		diff += ((uint64_t*)hash)[3];
 
-		if(diff < 1) diff = 1; // because log(x) function is not defined for x=0.
-
+		if(diff < 1) diff = 1; 	// since diff is unsigned, diff < 1 implies diff=0
+					// and log(diff) function is not defined for diff=0.
 		diff = 46 - log(diff);
 
 		if(conn_data->task_time < task_time) {
