@@ -451,7 +451,7 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 	const xdag_time_t task_time = task->task_time;
 
 	if(conn_data->task_time <= task_time) {
-		double diff = ((uint64_t*)hash)[2];		
+		double diff = ((uint64_t*)hash)[2];
 		int i = task_time & (CONFIRMATIONS_COUNT - 1);	// CONFIRMATION_COUNT-1=15d=1111b, thus it just cut task_time to its 4 least significant bit
 		
 		// %%%%%% ldexp(double a, int b) -> ldexp(diff, -64) will return [diff/2^64] %%%%%%
