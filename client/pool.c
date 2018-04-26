@@ -452,7 +452,7 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 
 	if(conn_data->task_time <= task_time) {
 		double diff = ((uint64_t*)hash)[2];		
-		int i = task_time & (CONFIRMATIONS_COUNT - 1);	// CONFIRMATION_COUNT-1=15d=1111b, thus it just task_time to its 4 less significant bit
+		int i = task_time & (CONFIRMATIONS_COUNT - 1);	// CONFIRMATION_COUNT-1=15d=1111b, thus it just cut task_time to its 4 least significant bit
 		
 		// %%%%%% ldexp(double a, int b) -> ldexp(diff, -64) will return [diff/2^64] %%%%%%
 		// Since max value of diff is 0xFFFFFFFFFFFFFFFF (it is a 64bit unsigned integer variable)
