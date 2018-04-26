@@ -31,9 +31,10 @@
 #define START_MINERS_COUNT     256
 #define START_MINERS_IP_COUNT  8
 
-#define HEADER_WORD            0x3fca9e2bu
-#define FUND_ADDRESS           "FQglVQtb60vQv2DOWEUL7yh3smtj7g1s"  /* community fund */
-#define SHARES_PER_TASK_LIMIT  20                                  /* maximum count of shares per task */
+#define HEADER_WORD                        0x3fca9e2bu
+#define FUND_ADDRESS                       "FQglVQtb60vQv2DOWEUL7yh3smtj7g1s" /* community fund */
+#define SHARES_PER_TASK_LIMIT              20                                 /* maximum count of shares per task */
+#define DEFAUL_CONNECTIONS_PER_MINER_LIMIT 100
 
 enum miner_state {
 	MINER_UNKNOWN = 0,
@@ -50,8 +51,6 @@ struct miner_pool_data {
 	double maxdiff[CONFIRMATIONS_COUNT];
 	enum miner_state state;
 	uint32_t connections_count;
-
-	//uint32_t shares_count;
 };
 
 typedef struct miner_list_element {
@@ -82,6 +81,7 @@ struct connection_pool_data {
 	struct pollfd connection_descriptor;
 	struct miner_pool_data *miner;
 	int balance_sent;
+	uint32_t shares_count;
 };
 
 typedef struct connection_list_element {
@@ -102,7 +102,8 @@ struct payment_data {
 
 xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT], g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
 
-static int g_max_miners_count = START_MINERS_COUNT, g_max_miner_ip_count = START_MINERS_IP_COUNT;
+static int g_max_connections_count = START_MINERS_COUNT, g_max_miner_ip_count = START_MINERS_IP_COUNT;
+static int g_connections_per_miner_limit = DEFAUL_CONNECTIONS_PER_MINER_LIMIT;
 static int g_connections_count = 0;
 static double g_pool_fee = 0, g_pool_reward = 0, g_pool_direct = 0, g_pool_fund = 0;
 static struct xdag_block *g_firstb = 0, *g_lastb = 0;
@@ -116,6 +117,7 @@ miner_list_element *g_miner_list_head = NULL;
 pthread_mutex_t g_descriptors_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int pay_miners(xdag_time_t time);
+void remove_inactive_miners();
 
 /* initialization of the pool */
 int xdag_initialize_pool(const char *pool_arg)
@@ -183,18 +185,34 @@ int xdag_pool_set_config(const char *pool_config)
 	if(pool_config) {
 		int open_max = sysconf(_SC_OPEN_MAX);
 
-		sscanf(pool_config, "%d", &g_max_miners_count);
+		sscanf(pool_config, "%d", &g_max_connections_count);
 
-		if(g_max_miners_count < 0) {
-			g_max_miners_count = 0;
-			xdag_warn("pool : wrong miner count");
-		} else if(g_max_miners_count > MAX_MINERS_COUNT) {
-			g_max_miners_count = MAX_MINERS_COUNT;
+		if(g_max_connections_count < 0) {
+			g_max_connections_count = 0;
+			xdag_warn("pool : wrong miners count");
+		} else if(g_max_connections_count > MAX_MINERS_COUNT) {
+			g_max_connections_count = MAX_MINERS_COUNT;
 			xdag_warn("pool : exceed max miners count %d", MAX_MINERS_COUNT);
-		} else if(g_max_miners_count > open_max - 64) {
-			g_max_miners_count = open_max - 64;
+		} else if(g_max_connections_count > open_max - 64) {
+			g_max_connections_count = open_max - 64;
 			xdag_warn("pool : exceed max open files %d", open_max - 64);
 		}
+	}
+
+	pool_config = strtok_r(0, " \t\r\n:", &lasts);
+	if(pool_config) {
+		sscanf(pool_config, "%d", &g_max_miner_ip_count);
+
+		if(g_max_miner_ip_count <= 0)
+			g_max_miner_ip_count = 1;
+	}
+
+	pool_config = strtok_r(0, " \t\r\n:", &lasts);
+	if(pool_config) {
+		sscanf(pool_config, "%d", &g_connections_per_miner_limit);
+
+		if(g_connections_per_miner_limit <= 0)
+			g_connections_per_miner_limit = 1;
 	}
 
 	pool_config = strtok_r(0, " \t\r\n:", &lasts);
@@ -236,14 +254,6 @@ int xdag_pool_set_config(const char *pool_config)
 
 	pool_config = strtok_r(0, " \t\r\n:", &lasts);
 	if(pool_config) {
-		sscanf(pool_config, "%d", &g_max_miner_ip_count);
-
-		if(g_max_miner_ip_count <= 0)
-			g_max_miner_ip_count = 1;
-	}
-
-	pool_config = strtok_r(0, " \t\r\n:", &lasts);
-	if(pool_config) {
 		sscanf(pool_config, "%lf", &g_pool_fund);
 
 		g_pool_fund /= 100;
@@ -262,8 +272,8 @@ char *xdag_pool_get_config(char *buf)
 {
 	if(!g_xdag_pool) return 0;
 
-	sprintf(buf, "%d:%.2lf:%.2lf:%.2lf:%d:%.2lf", g_max_miners_count, g_pool_fee * 100, g_pool_reward * 100,
-		g_pool_direct * 100, g_max_miner_ip_count, g_pool_fund * 100);
+	sprintf(buf, "%d:%d:%d:%.2lf:%.2lf:%.2lf:%.2lf", g_max_connections_count, g_max_miner_ip_count, g_connections_per_miner_limit,
+		g_pool_fee * 100, g_pool_reward * 100, g_pool_direct * 100, g_pool_fund * 100);
 
 	return buf;
 }
@@ -338,7 +348,7 @@ static int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 
 	//firstly we check that total count of connection did not exceed max count of connection
 	LL_COUNT(g_connection_list_head, elt, count);
-	if(count >= g_max_miners_count) {
+	if(count >= g_max_connections_count) {
 		return 0;
 	}
 
@@ -489,12 +499,13 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 		// of the 256 bit number hash[3] || hash[2] || hash[1] || hash[0].
 
 		diff = ldexp(diff, -64);
-		diff += ((uint64_t*)hash)[3];
-
-		if(diff < 1) diff = 1;
-
-		diff = 46 - log(diff);
-
+		diff += ((uint64_t*)hash)[3]; // Since diff is unsigned, diff < 1 implies diff=0 and log(diff) function is not defined for diff=0, it is needed to eliminate
+					      // the diff=0 case (if(diff < 1) diff = 1). The "most difficult" hash sent by miner implies diff=1 (since this is the case of hash[3] is 0) 
+		if(diff < 1) diff = 1;	      // and log(1)=0, thus maximum diff value, at this point, is 46. The "easiest" hash, instead, would lay on
+					      // the same result that is diff 46 (that's the case hash[3]=hash[2]=0xFFFFFFFFFFFFFFFF, hash[3]+1=0 
+		diff = 46 - log(diff);	      // thus it's the same as the most difficult hash), it is probably a bug. Let's consider an "almost easiest" hash
+					      // like hash[3]=FFFFFFFFFFFFFFFF and hash[2]<=FFFFFFFFFFFFFBFF, in this case we have 46-log(FFFFFFFFFFFFFFFF)=46-19=27.
+					      // At this point diff seems to have a range [46;27], where higher value is higher difficulty.
 		if(conn_data->task_time < task_time) {
 			conn_data->task_time = task_time;
 
@@ -524,7 +535,7 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 	}
 }
 
-static void register_new_miner(connection_list_element *connection, int index)
+static int register_new_miner(connection_list_element *connection, int index)
 {
 	miner_list_element *elt;
 	struct connection_pool_data *conn_data = &connection->connection_data;
@@ -533,6 +544,11 @@ static void register_new_miner(connection_list_element *connection, int index)
 	LL_FOREACH(g_miner_list_head, elt)
 	{
 		if(memcmp(elt->miner_data.id.data, conn_data->data, sizeof(xdag_hashlow_t)) == 0) {
+			if(elt->miner_data.connections_count >= g_connections_per_miner_limit) {
+				close_connection(connection, index, "Max count of connections per miner is exceeded");
+				return 0;
+			}
+
 			conn_data->miner = &elt->miner_data;
 			++conn_data->miner->connections_count;
 			conn_data->miner->state = MINER_ACTIVE;
@@ -552,6 +568,8 @@ static void register_new_miner(connection_list_element *connection, int index)
 		conn_data->miner = &new_miner->miner_data;
 		conn_data->state = ACTIVE_CONNECTION;
 	}
+
+	return 1;
 }
 
 static int recieve_data_from_connection(connection_list_element *connection, int index)
@@ -614,13 +632,15 @@ static int recieve_data_from_connection(connection_list_element *connection, int
 			uint64_t task_index = g_xdag_pool_task_index;
 			struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
 
-			//if (++m->shares_count > SHARES_PER_TASK_LIMIT) {   //if shares count limit is exceded it is considered as spamming and current connection is disconnected
-			//	mess = "Spamming of shares";
-			//	goto disconnect;	//TODO: get rid of gotos
-			//}
+			if (++conn_data->shares_count > SHARES_PER_TASK_LIMIT) {   //if shares count limit is exceded it is considered as spamming and current connection is disconnected
+				close_connection(connection, index, "Spamming of shares");
+				return 0;
+			}
 
 			if(conn_data->state == UNKNOWN_ADDRESS) {
-				register_new_miner(connection, index);
+				if(!register_new_miner(connection, index)) {
+					return 0;
+				}
 			} else {
 				if(!conn_data->miner) {
 					close_connection(connection, index, "Miner is unregistered");
@@ -654,7 +674,7 @@ static int send_data_to_connection(connection_list_element *connection, int inde
 
 	if(conn_data->task_index < task_index) {
 		conn_data->task_index = task_index;
-		//m->shares_count = 0;
+		conn_data->shares_count = 0;
 		fields_count = 2;
 		memcpy(data, task->task, fields_count * sizeof(struct xdag_field));
 	} else if(!conn_data->balance_sent && conn_data->miner && time(0) >= (conn_data->task_time << 6) + 4) {
@@ -741,7 +761,7 @@ void *pool_main_thread(void *arg)
 
 void *pool_block_thread(void *arg)
 {
-	xdag_time_t t0 = 0;
+	xdag_time_t prev_task_time = 0;
 	struct xdag_block *b;
 	int res;
 
@@ -750,21 +770,22 @@ void *pool_block_thread(void *arg)
 	}
 
 	for(;;) {
-		int done = 0;
-		uint64_t ntask = g_xdag_pool_task_index;
-		struct xdag_pool_task *task = &g_xdag_pool_task[ntask & 1];
-		xdag_time_t t = task->task_time;
+		int processed = 0;
+		uint64_t task_index = g_xdag_pool_task_index;
+		struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
+		xdag_time_t current_task_time = task->task_time;
 
-		if(t > t0) {
-			uint64_t *h = g_xdag_mined_hashes[(t - CONFIRMATIONS_COUNT + 1) & (CONFIRMATIONS_COUNT - 1)];
+		if(current_task_time > prev_task_time) {
+			uint64_t *hash = g_xdag_mined_hashes[(current_task_time - CONFIRMATIONS_COUNT + 1) & (CONFIRMATIONS_COUNT - 1)];
 
-			done = 1;
-			t0 = t;
+			processed = 1;
+			prev_task_time = current_task_time;
 
-			res = pay_miners(t - CONFIRMATIONS_COUNT + 1);
+			res = pay_miners(current_task_time - CONFIRMATIONS_COUNT + 1);
+			remove_inactive_miners();
 
 			xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
-				h[3], h[2], h[1], h[0], (t - CONFIRMATIONS_COUNT + 1) << 16 | 0xffff, res);
+				hash[3], hash[2], hash[1], hash[0], (current_task_time - CONFIRMATIONS_COUNT + 1) << 16 | 0xffff, res);
 		}
 
 		pthread_mutex_lock(&g_pool_mutex);
@@ -780,7 +801,7 @@ void *pool_block_thread(void *arg)
 		pthread_mutex_unlock(&g_pool_mutex);
 
 		if(b) {
-			done = 1;
+			processed = 1;
 			b->field[0].transport_header = 2;
 
 			res = xdag_add_block(b);
@@ -789,13 +810,43 @@ void *pool_block_thread(void *arg)
 			}
 		}
 
-		if(!done) sleep(1);
+		if(!processed) sleep(1);
 	}
 
 	return 0;
 }
 
 #define diff2pay(d, n) ((n) ? exp((d) / (n) - 20) * (n) : 0)
+
+static double miner_calculate_unpaid_shares(struct miner_pool_data *miner)
+{
+	double sum = miner->prev_diff;
+	int count = miner->prev_diff_count;
+
+	for(int j = 0; j < CONFIRMATIONS_COUNT; ++j) {
+		if(miner->maxdiff[j] > 0) {
+			sum += miner->maxdiff[j];
+			count++;
+		}
+	}
+
+	return diff2pay(sum, count);
+}
+
+static double connection_calculate_unpaid_shares(struct connection_pool_data *connection)
+{
+	double sum = connection->prev_diff;
+	int count = connection->prev_diff_count;
+
+	for(int j = 0; j < CONFIRMATIONS_COUNT; ++j) {
+		if(connection->maxdiff[j] > 0) {
+			sum += connection->maxdiff[j];
+			count++;
+		}
+	}
+
+	return diff2pay(sum, count);
+}
 
 static double countpay(struct miner_pool_data *miner, int confirmation_index, double *pay)
 {
@@ -972,43 +1023,61 @@ int pay_miners(xdag_time_t time)
 	return 0;
 }
 
+void remove_inactive_miners()
+{
+	miner_list_element *elt, *eltmp;	
+
+	LL_FOREACH_SAFE(g_miner_list_head, elt, eltmp)
+	{
+		if(elt->miner_data.state == MINER_ARCHIVE && miner_calculate_unpaid_shares(&elt->miner_data) == 0.0) {
+			const char *address = xdag_hash2address(elt->miner_data.id.data);
+			
+			LL_DELETE(g_miner_list_head, elt);
+			free(elt);
+
+			xdag_info("Pool: miner %s is removed from miners list", address);
+		}
+	}
+}
+
 static const char* miner_state_to_string(int miner_state)
 {
 	switch(miner_state) {
 		case MINER_ACTIVE:
-			return "active";
+			return "active ";
 		case MINER_ARCHIVE:
 			return "archive";
+		case MINER_SERVICE:
+			return "fee    ";
 		default:
 			return "unknown";
 	}
 }
 
-static int print_miner(FILE *out, int index, struct miner_pool_data *miner)
+static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int print_connections)
 {
-	double sum = miner->prev_diff;
-	int count = miner->prev_diff_count;
-	//char buf[32], buf2[64];
-	//uint32_t ip = miner->ip;
+	char ip_port_str[32], in_out_str[64];
 
-	for(int j = 0; j < CONFIRMATIONS_COUNT; ++j) {
-		if(miner->maxdiff[j] > 0) {
-			sum += miner->maxdiff[j];
-			count++;
+	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", index, xdag_hash2address(miner->id.data),
+		miner_state_to_string(miner->state), "-", "-", miner_calculate_unpaid_shares(miner));
+
+	if(print_connections) {
+		connection_list_element *elt;
+		int index = 0;
+		LL_FOREACH(g_connection_list_head, elt)
+		{
+			if(elt->connection_data.miner == miner) {
+				struct connection_pool_data *conn_data = &elt->connection_data;
+				int ip = conn_data->ip;
+				sprintf(ip_port_str, "%u.%u.%u.%u:%u", ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(conn_data->port));
+				sprintf(in_out_str, "%llu/%llu", (unsigned long long)conn_data->nfield_in * sizeof(struct xdag_field),
+					(unsigned long long)conn_data->nfield_out * sizeof(struct xdag_field));
+
+				fprintf(out, " C%d. -                                 -        %-21s  %-16s  %lf\n", ++index, 
+					ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data));
+			}
 		}
 	}
-
-	//TODO: fix printing of connections data
-	//sprintf(buf, "%u.%u.%u.%u:%u", ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(miner->port));
-	//sprintf(buf2, "%llu/%llu", (unsigned long long)miner->nfield_in * sizeof(struct xdag_field),
-	//	(unsigned long long)m->nfield_out * sizeof(struct xdag_field));
-
-	//fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", n, xdag_hash2address(m->id.data),
-	//	(m->state & MINER_FREE ? "free   " : (m->state & MINER_ARCHIVE ? "archive" :
-	//	(m->state & MINER_ADDRESS ? "active " : "badaddr"))), buf, buf2, diff2pay(sum, count));
-
-	fprintf(out, "%3d. %s  %s  %lf\n", index, xdag_hash2address(miner->id.data),
-		miner_state_to_string(miner->state), diff2pay(sum, count));
 
 	return miner->state == MINER_ACTIVE ? 1 : 0;
 }
@@ -1019,14 +1088,14 @@ int xdag_print_miners(FILE *out)
 	fprintf(out, "List of miners:\n"
 		" NN  Address for payment to            Status   IP and port            in/out bytes      nopaid shares\n"
 		"------------------------------------------------------------------------------------------------------\n");
-	int count_active = print_miner(out, -1, &g_pool_miner);
+	int count_active = print_miner(out, -1, &g_pool_miner, 1);
 
 	miner_list_element *elt;
 	int index = 0;
 	LL_FOREACH(g_miner_list_head, elt)
 	{
 		struct miner_pool_data *miner = &elt->miner_data;
-		count_active += print_miner(out, index++, miner);
+		count_active += print_miner(out, index++, miner, 1);
 	}
 
 	fprintf(out,
