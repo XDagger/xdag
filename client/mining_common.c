@@ -51,9 +51,8 @@ static int crypt_start(void)
 
 /* initialization of the pool (pool_on = 1) or connecting the miner to pool (pool_on = 0; pool_arg - pool parameters ip:port[:CFG];
 miner_addr - address of the miner, if specified */
-int xdag_initialize_mining(int pool_on, const char *pool_arg, const char *miner_address)
+int xdag_initialize_mining(const char *pool_arg, const char *miner_address)
 {
-//	g_xdag_pool = pool_on; //move to init.c to avoid data race.
 	g_miner_address = miner_address;
 
 	for(int i = 0; i < 2; ++i) {
@@ -65,11 +64,11 @@ int xdag_initialize_mining(int pool_on, const char *pool_arg, const char *miner_
 		}
 	}
 
-	if(!pool_on && !pool_arg) return 0;
+	if(!g_xdag_pool && !pool_arg) return 0;
 
 	if(crypt_start()) return -1;
 
-	if(!pool_on) {
+	if(!g_xdag_pool) {
 		return xdag_initialize_miner(pool_arg);
 	} else {
 		return xdag_initialize_pool(pool_arg);

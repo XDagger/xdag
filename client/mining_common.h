@@ -37,9 +37,9 @@ extern pthread_mutex_t g_share_mutex;
 
 extern struct dfslib_crypt *g_crypt;
 
-/* initialization of the pool (pool_on = 1) or connecting the miner to pool (pool_on = 0; pool_arg - pool parameters ip:port[:CFG];
+/* initialization of the pool (g_xdag_pool = 1) or connecting the miner to pool (g_xdag_pool = 0; pool_arg - pool parameters ip:port[:CFG];
 miner_addr - address of the miner, if specified */
-extern int xdag_initialize_mining(int pool_on, const char *pool_arg, const char *miner_address);
+extern int xdag_initialize_mining(const char *pool_arg, const char *miner_address);
 
 //function sets minimal share for the task
 extern void xdag_set_min_share(struct xdag_pool_task *task, xdag_hash_t last, xdag_hash_t hash);
