@@ -22,7 +22,7 @@ struct xdag_pool_task {
 };
 
 extern struct xdag_pool_task g_xdag_pool_task[2];
-extern uint64_t g_xdag_pool_task_index; // Just a never initialized index, start value is not important. It seems only least significant bit is used.
+extern uint64_t g_xdag_pool_task_index; // Just a never initialized index, start value is not important. It seems only the least significant bit is used.
 					// [for g_xdag_pool_task that in fact is an array with length=2] Why 64bit needed?
 /* poiter to mutex for optimal share  */
 extern void *g_ptr_share_mutex;
