@@ -3,8 +3,11 @@
 #ifndef	LDUS_LIST_H_INCLUDED
 #define LDUS_LIST_H_INCLUDED
 
-#define container_of(ptr, type, member) \
-	((type *)((char *)(ptr) - (size_t)&((type *)0)->member))
+#include <stddef.h>
+
+// get rid of access memory 0x0000000000000000 runtime error which will cause dnet restart.
+#define container_of(ptr, type, member) ((type *)((char *)(ptr) - (size_t)offsetof(type, member)))
+//#define container_of(ptr, type, member) ((type *)((char *)(ptr) - (size_t)&((type *)0)->member))
 
 /* циклический список */
 struct list {

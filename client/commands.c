@@ -50,7 +50,7 @@ void processLastBlocksCommand(char *nextParam, FILE *out);
 
 void startCommandProcessing(int transportFlags)
 {
-	char cmd[XDAG_COMMAND_MAX];
+	char cmd[XDAG_COMMAND_MAX] = {0};
 
 	if(!(transportFlags & XDAG_DAEMON)) printf("Type command, help for example.\n");
 	for(;;) {
@@ -553,7 +553,7 @@ int out_balances()
 	xdag_mem_init((xdag_main_time() - xdag_start_main_time()) << 17);
 	xdag_crypt_init(0);
 	memset(&d, 0, sizeof(struct out_balances_data));
-	xdag_load_blocks(xdag_start_main_time() << 16, xdag_main_time() << 16, &i, add_block_callback);
+	xdag_load_blocks(xdag_start_main_time() << 16, xdag_main_time() << 16, &i, &add_block_callback);
 	xdag_traverse_all_blocks(&d, out_balances_callback);
 	qsort(d.blocks, d.blocksCount, sizeof(struct xdag_field), out_sort_callback);
 	for(i = 0; i < d.blocksCount; ++i) {

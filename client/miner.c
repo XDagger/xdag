@@ -53,10 +53,17 @@ extern int xdag_initialize_miner(const char *pool_address)
 	memset(&g_local_miner, 0, sizeof(struct miner));
 	xdag_get_our_block(g_local_miner.id.data);
 
-	int res = pthread_create(&th, 0, miner_net_thread, (void*)pool_address);
-	if(res) return -1;
+	int err = pthread_create(&th, 0, miner_net_thread, (void*)pool_address);
+	if(err != 0) {
+		printf("create miner_net_thread failed, error : %s\n", strerror(err));
+		return -1;
+	}
 
-	pthread_detach(th);
+	err = pthread_detach(th);
+	if(err != 0) {
+		printf("detach miner_net_thread failed, error : %s\n", strerror(err));
+//		return -1; //fixme: not sure why pthread_detach return 3
+	}
 
 	return 0;
 }
@@ -204,7 +211,7 @@ begin:
 		peeraddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	} else if(!inet_aton(s, &peeraddr.sin_addr)) {
 		struct hostent *host = gethostbyname(s);
-		if(!host || !host->h_addr_list[0]) {
+		if(host == NULL || host->h_addr_list[0] == NULL) {
 			pthread_mutex_unlock(&g_pool_mutex);
 			mess = "cannot resolve host ";
 			mess1 = s;
@@ -288,8 +295,11 @@ begin:
 
 				if(!memcmp(last->data, hash, sizeof(xdag_hashlow_t))) {
 					xdag_set_balance(hash, last->amount);
-
+					
+					pthread_mutex_lock(&g_transport_mutex);
 					g_xdag_last_received = tt;
+					pthread_mutex_unlock(&g_transport_mutex);
+					
 					ndata = 0;
 
 					maxndata = sizeof(struct xdag_field);
@@ -420,9 +430,19 @@ int xdag_mining_start(int n_mining_threads)
 		xdag_mess("Starting general mining thread...");
 
 		g_stop_general_mining = 0;
-
-		pthread_create(&th, 0, general_mining_thread, 0);
-		pthread_detach(th);
+		
+		int err;
+		err = pthread_create(&th, 0, general_mining_thread, 0);
+		if(err != 0) {
+			printf("create generatl_mining_thread failed, error : %s\n", strerror(err));
+			return -1;
+		}
+		
+		err = pthread_detach(th);
+		if(err != 0) {
+			printf("detach general_mining_thread failed, error : %s\n", strerror(err));
+			return -1;
+		}
 	}
 
 	if(n_mining_threads < 0) {
@@ -445,9 +465,20 @@ int xdag_mining_start(int n_mining_threads)
 	}
 
 	while(g_xdag_mining_threads < n_mining_threads) {
-		pthread_create(&th, 0, mining_thread, (void*)(uintptr_t)g_xdag_mining_threads);
-		pthread_detach(th);
+		
 		g_xdag_mining_threads++;
+		int err;
+		err = pthread_create(&th, 0, mining_thread, (void*)(uintptr_t)g_xdag_mining_threads);
+		if(err != 0) {
+			printf("create mining_thread failed, error : %s\n", strerror(err));
+			continue;
+		}
+		
+		err = pthread_detach(th);
+		if(err != 0) {
+			printf("detach mining_thread failed, error : %s\n", strerror(err));
+			continue;
+		}
 	}
 
 	return 0;
