@@ -8,6 +8,7 @@
 
 #include "rpc_service.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -207,8 +208,15 @@ static int invoke_procedure(struct xdag_rpc_connection * conn, char *name, cJSON
 /* create xdag connection */
 static struct xdag_rpc_connection* create_connection(int fd, const char* req_buffer, size_t len)
 {
-	char *req = (char*)malloc(len);
-	memcpy(req, req_buffer, len);
+	const char *body = strstr(req_buffer, "\r\n\r\n");
+	if(body) {
+		body += 4;
+	} else {
+		body = req_buffer;
+	}
+	
+	char *req = (char*)malloc(strlen(body));
+	memcpy(req, body, strlen(body));
 	
 	struct xdag_rpc_connection *conn = (struct xdag_rpc_connection*)malloc(sizeof(struct xdag_rpc_connection));
 	conn->buffer = req;
@@ -335,14 +343,22 @@ static void *rpc_service_thread(void *arg)
 }
 
 /* init xdag rpc service */
-int xdag_rpc_service_init(void)
+int xdag_rpc_service_init(int port)
 {
+	if (!port) {
+		port = RPC_SERVER_PORT;
+	}
+	
 	pthread_t th;
-	if(pthread_create(&th, NULL, rpc_service_thread, (void*)&RPC_SERVER_PORT)) {
+	int err = pthread_create(&th, NULL, rpc_service_thread, (void*)&port);
+	if(err != 0) {
+		printf("create rpc_service_thread failed, error : %s\n", strerror(err));
 		return 1;
 	}
 	
-	if(pthread_detach(th)) {
+	err = pthread_detach(th);
+	if(err != 0) {
+		printf("detach rpc_service_thread failed, error : %s\n", strerror(err));
 		return 1;
 	}
 	

@@ -43,6 +43,9 @@
     <Filter Include="client\json-rpc">
       <UniqueIdentifier>{5c470121-b197-4756-93e8-4d7bb0d55185}</UniqueIdentifier>
     </Filter>
+    <Filter Include="client\uthash">
+      <UniqueIdentifier>{045ecca6-4308-47a2-bf89-229740ba9751}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\client\address.c">
@@ -346,6 +349,12 @@
     </ClInclude>
     <ClInclude Include="..\..\client\json-rpc\rpc_wrapper.h">
       <Filter>client\json-rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\uthash\utlist.h">
+      <Filter>client\uthash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\uthash\uthash.h">
+      <Filter>client\uthash</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

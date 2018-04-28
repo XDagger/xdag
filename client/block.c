@@ -972,7 +972,7 @@ static void *work_thread(void *arg)
 #if MULTI_THREAD_LOADING
 	xdag_init_storage(t, get_timestamp(), &t, add_block_callback);
 #else
-	xdag_load_blocks(t, get_timestamp(), &t, add_block_callback);
+	xdag_load_blocks(t, get_timestamp(), &t, &add_block_callback);
 #endif
 	
 	xdag_mess("Finish loading blocks, time cost %ldms", get_timestamp() - start);
@@ -987,9 +987,18 @@ static void *work_thread(void *arg)
 	g_xdag_sync_on = 1;
 	if (!g_light_mode && !sync_thread_running) {
 		xdag_mess("Starting sync thread...");
-		if (!pthread_create(&th, 0, sync_thread, 0)) {
-			sync_thread_running = 1;
-			pthread_detach(th);
+		int err = pthread_create(&th, 0, sync_thread, 0);
+		if(err != 0) {
+			printf("create sync_thread failed, error : %s\n", strerror(err));
+			return 0;
+		}
+		
+		sync_thread_running = 1;
+		
+		err = pthread_detach(th);
+		if(err != 0) {
+			printf("detach sync_thread failed, error : %s\n", strerror(err));
+			return 0;
 		}
 	}
 
@@ -1021,6 +1030,7 @@ static void *work_thread(void *arg)
 		}
 		
 		pthread_mutex_lock(&block_mutex);
+		pthread_mutex_lock(&g_transport_mutex);
 		
 		if (g_xdag_state == XDAG_STATE_REST) {
 			g_xdag_sync_on = 0;
@@ -1079,6 +1089,7 @@ static void *work_thread(void *arg)
 		}
 
 		struct block_internal *ours = ourfirst;
+		pthread_mutex_unlock(&g_transport_mutex);
 		pthread_mutex_unlock(&block_mutex);
 		xdag_show_state(ours ? ours->hash : 0);
 
@@ -1115,12 +1126,18 @@ int xdag_blocks_start(int n_mining_threads, int miner_address)
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&block_mutex, &attr);
-	int res = pthread_create(&th, 0, work_thread, (void*)(uintptr_t)(unsigned)n_mining_threads);
-	if (!res) {
-		pthread_detach(th);
+	int err = pthread_create(&th, 0, work_thread, (void*)(uintptr_t)(unsigned)n_mining_threads);
+	if(err != 0) {
+		printf("create work_thread failed, error : %s\n", strerror(err));
+		return -1;
+	}
+	err = pthread_detach(th);
+	if(err != 0) {
+		printf("create pool_main_thread failed, error : %s\n", strerror(err));
+		return -1;
 	}
 	
-	return res;
+	return 0;
 }
 
 /* returns our first block. If there is no blocks yet - the first block is created. */

@@ -50,7 +50,7 @@ void processLastBlocksCommand(char *nextParam, FILE *out);
 
 void startCommandProcessing(int transportFlags)
 {
-	char cmd[XDAG_COMMAND_MAX];
+	char cmd[XDAG_COMMAND_MAX] = {0};
 
 	if(!(transportFlags & XDAG_DAEMON)) printf("Type command, help for example.\n");
 	for(;;) {
@@ -314,11 +314,9 @@ void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd)
 
 void processLastBlocksCommand(char *nextParam, FILE *out)
 {
-	int blocksCount;
+	int blocksCount = 20;
 	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
-	if(!cmd) {
-		fprintf(out, "Blocks count is not specified.\n");
-	} else if(sscanf(cmd, "%d", &blocksCount) != 1 || blocksCount <= 0) {
+	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
 		fprintf(out, "Illegal number.\n");
 	} else {
 		//100 is limit
@@ -555,7 +553,7 @@ int out_balances()
 	xdag_mem_init((xdag_main_time() - xdag_start_main_time()) << 17);
 	xdag_crypt_init(0);
 	memset(&d, 0, sizeof(struct out_balances_data));
-	xdag_load_blocks(xdag_start_main_time() << 16, xdag_main_time() << 16, &i, add_block_callback);
+	xdag_load_blocks(xdag_start_main_time() << 16, xdag_main_time() << 16, &i, &add_block_callback);
 	xdag_traverse_all_blocks(&d, out_balances_callback);
 	qsort(d.blocks, d.blocksCount, sizeof(struct xdag_field), out_sort_callback);
 	for(i = 0; i < d.blocksCount; ++i) {
@@ -587,22 +585,23 @@ int xdag_show_state(xdag_hash_t hash)
 void printHelp(FILE *out)
 {
 	fprintf(out, "Commands:\n"
-		"  account [N] - print first N (20 by default) our addresses with their amounts\n"
-		"  balance [A] - print balance of the address A or total balance for all our addresses\n"
-		"  block [A]   - print extended info for the block corresponding to the address or hash A\n"
-		"  exit        - exit this program (not the daemon)\n"
-		"  help        - print this help\n"
-		"  keygen      - generate new private/public key pair and set it by default\n"
-		"  level [N]   - print level of logging or set it to N (0 - nothing, ..., 9 - all)\n"
-		"  miners      - for pool, print list of recent connected miners\n"
-		"  mining [N]  - print number of mining threads or set it to N\n"
-		"  net command - run transport layer command, try 'net help'\n"
-		"  pool [CFG]  - print or set pool config; CFG is miners:fee:reward:direct:maxip:fund\n"
-		"  run         - run node after loading local blocks if option -r is used\n"
-		"  state       - print the program state\n"
-		"  stats       - print statistics for loaded and all known blocks\n"
-		"  terminate   - terminate both daemon and this program\n"
-		"  xfer S A    - transfer S our %s to the address A\n"
+		"  account [N]     - print first N (20 by default) our addresses with their amounts\n"
+		"  balance [A]     - print balance of the address A or total balance for all our addresses\n"
+		"  block [A]       - print extended info for the block corresponding to the address or hash A\n"
+		"  lastblocks [N]  - print latest N (20 by default, max limit 100) main blocks\n"
+		"  exit            - exit this program (not the daemon)\n"
+		"  help            - print this help\n"
+		"  keygen          - generate new private/public key pair and set it by default\n"
+		"  level [N]       - print level of logging or set it to N (0 - nothing, ..., 9 - all)\n"
+		"  miners          - for pool, print list of recent connected miners\n"
+		"  mining [N]      - print number of mining threads or set it to N\n"
+		"  net command     - run transport layer command, try 'net help'\n"
+		"  pool [CFG]      - print or set pool config; CFG is miners:fee:reward:direct:maxip:fund\n"
+		"  run             - run node after loading local blocks if option -r is used\n"
+		"  state           - print the program state\n"
+		"  stats           - print statistics for loaded and all known blocks\n"
+		"  terminate       - terminate both daemon and this program\n"
+		"  xfer S A        - transfer S our %s to the address A\n"
 		, g_coinname);
 }
 

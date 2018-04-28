@@ -136,8 +136,7 @@ int dfslib_encrypt_sector(struct dfslib_crypt *dfsc, dfs32 *sector, dfs64 sector
 	return 1;
 }
 
-int dfslib_encrypt_array(struct dfslib_crypt *dfsc, dfs32 *data, unsigned size,
-			 dfs64 sectorNo) {
+int dfslib_encrypt_array(struct dfslib_crypt *dfsc, dfs32 *data, unsigned size, dfs64 sectorNo) {
 	dfs32 a,b,c,d,x,y,z,t;
 	if (!dfsc->ispwd || (size & 1)) return 0;
 	dfs_prepare(dfsc, sectorNo, &x, &y, &z, &t);
