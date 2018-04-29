@@ -424,9 +424,8 @@ void *pool_net_thread(void *arg)
 		int ip = new_connection->connection_data.ip = peeraddr.sin_addr.s_addr;
 		new_connection->connection_data.port = peeraddr.sin_port;
 
-		LL_APPEND(g_connection_list_head, new_connection);
-
 		pthread_mutex_lock(&g_descriptors_mutex);
+		LL_APPEND(g_connection_list_head, new_connection);
 		++g_connections_count;
 		rebuild_descriptors_array();
 		pthread_mutex_unlock(&g_descriptors_mutex);
