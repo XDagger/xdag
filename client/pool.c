@@ -512,7 +512,7 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 		diff = 46 - log(diff);	      // thus it's the same as the most difficult hash), it is probably a bug. Let's consider an "almost easiest" hash
 					      // like hash[3]=FFFFFFFFFFFFFFFF and hash[2]<=FFFFFFFFFFFFFBFF, in this case we have 46-log(FFFFFFFFFFFFFFFF)=46-19=27.
 					      // At this point diff seems to have a range [46;27], where higher value is higher difficulty.
-		// Counting share for connection
+		// Adding share for connection
 		if(conn_data->task_time < task_time) {
 			conn_data->task_time = task_time;
 
@@ -526,7 +526,7 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 		} else if(diff > conn_data->maxdiff[i]) {
 			conn_data->maxdiff[i] = diff;
 		}
-		// Counting share for miner (same miner could have more connections)
+		// Adding share for miner (same miner could have more connections)
 		if(conn_data->miner && conn_data->miner->task_time < task_time) {
 			conn_data->miner->task_time = task_time;
 
