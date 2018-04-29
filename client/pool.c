@@ -79,7 +79,7 @@ struct connection_pool_data {
 	uint8_t data_size;
 	uint8_t block_size;
 	struct pollfd connection_descriptor;
-	struct miner_pool_data *miner;
+	struct miner_pool_data *miner; // more than one connection may lead to the same miner
 	int balance_sent;
 	uint32_t shares_count;
 };
@@ -526,7 +526,7 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 		} else if(diff > conn_data->maxdiff[i]) {
 			conn_data->maxdiff[i] = diff;
 		}
-		// Adding share for miner (same miner could have more connections)
+		// Adding share for miner
 		if(conn_data->miner && conn_data->miner->task_time < task_time) {
 			conn_data->miner->task_time = task_time;
 
