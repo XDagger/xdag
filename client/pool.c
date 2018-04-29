@@ -79,8 +79,8 @@ struct connection_pool_data {
 	uint8_t data_size;
 	uint8_t block_size;
 	struct pollfd connection_descriptor;
-	struct miner_pool_data *miner; // more than one connection may lead to the same miner
-	int balance_sent;
+	struct miner_pool_data *miner; 		// More than one connection may lead to the same miner, it is needed to track 
+	int balance_sent;			// this behaviour to avoid potential exploit of the service.
 	uint32_t shares_count;
 };
 
