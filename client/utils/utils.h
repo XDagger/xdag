@@ -28,7 +28,7 @@ extern int xdag_mkdir(const char *path);
 
 /* dead lock detector */
 
-#define DEAD_LOCK_DETECT 1
+#define DEAD_LOCK_DETECT 0
 extern void start_check_deadlock_thread(void);
 extern void apply_lock_before(uint64_t tid, pthread_mutex_t* mutex_ptr, const char* name);
 extern void apply_lock_after(uint64_t tid, pthread_mutex_t* mutex_ptr);
