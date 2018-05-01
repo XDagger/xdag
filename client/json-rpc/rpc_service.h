@@ -35,7 +35,7 @@ struct xdag_rpc_connection {
 };
 
 /* init xdag rpc */
-extern int xdag_rpc_service_init(void);
+extern int xdag_rpc_service_init(int port);
 
 /* stop xdag rpc */
 extern int xdag_rpc_service_stop(void);
