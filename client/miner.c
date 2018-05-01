@@ -489,6 +489,7 @@ int xdag_send_block_via_pool(struct xdag_block *b)
 	if(g_socket < 0) return -1;
 
 	pthread_mutex_lock(&g_miner_mutex);
-
-	return send_to_pool(b->field, XDAG_BLOCK_FIELDS);
+	int ret = send_to_pool(b->field, XDAG_BLOCK_FIELDS);
+	pthread_mutex_unlock(&g_miner_mutex);
+	return ret;
 }
