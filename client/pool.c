@@ -1080,7 +1080,6 @@ static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int 
 	if(print_connections) {
 		connection_list_element *elt;
 		int index = 0;
-		pthread_mutex_lock(&g_descriptors_mutex);
 		LL_FOREACH(g_connection_list_head, elt)
 		{
 			if(elt->connection_data.miner == miner) {
@@ -1094,7 +1093,6 @@ static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int 
 					ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data));
 			}
 		}
-		pthread_mutex_unlock(&g_descriptors_mutex);
 	}
 
 	return miner->state == MINER_ACTIVE ? 1 : 0;
@@ -1115,13 +1113,18 @@ int xdag_print_miners(FILE *out)
 	int times = 0;
 	do {
 		if(!pthread_mutex_trylock(&g_miners_mutex)) {
-			LL_FOREACH(g_miner_list_head, elt)
-			{
-				struct miner_pool_data *miner = &elt->miner_data;
-				count_active += print_miner(out, index++, miner, 1);
+			if(!pthread_mutex_trylock(&g_descriptors_mutex)) {
+				LL_FOREACH(g_miner_list_head, elt)
+				{
+					struct miner_pool_data *miner = &elt->miner_data;
+					count_active += print_miner(out, index++, miner, 1);
+				}
+				pthread_mutex_unlock(&g_descriptors_mutex);
+				pthread_mutex_unlock(&g_miners_mutex);
+				break;
+			} else {
+				pthread_mutex_unlock(&g_miners_mutex);
 			}
-			pthread_mutex_unlock(&g_miners_mutex);
-			break;
 		}
 		if(++times>=10) {
 			xdag_err("try lock g_miners_mutex failed, exceed max try time.");
