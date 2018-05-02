@@ -22,7 +22,7 @@ struct xdag_pool_task {
 };
 
 extern struct xdag_pool_task g_xdag_pool_task[2];
-extern uint64_t g_xdag_pool_task_index;
+extern uint64_t g_xdag_pool_task_index; /* global variables are instantiated with 0 */
 
 /* poiter to mutex for optimal share  */
 extern void *g_ptr_share_mutex;
