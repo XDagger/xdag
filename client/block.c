@@ -1030,7 +1030,6 @@ static void *work_thread(void *arg)
 		}
 		
 		pthread_mutex_lock(&block_mutex);
-		pthread_mutex_lock(&g_transport_mutex);
 		
 		if (g_xdag_state == XDAG_STATE_REST) {
 			g_xdag_sync_on = 0;
@@ -1057,31 +1056,35 @@ static void *work_thread(void *arg)
 			conn_time = sync_time = 0;
 
 			goto begin;
-		} else if (t > (g_xdag_last_received << 10) && t - (g_xdag_last_received << 10) > 3 * MAIN_CHAIN_PERIOD) {
-			g_xdag_state = (g_light_mode ? (g_xdag_testnet ? XDAG_STATE_TTST : XDAG_STATE_TRYP)
-								 : (g_xdag_testnet ? XDAG_STATE_WTST : XDAG_STATE_WAIT));
-			conn_time = sync_time = 0;
 		} else {
-			if (!conn_time) {
-				conn_time = t;
-			}
-			
-			if (!g_light_mode && t - conn_time >= 2 * MAIN_CHAIN_PERIOD
-				&& !memcmp(&g_xdag_stats.difficulty, &g_xdag_stats.max_difficulty, sizeof(xdag_diff_t))) {
-				sync_time = t;
-			}
-			
-			if (t - (g_xdag_xfer_last << 10) <= 2 * MAIN_CHAIN_PERIOD + 4) {
-				g_xdag_state = XDAG_STATE_XFER;
-			} else if (g_light_mode) {
-				g_xdag_state = (g_xdag_mining_threads > 0 ?
-									 (g_xdag_testnet ? XDAG_STATE_MTST : XDAG_STATE_MINE)
-									 : (g_xdag_testnet ? XDAG_STATE_PTST : XDAG_STATE_POOL));
-			} else if (t - sync_time > 8 * MAIN_CHAIN_PERIOD) {
-				g_xdag_state = (g_xdag_testnet ? XDAG_STATE_CTST : XDAG_STATE_CONN);
+			pthread_mutex_lock(&g_transport_mutex);
+			if (t > (g_xdag_last_received << 10) && t - (g_xdag_last_received << 10) > 3 * MAIN_CHAIN_PERIOD) {
+				g_xdag_state = (g_light_mode ? (g_xdag_testnet ? XDAG_STATE_TTST : XDAG_STATE_TRYP)
+									 : (g_xdag_testnet ? XDAG_STATE_WTST : XDAG_STATE_WAIT));
+				conn_time = sync_time = 0;
 			} else {
-				g_xdag_state = (g_xdag_testnet ? XDAG_STATE_STST : XDAG_STATE_SYNC);
+				if (!conn_time) {
+					conn_time = t;
+				}
+				
+				if (!g_light_mode && t - conn_time >= 2 * MAIN_CHAIN_PERIOD
+					&& !memcmp(&g_xdag_stats.difficulty, &g_xdag_stats.max_difficulty, sizeof(xdag_diff_t))) {
+					sync_time = t;
+				}
+				
+				if (t - (g_xdag_xfer_last << 10) <= 2 * MAIN_CHAIN_PERIOD + 4) {
+					g_xdag_state = XDAG_STATE_XFER;
+				} else if (g_light_mode) {
+					g_xdag_state = (g_xdag_mining_threads > 0 ?
+										 (g_xdag_testnet ? XDAG_STATE_MTST : XDAG_STATE_MINE)
+										 : (g_xdag_testnet ? XDAG_STATE_PTST : XDAG_STATE_POOL));
+				} else if (t - sync_time > 8 * MAIN_CHAIN_PERIOD) {
+					g_xdag_state = (g_xdag_testnet ? XDAG_STATE_CTST : XDAG_STATE_CONN);
+				} else {
+					g_xdag_state = (g_xdag_testnet ? XDAG_STATE_STST : XDAG_STATE_SYNC);
+				}
 			}
+			pthread_mutex_unlock(&g_transport_mutex);
 		}
 
 		if (!g_light_mode) {
@@ -1089,7 +1092,6 @@ static void *work_thread(void *arg)
 		}
 
 		struct block_internal *ours = ourfirst;
-		pthread_mutex_unlock(&g_transport_mutex);
 		pthread_mutex_unlock(&block_mutex);
 		xdag_show_state(ours ? ours->hash : 0);
 
