@@ -954,6 +954,16 @@ static int precalculate_payments(uint64_t *hash, int confirmation_index, struct 
 		++index;
 	}
 	pthread_mutex_unlock(&g_miners_mutex);
+	
+	/* clear nopaid shares for each connection */
+	pthread_mutex_lock(&g_descriptors_mutex);
+	connection_list_element *conn;
+	LL_FOREACH(g_connection_list_head, conn)
+	{
+		conn->connection_data.prev_diff = 0;
+		conn->connection_data.prev_diff_count = 0;
+	}
+	pthread_mutex_unlock(&g_descriptors_mutex);
 
 	if(data->sum > 0) {
 		data->direct = data->balance * g_pool_direct;
