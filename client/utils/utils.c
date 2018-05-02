@@ -13,7 +13,6 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
-#include <pthread.h>
 #if defined (__APPLE__)|| defined (__MACOS__)
 #include <libgen.h>
 #define PATH_MAX 4096
@@ -26,6 +25,7 @@
 #endif
 #include "../uthash/utlist.h"
 #include "log.h"
+#include "../system.h"
 
 static pthread_mutex_t g_detect_mutex = PTHREAD_MUTEX_INITIALIZER;
 

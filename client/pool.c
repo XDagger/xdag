@@ -38,7 +38,7 @@
 #define DEFAUL_CONNECTIONS_PER_MINER_LIMIT 100
 
 struct nonce_hash {
-	uint64_t id;
+	uint64_t key;
 	UT_hash_handle hh;
 };
 
@@ -606,14 +606,14 @@ static int share_can_be_accepted(struct miner_pool_data *miner, xdag_hash_t shar
 		clear_nonces_hashtable(miner);
 		miner->task_index = task_index;
 	} else {
-		HASH_FIND(hh, miner->nonces, nonce, sizeof(uint64_t), eln);
+		HASH_FIND(hh, miner->nonces, &nonce, sizeof(uint64_t), eln);
 		if(eln != NULL) {
 			return 0;	// we received the same nonce and will ignore duplicate
 		}
 	}
 	eln = (struct nonce_hash*)malloc(sizeof(struct nonce_hash));
-	eln->id = nonce;
-	HASH_ADD(hh, miner->nonces, id, sizeof(uint64_t), eln);
+	eln->key = nonce;
+	HASH_ADD(hh, miner->nonces, key, sizeof(uint64_t), eln);
 	return 1;
 }
 
@@ -698,10 +698,12 @@ static int recieve_data_from_connection(connection_list_element *connection, int
 				memcpy(conn_data->miner->id.data, conn_data->data, sizeof(struct xdag_field));	//TODO:do I need to copy whole field?
 			}
 
-			xdag_hash_t hash;
-			xdag_hash_final(task->ctx0, conn_data->data, sizeof(struct xdag_field), hash);
-			xdag_set_min_share(task, conn_data->miner->id.data, hash);
-			calculate_nopaid_shares(conn_data, task, hash);
+			if(share_can_be_accepted(conn_data->miner, conn_data->data, task_index)) {
+				xdag_hash_t hash;
+				xdag_hash_final(task->ctx0, conn_data->data, sizeof(struct xdag_field), hash);
+				xdag_set_min_share(task, conn_data->miner->id.data, hash);
+				calculate_nopaid_shares(conn_data, task, hash);
+			}
 		}
 	}
 
@@ -1005,6 +1007,7 @@ static void do_payments(uint64_t *hash, int fields_count, struct payment_data *d
 		}
 
 		transfer_payment(miner, payment_sum, fields, fields_count, &field_index);
+		++index;
 	}
 	pthread_mutex_unlock(&g_miners_mutex);
 

@@ -5,6 +5,7 @@
 
 #include <time.h>
 #include <stdint.h>
+#include <pthread.h>
 #include "block.h"
 #include "storage.h"
 
