@@ -26,6 +26,7 @@
 #include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
 #include "../dus/programs/dar/source/include/crc.h"
 #include "uthash/utlist.h"
+#include "uthash/uthash.h"
 
 //TODO: why do we need these two definitions?
 #define START_MINERS_COUNT     256
@@ -35,6 +36,11 @@
 #define FUND_ADDRESS                       "FQglVQtb60vQv2DOWEUL7yh3smtj7g1s" /* community fund */
 #define SHARES_PER_TASK_LIMIT              20                                 /* maximum count of shares per task */
 #define DEFAUL_CONNECTIONS_PER_MINER_LIMIT 100
+
+struct nonce_hash {
+	uint64_t key;
+	UT_hash_handle hh;
+};
 
 enum miner_state {
 	MINER_UNKNOWN = 0,
@@ -51,6 +57,8 @@ struct miner_pool_data {
 	double maxdiff[CONFIRMATIONS_COUNT];
 	enum miner_state state;
 	uint32_t connections_count;
+	uint64_t task_index;
+	struct nonce_hash *nonces;
 };
 
 typedef struct miner_list_element {
@@ -580,6 +588,35 @@ static int register_new_miner(connection_list_element *connection, int index)
 	return 1;
 }
 
+static void clear_nonces_hashtable(struct miner_pool_data *miner)
+{
+	struct nonce_hash *eln, *tmp;
+	HASH_ITER(hh, miner->nonces, eln, tmp)
+	{
+		HASH_DEL(miner->nonces, eln);
+		free(eln);
+	}
+}
+
+static int share_can_be_accepted(struct miner_pool_data *miner, xdag_hash_t share, uint64_t task_index)
+{
+	struct nonce_hash *eln;
+	uint64_t nonce = share[3];
+	if(miner->task_index != task_index) {
+		clear_nonces_hashtable(miner);
+		miner->task_index = task_index;
+	} else {
+		HASH_FIND(hh, miner->nonces, &nonce, sizeof(uint64_t), eln);
+		if(eln != NULL) {
+			return 0;	// we received the same nonce and will ignore duplicate
+		}
+	}
+	eln = (struct nonce_hash*)malloc(sizeof(struct nonce_hash));
+	eln->key = nonce;
+	HASH_ADD(hh, miner->nonces, key, sizeof(uint64_t), eln);
+	return 1;
+}
+
 static int recieve_data_from_connection(connection_list_element *connection, int index)
 {
 	struct connection_pool_data *conn_data = &connection->connection_data;
@@ -661,10 +698,12 @@ static int recieve_data_from_connection(connection_list_element *connection, int
 				memcpy(conn_data->miner->id.data, conn_data->data, sizeof(struct xdag_field));	//TODO:do I need to copy whole field?
 			}
 
-			xdag_hash_t hash;
-			xdag_hash_final(task->ctx0, conn_data->data, sizeof(struct xdag_field), hash);
-			xdag_set_min_share(task, conn_data->miner->id.data, hash);
-			calculate_nopaid_shares(conn_data, task, hash);
+			if(share_can_be_accepted(conn_data->miner, conn_data->data, task_index)) {
+				xdag_hash_t hash;
+				xdag_hash_final(task->ctx0, conn_data->data, sizeof(struct xdag_field), hash);
+				xdag_set_min_share(task, conn_data->miner->id.data, hash);
+				calculate_nopaid_shares(conn_data, task, hash);
+			}
 		}
 	}
 
@@ -968,6 +1007,7 @@ static void do_payments(uint64_t *hash, int fields_count, struct payment_data *d
 		}
 
 		transfer_payment(miner, payment_sum, fields, fields_count, &field_index);
+		++index;
 	}
 	pthread_mutex_unlock(&g_miners_mutex);
 
@@ -1048,6 +1088,7 @@ void remove_inactive_miners(void)
 			const char *address = xdag_hash2address(elt->miner_data.id.data);
 			
 			LL_DELETE(g_miner_list_head, elt);
+			clear_nonces_hashtable(&elt->miner_data);
 			free(elt);
 
 			xdag_info("Pool: miner %s is removed from miners list", address);
