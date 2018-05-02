@@ -247,7 +247,7 @@ void printUsage(char* appName)
 		"  -t             - connect to test net (default is main net)\n"
 		"  -v N           - set loglevel to N\n"
 		"  -z <path>      - path to temp-file folder\n"
-		"  -z malloc      - use malloc RAM instead of temp-files\n"
+		"  -z RAM         - use RAM instead of temp-files\n"
 		"  -rpc-enable    - enable JSON-RPC service\n"
 		"  -rpc-port      - set HTTP JSON-RPC port (default is 7677)\n"
 		, appName);

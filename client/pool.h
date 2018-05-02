@@ -8,7 +8,7 @@
 #include "hash.h"
 #include "mining_common.h"
 
-#define MAX_MINERS_COUNT               4096
+#define MAX_CONNECTIONS_COUNT          8192
 #define XDAG_POOL_CONFIRMATIONS_COUNT  16
 #define CONFIRMATIONS_COUNT            XDAG_POOL_CONFIRMATIONS_COUNT   /*16*/
 

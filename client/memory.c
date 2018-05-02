@@ -65,7 +65,7 @@ int xdag_mem_init(size_t size)
 	if (!size) {
 		return 0;
 	}
-	if(strcmp(g_tmpfile_path,"malloc") == 0) {
+	if(strcmp(g_tmpfile_path,"RAM") == 0) {
 		/* This will leave g_fd as -1, and malloc will then be called in xdag_malloc instead of pointer into mmap */
 		return 0;
 	}
