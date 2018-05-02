@@ -954,6 +954,16 @@ static int precalculate_payments(uint64_t *hash, int confirmation_index, struct 
 		++index;
 	}
 	pthread_mutex_unlock(&g_miners_mutex);
+	
+	/* clear nopaid shares for each connection */
+	pthread_mutex_lock(&g_descriptors_mutex);
+	connection_list_element *conn;
+	LL_FOREACH(g_connection_list_head, conn)
+	{
+		conn->connection_data.prev_diff = 0;
+		conn->connection_data.prev_diff_count = 0;
+	}
+	pthread_mutex_unlock(&g_descriptors_mutex);
 
 	if(data->sum > 0) {
 		data->direct = data->balance * g_pool_direct;
@@ -984,7 +994,7 @@ static void do_payments(uint64_t *hash, int fields_count, struct payment_data *d
 {
 	miner_list_element *elt;
 	struct xdag_field fields[12];
-	xdag_amount_t payment_sum;
+	xdag_amount_t payment_sum = 0;
 
 	memcpy(fields[0].data, hash, sizeof(xdag_hashlow_t));
 	fields[0].amount = 0;
@@ -994,9 +1004,12 @@ static void do_payments(uint64_t *hash, int fields_count, struct payment_data *d
 	pthread_mutex_lock(&g_miners_mutex);
 	LL_FOREACH(g_miner_list_head, elt)
 	{
+		payment_sum = 0;
 		struct miner_pool_data *miner = &elt->miner_data;
 
-		payment_sum = data->pay * (prev_diff[index] / data->prev_sum);
+		if(data->prev_sum > 0) {
+			payment_sum += data->pay * (prev_diff[index] / data->prev_sum);
+		}
 
 		if(data->sum > 0) {
 			payment_sum += data->direct * (diff[index] / data->sum);
