@@ -10,7 +10,7 @@
 #include "../dus/programs/dar/source/include/crc.h"
 #include "dnet_database.h"
 #include "dnet_main.h"
-#include "../utils/utils.h"
+#include "../client/utils/utils.h"
 
 #define DNET_HOST_MAX           0x1000
 #define DNET_NEW_HOST_TIMEOUT	DNET_ACTIVE_PERIOD

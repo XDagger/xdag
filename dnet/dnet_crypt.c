@@ -13,7 +13,7 @@
 #include "dnet_database.h"
 #include "dnet_crypt.h"
 #include "dnet_main.h"
-#include "../utils/utils.h"
+#include "../client/utils/utils.h"
 
 #define KEYFILE	    "dnet_key.dat"
 #define PWDLEN	    64
@@ -169,12 +169,12 @@ static int set_user_crypt(struct dfslib_string *pwd) {
 	return 0;
 }
 
-/* выполнить действие с паролем пользователя:
- * 1 - закодировать данные (data_id - порядковый номер данных, size - размер данных, измеряется в 32-битных словах)
- * 2 - декодировать -//-
- * 3 - ввести пароль и проверить его, возвращает 0 при успехе
- * 4 - ввести пароль и записать его отпечаток в массив data длины 16 байт
- * 5 - проверить, что отпечаток в массиве data соответствует паролю
+/* 
+ * 1 - to encode data (data _ id, serial number data and size data measured in 32 - bit words)
+ * 2 - decode
+ * 3 - password and check it returns 0 on success
+ * 4 - password and write print array data of length 16 bytes
+ * 5 - to verify that the pattern in the data corresponds to the password
  * 6 - setup callback function to input password, data is pointer to function 
  *     int (*)(const char *prompt, char *buf, unsigned size);
  */

@@ -8,14 +8,17 @@
 
 #define VERSION_MAJOR               0
 #define VERSION_MINOR               2
-#define VERSION_REVISION            1
+#define VERSION_REVISION            2
 
 #define XDAG_VERSION STRINGIZE(VERSION_MAJOR) "." STRINGIZE(VERSION_MINOR) "." STRINGIZE(VERSION_REVISION)
 
 
 //version history in russian
 /* история
-
+0.2.2	refatory pool logic
+ 		verfiy share from miner
+ 		initial version of JSON-RPC
+ 
 T13.895 более аккуратное сокращение времени прохождения транзакции (132 сек максимум);
 	статистика теперь усредняется по 4-часовому интервалу; более аккуратное
 	устранение утечки памяти; исправлены падения по сигналам 15, 28
