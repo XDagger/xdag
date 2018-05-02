@@ -984,7 +984,7 @@ static void do_payments(uint64_t *hash, int fields_count, struct payment_data *d
 {
 	miner_list_element *elt;
 	struct xdag_field fields[12];
-	xdag_amount_t payment_sum;
+	xdag_amount_t payment_sum = 0;
 
 	memcpy(fields[0].data, hash, sizeof(xdag_hashlow_t));
 	fields[0].amount = 0;
@@ -994,9 +994,12 @@ static void do_payments(uint64_t *hash, int fields_count, struct payment_data *d
 	pthread_mutex_lock(&g_miners_mutex);
 	LL_FOREACH(g_miner_list_head, elt)
 	{
+		payment_sum = 0;
 		struct miner_pool_data *miner = &elt->miner_data;
 
-		payment_sum = data->pay * (prev_diff[index] / data->prev_sum);
+		if(data->prev_sum > 0) {
+			payment_sum += data->pay * (prev_diff[index] / data->prev_sum);
+		}
 
 		if(data->sum > 0) {
 			payment_sum += data->direct * (diff[index] / data->sum);
