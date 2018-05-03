@@ -140,7 +140,7 @@ int xdag_initialize_pool(const char *pool_arg)
 	xdag_get_our_block(g_pool_miner.id.data);
 	g_pool_miner.state = MINER_SERVICE;
 
-	g_fds = malloc(MAX_MINERS_COUNT * sizeof(struct pollfd));
+	g_fds = malloc(MAX_CONNECTIONS_COUNT * sizeof(struct pollfd));
 	if(!g_fds) return -1;
 
 	int err = pthread_create(&th, 0, pool_net_thread, (void*)pool_arg);
@@ -199,13 +199,13 @@ int xdag_pool_set_config(const char *pool_config)
 
 		if(g_max_connections_count < 0) {
 			g_max_connections_count = 0;
-			xdag_warn("pool : wrong miners count");
-		} else if(g_max_connections_count > MAX_MINERS_COUNT) {
-			g_max_connections_count = MAX_MINERS_COUNT;
-			xdag_warn("pool : exceed max miners count %d", MAX_MINERS_COUNT);
+			xdag_warn("pool: wrong connections count");
+		} else if(g_max_connections_count > MAX_CONNECTIONS_COUNT) {
+			g_max_connections_count = MAX_CONNECTIONS_COUNT;
+			xdag_warn("pool: exceed max connections count %d", MAX_CONNECTIONS_COUNT);
 		} else if(g_max_connections_count > open_max - 64) {
 			g_max_connections_count = open_max - 64;
-			xdag_warn("pool : exceed max open files %d", open_max - 64);
+			xdag_warn("pool: exceed max open files %d", open_max - 64);
 		}
 	}
 
@@ -405,7 +405,7 @@ void *pool_net_thread(void *arg)
 	}
 
 	// Now, listen for a connection
-	int res = listen(sock, MAX_MINERS_COUNT);    // "1" is the maximal length of the queue
+	int res = listen(sock, MAX_CONNECTIONS_COUNT);    // "1" is the maximal length of the queue
 	if(res) {
 		xdag_err("pool: cannot listen");
 		return 0;
@@ -698,7 +698,7 @@ static int recieve_data_from_connection(connection_list_element *connection, int
 				memcpy(conn_data->miner->id.data, conn_data->data, sizeof(struct xdag_field));	//TODO:do I need to copy whole field?
 			}
 
-			if(share_can_be_accepted(conn_data->miner, conn_data->data, task_index)) {
+			if(share_can_be_accepted(conn_data->miner, (uint64_t*)conn_data->data, task_index)) {
 				xdag_hash_t hash;
 				xdag_hash_final(task->ctx0, conn_data->data, sizeof(struct xdag_field), hash);
 				xdag_set_min_share(task, conn_data->miner->id.data, hash);
@@ -994,7 +994,6 @@ static void do_payments(uint64_t *hash, int fields_count, struct payment_data *d
 {
 	miner_list_element *elt;
 	struct xdag_field fields[12];
-	xdag_amount_t payment_sum = 0;
 
 	memcpy(fields[0].data, hash, sizeof(xdag_hashlow_t));
 	fields[0].amount = 0;
@@ -1004,7 +1003,7 @@ static void do_payments(uint64_t *hash, int fields_count, struct payment_data *d
 	pthread_mutex_lock(&g_miners_mutex);
 	LL_FOREACH(g_miner_list_head, elt)
 	{
-		payment_sum = 0;
+		xdag_amount_t payment_sum = 0;
 		struct miner_pool_data *miner = &elt->miner_data;
 
 		if(data->prev_sum > 0) {
