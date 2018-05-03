@@ -960,6 +960,10 @@ static int precalculate_payments(uint64_t *hash, int confirmation_index, struct 
 	connection_list_element *conn;
 	LL_FOREACH(g_connection_list_head, conn)
 	{
+		if(conn->connection_data.maxdiff[confirmation_index] > 0) {
+			conn->connection_data.maxdiff[confirmation_index] = 0;
+		}
+		
 		conn->connection_data.prev_diff = 0;
 		conn->connection_data.prev_diff_count = 0;
 	}
