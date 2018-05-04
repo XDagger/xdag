@@ -470,12 +470,17 @@ static void close_connection(connection_list_element *connection, int index, con
 		ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port), message);
 }
 
-/* static void calculate_nopaid_shares infos:
-+  struct connection_pool_data *conn_data is miner's side data
-+  struct xdag_pool_task *task is pool's side data
-+  xdag_hash_t hash is a digest computed by the pool starting from the
-+  miner's data 'conn_data->data' and pool side context task->ctx0
-*/
+
+
+/* @method      :- calculate_nopaid_shares
++  @param       :-
++               struct connection_pool_data* connection data :- miner's side data
++               struct xdag_pool_task* task data             :- pool's side data
++               xdag_hash_t hash                             :- is a digest computed by the pool starting from the
++                                                            miner's data 'conn_data->data' and pool side context task->ctx0
++  @return      :- void
++  @description :- calculate nopaid share */
+
 static void calculate_nopaid_shares(struct connection_pool_data *conn_data, struct xdag_pool_task *task, xdag_hash_t hash)
 {
 	const xdag_time_t task_time = task->task_time;
