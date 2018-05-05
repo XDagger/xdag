@@ -15,7 +15,7 @@
 #include "../init.h"
 #include "utils.h"
 
-#define ASYNC_LOG 1
+#define ASYNC_LOG 0
 
 //#define LOG_PRINT // print log to stdout
 
