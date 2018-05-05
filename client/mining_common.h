@@ -32,7 +32,6 @@ extern int g_xdag_pool;
 
 extern const char *g_miner_address;
 
-extern pthread_mutex_t g_pool_mutex;
 extern pthread_mutex_t g_share_mutex;
 
 extern struct dfslib_crypt *g_crypt;

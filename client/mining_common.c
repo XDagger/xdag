@@ -19,7 +19,6 @@ uint64_t g_xdag_pool_task_index;
 
 const char *g_miner_address;
 
-pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_share_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct dfslib_crypt *g_crypt;

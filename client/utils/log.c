@@ -65,7 +65,6 @@ size_t get_free_size(void)
 
 size_t put_log(const char* log, size_t size)
 {
-	pthread_mutex_lock(&log_mutex);
 	size_t freesize = get_free_size();
 	if(!freesize) {
 		size = 0;
@@ -88,13 +87,11 @@ size_t put_log(const char* log, size_t size)
 		}
 	}
 	
-	pthread_mutex_unlock(&log_mutex);
 	return size;
 }
 
 size_t get_log(char* log, size_t size)
 {
-	pthread_mutex_lock(&log_mutex);
 	size_t used = get_used_size();
 	if (!used) {
 		size = 0;
@@ -116,7 +113,6 @@ size_t get_log(char* log, size_t size)
 	}
 	
 	g_buffer_full = FALSE;
-	pthread_mutex_unlock(&log_mutex);
 	return size;
 }
 
@@ -128,6 +124,7 @@ static void *xdag_log_writer_thread(void* data)
 	while (1) {
 		sem_wait(writer_notice_sem);
 		
+		pthread_mutex_lock(&log_mutex);
 		memset(poll_get_buf, 0, MAX_POLL_SIZE);
 		pollsize = get_log(poll_get_buf, MAX_POLL_SIZE);
 		if (pollsize>0) {
@@ -147,6 +144,7 @@ static void *xdag_log_writer_thread(void* data)
 		} else {
 			// ring buffer empty
 		}
+		pthread_mutex_unlock(&log_mutex);
 	}
 
 	return 0;
@@ -187,7 +185,9 @@ int xdag_log(int level, const char *format, ...)
 #ifdef LOG_PRINT
 	printf("%s", buffer);
 #endif
+	pthread_mutex_lock(&log_mutex);
 	size_t putsize = put_log(buffer, strlen(buffer));
+	pthread_mutex_unlock(&log_mutex);
 	if(putsize>0) {
 		sem_post(writer_notice_sem);
 	}
