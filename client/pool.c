@@ -1127,6 +1127,16 @@ static const char* miner_state_to_string(int miner_state)
 	}
 }
 
+static const char* connection_state_to_string(int connection_state)
+{
+	switch(connection_state) {
+		case ACTIVE_CONNECTION:
+			return "active ";
+		default:
+			return "unknown";
+	}
+}
+
 static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int print_connections)
 {
 	char ip_port_str[32], in_out_str[64];
@@ -1155,17 +1165,13 @@ static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int 
 	return miner->state == MINER_ACTIVE ? 1 : 0;
 }
 
-/* output to the file a list of miners */
-int xdag_print_miners(FILE *out)
+int print_miners(FILE *out)
 {
-	fprintf(out, "List of miners:\n"
-		" NN  Address for payment to            Status   IP and port            in/out bytes      nopaid shares\n"
-		"------------------------------------------------------------------------------------------------------\n");
 	int count_active = print_miner(out, -1, &g_pool_miner, 1);
 
 	miner_list_element *elt;
 	int index = 0;
-	
+
 	//if not locked, wait for 100 ms, max try time 10.
 	int times = 0;
 	do {
@@ -1183,7 +1189,7 @@ int xdag_print_miners(FILE *out)
 				pthread_mutex_unlock(&g_miners_mutex);
 			}
 		}
-		if(++times>=10) {
+		if(++times >= 10) {
 			xdag_err("try lock g_miners_mutex failed, exceed max try time.");
 			break;
 		} else {
@@ -1191,6 +1197,61 @@ int xdag_print_miners(FILE *out)
 		}
 		sleep(0.1);
 	} while(1);
+
+	return count_active;
+}
+
+static void print_connection(FILE *out, int index, struct connection_pool_data *conn_data)
+{
+	char ip_port_str[32], in_out_str[64];
+	char address[50];
+	int ip = conn_data->ip;
+	sprintf(ip_port_str, "%u.%u.%u.%u:%u", ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(conn_data->port));
+	sprintf(in_out_str, "%llu/%llu", (unsigned long long)conn_data->nfield_in * sizeof(struct xdag_field),
+		(unsigned long long)conn_data->nfield_out * sizeof(struct xdag_field));
+
+	sprintf(address, conn_data->miner ? xdag_hash2address(conn_data->miner->id.data) : "-                               ");
+	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", index, address,
+		connection_state_to_string(conn_data->state), ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data));
+}
+
+int print_connections(FILE *out)
+{
+	connection_list_element *elt;
+	int index = 0;
+
+	//if not locked, wait for 100 ms, max try time 10.
+	int times = 0;
+	do {
+		if(!pthread_mutex_trylock(&g_descriptors_mutex)) {
+			LL_FOREACH(g_connection_list_head, elt)
+			{
+				struct miner_connection_data *conn_data = &elt->connection_data;
+				print_connection(out, index++, conn_data);
+			}
+			pthread_mutex_unlock(&g_descriptors_mutex);
+			break;
+		}
+		if(++times >= 10) {
+			xdag_err("try lock g_descriptors_mutex failed, exceed max try time.");
+			break;
+		} else {
+			xdag_warn("try lock g_descriptors_mutex failed, try time : %d", times);
+		}
+		sleep(0.1);
+	} while(1);
+
+	return index;
+}
+
+/* output to the file a list of miners */
+int xdag_print_miners(FILE *out, int printOnlyConnections)
+{
+	fprintf(out, "List of miners:\n"
+		" NN  Address for payment to            Status   IP and port            in/out bytes      nopaid shares\n"
+		"------------------------------------------------------------------------------------------------------\n");
+	
+	int count_active = printOnlyConnections ? print_connections(out) : print_miners(out);
 
 	fprintf(out,
 		"------------------------------------------------------------------------------------------------------\n"
