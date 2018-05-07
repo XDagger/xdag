@@ -46,7 +46,7 @@ void processStatsCommand(FILE *out);
 void processExitCommand(void);
 void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd);
 void processLastBlocksCommand(char *nextParam, FILE *out);
-// Function declarations
+void processMinersCommand(char *nextParam, FILE *out);
 
 void startCommandProcessing(int transportFlags)
 {
@@ -91,7 +91,7 @@ int xdag_command(char *cmd, FILE *out)
 	} else if(!strcmp(cmd, "level")) {
 		processLevelCommand(nextParam, out);
 	} else if(!strcmp(cmd, "miners")) {
-		xdag_print_miners(out);
+		processMinersCommand(nextParam, out);
 	} else if(!strcmp(cmd, "mining")) {
 		processMiningCommand(nextParam, out);
 	} else if(!strcmp(cmd, "net")) {
@@ -227,6 +227,16 @@ void processMiningCommand(char *nextParam, FILE *out)
 		xdag_mining_start(g_is_miner ? ~nthreads : nthreads);
 		fprintf(out, "%d mining threads running\n", g_xdag_mining_threads);
 	}
+}
+
+void processMinersCommand(char *nextParam, FILE *out)
+{
+	int printOnlyConnections = 0;
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	if(cmd) {
+		printOnlyConnections = strcmp(cmd, "conn") == 0;
+	}
+	xdag_print_miners(out, printOnlyConnections);
 }
 
 void processNetCommand(char *nextParam, FILE *out)
