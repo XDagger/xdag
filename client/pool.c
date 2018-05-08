@@ -1215,6 +1215,7 @@ static void print_connection(FILE *out, int index, struct connection_pool_data *
 		connection_state_to_string(conn_data->state), ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data));
 }
 
+int print_connections(FILE *out);
 int print_connections(FILE *out)
 {
 	connection_list_element *elt;
@@ -1223,10 +1224,13 @@ int print_connections(FILE *out)
 	//if not locked, wait for 100 ms, max try time 10.
 	int times = 0;
 	do {
-		if(!pthread_mutex_trylock(&g_descriptors_mutex)) {
+//		int res = pthread_mutex_trylock(&g_descriptors_mutex);
+		int res = pthread_mutex_lock(&g_descriptors_mutex);
+		xdag_debug("pthread_mutex_trylock g_descriptors_mutex, result : %d", res);
+		if(!res) {
 			LL_FOREACH(g_connection_list_head, elt)
 			{
-				struct miner_connection_data *conn_data = &elt->connection_data;
+				struct connection_pool_data *conn_data = &elt->connection_data;
 				print_connection(out, index++, conn_data);
 			}
 			pthread_mutex_unlock(&g_descriptors_mutex);
