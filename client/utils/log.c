@@ -194,7 +194,7 @@ int xdag_log(int level, const char *format, ...)
 	
 #else
 	static const char lvl[] = "NONEFATACRITINTEERROWARNMESSINFODBUGTRAC";
-	char tbuf[64], buf[64];
+	char tbuf[64] = {0}, buf[64] = {0};
 	struct tm tm;
 	va_list arg;
 	struct timeval tv;
