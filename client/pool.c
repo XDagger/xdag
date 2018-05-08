@@ -1165,7 +1165,7 @@ static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int 
 	return miner->state == MINER_ACTIVE ? 1 : 0;
 }
 
-int print_miners(FILE *out)
+static int print_miners(FILE *out)
 {
 	int count_active = print_miner(out, -1, &g_pool_miner, 1);
 
@@ -1210,13 +1210,12 @@ static void print_connection(FILE *out, int index, struct connection_pool_data *
 	sprintf(in_out_str, "%llu/%llu", (unsigned long long)conn_data->nfield_in * sizeof(struct xdag_field),
 		(unsigned long long)conn_data->nfield_out * sizeof(struct xdag_field));
 
-	sprintf(address, conn_data->miner ? xdag_hash2address(conn_data->miner->id.data) : "-                               ");
+	strcpy(address, (conn_data->miner ? xdag_hash2address(conn_data->miner->id.data) : "-                               "));
 	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", index, address,
 		connection_state_to_string(conn_data->state), ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data));
 }
 
-int print_connections(FILE *out);
-int print_connections(FILE *out)
+static int print_connections(FILE *out)
 {
 	connection_list_element *elt;
 	int index = 0;
