@@ -25,7 +25,7 @@ extern char *xdag_pool_get_config(char *buf);
 extern int xdag_pool_set_config(const char *pool_config);
 
 /* output to the file a list of miners */
-extern int xdag_print_miners(FILE *out);
+extern int xdag_print_miners(FILE *out, int printOnlyConnections);
 
 extern void *pool_net_thread(void *arg);
 extern void *pool_main_thread(void *arg);
