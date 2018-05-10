@@ -81,9 +81,8 @@ Run (Mac OS):
 -----------------------
 
 - Install:
-
-		Download binary file from [release page](https://github.com/XDagger/xdag/releases).  
-		Unzip the zip file to what folder you want.
+Download binary file from [release page](https://github.com/XDagger/xdag/releases).  
+Unzip the zip file to what folder you want.
 
 - Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool put.xdag.server.here:13654
 
@@ -91,9 +90,9 @@ Run (Mac OS):
 		Enter random characters: [enter]
 		
 - Already have an account
-
-		Put your wallet.dat, dnet_key.dat and storage folder in this folder.
-		Then run below command
+Put your wallet.dat, dnet_key.dat and storage folder in this folder.
+Then run below command
+		
 		$./xdag -m 2 -d put.xdag.server.here:13654
 
 - Run terminal connected to the daemon in the same folder:
