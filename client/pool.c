@@ -1223,8 +1223,7 @@ static int print_connections(FILE *out)
 	//if not locked, wait for 100 ms, max try time 10.
 	int times = 0;
 	do {
-//		int res = pthread_mutex_trylock(&g_descriptors_mutex);
-		int res = pthread_mutex_lock(&g_descriptors_mutex);
+		int res = pthread_mutex_trylock(&g_descriptors_mutex);
 		xdag_debug("pthread_mutex_trylock g_descriptors_mutex, result : %d", res);
 		if(!res) {
 			LL_FOREACH(g_connection_list_head, elt)
