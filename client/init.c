@@ -70,9 +70,6 @@ int xdag_init(int argc, char **argv, int isGui)
 	if (!isGui) {
 		printf("%s client/server, version %s.\n", g_progname, XDAG_VERSION);
 	}
-	
-	/* initialize log system */
-	if (xdag_log_init()) return -1;
 
 	g_xdag_run = 1;
 	xdag_show_state(0);
@@ -162,9 +159,6 @@ int xdag_init(int argc, char **argv, int isGui)
 	
 	g_xdag_pool = is_pool; // move to here to avoid Data Race
 
-	/* initialize json rpc */
-	if(is_rpc && xdag_rpc_service_init(rpc_port)) return -1;
-		
 	g_is_miner = is_miner;
 	g_is_pool = is_pool;
 	if (pubaddr && !bindto) {
@@ -183,6 +177,12 @@ int xdag_init(int argc, char **argv, int isGui)
 	xdag_mess("Starting dnet transport...");
 	printf("Transport module: ");
 	if (xdag_transport_start(transport_flags, bindto, n_addrports, addrports)) return -1;
+	
+	/* initialize log system */
+	if (xdag_log_init()) return -1;
+	
+	/* initialize json rpc */
+	if(is_rpc && xdag_rpc_service_init(rpc_port)) return -1;
 	
 	if (!is_miner) {
 		xdag_mess("Reading hosts database...");
@@ -247,7 +247,7 @@ void printUsage(char* appName)
 		"  -t             - connect to test net (default is main net)\n"
 		"  -v N           - set loglevel to N\n"
 		"  -z <path>      - path to temp-file folder\n"
-		"  -z malloc      - use malloc RAM instead of temp-files\n"
+		"  -z RAM         - use RAM instead of temp-files\n"
 		"  -rpc-enable    - enable JSON-RPC service\n"
 		"  -rpc-port      - set HTTP JSON-RPC port (default is 7677)\n"
 		, appName);
