@@ -531,17 +531,19 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 			conn_data->maxdiff[i] = diff;
 		}
 
-		if(conn_data->miner && conn_data->miner->task_time < task_time) {
-			conn_data->miner->task_time = task_time;
+		if(conn_data->miner) {
+			if(conn_data->miner->task_time < task_time) {
+				conn_data->miner->task_time = task_time;
 
-			if(conn_data->miner->maxdiff[i] > 0) {
-				conn_data->miner->prev_diff += conn_data->miner->maxdiff[i];
-				conn_data->miner->prev_diff_count++;
+				if(conn_data->miner->maxdiff[i] > 0) {
+					conn_data->miner->prev_diff += conn_data->miner->maxdiff[i];
+					conn_data->miner->prev_diff_count++;
+				}
+
+				conn_data->miner->maxdiff[i] = diff;
+			} else if(diff > conn_data->miner->maxdiff[i]) {
+				conn_data->miner->maxdiff[i] = diff;
 			}
-
-			conn_data->miner->maxdiff[i] = diff;
-		} else if(diff > conn_data->miner->maxdiff[i]) {
-			conn_data->miner->maxdiff[i] = diff;
 		}
 	}
 }
