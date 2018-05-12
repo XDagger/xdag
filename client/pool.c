@@ -630,7 +630,7 @@ static int recieve_data_from_connection(connection_list_element *connection, int
 
 	conn_data->data_size += data_size;
 
-	if(conn_data->data_size == sizeof(struct xdag_field)) {
+	if(conn_data->data_size == sizeof(struct xdag_field)) { //32
 		conn_data->data_size = 0;
 		dfslib_uncrypt_array(g_crypt, conn_data->data, DATA_SIZE, conn_data->nfield_in++);
 
