@@ -7,6 +7,17 @@ dfslib	 = $(dfstools)/dfslib
 dar		 = ../dus/programs/dar/source
 ldusinc	 = ../ldus/source/include/ldus
 utils    = ./utils
+OS	:= $(shell uname)
+
+ifeq ($(OS), Darwin)
+	asm_src = \
+		sha256-mb-x86_64-mac.s		\
+		x86_64cpuid-mac.s
+else
+	asm_src = \
+		sha256-mb-x86_64.s		\
+		x86_64cpuid.s
+endif
 
 sources = \
 	address.c					\
@@ -21,14 +32,12 @@ sources = \
 	miner.c						\
 	mining_common.c				\
 	sha256.c					\
-	sha256-mb-x86_64.s			\
 	storage.c					\
 	sync.c						\
 	transport.c					\
 	wallet.c					\
 	commands.c					\
 	terminal.c					\
-	x86_64cpuid.s				\
 	$(dnet)/dnet_crypt.c		\
 	$(dnet)/dnet_database.c		\
 	$(dnet)/dnet_main.c			\
@@ -103,13 +112,20 @@ headers = \
 	./json-rpc/rpc_wrapper.h		\
 
 
-flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
+
+ifeq ($(OS), Darwin)
+
+	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result
+else
+	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
+
+endif
 
 
 all: xdag
 
 xdag: $(sources) $(headers) Makefile
-	gcc -o xdag $(sources) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) $(flags)
+	gcc -o xdag $(sources) $(asm_src) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) $(flags)
 
 clean:
 	rm xdag
