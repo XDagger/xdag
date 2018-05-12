@@ -562,6 +562,7 @@ static int register_new_miner(connection_list_element *connection, int index)
 		if(memcmp(elt->miner_data.id.data, conn_data->data, sizeof(xdag_hashlow_t)) == 0) {
 			if(elt->miner_data.connections_count >= g_connections_per_miner_limit) {
 				close_connection(connection, index, "Max count of connections per miner is exceeded");
+				pthread_mutex_unlock(&g_miners_mutex);
 				return 0;
 			}
 
