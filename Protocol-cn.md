@@ -13,7 +13,7 @@
 
 **Cheato** - 一个XDAG包括2^32个Cheato.  
 
-**Dagger元年** - Unix格式：0x5A500000 ，也就是2018年1月6号 22:45:20 GMT.  
+**Dagger元年** - Unix格式：0x5A500000 ，也就是2018年1月5日.
 
 **区块难度** - (2^128-1)/(hash_little / 2^160), hash_little = 小端字节序(hash(block)), hash_little大小为256 bits(32 bytes).
 
