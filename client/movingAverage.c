@@ -19,13 +19,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define NSAMPLES_MAX 112; // Number of blocks in 2 hours (60*60*2/64)
 
 
-// Discrete Welford's one pass algorithm
+/* @method      :- movingAverage
++  @param       :-
++               	double* mean 		:- actual mean
++               	double sample           :- actual value that have to be added to mean
++               	int nsamples		:- number of samples
++  @return      :- void
++  @description :- Discrete Welford's one pass algorithm */
 void welfordOnePass(double* mean,double sample,int nsamples){
 	//*mean=*mean+(sample-*mean)/(double)(nsamples);
 }
 
-
-// entry point
+/* @method      :- movingAverage
++  @param       :-
++               	double* mean 		:- actual mean
++               	double sample           :- actual value that have to be added to mean
++               	int nsamples		:- number of samples
++  @return      :- void
++  @description :- calculate moving average in a window of NSAMPLES_MAX samples */
 void movingAverage(double* mean,double sample,int nsamples){
 /*
 	if(nsamples>=NSAMPLES_MAX){
