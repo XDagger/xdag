@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define NSAMPLES_MAX 112; // Number of blocks in 2 hours (60*60*2/64)
 
 
-/* @method      :- movingAverage
+/* @method      :- welfordOnePass
 +  @param       :-
 +               	double* mean 		:- actual mean
 +               	double sample           :- actual value that have to be added to mean
