@@ -8,7 +8,7 @@
 #include "hash.h"
 #include "init.h"
 #include "transport.h"
-#include "log.h"
+#include "utils/log.h"
 
 #define SYNC_HASH_SIZE      0x10000
 #define get_list(hash)      (g_sync_hash   + ((hash)[0] & (SYNC_HASH_SIZE - 1)))
