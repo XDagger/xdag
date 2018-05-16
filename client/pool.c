@@ -355,13 +355,13 @@ static int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 {
 	connection_list_element *elt;
 	int count;
-	int count2;
+	int count_accept;
 
 	//firstly we check that total count of connection did not exceed max count of connection
 	LL_COUNT(g_connection_list_head, elt, count);
-	LL_COUNT(g_accept_connection_list_head, elt, count2);
-	if(count+count2 >= g_max_connections_count) {
-		xdag_warn("Max connection exceed %d, not accept any new  connections.", g_max_connections_count);
+	LL_COUNT(g_accept_connection_list_head, elt, count_accept);
+	if(count + count_accept >= g_max_connections_count) {
+		xdag_warn("Max connections %d exceed, new connections are not accepted.", g_max_connections_count);
 		return 0;
 	}
 
@@ -371,7 +371,7 @@ static int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 	{
 		if(elt->connection_data.ip == peeraddr->sin_addr.s_addr) {
 			if(++count >= g_max_miner_ip_count) {
-				xdag_warn("Max ip %s for miner %s exceed, not accept any new  connections.", 
+				xdag_warn("Max ip %d for miner %s exceed, new connections are not accepted.", 
 						  g_max_miner_ip_count, xdag_hash2address(elt->connection_data.miner->id.data));
 				return 0;
 			}
@@ -382,7 +382,7 @@ static int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 	{
 		if(elt->connection_data.ip == peeraddr->sin_addr.s_addr) {
 			if(++count >= g_max_miner_ip_count) {
-				xdag_warn("Max ip %s for miner %s exceed, not accept any new connections.", 
+				xdag_warn("Max ip %d for miner %s exceed, new connections are not accepted.", 
 						  g_max_miner_ip_count, xdag_hash2address(elt->connection_data.miner->id.data));
 				return 0;
 			}
