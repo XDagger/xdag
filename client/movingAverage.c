@@ -1,6 +1,6 @@
 /***************************************************************************
 This software will calulate the moving average.
-Thanks to B.P.Welford [Donald Knuth's Art of Computer Programming, Vol 2, page 232, 3rd edition]
+Thanks to B.P.Welford (1962) [Donald Knuth's Art of Computer Programming, Vol 2, page 232, 3rd edition]
 
 Copyright (C) 2018  Marco Scarlino <marco.scarlino@students-live.uniroma2.it>.
 movingAverage (consisting of movingAverage.cpp and movingAverage.h) is free software; you can redistribute it and/or
