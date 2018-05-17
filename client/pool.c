@@ -650,9 +650,11 @@ static int share_can_be_accepted(struct miner_pool_data *miner, xdag_hash_t shar
 
 static int recieve_data_from_connection(connection_list_element *connection)
 {
+#if _DEBUG
 	int ip = connection->connection_data.ip;
 	xdag_debug("Pool  : receive data from %u.%u.%u.%u:%u",
 			  ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(connection->connection_data.port));
+#endif
 	
 	struct connection_pool_data *conn_data = &connection->connection_data;
 	size_t data_size = sizeof(struct xdag_field) - conn_data->data_size;
