@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -24,9 +24,15 @@
     <ClCompile Include="..\..\client\commands.c" />
     <ClCompile Include="..\..\client\crypt.c" />
     <ClCompile Include="..\..\client\hash.c" />
-    <ClCompile Include="..\..\client\log.c" />
     <ClCompile Include="..\..\client\init.c" />
+    <ClCompile Include="..\..\client\json-rpc\cJSON.c" />
+    <ClCompile Include="..\..\client\json-rpc\cJSON_Utils.c" />
+    <ClCompile Include="..\..\client\json-rpc\rpc_procedures.c" />
+    <ClCompile Include="..\..\client\json-rpc\rpc_service.c" />
+    <ClCompile Include="..\..\client\json-rpc\rpc_wrapper.c" />
     <ClCompile Include="..\..\client\memory.c" />
+    <ClCompile Include="..\..\client\miner.c" />
+    <ClCompile Include="..\..\client\mining_common.c" />
     <ClCompile Include="..\..\client\netdb.c" />
     <ClCompile Include="..\..\client\pool.c" />
     <ClCompile Include="..\..\client\sha256.c" />
@@ -34,6 +40,8 @@
     <ClCompile Include="..\..\client\sync.c" />
     <ClCompile Include="..\..\client\terminal.c" />
     <ClCompile Include="..\..\client\transport.c" />
+    <ClCompile Include="..\..\client\utils\log.c" />
+    <ClCompile Include="..\..\client\utils\utils.c" />
     <ClCompile Include="..\..\client\wallet.c" />
     <ClCompile Include="..\..\dnet\dnet_command.c" />
     <ClCompile Include="..\..\dnet\dnet_connection.c" />
@@ -51,7 +59,6 @@
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_random.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_string.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\lib\dfsrsa.c" />
-    <ClCompile Include="..\..\utils\utils.c" />
     <ClCompile Include="..\system.c" />
   </ItemGroup>
   <ItemGroup>
@@ -60,9 +67,15 @@
     <ClInclude Include="..\..\client\commands.h" />
     <ClInclude Include="..\..\client\crypt.h" />
     <ClInclude Include="..\..\client\hash.h" />
-    <ClInclude Include="..\..\client\log.h" />
     <ClInclude Include="..\..\client\init.h" />
+    <ClInclude Include="..\..\client\json-rpc\cJSON.h" />
+    <ClInclude Include="..\..\client\json-rpc\cJSON_Utils.h" />
+    <ClInclude Include="..\..\client\json-rpc\rpc_procedures.h" />
+    <ClInclude Include="..\..\client\json-rpc\rpc_service.h" />
+    <ClInclude Include="..\..\client\json-rpc\rpc_wrapper.h" />
     <ClInclude Include="..\..\client\memory.h" />
+    <ClInclude Include="..\..\client\miner.h" />
+    <ClInclude Include="..\..\client\mining_common.h" />
     <ClInclude Include="..\..\client\netdb.h" />
     <ClInclude Include="..\..\client\pool.h" />
     <ClInclude Include="..\..\client\sha256.h" />
@@ -72,6 +85,10 @@
     <ClInclude Include="..\..\client\system.h" />
     <ClInclude Include="..\..\client\terminal.h" />
     <ClInclude Include="..\..\client\transport.h" />
+    <ClInclude Include="..\..\client\uthash\uthash.h" />
+    <ClInclude Include="..\..\client\uthash\utlist.h" />
+    <ClInclude Include="..\..\client\utils\log.h" />
+    <ClInclude Include="..\..\client\utils\utils.h" />
     <ClInclude Include="..\..\client\version.h" />
     <ClInclude Include="..\..\client\wallet.h" />
     <ClInclude Include="..\..\dnet\dnet_command.h" />
@@ -97,7 +114,6 @@
     <ClInclude Include="..\..\ldus\source\include\ldus\atomic.h" />
     <ClInclude Include="..\..\ldus\source\include\ldus\list.h" />
     <ClInclude Include="..\..\ldus\source\include\ldus\rbtree.h" />
-    <ClInclude Include="..\..\utils\utils.h" />
     <ClInclude Include="..\arpa\inet.h" />
     <ClInclude Include="..\netdb.h" />
     <ClInclude Include="..\netinet\in.h" />

@@ -12,7 +12,7 @@
 #include <openssl/ecdsa.h>
 #include "crypt.h"
 #include "transport.h"
-#include "log.h"
+#include "utils/log.h"
 #include "system.h"
 
 static EC_GROUP *group;
@@ -322,7 +322,8 @@ int xdag_verify_signature(const void *key, const xdag_hash_t hash, const xdag_ha
 
 	ptr = add_number_to_sign(buf + 2, sign_r);
 	ptr = add_number_to_sign(ptr, sign_s);
-	buf[0] = 0x30, buf[1] = ptr - buf - 2;
+	buf[0] = 0x30;
+	buf[1] = ptr - buf - 2;
 	res = ECDSA_verify(0, (const uint8_t*)hash, sizeof(xdag_hash_t), buf, ptr - buf, (EC_KEY*)key);
 
 	xdag_debug("Verify: res=%2d key=%lx hash=[%s] sign=[%s] r=[%s], s=[%s]", res, (long)key, xdag_log_hash(hash),
