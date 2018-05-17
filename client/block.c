@@ -624,7 +624,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 			if (blockRef == noref_last) {
 				noref_last = blockRef0;
 			}
-			
+
 			blockRef->ref = 0;
 			tmpNodeBlock.link[i]->flags |= BI_REF;
 			g_xdag_extstats.nnoref--;
@@ -1342,11 +1342,14 @@ static int bi_compar(const void *l, const void *r)
 
 static const char* xdag_get_block_state_info(struct block_internal *block)
 {
-	if(block->flags & BI_MAIN) {
-		return "Main";
-	}
-	if(block->flags & BI_APPLIED) {
-		return "Accepted";
+	if(block->flags & (BI_REF | BI_MAIN_REF)) {
+		if(block->flags & BI_MAIN) {
+			return "Main";
+		}
+		if(block->flags & BI_APPLIED) {
+			return "Accepted";
+		}
+		return "Rejected";
 	}
 	return "Pending";
 }
