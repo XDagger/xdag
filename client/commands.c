@@ -46,7 +46,7 @@ void processStatsCommand(FILE *out);
 void processExitCommand(void);
 void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd);
 void processLastBlocksCommand(char *nextParam, FILE *out);
-// Function declarations
+void processMinersCommand(char *nextParam, FILE *out);
 
 void startCommandProcessing(int transportFlags)
 {
@@ -91,7 +91,7 @@ int xdag_command(char *cmd, FILE *out)
 	} else if(!strcmp(cmd, "level")) {
 		processLevelCommand(nextParam, out);
 	} else if(!strcmp(cmd, "miners")) {
-		xdag_print_miners(out);
+		processMinersCommand(nextParam, out);
 	} else if(!strcmp(cmd, "mining")) {
 		processMiningCommand(nextParam, out);
 	} else if(!strcmp(cmd, "net")) {
@@ -227,6 +227,16 @@ void processMiningCommand(char *nextParam, FILE *out)
 		xdag_mining_start(g_is_miner ? ~nthreads : nthreads);
 		fprintf(out, "%d mining threads running\n", g_xdag_mining_threads);
 	}
+}
+
+void processMinersCommand(char *nextParam, FILE *out)
+{
+	int printOnlyConnections = 0;
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	if(cmd) {
+		printOnlyConnections = strcmp(cmd, "conn") == 0;
+	}
+	xdag_print_miners(out, printOnlyConnections);
 }
 
 void processNetCommand(char *nextParam, FILE *out)
@@ -596,7 +606,14 @@ void printHelp(FILE *out)
 		"  miners          - for pool, print list of recent connected miners\n"
 		"  mining [N]      - print number of mining threads or set it to N\n"
 		"  net command     - run transport layer command, try 'net help'\n"
-		"  pool [CFG]      - print or set pool config; CFG is miners:fee:reward:direct:maxip:fund\n"
+		"  pool [CFG]      - print or set pool config; CFG is miners:maxip:maxconn:fee:reward:direct:fund\n"
+		"                     miners - maximum allowed number of miners,\n"
+		"                     maxip - maximum allowed number of miners connected from single ip,\n"
+		"                     maxconn - maximum allowed number of miners with the same address,\n"
+		"                     fee - pool fee in percent,\n"
+		"                     reward - reward to miner who got a block in percent,\n"
+		"                     direct - reward to miners participated in earned block in percent,\n"
+		"                     fund - community fund fee in percent\n"
 		"  run             - run node after loading local blocks if option -r is used\n"
 		"  state           - print the program state\n"
 		"  stats           - print statistics for loaded and all known blocks\n"

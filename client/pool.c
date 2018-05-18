@@ -87,8 +87,8 @@ struct connection_pool_data {
 	uint8_t data_size;
 	uint8_t block_size;
 	struct pollfd connection_descriptor;
-	struct miner_pool_data *miner;
-	int balance_sent;
+	struct miner_pool_data *miner; 		// More than one connection may lead to the same miner, it is needed to track 
+	int balance_sent;			// this behaviour to avoid potential exploit of the service.
 	uint32_t shares_count;
 };
 
@@ -121,9 +121,9 @@ static struct miner_pool_data g_fund_miner;
 static struct pollfd *g_fds;
 
 static connection_list_element *g_connection_list_head = NULL;
+static connection_list_element *g_accept_connection_list_head = NULL;
 static miner_list_element *g_miner_list_head = NULL;
 static pthread_mutex_t g_descriptors_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t g_miners_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int pay_miners(xdag_time_t time);
@@ -140,7 +140,7 @@ int xdag_initialize_pool(const char *pool_arg)
 	xdag_get_our_block(g_pool_miner.id.data);
 	g_pool_miner.state = MINER_SERVICE;
 
-	g_fds = malloc(MAX_MINERS_COUNT * sizeof(struct pollfd));
+	g_fds = malloc(MAX_CONNECTIONS_COUNT * sizeof(struct pollfd));
 	if(!g_fds) return -1;
 
 	int err = pthread_create(&th, 0, pool_net_thread, (void*)pool_arg);
@@ -199,13 +199,13 @@ int xdag_pool_set_config(const char *pool_config)
 
 		if(g_max_connections_count < 0) {
 			g_max_connections_count = 0;
-			xdag_warn("pool : wrong miners count");
-		} else if(g_max_connections_count > MAX_MINERS_COUNT) {
-			g_max_connections_count = MAX_MINERS_COUNT;
-			xdag_warn("pool : exceed max miners count %d", MAX_MINERS_COUNT);
+			xdag_warn("pool: wrong connections count");
+		} else if(g_max_connections_count > MAX_CONNECTIONS_COUNT) {
+			g_max_connections_count = MAX_CONNECTIONS_COUNT;
+			xdag_warn("pool: exceed max connections count %d", MAX_CONNECTIONS_COUNT);
 		} else if(g_max_connections_count > open_max - 64) {
 			g_max_connections_count = open_max - 64;
-			xdag_warn("pool : exceed max open files %d", open_max - 64);
+			xdag_warn("pool: exceed max open files %d", open_max - 64);
 		}
 	}
 
@@ -333,7 +333,7 @@ static int open_pool_connection(const char *pool_arg)
 
 	int res = bind(sock, (struct sockaddr*)&peeraddr, sizeof(peeraddr));
 	if(res) {
-		xdag_err("pool: cannot bind a socket (error %d)", res);
+		xdag_err("pool: cannot bind a socket (error %s)", strerror(res));
 		return INVALID_SOCKET;
 	}
 
@@ -355,10 +355,13 @@ static int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 {
 	connection_list_element *elt;
 	int count;
+	int count_accept;
 
 	//firstly we check that total count of connection did not exceed max count of connection
 	LL_COUNT(g_connection_list_head, elt, count);
-	if(count >= g_max_connections_count) {
+	LL_COUNT(g_accept_connection_list_head, elt, count_accept);
+	if(count + count_accept >= g_max_connections_count) {
+		xdag_warn("Max connections %d exceed, new connections are not accepted.", g_max_connections_count);
 		return 0;
 	}
 
@@ -368,6 +371,23 @@ static int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 	{
 		if(elt->connection_data.ip == peeraddr->sin_addr.s_addr) {
 			if(++count >= g_max_miner_ip_count) {
+				int ip = elt->connection_data.ip;
+				xdag_warn("Max connection %d for ip %u.%u.%u.%u:%u exceed, new connections are not accepted.", 
+						  g_max_miner_ip_count,  ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff,
+						  ntohs(elt->connection_data.port));
+				return 0;
+			}
+		}
+	}
+	
+	LL_FOREACH(g_accept_connection_list_head, elt)
+	{
+		if(elt->connection_data.ip == peeraddr->sin_addr.s_addr) {
+			if(++count >= g_max_miner_ip_count) {
+				int ip = elt->connection_data.ip;
+				xdag_warn("Max connection %d for ip %u.%u.%u.%u:%u exceed, new connections are not accepted.", 
+						  g_max_miner_ip_count,  ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff,
+						  ntohs(elt->connection_data.port));
 				return 0;
 			}
 		}
@@ -376,17 +396,17 @@ static int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 	return 1;
 }
 
-static void rebuild_descriptors_array()
-{
-	connection_list_element *elt;
-	int index = 0;
-	LL_FOREACH(g_connection_list_head, elt)
-	{
-		memcpy(g_fds + index, &elt->connection_data.connection_descriptor, sizeof(struct pollfd));
-		++index;
-	}
-	g_connections_count = index;
-}
+//static void rebuild_descriptors_array()
+//{
+//	connection_list_element *elt;
+//	int index = 0;
+//	LL_FOREACH(g_connection_list_head, elt)
+//	{
+//		memcpy(g_fds + index, &elt->connection_data.connection_descriptor, sizeof(struct pollfd));
+//		++index;
+//	}
+//	g_connections_count = index;
+//}
 
 void *pool_net_thread(void *arg)
 {
@@ -401,11 +421,12 @@ void *pool_net_thread(void *arg)
 
 	int sock = open_pool_connection(pool_arg);
 	if(sock == INVALID_SOCKET) {
+		xdag_err("Pool: open connection error!");
 		return 0;
 	}
 
 	// Now, listen for a connection
-	int res = listen(sock, MAX_MINERS_COUNT);    // "1" is the maximal length of the queue
+	int res = listen(sock, MAX_CONNECTIONS_COUNT);    // "1" is the maximal length of the queue
 	if(res) {
 		xdag_err("pool: cannot listen");
 		return 0;
@@ -437,8 +458,10 @@ void *pool_net_thread(void *arg)
 		int ip = new_connection->connection_data.ip = peeraddr.sin_addr.s_addr;
 		new_connection->connection_data.port = peeraddr.sin_port;
 
-		LL_APPEND(g_connection_list_head, new_connection);
-		rebuild_descriptors_array();
+		LL_APPEND(g_accept_connection_list_head, new_connection);
+//		LL_APPEND(g_connection_list_head, new_connection);
+//		rebuild_descriptors_array();
+		++g_connections_count;
 		pthread_mutex_unlock(&g_descriptors_mutex);
 
 		xdag_info("Pool  : miner %d connected from %u.%u.%u.%u:%u", g_connections_count,
@@ -448,14 +471,13 @@ void *pool_net_thread(void *arg)
 	return 0;
 }
 
-static void close_connection(connection_list_element *connection, int index, const char *message)
+static void close_connection(connection_list_element *connection, const char *message)
 {
 	struct connection_pool_data *conn_data = &connection->connection_data;
 
 	pthread_mutex_lock(&g_descriptors_mutex);
 	LL_DELETE(g_connection_list_head, connection);
-	rebuild_descriptors_array();
-	pthread_mutex_unlock(&g_descriptors_mutex);
+	--g_connections_count;
 
 	close(conn_data->connection_descriptor.fd);
 
@@ -463,23 +485,38 @@ static void close_connection(connection_list_element *connection, int index, con
 		free(conn_data->block);
 	}
 	
-	pthread_mutex_lock(&g_miners_mutex);
 	if(conn_data->miner) {
 		--conn_data->miner->connections_count;
 		if(conn_data->miner->connections_count == 0) {
 			conn_data->miner->state = MINER_ARCHIVE;
 		}
 	}
-	pthread_mutex_unlock(&g_miners_mutex);
+	pthread_mutex_unlock(&g_descriptors_mutex);
 
 	uint32_t ip = conn_data->ip;
 	uint16_t port = conn_data->port;
+	
+	if(conn_data->miner) {
+		xdag_info("Pool: miner %s disconnected from %u.%u.%u.%u:%u by %s", xdag_hash2address(conn_data->miner->id.data),
+				  ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port), message);
+	} else {
+		xdag_info("Pool: disconnected from %u.%u.%u.%u:%u by %s",
+				  ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port), message);
+	}
 
 	free(connection);
-
-	xdag_info("Pool: miner %d disconnected from %u.%u.%u.%u:%u by %s", index,
-		ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port), message);
 }
+
+
+
+/* @method      :- calculate_nopaid_shares
++  @param       :-
++               struct connection_pool_data* connection data :- miner's side data
++               struct xdag_pool_task* task data             :- pool's side data
++               xdag_hash_t hash                             :- is a digest computed by the pool starting from the
++                                                            miner's data 'conn_data->data' and pool side context task->ctx0
++  @return      :- void
++  @description :- calculate nopaid share */
 
 static void calculate_nopaid_shares(struct connection_pool_data *conn_data, struct xdag_pool_task *task, xdag_hash_t hash)
 {
@@ -517,6 +554,7 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 		diff = 46 - log(diff);	      // thus it's the same as the most difficult hash), it is probably a bug. Let's consider an "almost easiest" hash
 					      // like hash[3]=FFFFFFFFFFFFFFFF and hash[2]<=FFFFFFFFFFFFFBFF, in this case we have 46-log(FFFFFFFFFFFFFFFF)=46-19=27.
 					      // At this point diff seems to have a range [46;27], where higher value is higher difficulty.
+		// Adding share for connection
 		if(conn_data->task_time < task_time) {
 			conn_data->task_time = task_time;
 
@@ -530,34 +568,39 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 		} else if(diff > conn_data->maxdiff[i]) {
 			conn_data->maxdiff[i] = diff;
 		}
+		// Adding share for miner
+		if(conn_data->miner) {
+			if(conn_data->miner->task_time < task_time) {
+				conn_data->miner->task_time = task_time;
 
-		if(conn_data->miner && conn_data->miner->task_time < task_time) {
-			conn_data->miner->task_time = task_time;
+				if(conn_data->miner->maxdiff[i] > 0) {
+					conn_data->miner->prev_diff += conn_data->miner->maxdiff[i];
+					conn_data->miner->prev_diff_count++;
+				}
 
-			if(conn_data->miner->maxdiff[i] > 0) {
-				conn_data->miner->prev_diff += conn_data->miner->maxdiff[i];
-				conn_data->miner->prev_diff_count++;
+				conn_data->miner->maxdiff[i] = diff;
+			} else if(diff > conn_data->miner->maxdiff[i]) {
+				conn_data->miner->maxdiff[i] = diff;
 			}
-
-			conn_data->miner->maxdiff[i] = diff;
-		} else if(diff > conn_data->miner->maxdiff[i]) {
-			conn_data->miner->maxdiff[i] = diff;
+		} else {
+			xdag_err("conn_data->miner is null");
 		}
 	}
 }
 
-static int register_new_miner(connection_list_element *connection, int index)
+static int register_new_miner(connection_list_element *connection)
 {
 	miner_list_element *elt;
 	struct connection_pool_data *conn_data = &connection->connection_data;
 
 	int exists = 0;
-	pthread_mutex_lock(&g_miners_mutex);
+	pthread_mutex_lock(&g_descriptors_mutex);
 	LL_FOREACH(g_miner_list_head, elt)
 	{
 		if(memcmp(elt->miner_data.id.data, conn_data->data, sizeof(xdag_hashlow_t)) == 0) {
 			if(elt->miner_data.connections_count >= g_connections_per_miner_limit) {
-				close_connection(connection, index, "Max count of connections per miner is exceeded");
+				pthread_mutex_unlock(&g_descriptors_mutex);
+				close_connection(connection, "Max count of connections per miner is exceeded");
 				return 0;
 			}
 
@@ -569,10 +612,10 @@ static int register_new_miner(connection_list_element *connection, int index)
 			break;
 		}
 	}
-	pthread_mutex_unlock(&g_miners_mutex);
+	pthread_mutex_unlock(&g_descriptors_mutex);
 
 	if(!exists) {
-		pthread_mutex_lock(&g_miners_mutex);
+		pthread_mutex_lock(&g_descriptors_mutex);
 		struct miner_list_element *new_miner = (struct miner_list_element*)malloc(sizeof(miner_list_element));
 		memset(new_miner, 0, sizeof(miner_list_element));
 		memcpy(new_miner->miner_data.id.data, conn_data->data, sizeof(struct xdag_field));
@@ -581,7 +624,7 @@ static int register_new_miner(connection_list_element *connection, int index)
 		LL_APPEND(g_miner_list_head, new_miner);
 		conn_data->miner = &new_miner->miner_data;
 		conn_data->state = ACTIVE_CONNECTION;
-		pthread_mutex_unlock(&g_miners_mutex);
+		pthread_mutex_unlock(&g_descriptors_mutex);
 	}
 	
 
@@ -617,20 +660,26 @@ static int share_can_be_accepted(struct miner_pool_data *miner, xdag_hash_t shar
 	return 1;
 }
 
-static int recieve_data_from_connection(connection_list_element *connection, int index)
+static int recieve_data_from_connection(connection_list_element *connection)
 {
+#if _DEBUG
+	int ip = connection->connection_data.ip;
+	xdag_debug("Pool  : receive data from %u.%u.%u.%u:%u",
+			  ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(connection->connection_data.port));
+#endif
+	
 	struct connection_pool_data *conn_data = &connection->connection_data;
 	size_t data_size = sizeof(struct xdag_field) - conn_data->data_size;
 	data_size = read(conn_data->connection_descriptor.fd, (uint8_t*)conn_data->data + conn_data->data_size, data_size);
 
 	if(data_size <= 0) {
-		close_connection(connection, index, "read error");
+		close_connection(connection, "read error");
 		return 0;
 	}
 
 	conn_data->data_size += data_size;
 
-	if(conn_data->data_size == sizeof(struct xdag_field)) {
+	if(conn_data->data_size == sizeof(struct xdag_field)) { //32
 		conn_data->data_size = 0;
 		dfslib_uncrypt_array(g_crypt, conn_data->data, DATA_SIZE, conn_data->nfield_in++);
 
@@ -642,7 +691,7 @@ static int recieve_data_from_connection(connection_list_element *connection, int
 			memcpy(conn_data->block->field, conn_data->data, sizeof(struct xdag_field));
 			conn_data->block_size++;
 		} else if(conn_data->nfield_in == 1) {
-			close_connection(connection, index, "protocol mismatch");
+			close_connection(connection, "protocol mismatch");
 			return 0;
 		} else if(conn_data->block_size) {
 			memcpy(conn_data->block->field + conn_data->block_size, conn_data->data, sizeof(struct xdag_field));
@@ -678,27 +727,27 @@ static int recieve_data_from_connection(connection_list_element *connection, int
 			struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
 
 			if (++conn_data->shares_count > SHARES_PER_TASK_LIMIT) {   //if shares count limit is exceded it is considered as spamming and current connection is disconnected
-				close_connection(connection, index, "Spamming of shares");
+				close_connection(connection, "Spamming of shares");
 				return 0;
 			}
 
 			if(conn_data->state == UNKNOWN_ADDRESS) {
-				if(!register_new_miner(connection, index)) {
+				if(!register_new_miner(connection)) {
 					return 0;
 				}
 			} else {
 				if(!conn_data->miner) {
-					close_connection(connection, index, "Miner is unregistered");
+					close_connection(connection, "Miner is unregistered");
 					return 0;
 				}
 				if(memcmp(conn_data->miner->id.data, conn_data->data, sizeof(xdag_hashlow_t)) != 0) {
-					close_connection(connection, index, "Wallet address was unexpectedly changed");
+					close_connection(connection, "Wallet address was unexpectedly changed");
 					return 0;
 				}
 				memcpy(conn_data->miner->id.data, conn_data->data, sizeof(struct xdag_field));	//TODO:do I need to copy whole field?
 			}
 
-			if(share_can_be_accepted(conn_data->miner, conn_data->data, task_index)) {
+			if(share_can_be_accepted(conn_data->miner, (uint64_t*)conn_data->data, task_index)) {
 				xdag_hash_t hash;
 				xdag_hash_final(task->ctx0, conn_data->data, sizeof(struct xdag_field), hash);
 				xdag_set_min_share(task, conn_data->miner->id.data, hash);
@@ -710,7 +759,7 @@ static int recieve_data_from_connection(connection_list_element *connection, int
 	return 1;
 }
 
-static int send_data_to_connection(connection_list_element *connection, int index, int *processed)
+static int send_data_to_connection(connection_list_element *connection, int *processed)
 {
 	struct xdag_field data[2];
 	int fields_count = 0;
@@ -740,7 +789,7 @@ static int send_data_to_connection(connection_list_element *connection, int inde
 		size_t length = write(conn_data->connection_descriptor.fd, (void*)data, fields_count * sizeof(struct xdag_field));
 
 		if(length != fields_count * sizeof(struct xdag_field)) {
-			close_connection(connection, index, "write error");
+			close_connection(connection, "write error");
 			return 0;
 		}
 	}
@@ -750,49 +799,68 @@ static int send_data_to_connection(connection_list_element *connection, int inde
 
 void *pool_main_thread(void *arg)
 {
-	connection_list_element *elt, *eltmp;
-
 	while(!g_xdag_sync_on) {
 		sleep(1);
 	}
-
+	
+	connection_list_element *elt, *eltmp;
+	
 	for(;;) {
 		pthread_mutex_lock(&g_descriptors_mutex);
-		const int miners_count = g_connections_count;
-		int res = poll(g_fds, miners_count, 1000);
-		pthread_mutex_unlock(&g_descriptors_mutex);
+//		const int miners_count = g_connections_count;
+//		int res = poll(g_fds, miners_count, 1000);
 
+		// move accept connection to g_connection_list_head.
+		LL_FOREACH_SAFE(g_accept_connection_list_head, elt, eltmp)
+		{
+			LL_DELETE(g_accept_connection_list_head, elt);
+			LL_APPEND(g_connection_list_head, elt);
+		}
+		
+		int index = 0;
+		LL_FOREACH(g_connection_list_head, elt)
+		{
+			memcpy(g_fds + index, &elt->connection_data.connection_descriptor, sizeof(struct pollfd));
+			++index;
+		}
+		pthread_mutex_unlock(&g_descriptors_mutex);
+		
+		int res = poll(g_fds, index, 1000);
+		
 		if(!res) continue;
 
-		int index = 0;
+//		int index = 0;
+		index = 0;
 		int processed = 0;
 		LL_FOREACH_SAFE(g_connection_list_head, elt, eltmp)
 		{
 			struct pollfd *p = g_fds + index++;
 
-			if(p->revents & POLLNVAL) continue;
+			if(p->revents & POLLNVAL) {
+				continue;
+			}
 
 			if(p->revents & POLLHUP) {
 				processed = 1;
-				close_connection(elt, index, "socket hangup");
+				close_connection(elt, "socket hangup");
 				continue;
 			}
 
 			if(p->revents & POLLERR) {
 				processed = 1;
-				close_connection(elt, index, "socket error");
+				close_connection(elt, "socket error");
 				continue;
 			}
 
 			if(p->revents & POLLIN) {
 				processed = 1;
-				if(!recieve_data_from_connection(elt, index)) {
+				if(!recieve_data_from_connection(elt)) {
 					continue;
 				}
 			}
 
 			if(p->revents & POLLOUT) {
-				if(!send_data_to_connection(elt, index, &processed)) {
+				if(!send_data_to_connection(elt, &processed)) {
 					continue;
 				}
 			}
@@ -939,7 +1007,7 @@ static int precalculate_payments(uint64_t *hash, int confirmation_index, struct 
 	data->prev_sum = countpay(&g_pool_miner, confirmation_index, &data->sum);
 
 	int index = 0;
-	pthread_mutex_lock(&g_miners_mutex);
+	pthread_mutex_lock(&g_descriptors_mutex);
 	LL_FOREACH(g_miner_list_head, elt)
 	{
 		struct miner_pool_data *miner = &elt->miner_data;
@@ -953,13 +1021,15 @@ static int precalculate_payments(uint64_t *hash, int confirmation_index, struct 
 		}
 		++index;
 	}
-	pthread_mutex_unlock(&g_miners_mutex);
 	
 	/* clear nopaid shares for each connection */
-	pthread_mutex_lock(&g_descriptors_mutex);
 	connection_list_element *conn;
 	LL_FOREACH(g_connection_list_head, conn)
 	{
+		if(conn->connection_data.maxdiff[confirmation_index] > 0) {
+			conn->connection_data.maxdiff[confirmation_index] = 0;
+		}
+		
 		conn->connection_data.prev_diff = 0;
 		conn->connection_data.prev_diff_count = 0;
 	}
@@ -994,17 +1064,16 @@ static void do_payments(uint64_t *hash, int fields_count, struct payment_data *d
 {
 	miner_list_element *elt;
 	struct xdag_field fields[12];
-	xdag_amount_t payment_sum = 0;
 
 	memcpy(fields[0].data, hash, sizeof(xdag_hashlow_t));
 	fields[0].amount = 0;
 	int field_index = 1;
 
 	int index = 0;
-	pthread_mutex_lock(&g_miners_mutex);
+	pthread_mutex_lock(&g_descriptors_mutex);
 	LL_FOREACH(g_miner_list_head, elt)
 	{
-		payment_sum = 0;
+		xdag_amount_t payment_sum = 0;
 		struct miner_pool_data *miner = &elt->miner_data;
 
 		if(data->prev_sum > 0) {
@@ -1022,7 +1091,7 @@ static void do_payments(uint64_t *hash, int fields_count, struct payment_data *d
 		transfer_payment(miner, payment_sum, fields, fields_count, &field_index);
 		++index;
 	}
-	pthread_mutex_unlock(&g_miners_mutex);
+	pthread_mutex_unlock(&g_descriptors_mutex);
 
 	if(g_fund_miner.state != MINER_UNKNOWN) {
 		transfer_payment(&g_fund_miner, data->fund, fields, fields_count, &field_index);
@@ -1045,9 +1114,9 @@ int pay_miners(xdag_time_t time)
 	data.reward_index = -1;
 
 	int miners_count;
-	pthread_mutex_lock(&g_miners_mutex);
+	pthread_mutex_lock(&g_descriptors_mutex);
 	LL_COUNT(g_miner_list_head, elt, miners_count);
-	pthread_mutex_unlock(&g_miners_mutex);
+	pthread_mutex_unlock(&g_descriptors_mutex);
 	if(!miners_count) return -1;
 
 	int confirmation_index = time & (CONFIRMATIONS_COUNT - 1);
@@ -1094,7 +1163,7 @@ void remove_inactive_miners(void)
 {
 	miner_list_element *elt, *eltmp;
 
-	pthread_mutex_lock(&g_miners_mutex);
+	pthread_mutex_lock(&g_descriptors_mutex);
 	LL_FOREACH_SAFE(g_miner_list_head, elt, eltmp)
 	{
 		if(elt->miner_data.state == MINER_ARCHIVE && miner_calculate_unpaid_shares(&elt->miner_data) == 0.0) {
@@ -1107,7 +1176,7 @@ void remove_inactive_miners(void)
 			xdag_info("Pool: miner %s is removed from miners list", address);
 		}
 	}
-	pthread_mutex_unlock(&g_miners_mutex);
+	pthread_mutex_unlock(&g_descriptors_mutex);
 }
 
 static const char* miner_state_to_string(int miner_state)
@@ -1119,6 +1188,16 @@ static const char* miner_state_to_string(int miner_state)
 			return "archive";
 		case MINER_SERVICE:
 			return "fee    ";
+		default:
+			return "unknown";
+	}
+}
+
+static const char* connection_state_to_string(int connection_state)
+{
+	switch(connection_state) {
+		case ACTIVE_CONNECTION:
+			return "active ";
 		default:
 			return "unknown";
 	}
@@ -1152,42 +1231,60 @@ static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int 
 	return miner->state == MINER_ACTIVE ? 1 : 0;
 }
 
-/* output to the file a list of miners */
-int xdag_print_miners(FILE *out)
+static int print_miners(FILE *out)
 {
-	fprintf(out, "List of miners:\n"
-		" NN  Address for payment to            Status   IP and port            in/out bytes      nopaid shares\n"
-		"------------------------------------------------------------------------------------------------------\n");
+	pthread_mutex_lock(&g_descriptors_mutex);
 	int count_active = print_miner(out, -1, &g_pool_miner, 1);
 
 	miner_list_element *elt;
 	int index = 0;
+	LL_FOREACH(g_miner_list_head, elt)
+	{
+		struct miner_pool_data *miner = &elt->miner_data;
+		count_active += print_miner(out, index++, miner, 1);
+	}
+	pthread_mutex_unlock(&g_descriptors_mutex);
+
+	return count_active;
+}
+
+static void print_connection(FILE *out, int index, struct connection_pool_data *conn_data)
+{
+	char ip_port_str[32], in_out_str[64];
+	char address[50];
+	int ip = conn_data->ip;
+	sprintf(ip_port_str, "%u.%u.%u.%u:%u", ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(conn_data->port));
+	sprintf(in_out_str, "%llu/%llu", (unsigned long long)conn_data->nfield_in * sizeof(struct xdag_field),
+		(unsigned long long)conn_data->nfield_out * sizeof(struct xdag_field));
+
+	strcpy(address, (conn_data->miner ? xdag_hash2address(conn_data->miner->id.data) : "-                               "));
+	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", index, address,
+		connection_state_to_string(conn_data->state), ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data));
+}
+
+static int print_connections(FILE *out)
+{
+	connection_list_element *elt;
+	int index = 0;
+	pthread_mutex_lock(&g_descriptors_mutex);
+	LL_FOREACH(g_connection_list_head, elt)
+	{
+		struct connection_pool_data *conn_data = &elt->connection_data;
+		print_connection(out, index++, conn_data);
+	}
+	pthread_mutex_unlock(&g_descriptors_mutex);
+
+	return index;
+}
+
+/* output to the file a list of miners */
+int xdag_print_miners(FILE *out, int printOnlyConnections)
+{
+	fprintf(out, "List of miners:\n"
+		" NN  Address for payment to            Status   IP and port            in/out bytes      nopaid shares\n"
+		"------------------------------------------------------------------------------------------------------\n");
 	
-	//if not locked, wait for 100 ms, max try time 10.
-	int times = 0;
-	do {
-		if(!pthread_mutex_trylock(&g_miners_mutex)) {
-			if(!pthread_mutex_trylock(&g_descriptors_mutex)) {
-				LL_FOREACH(g_miner_list_head, elt)
-				{
-					struct miner_pool_data *miner = &elt->miner_data;
-					count_active += print_miner(out, index++, miner, 1);
-				}
-				pthread_mutex_unlock(&g_descriptors_mutex);
-				pthread_mutex_unlock(&g_miners_mutex);
-				break;
-			} else {
-				pthread_mutex_unlock(&g_miners_mutex);
-			}
-		}
-		if(++times>=10) {
-			xdag_err("try lock g_miners_mutex failed, exceed max try time.");
-			break;
-		} else {
-			xdag_warn("try lock g_miners_mutex failed, try time : %d", times);
-		}
-		sleep(0.1);
-	} while(1);
+	int count_active = printOnlyConnections ? print_connections(out) : print_miners(out);
 
 	fprintf(out,
 		"------------------------------------------------------------------------------------------------------\n"

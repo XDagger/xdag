@@ -81,9 +81,8 @@ Run (Mac OS):
 -----------------------
 
 - Install:
-
-		Download binary file from [release page](https://github.com/XDagger/xdag/releases).  
-		Unzip the zip file to what folder you want.
+Download binary file from [release page](https://github.com/XDagger/xdag/releases).  
+Unzip the zip file to what folder you want.
 
 - Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool put.xdag.server.here:13654
 
@@ -91,9 +90,9 @@ Run (Mac OS):
 		Enter random characters: [enter]
 		
 - Already have an account
-
-		Put your wallet.dat, dnet_key.dat and storage folder in this folder.
-		Then run below command
+Put your wallet.dat, dnet_key.dat and storage folder in this folder.
+Then run below command
+		
 		$./xdag -m 2 -d put.xdag.server.here:13654
 
 - Run terminal connected to the daemon in the same folder:
@@ -120,6 +119,20 @@ Run (Mac OS):
 - Transfer funds to another address:
 
 		xdag> xfer [amount] [address]
+
+Build (Mac Os):
+-----------------------
+- Install dependencies:
+
+        $ brew install openssl
+        $ ln -s /usr/local/opt/openssl/include/openssl /usr/local/include
+        $ ln -s /usr/local/opt/openssl/lib/libssl.1.0.0.dylib /usr/local/lib/
+    
+- Make
+  
+        $ cd xdag/client
+        $ make
+
 
 Main chain idea:
 ---------------
@@ -177,6 +190,6 @@ _A new transport layer will come in the future._
 
 Maintainers:
 ---------------
-
-Evgeniy ( XDAG: gKNRtSL1pUaTpzMuPMznKw49ILtP6qX3, BTC: 1Jonano4esJzZvqNtUY6NwfPme3EMpVs7n )  
-true ( rvKaJSbP9DE6sg6XetYtSpaK+2aDbUq8 )
+[Evgeniy](https://github.com/jonano614) ( XDAG: gKNRtSL1pUaTpzMuPMznKw49ILtP6qX3, BTC: 1Jonano4esJzZvqNtUY6NwfPme3EMpVs7n )  
+[Frozen](https://github.com/xrdavies) ( XDAG: +L5dzSh1QZv1We3wi8Of31M8eHwQJq4K )  
+[trueserve](https://github.com/trueserve) ( rvKaJSbP9DE6sg6XetYtSpaK+2aDbUq8 )  

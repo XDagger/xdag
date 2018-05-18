@@ -223,6 +223,7 @@ static uint64_t unapply_block(struct block_internal *bi)
 	}
 
 	bi->flags &= ~BI_MAIN_REF;
+	bi->ref = 0;
 
 	for (i = 0; i < bi->nlinks; ++i) {
 		if (bi->link[i]->ref == bi && bi->link[i]->flags & BI_MAIN_REF) {
@@ -260,6 +261,7 @@ static void set_main(struct block_internal *m)
 	}
 
 	accept_amount(m, apply_block(m));
+	m->ref = m;
 	log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time, m->storage_pos);
 }
 
@@ -623,6 +625,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 				noref_last = blockRef0;
 			}
 
+			blockRef->ref = 0;
 			tmpNodeBlock.link[i]->flags |= BI_REF;
 			g_xdag_extstats.nnoref--;
 		}
@@ -1339,11 +1342,14 @@ static int bi_compar(const void *l, const void *r)
 
 static const char* xdag_get_block_state_info(struct block_internal *block)
 {
-	if(block->flags & BI_MAIN) {
+	if(block->flags == (BI_REF | BI_MAIN_REF | BI_APPLIED | BI_MAIN | BI_MAIN_CHAIN)) { //1F
 		return "Main";
 	}
-	if(block->flags & BI_APPLIED) {
+	if(block->flags == (BI_REF | BI_MAIN_REF | BI_APPLIED)) { //1C
 		return "Accepted";
+	}
+	if(block->flags == (BI_REF | BI_MAIN_REF)) { //18
+		return "Rejected";
 	}
 	return "Pending";
 }

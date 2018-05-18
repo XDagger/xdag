@@ -15,7 +15,7 @@
 #include "../init.h"
 #include "utils.h"
 
-#define ASYNC_LOG 1
+#define ASYNC_LOG 0
 
 //#define LOG_PRINT // print log to stdout
 
@@ -39,8 +39,11 @@ static char g_ring_buffer[RING_BUFFER_SIZE] = {0};
 static size_t g_write_index = 0;
 static size_t g_read_index = 0;
 static boolean g_buffer_full = FALSE;
+
+#if ASYNC_LOG && (!defined _WIN32 && !defined _WIN64)
 static sem_t *writer_notice_sem = NULL;
 static char log_file_path[1024] = {0};
+#endif
 
 size_t get_used_size(void);
 size_t get_free_size(void);
@@ -116,6 +119,7 @@ size_t get_log(char* log, size_t size)
 	return size;
 }
 
+#if ASYNC_LOG && (!defined _WIN32 && !defined _WIN64)
 static void *xdag_log_writer_thread(void* data)
 {
 	char *poll_get_buf = (char*)malloc(MAX_POLL_SIZE);
@@ -149,6 +153,7 @@ static void *xdag_log_writer_thread(void* data)
 
 	return 0;
 }
+#endif
 
 int xdag_log(int level, const char *format, ...)
 {	
@@ -194,7 +199,7 @@ int xdag_log(int level, const char *format, ...)
 	
 #else
 	static const char lvl[] = "NONEFATACRITINTEERROWARNMESSINFODBUGTRAC";
-	char tbuf[64], buf[64];
+	char tbuf[64] = {0}, buf[64] = {0};
 	struct tm tm;
 	va_list arg;
 	struct timeval tv;
