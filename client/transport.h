@@ -5,6 +5,7 @@
 
 #include <time.h>
 #include <stdint.h>
+#include <pthread.h>
 #include "block.h"
 #include "storage.h"
 
@@ -49,6 +50,7 @@ extern int xdag_send_packet(struct xdag_block *b, void *conn);
 /* see dnet_user_crypt_action */
 extern int xdag_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action);
 
+extern pthread_mutex_t g_transport_mutex;
 extern time_t g_xdag_last_received;
 
 #endif

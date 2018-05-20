@@ -2,7 +2,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 #include <unistd.h>
 #include "transport.h"
 #include "storage.h"
@@ -10,6 +9,7 @@
 #include "netdb.h"
 #include "init.h"
 #include "sync.h"
+#include "miner.h"
 #include "pool.h"
 #include "version.h"
 #include "../dnet/dnet_main.h"
@@ -17,6 +17,8 @@
 #define NEW_BLOCK_TTL   5
 #define REQUEST_WAIT    64
 #define N_CONNS         4096
+
+pthread_mutex_t g_transport_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 time_t g_xdag_last_received = 0;
 static void *reply_data;
@@ -86,7 +88,7 @@ static void *xdag_send_thread(void *arg)
 {
 	struct xdag_send_data *d = (struct xdag_send_data *)arg;
 
-	d->b.field[0].time = xdag_load_blocks(d->b.field[0].time, d->b.field[0].end_time, d->connection, dnet_send_xdag_packet);
+	d->b.field[0].time = xdag_load_blocks(d->b.field[0].time, d->b.field[0].end_time, d->connection, &dnet_send_xdag_packet);
 	d->b.field[0].type = XDAG_FIELD_NONCE | XDAG_MESSAGE_BLOCKS_REPLY << 4;
 
 	memcpy(&d->b.field[2], &g_xdag_stats, sizeof(g_xdag_stats));
@@ -131,7 +133,9 @@ static int block_arrive_callback(void *packet, void *connection)
 			if (s->total_nhosts   > g->total_nhosts)
 				g->total_nhosts = s->total_nhosts;
 			
+			pthread_mutex_lock(&g_transport_mutex);
 			g_xdag_last_received = time(0);
+			pthread_mutex_unlock(&g_transport_mutex);
 			
 			xdag_netdb_receive((uint8_t*)&b->field[2] + sizeof(struct xdag_stats),
 									(xdag_type(b, 1) == XDAG_MESSAGE_SUMS_REPLY ? 6 : 14) * sizeof(struct xdag_field)
@@ -151,12 +155,18 @@ static int block_arrive_callback(void *packet, void *connection)
 						xdag_send_thread(d);
 					} else {
 						pthread_t t;
-						
-						if (pthread_create(&t, 0, xdag_send_thread, d) < 0) {
-							free(d); return -1;
+						int err = pthread_create(&t, 0, xdag_send_thread, d);
+						if (err != 0) {
+							printf("create xdag_send_thread failed, error : %s\n", strerror(err));
+							free(d);
+							return -1;
 						}
 
-						pthread_detach(t);
+						err = pthread_detach(t);
+						if (err != 0) {
+							printf("detach xdag_send_thread failed, error : %s\n", strerror(err));
+							return -1;
+						}
 					}
 					break;
 				}

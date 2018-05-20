@@ -32,6 +32,13 @@ Install and run (Linux):
 
         $ cd xdag/client
         $ make
+        
+- or automake
+
+        $ cd xdag/automake
+        $ autoreconf -if
+        $ ./configure
+        $ make
 
 - Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool put.xdag.server.here:13654
 

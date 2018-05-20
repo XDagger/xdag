@@ -34,8 +34,17 @@
     <Filter Include="win\sys">
       <UniqueIdentifier>{874b2b63-f358-4dea-b109-a761875c2512}</UniqueIdentifier>
     </Filter>
-    <Filter Include="utils">
+    <Filter Include="client\mining">
+      <UniqueIdentifier>{44caefc7-4416-4100-b2e3-f6d413cc6242}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="client\utils">
       <UniqueIdentifier>{71f09615-b936-42fb-b99c-61c593b206be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="client\json-rpc">
+      <UniqueIdentifier>{5c470121-b197-4756-93e8-4d7bb0d55185}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="client\uthash">
+      <UniqueIdentifier>{045ecca6-4308-47a2-bf89-229740ba9751}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -54,16 +63,10 @@
     <ClCompile Include="..\..\client\hash.c">
       <Filter>client</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\client\log.c">
-      <Filter>client</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\client\memory.c">
       <Filter>client</Filter>
     </ClCompile>
     <ClCompile Include="..\..\client\netdb.c">
-      <Filter>client</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\client\pool.c">
       <Filter>client</Filter>
     </ClCompile>
     <ClCompile Include="..\..\client\sha256.c">
@@ -138,8 +141,35 @@
     <ClCompile Include="..\..\client\init.c">
       <Filter>client</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\utils\utils.c">
-      <Filter>utils</Filter>
+    <ClCompile Include="..\..\client\miner.c">
+      <Filter>client\mining</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\pool.c">
+      <Filter>client\mining</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\mining_common.c">
+      <Filter>client\mining</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\utils\log.c">
+      <Filter>client\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\utils\utils.c">
+      <Filter>client\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\json-rpc\cJSON.c">
+      <Filter>client\json-rpc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\json-rpc\cJSON_Utils.c">
+      <Filter>client\json-rpc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\json-rpc\rpc_procedures.c">
+      <Filter>client\json-rpc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\json-rpc\rpc_service.c">
+      <Filter>client\json-rpc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\json-rpc\rpc_wrapper.c">
+      <Filter>client\json-rpc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -158,16 +188,10 @@
     <ClInclude Include="..\..\client\hash.h">
       <Filter>client</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\client\log.h">
-      <Filter>client</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\client\memory.h">
       <Filter>client</Filter>
     </ClInclude>
     <ClInclude Include="..\..\client\netdb.h">
-      <Filter>client</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\client\pool.h">
       <Filter>client</Filter>
     </ClInclude>
     <ClInclude Include="..\..\client\sha256.h">
@@ -296,8 +320,41 @@
     <ClInclude Include="..\..\client\init.h">
       <Filter>client</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\utils\utils.h">
-      <Filter>utils</Filter>
+    <ClInclude Include="..\..\client\miner.h">
+      <Filter>client\mining</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\pool.h">
+      <Filter>client\mining</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\mining_common.h">
+      <Filter>client\mining</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\utils\log.h">
+      <Filter>client\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\utils\utils.h">
+      <Filter>client\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\json-rpc\cJSON.h">
+      <Filter>client\json-rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\json-rpc\cJSON_Utils.h">
+      <Filter>client\json-rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\json-rpc\rpc_procedures.h">
+      <Filter>client\json-rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\json-rpc\rpc_service.h">
+      <Filter>client\json-rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\json-rpc\rpc_wrapper.h">
+      <Filter>client\json-rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\uthash\utlist.h">
+      <Filter>client\uthash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\uthash\uthash.h">
+      <Filter>client\uthash</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
