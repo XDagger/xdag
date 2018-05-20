@@ -33,7 +33,7 @@
     <ProjectGuid>{8F05F6FF-AA25-4D79-AB2D-886BA8976393}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>xdag</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
     <ProjectName>xdag</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
