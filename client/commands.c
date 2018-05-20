@@ -394,25 +394,31 @@ long double amount2xdags(xdag_amount_t amount)
 
 int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key)
 {
+	char address[33];
 	struct account_callback_data *d = (struct account_callback_data *)data;
-	if(!d->count--) return -1;
+	if(!d->count--) {
+		return -1;
+	}
+	xdag_hash2address(hash, address);
 	if(g_xdag_state < XDAG_STATE_XFER)
-		fprintf(d->out, "%s  key %d\n", xdag_hash2address(hash), n_our_key);
+		fprintf(d->out, "%s  key %d\n", address, n_our_key);
 	else
-		fprintf(d->out, "%s %20.9Lf  key %d\n", xdag_hash2address(hash), amount2xdags(amount), n_our_key);
+		fprintf(d->out, "%s %20.9Lf  key %d\n", address, amount2xdags(amount), n_our_key);
 	return 0;
 }
 
 static int make_transaction_block(struct xfer_callback_data *xferData)
 {
+	char address[33];
 	if(xferData->fieldsCount != XFER_MAX_IN) {
 		memcpy(xferData->fields + xferData->fieldsCount, xferData->fields + XFER_MAX_IN, sizeof(xdag_hashlow_t));
 	}
 	xferData->fields[xferData->fieldsCount].amount = xferData->todo;
 	int res = xdag_create_block(xferData->fields, xferData->fieldsCount, 1, 0, 0, xferData->transactionBlockHash);
 	if(res) {
+		xdag_hash2address(xferData->fields[xferData->fieldsCount].hash, address);
 		xdag_err("FAILED: to %s xfer %.9Lf %s, error %d",
-			xdag_hash2address(xferData->fields[xferData->fieldsCount].hash), amount2xdags(xferData->todo), g_coinname, res);
+			address, amount2xdags(xferData->todo), g_coinname, res);
 		return -1;
 	}
 	xferData->done += xferData->todo;
@@ -425,6 +431,7 @@ static int make_transaction_block(struct xfer_callback_data *xferData)
 
 int xdag_do_xfer(void *outv, const char *amount, const char *address, int isGui)
 {
+	char address_buf[33];
 	struct xfer_callback_data xfer;
 	FILE *out = (FILE *)outv;
 
@@ -459,10 +466,10 @@ int xdag_do_xfer(void *outv, const char *amount, const char *address, int isGui)
 	g_xdag_xfer_last = time(0);
 	xdag_traverse_our_blocks(&xfer, &xfer_callback);
 	if(out) {
-		fprintf(out, "Xfer: transferred %.9Lf %s to the address %s.\n",
-			amount2xdags(xfer.done), g_coinname, xdag_hash2address(xfer.fields[XFER_MAX_IN].hash));
-		fprintf(out, "Transaction address is %s, it will take several minutes to complete the transaction.\n",
-			xdag_hash2address(xfer.transactionBlockHash));
+		xdag_hash2address(xfer.fields[XFER_MAX_IN].hash, address_buf);
+		fprintf(out, "Xfer: transferred %.9Lf %s to the address %s.\n", amount2xdags(xfer.done), g_coinname, address_buf);
+		xdag_hash2address(xfer.transactionBlockHash, address_buf);
+		fprintf(out, "Transaction address is %s, it will take several minutes to complete the transaction.\n", address_buf);
 	}
 	return 0;
 }
@@ -519,8 +526,10 @@ int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_
 
 void xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount)
 {
-	xdag_mess("Xfer  : from %s to %s xfer %.9Lf %s",
-		xdag_hash2address(from), xdag_hash2address(to), amount2xdags(amount), g_coinname);
+	char address_from[33], address_to[33];
+	xdag_hash2address(from, address_from);
+	xdag_hash2address(to, address_to);
+	xdag_mess("Xfer : from %s to %s xfer %.9Lf %s", address_from, address_to, amount2xdags(amount), g_coinname);
 }
 
 static int out_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time)
@@ -543,8 +552,10 @@ static int out_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amo
 
 static int out_sort_callback(const void *l, const void *r)
 {
-	return strcmp(xdag_hash2address(((struct xdag_field *)l)->data),
-		xdag_hash2address(((struct xdag_field *)r)->data));
+	char address_l[33], address_r[33];
+	xdag_hash2address(((struct xdag_field *)l)->data, address_l);
+	xdag_hash2address(((struct xdag_field *)r)->data, address_r);
+	return strcmp(address_l, address_r);
 }
 
 static void *add_block_callback(void *block, void *data)
@@ -557,6 +568,7 @@ static void *add_block_callback(void *block, void *data)
 
 int out_balances()
 {
+	char address[33];
 	struct out_balances_data d;
 	unsigned i = 0;
 	xdag_set_log_level(0);
@@ -567,7 +579,8 @@ int out_balances()
 	xdag_traverse_all_blocks(&d, out_balances_callback);
 	qsort(d.blocks, d.blocksCount, sizeof(struct xdag_field), out_sort_callback);
 	for(i = 0; i < d.blocksCount; ++i) {
-		printf("%s  %20.9Lf\n", xdag_hash2address(d.blocks[i].data), amount2xdags(d.blocks[i].amount));
+		xdag_hash2address(d.blocks[i].data, address);
+		printf("%s  %20.9Lf\n", address, amount2xdags(d.blocks[i].amount));
 	}
 	return 0;
 }
@@ -586,7 +599,7 @@ int xdag_show_state(xdag_hash_t hash)
 	if(!hash) {
 		strcpy(address, "Not ready");
 	} else {
-		strcpy(address, xdag_hash2address(hash));
+		xdag_hash2address(hash, address);
 	}
 	strcpy(state, get_state());
 	return (*g_xdag_show_state)(state, balance, address);
