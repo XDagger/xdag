@@ -9,25 +9,25 @@
 #define container_of(ptr, type, member) ((type *)((char *)(ptr) - (size_t)offsetof(type, member)))
 //#define container_of(ptr, type, member) ((type *)((char *)(ptr) - (size_t)&((type *)0)->member))
 
-/* circular list */
+/* doubly linked list */
 struct list {
 	struct list *prev;
 	struct list *next;
 };
 
-/* create an empty list with specified head */
+/* initialize an empty list */
 static inline void list_init(struct list *head) {
 	head->prev = head->next = head;
 }
 
-/* adds the node to the list */
+/* adds a node to the end of the list */
 static inline void list_insert(struct list *head, struct list *node) {
 	node->prev = head;
 	node->next = head->next;
 	node->next->prev = head->next = node;
 }
 
-/* adds the node to the end of the list */
+/* adds the node to the beginning of the list */
 static inline void list_insert_before(struct list *head, struct list *node) {
 	node->next = head;
 	node->prev = head->prev;
