@@ -485,13 +485,16 @@ static void close_connection(connection_list_element *connection, const char *me
 
 	uint32_t ip = conn_data->ip;
 	uint16_t port = conn_data->port;
-	
+
+	char address_buf[33];
+	xdag_hash2address(conn_data->miner->id.data, address_buf);
+
 	if(conn_data->miner) {
-		xdag_info("Pool: miner %s disconnected from %u.%u.%u.%u:%u by %s", xdag_hash2address(conn_data->miner->id.data),
-				  ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port), message);
+		xdag_info("Pool: miner %s disconnected from %u.%u.%u.%u:%u by %s", address_buf,			
+			ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port), message);
 	} else {
-		xdag_info("Pool: disconnected from %u.%u.%u.%u:%u by %s",
-				  ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port), message);
+		xdag_info("Pool: disconnected from %u.%u.%u.%u:%u by %s",		
+			ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port), message);
 	}
 
 	free(connection);
@@ -1157,12 +1160,13 @@ int pay_miners(xdag_time_t time)
 void remove_inactive_miners(void)
 {
 	miner_list_element *elt, *eltmp;
+	char address[33];
 
 	pthread_mutex_lock(&g_descriptors_mutex);
 	LL_FOREACH_SAFE(g_miner_list_head, elt, eltmp)
 	{
 		if(elt->miner_data.state == MINER_ARCHIVE && miner_calculate_unpaid_shares(&elt->miner_data) == 0.0) {
-			const char *address = xdag_hash2address(elt->miner_data.id.data);
+			xdag_hash2address(elt->miner_data.id.data, address);
 			
 			LL_DELETE(g_miner_list_head, elt);
 			clear_nonces_hashtable(&elt->miner_data);
@@ -1201,8 +1205,10 @@ static const char* connection_state_to_string(int connection_state)
 static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int print_connections)
 {
 	char ip_port_str[32], in_out_str[64];
+	char address_buf[33];
+	xdag_hash2address(miner->id.data, address_buf);
 
-	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", index, xdag_hash2address(miner->id.data),
+	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", index, address_buf,
 		miner_state_to_string(miner->state), "-", "-", miner_calculate_unpaid_shares(miner));
 
 	if(print_connections) {
@@ -1252,7 +1258,12 @@ static void print_connection(FILE *out, int index, struct connection_pool_data *
 	sprintf(in_out_str, "%llu/%llu", (unsigned long long)conn_data->nfield_in * sizeof(struct xdag_field),
 		(unsigned long long)conn_data->nfield_out * sizeof(struct xdag_field));
 
-	strcpy(address, (conn_data->miner ? xdag_hash2address(conn_data->miner->id.data) : "-                               "));
+	if(conn_data->miner) {
+		xdag_hash2address(conn_data->miner->id.data, address);
+	}
+	else {
+		strcpy(address, "-                               ");
+	}
 	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", index, address,
 		connection_state_to_string(conn_data->state), ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data));
 }
