@@ -11,7 +11,7 @@
 
 **Chain** - a sequence of blocks each block of which is referenced by the previous block.  
 
-**Cheato** - on XDAG consists of power(2, 32) cheato.  
+**Cheato** - 1 XDAG consists of power(2, 32) cheato.  
 
 **Dagger era** - time 0x5A500000 in Unix format, i.e. January 6, 2018, 22:45:20 GMT.  
 
