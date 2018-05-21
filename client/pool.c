@@ -486,10 +486,9 @@ static void close_connection(connection_list_element *connection, const char *me
 	uint32_t ip = conn_data->ip;
 	uint16_t port = conn_data->port;
 
-	char address_buf[33];
-	xdag_hash2address(conn_data->miner->id.data, address_buf);
-
 	if(conn_data->miner) {
+		char address_buf[33];
+		xdag_hash2address(conn_data->miner->id.data, address_buf);
 		xdag_info("Pool: miner %s disconnected from %u.%u.%u.%u:%u by %s", address_buf,			
 			ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port), message);
 	} else {
@@ -499,7 +498,6 @@ static void close_connection(connection_list_element *connection, const char *me
 
 	free(connection);
 }
-
 
 
 /* @method      :- calculate_nopaid_shares
@@ -587,9 +585,13 @@ static int register_new_miner(connection_list_element *connection)
 	struct connection_pool_data *conn_data = &connection->connection_data;
 
 	xdag_time_t time;
-	const int64_t position = xdag_get_block_pos(conn_data->data, &time);
+	const int64_t position = xdag_get_block_pos((const uint64_t*)conn_data->data, &time);
 	if(position < 0) {
-		close_connection(connection, "Miner's address is unknown");
+		char address_buf[33];
+		char message[100];
+		xdag_hash2address((const uint64_t*)conn_data->data, address_buf);
+		sprintf(message, "Miner's address is unknown (%s)", address_buf);
+		close_connection(connection, message);
 		return 0;
 	}
 
@@ -807,8 +809,6 @@ void *pool_main_thread(void *arg)
 	
 	for(;;) {
 		pthread_mutex_lock(&g_descriptors_mutex);
-//		const int miners_count = g_connections_count;
-//		int res = poll(g_fds, miners_count, 1000);
 
 		// move accept connection to g_connection_list_head.
 		LL_FOREACH_SAFE(g_accept_connection_list_head, elt, eltmp)
