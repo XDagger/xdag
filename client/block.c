@@ -1359,6 +1359,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 {
 	struct tm tm;
 	char tbuf[64];
+	char address[33];
 	int i;
 
 	pthread_mutex_lock(&block_mutex);
@@ -1381,17 +1382,25 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 			(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
 	fprintf(out, "difficulty: %llx%016llx\n", xdag_diff_args(bi->difficulty));
-	fprintf(out, "   balance: %s  %10u.%09u\n", xdag_hash2address(h), pramount(bi->amount));
+	xdag_hash2address(h, address);
+	fprintf(out, "   balance: %s  %10u.%09u\n", address, pramount(bi->amount));
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
 	fprintf(out, "                               block as transaction: details\n");
 	fprintf(out, " direction  address                                    amount\n");
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
-	fprintf(out, "       fee: %s  %10u.%09u\n", (bi->ref ? xdag_hash2address(bi->ref->hash) : "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+	if(bi->ref) {
+		xdag_hash2address(bi->ref->hash, address);
+	}
+	else {
+		strcpy(address, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+	}
+	fprintf(out, "       fee: %s  %10u.%09u\n", address,
 			pramount(bi->fee));
 
 	for (i = 0; i < bi->nlinks; ++i) {
+		xdag_hash2address(bi->link[i]->hash, address);
 		fprintf(out, "    %6s: %s  %10u.%09u\n", (1 << i & bi->in_mask ? " input" : "output"),
-				xdag_hash2address(bi->link[i]->hash), pramount(bi->linkamount[i]));
+			address, pramount(bi->linkamount[i]));
 	}
 	
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
@@ -1400,7 +1409,8 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
 	
 	if (bi->flags & BI_MAIN) {
-		fprintf(out, "   earning: %s  %10u.%09u  %s.%03d\n", xdag_hash2address(h),
+		xdag_hash2address(h, address);
+		fprintf(out, "   earning: %s  %10u.%09u  %s.%03d\n", address,
 				pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)),
 				tbuf, (int)((bi->time & 0x3ff) * 1000) >> 10);
 	}
@@ -1445,13 +1455,14 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 			struct block_internal *ri = ba[i];
 			if (ri->flags & BI_APPLIED) {
 				for (int j = 0; j < ri->nlinks; j++) {
-					if (ri->link[j] == bi && ri->linkamount[j]) {
+					if(ri->link[j] == bi && ri->linkamount[j]) {
 						t = ri->time >> 10;
 						localtime_r(&t, &tm);
 						strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
+						xdag_hash2address(ri->hash, address);
 						fprintf(out, "    %6s: %s  %10u.%09u  %s.%03d\n",
-								(1 << j & ri->in_mask ? "output" : " input"), xdag_hash2address(ri->hash),
-								pramount(ri->linkamount[j]), tbuf, (int)((ri->time & 0x3ff) * 1000) >> 10);
+							(1 << j & ri->in_mask ? "output" : " input"), address,
+							pramount(ri->linkamount[j]), tbuf, (int)((ri->time & 0x3ff) * 1000) >> 10);
 					}
 				}
 			}
@@ -1469,7 +1480,7 @@ int xdagGetLastMainBlocks(int count, char** addressArray)
 	int i = 0;
 	for (struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
 		if (b->flags & BI_MAIN) {
-			strcpy(addressArray[i], xdag_hash2address(b->hash));
+			xdag_hash2address(b->hash, addressArray[i]);
 			++i;
 		}
 	}

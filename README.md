@@ -120,6 +120,20 @@ Then run below command
 
 		xdag> xfer [amount] [address]
 
+Build (Mac Os):
+-----------------------
+- Install dependencies:
+
+        $ brew install openssl
+        $ ln -s /usr/local/opt/openssl/include/openssl /usr/local/include
+        $ ln -s /usr/local/opt/openssl/lib/libssl.1.0.0.dylib /usr/local/lib/
+    
+- Make
+  
+        $ cd xdag/client
+        $ make
+
+
 Main chain idea:
 ---------------
 
