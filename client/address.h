@@ -12,6 +12,6 @@ extern int xdag_address_init(void);
 extern int xdag_address2hash(const char *address, xdag_hash_t hash);
 
 /* converts hash to address */
-extern const char *xdag_hash2address(const xdag_hash_t hash);
+extern void xdag_hash2address(const xdag_hash_t hash, char *address);
 
 #endif
