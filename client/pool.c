@@ -829,8 +829,10 @@ void *pool_main_thread(void *arg)
 			}
 		}
 		
-		int res = poll(g_fds, g_connections_count, 1000);
+		int connections_count = g_connections_count;
 		pthread_mutex_unlock(&g_descriptors_mutex);
+		
+		int res = poll(g_fds, connections_count, 1000);
 		
 		if(!res) continue;
 
