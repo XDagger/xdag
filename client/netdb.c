@@ -15,12 +15,41 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
+#define poll WSAPoll
+#else
+#define poll(a, b, c) ((a)->revents = (a)->events, (b))
+#endif
+#else
+#include <poll.h>
+#endif
+
+#if defined(_WIN32) || defined(_WIN64)
+#else
+#include <netinet/in.h>
+#include <unistd.h>
+#include <sys/fcntl.h>
+#include <errno.h>
+#endif
+
 #define MAX_SELECTED_HOSTS  64
 #define MAX_BLOCKED_IPS     64
 #define MAX_WHITE_IPS       64
 #define MAX_ALLOWED_FROM_IP 4
 #define DATABASE            (g_xdag_testnet ? "netdb-testnet.txt" : "netdb.txt")
 #define DATABASEWHITE       (g_xdag_testnet ? "netdb-white-testnet.txt" : "netdb-white.txt")
+
+#define GITHUB_HOST              "raw.githubusercontent.com"
+#define whitelist_url            "XDagger/xdag/master/client/netdb-white.txt"
+#define whitelist_url_testnet    "XDagger/xdag/master/client/netdb-white-testnet.txt"
+#define WHITE_URL                (g_xdag_testnet ? whitelist_url_testnet : whitelist_url)
 
 enum host_flags {
 	HOST_OUR        = 1,
@@ -263,6 +292,104 @@ static void *monitor_thread(void *arg)
 		}
 	}
 
+	return 0;
+}
+
+static void *refresh_thread(void *arg)
+{
+	while (!g_xdag_sync_on) {
+		sleep(1);
+	}
+	
+	for (;;) {
+		time_t t = time(0);
+		
+		int sockfd, ret, i, h;
+		struct sockaddr_in servaddr; 
+		char str1[4096], str2[4096], buf[4096], *str;
+		socklen_t len;
+		fd_set t_set1;
+		struct timeval tv;
+		
+		if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
+			xdag_err("create socket failed.");
+			goto next; 
+		}; 
+		
+		bzero(&servaddr, sizeof(servaddr));
+		servaddr.sin_family = AF_INET;
+		servaddr.sin_port = htons(80);
+		
+		if(!inet_aton(GITHUB_HOST, &servaddr.sin_addr)) {
+			struct hostent *host = gethostbyname(GITHUB_HOST);
+			if(host == NULL || host->h_addr_list[0] == NULL) {
+				xdag_err("cannot resolve host %s", GITHUB_HOST);
+			}
+			// Write resolved IP address of a server to the address structure
+			memmove(&servaddr.sin_addr.s_addr, host->h_addr_list[0], 4);
+		}
+		
+		if(connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0){
+			xdag_err("connect failed.");
+			goto next;
+		}
+		
+		memset(str2, 0, 4096);
+		str=(char*)malloc(128);
+		len = strlen(str2);
+		sprintf(str, "%d", len);
+		
+		memset(str1, 0, 4096);
+		strcat(str1, "GET /XDagger/xdag/master/client/netdb-white.txt HTTP/1.1\n");
+		strcat(str1, "Host: raw.githubusercontent.com\n");
+		strcat(str1, "Content-Type: application/x-www-form-urlencoded\n");
+		strcat(str1, "Content-Length: 0\n\n");
+		strcat(str1, "\r\n\r\n");
+		printf("%s\n",str1);
+		
+		ret = write(sockfd,str1,strlen(str1));
+		if(ret < 0) {
+			goto next;
+		}
+		
+		FD_ZERO(&t_set1);
+		FD_SET(sockfd, &t_set1);
+		
+		struct pollfd p;
+		p.fd = sockfd;
+		p.events = POLLIN;
+		
+		while(1)
+		{
+			sleep(2);
+			tv.tv_sec= 0;
+			tv.tv_usec= 0;
+			int res = poll(&p, 1, 100);
+			if(!res) {
+				while (time(0) - t < 67) {
+					sleep(1);
+				}
+				continue;
+			}
+			
+			if(h > 0){ 
+				memset(buf, 0, 4096);
+				i = read(sockfd, buf, 4095);
+				if(i==0){
+					close(sockfd);
+					break;
+				}
+			}
+		}
+		close(sockfd);
+		
+//		read_database(DATABASEWHITE, HOST_WHITE);
+next:
+		while (time(0) - t < 67) {
+			sleep(10);
+		}
+	}
+	
 	return 0;
 }
 
