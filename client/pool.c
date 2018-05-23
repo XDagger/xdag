@@ -123,6 +123,7 @@ static struct pollfd *g_fds;
 static connection_list_element *g_connection_list_head = NULL;
 static connection_list_element *g_accept_connection_list_head = NULL;
 static miner_list_element *g_miner_list_head = NULL;
+static uint32_t g_connection_changed = 0;
 static pthread_mutex_t g_descriptors_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -468,6 +469,7 @@ static void close_connection(connection_list_element *connection, const char *me
 	pthread_mutex_lock(&g_descriptors_mutex);
 	LL_DELETE(g_connection_list_head, connection);
 	--g_connections_count;
+	g_connection_changed = 1;
 
 	close(conn_data->connection_descriptor.fd);
 
@@ -815,17 +817,22 @@ void *pool_main_thread(void *arg)
 		{
 			LL_DELETE(g_accept_connection_list_head, elt);
 			LL_APPEND(g_connection_list_head, elt);
+			g_connection_changed = 1;
+		}
+		int index = 0;
+		if(g_connection_changed) {
+			g_connection_changed = 0;
+			LL_FOREACH(g_connection_list_head, elt)
+			{
+				memcpy(g_fds + index, &elt->connection_data.connection_descriptor, sizeof(struct pollfd));
+				++index;
+			}
 		}
 		
-		int index = 0;
-		LL_FOREACH(g_connection_list_head, elt)
-		{
-			memcpy(g_fds + index, &elt->connection_data.connection_descriptor, sizeof(struct pollfd));
-			++index;
-		}
+		int connections_count = g_connections_count;
 		pthread_mutex_unlock(&g_descriptors_mutex);
 		
-		int res = poll(g_fds, index, 1000);
+		int res = poll(g_fds, connections_count, 1000);
 		
 		if(!res) continue;
 
