@@ -12,8 +12,8 @@ case "${host_os}" in
         HOST_OS="linux"
         ;;
     cygwin*|mingw*)
-		HOST_SUFFIX="-win"
-		HOST_OS="win"
+        HOST_SUFFIX="-win"
+        HOST_OS="win"
         ;;
     darwin*)
         HOST_SUFFIX="-mac"
@@ -68,7 +68,7 @@ AC_CHECK_LIB([pthread], [main])
 AC_CHECK_LIB([ssl], [main])
 
 AC_CONFIG_FILES([
-	Makefile
+    Makefile
 ])
 
 AC_OUTPUT
