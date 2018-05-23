@@ -189,7 +189,7 @@ int xdag_init(int argc, char **argv, int isGui)
 		if (xdag_netdb_init(pubaddr, n_addrports, addrports)) return -1;
 	}
 	xdag_mess("Initializing cryptography...");
-	if (xdag_crypt_init(1)) return -1;
+	if (xdag_crypt_init(0)) return -1;
 	xdag_mess("Reading wallet...");
 	if (xdag_wallet_init()) return -1;
 	xdag_mess("Initializing addresses...");
