@@ -1,5 +1,8 @@
 #include "terminal.h"
+#include <stdio.h>
 #include <stdlib.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <sys/types.h>
 #include <sys/un.h>
@@ -44,14 +47,16 @@ int terminal(void)
 		printf("Can't initialize sockets");
 	}
 
-	char cmd[XDAG_COMMAND_MAX];
+	char* cmd;
 	char cmd2[XDAG_COMMAND_MAX];
 
+    rl_readline_name = "xdag";
+    rl_attempted_completion_function = xdag_com_completion;
+    
 	while (1) {
 		int ispwd = 0, c = 0;
-		printf("%s> ", g_progname); fflush(stdout);
-		fgets(cmd, XDAG_COMMAND_MAX, stdin);
-		strcpy(cmd2, cmd);
+        cmd = readline("xdag> ");
+        strcpy(cmd2, cmd);
 		char *ptr = strtok_r(cmd2, " \t\r\n", &lasts);
 		if (!ptr) continue;
 		if (!strcmp(ptr, "exit")) break;
@@ -92,6 +97,7 @@ int terminal(void)
 			write(sock, cmd2, strlen(cmd2));
 		}
 		write(sock, cmd, strlen(cmd) + 1);
+        add_history(cmd);
 		if (!strcmp(ptr, "terminate")) {
 			sleep(1);
 			close(sock);
@@ -101,6 +107,7 @@ int terminal(void)
 			putchar(c);
 		}
 		close(sock);
+        free(cmd);
 	}
 
 	return 0;
