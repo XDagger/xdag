@@ -16,30 +16,6 @@
 #include "utils/utils.h"
 #include "http/http.h"
 
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-#if defined(_WIN32) || defined(_WIN64)
-#if defined(_WIN64)
-#define poll WSAPoll
-#else
-#define poll(a, b, c) ((a)->revents = (a)->events, (b))
-#endif
-#else
-#include <poll.h>
-#endif
-
-#if defined(_WIN32) || defined(_WIN64)
-#else
-#include <netinet/in.h>
-#include <unistd.h>
-#include <sys/fcntl.h>
-#include <errno.h>
-#endif
-
 #define MAX_SELECTED_HOSTS  64
 #define MAX_BLOCKED_IPS     64
 #define MAX_WHITE_IPS       64
