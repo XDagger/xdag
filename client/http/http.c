@@ -119,7 +119,7 @@ char *tcpRead(connection *c)
 {
 	const int readSize = 1023;
 	char *rc = NULL;
-	size_t received, count = 0;
+	size_t received = 0, count = 0;
 	char buffer[1024];
 	
 	if(c) {
@@ -130,17 +130,20 @@ char *tcpRead(connection *c)
 				rc = realloc(rc,(count + 1) * readSize * sizeof(char) + 1);
 			}
 			
-			memset(rc,0,readSize + 1);
-			received = recv(c->socket, buffer, 1, readSize);
-			buffer[received] = '\0';
-			
+			memset(rc + count * readSize,0,readSize + 1);
+			memset(buffer, 0, 1024);
+			received = read(c->socket, buffer, readSize);
+
 			if(received > 0) {
 				strcat(rc, buffer);
-			}
-			
-			if(received < readSize) {
+			} else {
 				break;
 			}
+
+//			if(received < readSize) {
+//				break;
+//			}
+			
 			count++;
 		}
 	}
@@ -247,10 +250,10 @@ void sslDisconnect(connection *c)
 // Read all available text from the connection
 char *sslRead(connection *c)
 {
-	const int readSize = 1023;
+	const int readSize = 1024;
 	char *rc = NULL;
-	int received, count = 0;
-	char buffer[1024];
+	int received = 0, count = 0;
+	char buffer[1025] = {0};
 	
 	if(c) {
 		while(1) {
@@ -260,21 +263,23 @@ char *sslRead(connection *c)
 				rc = realloc(rc,(count + 1) * readSize * sizeof(char) + 1);
 			}
 			
-			memset(rc,0,readSize + 1);
+			memset(rc + count * readSize,0,readSize + 1);
+			memset(buffer, 0, 1024);
 			received = SSL_read(c->sslHandle, buffer, readSize);
-			buffer[received] = '\0';
 			
 			if(received > 0) {
 				strcat(rc, buffer);
-			}
-			
-			if(received < readSize) {
+			} else {
 				break;
 			}
+			
+//			if(received < readSize) {
+//				break;
+//			}
 			count++;
 		}
 	}
-	
+
 	return rc;
 }
 
@@ -286,26 +291,98 @@ void sslWrite(connection *c, char *text)
 	}
 }
 
-// Very basic main: we send GET / and print the response.
+char *http_get(const char *url)
+{
+	char request[1024] = {0};
+	char *resp = NULL;
+	
+	url_field_t *fields = url_parse(url);
+//	url_field_print(fields);
+	
+	if(fields->host) {
+		char *path = "";
+		if(fields->path) {
+			path = fields->path;
+		}
+		strcat(request, "GET /"); strcat(request, path); strcat(request, " HTTP/1.1\r\n");
+		strcat(request, "HOST: "); strcat(request, fields->host); strcat(request, "\r\n");
+		strcat(request, "Connection: close\r\n\r\n");
+
+		if(!strcmp("https",fields->schema)) {
+			int port = 443;
+			if(fields->port) {
+				port = atoi(fields->port);
+			}
+			
+			connection *conn = sslConnect(fields->host, port);
+			if(conn) {
+				sslWrite(conn, request);
+				resp = sslRead(conn);
+				sslDisconnect(conn);
+			}
+		} else if(!strcmp("http", fields->schema)) {
+			int port = 80;
+			if(fields->port) {
+				port = atoi(fields->port);
+			}
+			
+			connection *conn = tcpConnect(fields->host, port);
+			if(conn) {
+				tcpWrite(conn, request);
+				resp = tcpRead(conn);
+				tcpDisconnect(conn);
+			}
+		} else {
+			xdag_err("schema not supported yet! schema: %s", fields->schema);
+		}
+	}
+	
+	if(resp) {
+		char *ptr = strstr(resp, "\r\n\r\n");
+		if(ptr) {
+			char *ori = resp;
+			resp = strdup(ptr + 4);
+			free(ori);
+		}
+	}
+	
+	url_free(fields);
+	return resp;
+}
+
+// Very basic main: we send GET / and print the resp.
 int test_https(void)
 {
 	connection *c;
-	char *response;
+	char *resp;
 	
 	c = sslConnect(SERVER, PORT);
 	
 	sslWrite(c, "GET /XDagger/xdag/master/client/netdb-white.txt HTTP/1.1\r\nHost: raw.githubusercontent.com\r\nconnection: close\r\n\r\n");
-	response = sslRead(c);
+	resp = sslRead(c);
 	
-	printf("[content] %s\n", response);
+	printf("[content] %s\n", resp);
 	
 	sslDisconnect(c);
-	free(response);
+	free(resp);
 	
 	return 0;
 }
 
-size_t http_get(const char *url, uint8_t *buffer)
+int test_http(void)
 {
+	connection *c;
+	char *resp;
+	
+	c = tcpConnect(SERVER, 80);
+	
+	tcpWrite(c, "GET /XDagger/xdag/master/client/netdb-white.txt HTTP/1.1\r\nHost: raw.githubusercontent.com\r\nconnection: close\r\n\r\n");
+	resp = tcpRead(c);
+	
+	printf("[content] %s\n", resp);
+	
+	tcpDisconnect(c);
+	free(resp);
+	
 	return 0;
 }
