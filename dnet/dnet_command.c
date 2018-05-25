@@ -13,7 +13,7 @@
 #include "dnet_stream.h"
 #include "dnet_files.h"
 #include "dnet_main.h"
-#include "../utils/utils.h"
+#include "../client/utils/utils.h"
 
 #define HISTORY_FILE "dnet_history.txt"
 
@@ -45,7 +45,9 @@ int dnet_command(const char *in, struct dnet_output *out) {
     struct dnet_host *host;
 	FILE *f;
 	int len;
-	strcpy(inbuf, in);
+    
+    if (!(in && in[0]) || (strlen(in) >= DNET_COMMAND_MAX - 1)) return 0;
+    strcpy(inbuf, in);
 	cmd = inbuf;
 begin:
 	while (*cmd && isspace(*cmd)) ++cmd;

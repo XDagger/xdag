@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "afxwin.h"
+#include "stdafx.h"
 
 class CEditWalletAddr : public CEdit
 {

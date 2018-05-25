@@ -211,6 +211,8 @@ LRESULT CXDagWalletDlg::OnUpdateState(WPARAM wParam, LPARAM lParam)
 
 void CXDagWalletDlg::OnClickedButtonConnect()
 {
+	_accountAddressEdit.SendMessageA(WM_HIDE_TOOLTIP);
+
 	UpdateData(true);
 	if (_poolAddress.IsEmpty()) {
 		MessageBox("Pool address must be set", "Dagger wallet", MB_OK | MB_ICONSTOP);
@@ -256,4 +258,15 @@ void CXDagWalletDlg::OnTimer(WPARAM wParam)
 	CString hashRateStr;
 	hashRateStr.Format("%.2lf", hashRate);
 	_hashRateEdit.SetWindowText(hashRateStr);
+}
+
+LRESULT CXDagWalletDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message)
+	{
+	case WM_NCLBUTTONDOWN:
+		_accountAddressEdit.PostMessageA(WM_HIDE_TOOLTIP);
+		break;
+	}
+	return CDialog::WindowProc(message, wParam, lParam);
 }

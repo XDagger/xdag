@@ -10,4 +10,13 @@ Debug/
 /win/ipch
 /win/xdagwallet/xdagwallet.aps
 /win/xdaglib/xdaglib.vcxproj.user
+
+#mac project
+xcuserdata
 mac/xdag.xcodeproj/project.xcworkspace
+
+#autotools
+.deps
+autoscan.log
+*.o
+.dirstamp

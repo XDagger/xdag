@@ -3,8 +3,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "memory.h"
+#include "utils/log.h"
 
 #if defined(_WIN32) || defined(_WIN64)
+
+void xdag_mem_tempfile_path(const char *tempfile_path)
+{
+}
 
 int xdag_mem_init(size_t size)
 {
@@ -18,7 +23,7 @@ void *xdag_malloc(size_t size)
 
 void xdag_free(void *mem)
 {
-	return free(mem);
+	free(mem);
 }
 
 void xdag_mem_finish(void)
@@ -33,21 +38,35 @@ int xdag_free_all(void)
 #else
 
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/mman.h>
+#include <errno.h>
 
-#define MEM_PORTION     ((size_t)1 << 24)
+#define MEM_PORTION     ((size_t)1 << 25)
 
 static int g_fd = -1;
 static size_t g_pos = 0, g_fsize = 0, g_size = 0;
 static void *g_mem;
 static pthread_mutex_t g_mem_mutex = PTHREAD_MUTEX_INITIALIZER;
+static char g_tmpfile_path[1024] = "";
 static char g_tmpname[64] = "xdag-tmp-XXXXXX";
+
+void xdag_mem_tempfile_path(const char *tempfile_path)
+{
+	strcpy(g_tmpfile_path, tempfile_path);
+}
 
 int xdag_mem_init(size_t size)
 {
+	char tmpfilename[1024];
+
 	if (!size) {
+		return 0;
+	}
+	if(strcmp(g_tmpfile_path,"RAM") == 0) {
+		/* This will leave g_fd as -1, and malloc will then be called in xdag_malloc instead of pointer into mmap */
 		return 0;
 	}
 
@@ -55,8 +74,11 @@ int xdag_mem_init(size_t size)
 	size |= MEM_PORTION - 1;
 	size++;
 
-	g_fd = mkstemp(g_tmpname);
+	printf("%s , %s\n",g_tmpfile_path, g_tmpname);
+	sprintf(tmpfilename, "%s%s", g_tmpfile_path, g_tmpname);
+	g_fd = mkstemp(tmpfilename);
 	if (g_fd < 0) {
+		xdag_fatal("Unable to create temporary file %s errno:%d", tmpfilename, errno);
 		return -1;
 	}
 

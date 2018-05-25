@@ -9,11 +9,11 @@
 #include "../ldus/source/include/ldus/rbtree.h"
 #include "transport.h"
 #include "netdb.h"
-#include "log.h"
 #include "init.h"
 #include "block.h"
 #include "sync.h"
-#include "../utils/utils.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 #define MAX_SELECTED_HOSTS  64
 #define MAX_BLOCKED_IPS     64
