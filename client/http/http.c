@@ -187,6 +187,7 @@ connection *sslConnect(const char* h, int port)
 		connection *c = malloc(sizeof(connection));
 		c->sslHandle = NULL;
 		c->sslContext = NULL;
+		c->socket = sock;
 		
 		// Register the error strings for libcrypto & libssl
 		SSL_load_error_strings();
