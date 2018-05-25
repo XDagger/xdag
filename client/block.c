@@ -1339,16 +1339,16 @@ static int bi_compar(const void *l, const void *r)
 
 	return (tl > tr) - (tl < tr);
 }
-
+//TODO comments
 static const char* xdag_get_block_state_info(struct block_internal *block)
 {
-	if(block->flags == (BI_REF | BI_MAIN_REF | BI_APPLIED | BI_MAIN | BI_MAIN_CHAIN)) { //1F
+	if((block->flags & ~BI_OURS) == (BI_REF | BI_MAIN_REF | BI_APPLIED | BI_MAIN | BI_MAIN_CHAIN)) { //1F
 		return "Main";
 	}
-	if(block->flags == (BI_REF | BI_MAIN_REF | BI_APPLIED)) { //1C
+	if((block->flags & ~BI_OURS) == (BI_REF | BI_MAIN_REF | BI_APPLIED)) { //1C
 		return "Accepted";
 	}
-	if(block->flags == (BI_REF | BI_MAIN_REF)) { //18
+	if((block->flags & ~BI_OURS) == (BI_REF | BI_MAIN_REF)) { //18
 		return "Rejected";
 	}
 	return "Pending";
