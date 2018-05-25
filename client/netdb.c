@@ -14,6 +14,7 @@
 #include "sync.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "http/http.h"
 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -46,10 +47,11 @@
 #define DATABASE            (g_xdag_testnet ? "netdb-testnet.txt" : "netdb.txt")
 #define DATABASEWHITE       (g_xdag_testnet ? "netdb-white-testnet.txt" : "netdb-white.txt")
 
-#define GITHUB_HOST              "raw.githubusercontent.com"
-#define whitelist_url            "XDagger/xdag/master/client/netdb-white.txt"
-#define whitelist_url_testnet    "XDagger/xdag/master/client/netdb-white-testnet.txt"
+#define whitelist_url            "https://raw.githubusercontent.com/XDagger/xdag/master/client/netdb-white.txt"
+#define whitelist_url_testnet    "https://raw.githubusercontent.com/XDagger/xdag/master/client/netdb-white-testnet.txt"
 #define WHITE_URL                (g_xdag_testnet ? whitelist_url_testnet : whitelist_url)
+
+pthread_mutex_t g_white_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 enum host_flags {
 	HOST_OUR        = 1,
@@ -285,7 +287,9 @@ static void *monitor_thread(void *arg)
 		
 		g_xdag_n_white_ips = 0;
 		
+		pthread_mutex_lock(&g_white_list_mutex);
 		read_database(DATABASEWHITE, HOST_WHITE);
+		pthread_mutex_unlock(&g_white_list_mutex);
 
 		while (time(0) - t < 67) {
 			sleep(1);
@@ -304,89 +308,26 @@ static void *refresh_thread(void *arg)
 	for (;;) {
 		time_t t = time(0);
 		
-		int sockfd, ret, i, h;
-		struct sockaddr_in servaddr; 
-		char str1[4096], str2[4096], buf[4096], *str;
-		socklen_t len;
-		fd_set t_set1;
-		struct timeval tv;
+		xdag_mess("try to refresh white-list...");
 		
-		if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
-			xdag_err("create socket failed.");
-			goto next; 
-		}; 
-		
-		bzero(&servaddr, sizeof(servaddr));
-		servaddr.sin_family = AF_INET;
-		servaddr.sin_port = htons(80);
-		
-		if(!inet_aton(GITHUB_HOST, &servaddr.sin_addr)) {
-			struct hostent *host = gethostbyname(GITHUB_HOST);
-			if(host == NULL || host->h_addr_list[0] == NULL) {
-				xdag_err("cannot resolve host %s", GITHUB_HOST);
-			}
-			// Write resolved IP address of a server to the address structure
-			memmove(&servaddr.sin_addr.s_addr, host->h_addr_list[0], 4);
+		char *resp = http_get(WHITE_URL);
+		if(!resp) {
+			goto nextloop;
 		}
-		
-		if(connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0){
-			xdag_err("connect failed.");
-			goto next;
+		pthread_mutex_lock(&g_white_list_mutex);
+		FILE *f = xdag_open_file(DATABASEWHITE, "w");
+		if(f) {
+			fwrite(resp, 1, strlen(resp), f);
+			fclose(f);
 		}
+		pthread_mutex_unlock(&g_white_list_mutex);
 		
-		memset(str2, 0, 4096);
-		str=(char*)malloc(128);
-		len = strlen(str2);
-		sprintf(str, "%d", len);
+		xdag_info(resp);
+		free(resp);
 		
-		memset(str1, 0, 4096);
-		strcat(str1, "GET /XDagger/xdag/master/client/netdb-white.txt HTTP/1.1\n");
-		strcat(str1, "Host: raw.githubusercontent.com\n");
-		strcat(str1, "Content-Type: application/x-www-form-urlencoded\n");
-		strcat(str1, "Content-Length: 0\n\n");
-		strcat(str1, "\r\n\r\n");
-		printf("%s\n",str1);
-		
-		ret = write(sockfd,str1,strlen(str1));
-		if(ret < 0) {
-			goto next;
-		}
-		
-		FD_ZERO(&t_set1);
-		FD_SET(sockfd, &t_set1);
-		
-		struct pollfd p;
-		p.fd = sockfd;
-		p.events = POLLIN;
-		
-		while(1)
-		{
-			sleep(2);
-			tv.tv_sec= 0;
-			tv.tv_usec= 0;
-			int res = poll(&p, 1, 100);
-			if(!res) {
-				while (time(0) - t < 67) {
-					sleep(1);
-				}
-				continue;
-			}
-			
-			if(h > 0){ 
-				memset(buf, 0, 4096);
-				i = read(sockfd, buf, 4095);
-				if(i==0){
-					close(sockfd);
-					break;
-				}
-			}
-		}
-		close(sockfd);
-		
-//		read_database(DATABASEWHITE, HOST_WHITE);
-next:
+nextloop:
 		while (time(0) - t < 67) {
-			sleep(10);
+			sleep(1);
 		}
 	}
 	
@@ -421,6 +362,10 @@ int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port
 	
 	if (pthread_create(&t, 0, monitor_thread, 0)) {
 		xdag_fatal("Can't start netdb thread\n"); return -1;
+	}
+	
+	if (pthread_create(&t, 0, refresh_thread, 0)) {
+		xdag_fatal("Can't start refresh white-list netdb thread\n"); return -1;
 	}
 	
 	return 0;
