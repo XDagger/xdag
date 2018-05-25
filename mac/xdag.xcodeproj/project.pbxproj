@@ -21,11 +21,6 @@
 		385827BA20737CC6009C83CB /* rpc_wrapper.c in Sources */ = {isa = PBXBuildFile; fileRef = 385827B220737CC6009C83CB /* rpc_wrapper.c */; };
 		386E313520B736ED000F165C /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 386E313320B736ED000F165C /* libssl.a */; };
 		386E313620B736ED000F165C /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 386E313420B736ED000F165C /* libcrypto.a */; };
-		386E313C20B736F9000F165C /* libevent_openssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 386E313720B736F9000F165C /* libevent_openssl.a */; };
-		386E313D20B736F9000F165C /* libevent_pthreads.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 386E313820B736F9000F165C /* libevent_pthreads.a */; };
-		386E313E20B736F9000F165C /* libevent.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 386E313920B736F9000F165C /* libevent.a */; };
-		386E313F20B736F9000F165C /* libevent_extra.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 386E313A20B736F9000F165C /* libevent_extra.a */; };
-		386E314020B736F9000F165C /* libevent_core.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 386E313B20B736F9000F165C /* libevent_core.a */; };
 		38931ED720B8599D00FDD32F /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = 38931ED320B8599D00FDD32F /* http.c */; };
 		38931ED820B8599D00FDD32F /* url.c in Sources */ = {isa = PBXBuildFile; fileRef = 38931ED520B8599D00FDD32F /* url.c */; };
 		38A15E7520544F3F00598EC2 /* crc_c.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E0B20544F3E00598EC2 /* crc_c.c */; };
@@ -210,11 +205,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				386E313C20B736F9000F165C /* libevent_openssl.a in Frameworks */,
-				386E313D20B736F9000F165C /* libevent_pthreads.a in Frameworks */,
-				386E313E20B736F9000F165C /* libevent.a in Frameworks */,
-				386E313F20B736F9000F165C /* libevent_extra.a in Frameworks */,
-				386E314020B736F9000F165C /* libevent_core.a in Frameworks */,
 				386E313520B736ED000F165C /* libssl.a in Frameworks */,
 				386E313620B736ED000F165C /* libcrypto.a in Frameworks */,
 			);
@@ -793,7 +783,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
-				SYSTEM_HEADER_SEARCH_PATHS = "\"/usr/local/Cellar/openssl@1.1/1.1.0e/include/\" /usr/local/opt/openssl/include /usr/local/Cellar/libevent/2.1.8/include";
+				SYSTEM_HEADER_SEARCH_PATHS = "\"/usr/local/Cellar/openssl@1.1/1.1.0e/include/\" /usr/local/opt/openssl/include";
 			};
 			name = Debug;
 		};
@@ -828,7 +818,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
-				SYSTEM_HEADER_SEARCH_PATHS = "\"/usr/local/Cellar/openssl@1.1/1.1.0e/include/\" /usr/local/opt/openssl/include /usr/local/Cellar/libevent/2.1.8/include";
+				SYSTEM_HEADER_SEARCH_PATHS = "\"/usr/local/Cellar/openssl@1.1/1.1.0e/include/\" /usr/local/opt/openssl/include";
 			};
 			name = Release;
 		};
