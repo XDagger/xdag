@@ -22,14 +22,6 @@ extern double xdagGetHashRate(void);
 
 #define XFER_MAX_IN				11
 
-typedef int (*xdag_com_func_t)(char*, FILE *);
-
-typedef struct {
-    char *name;                  /* User printable name of the function. */
-    xdag_com_func_t func;        /* Function to call to do the job.      */
-    char *doc;                   /* Documentation for this function.     */
-} XDAG_COMMAND;
-
 struct xfer_callback_data {
 	struct xdag_field fields[XFER_MAX_IN + 1];
 	int keys[XFER_MAX_IN + 1];
@@ -49,8 +41,6 @@ int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_
 long double amount2xdags(xdag_amount_t amount);
 xdag_amount_t xdags2amount(const char *str);
 
-char* xdag_com_generator(const char*, int);
 char** xdag_com_completion(const char *, int, int);
-XDAG_COMMAND* find_xdag_command(char*);
 
 #endif // !XDAG_COMMANDS_H

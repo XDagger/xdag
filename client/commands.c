@@ -3,8 +3,10 @@
 #include <math.h>
 #include <stdlib.h>
 #include <ctype.h>
+#if !defined(_WIN32) && !defined(_WIN64)
 #include <readline/readline.h>
 #include <readline/history.h>
+#endif
 #include "init.h"
 #include "address.h"
 #include "wallet.h"
@@ -30,6 +32,12 @@ struct out_balances_data {
 	struct xdag_field *blocks;
 	unsigned blocksCount, maxBlocksCount;
 };
+
+typedef int (*xdag_com_func_t)(char*, FILE *);
+typedef struct {
+    char *name;                  /* User printable name of the function. */
+    xdag_com_func_t func;        /* Function to call to do the job.      */
+} XDAG_COMMAND;
 
 // Function declarations
 void printHelp(FILE *out);
@@ -69,28 +77,26 @@ int xdag_com_terminate(char *, FILE*);
 int xdag_com_exit(char *, FILE*);
 
 char* xdag_com_generator(const char*, int);
-char** xdag_com_completion(const char *, int, int);
 XDAG_COMMAND* find_xdag_command(char*);
-char* dupstr(char* s);
 
 XDAG_COMMAND commands[] = {
-    { "account"    , xdag_com_account    , "[N] print first N (20 by default) our addresses with their amounts" },
-    { "balance"    , xdag_com_balance    , "[A] print balance of the address A or total balance for all our addresses" },
-    { "block"      , xdag_com_block      , "[H] print extended info for the block corresponding to the address or hash H" },
-    { "lastblocks" , xdag_com_lastblocks , "[N] print latest N (20 by default, max limit 100) main blocks" },
-    { "keyGen"     , xdag_com_keyGen     , "generate new private/public key pair and set it by default" },
-    { "level"      , xdag_com_level      , "[N] print level of logging or set it to N (0 - nothing, ..., 9 - all)" },
-    { "miners"     , xdag_com_miners     , "for pool, print list of recent connected miners" },
-    { "mining"     , xdag_com_mining     , "[N] print number of mining threads or set it to N" },
-    { "net"        , xdag_com_net        , "run transport layer command, try 'net help'" },
-    { "pool"       , xdag_com_pool       , "[miners:maxip:maxconn:fee:reward:direct:fund]" },
-    { "run"        , xdag_com_run        , "run node after loading local blocks if option -r is used" },
-    { "state"      , xdag_com_state      , "print the program state" },
-    { "stats"      , xdag_com_stats      , "print statistics for loaded and all known blocks" },
-    { "terminate"  , xdag_com_terminate  , "terminate both daemon and this program" },
-    { "xfer"       ,(xdag_com_func_t)NULL, "[A] xfer S A, transfer S our %s to the address A" },
-    { "help"       , xdag_com_help       , "print xdag commands help" },
-    { (char *)NULL ,(xdag_com_func_t)NULL, (char *)NULL }
+    { "account"    , xdag_com_account},
+    { "balance"    , xdag_com_balance},
+    { "block"      , xdag_com_block},
+    { "lastblocks" , xdag_com_lastblocks},
+    { "keyGen"     , xdag_com_keyGen},
+    { "level"      , xdag_com_level},
+    { "miners"     , xdag_com_miners},
+    { "mining"     , xdag_com_mining},
+    { "net"        , xdag_com_net},
+    { "pool"       , xdag_com_pool},
+    { "run"        , xdag_com_run},
+    { "state"      , xdag_com_state},
+    { "stats"      , xdag_com_stats},
+    { "terminate"  , xdag_com_terminate},
+    { "xfer"       ,(xdag_com_func_t)NULL},
+    { "help"       , xdag_com_help},
+    { (char *)NULL ,(xdag_com_func_t)NULL}
 };
 
 int xdag_com_account(char* args, FILE* out) {
@@ -174,18 +180,10 @@ int xdag_com_help(char *args, FILE* out) {
 }
 
 char ** xdag_com_completion(const char *text, int start, int end) {
-    char **matches;
-    matches = (char **)NULL;
+    char **matches = (char **)NULL;;
     if (start == 0)
         matches = rl_completion_matches(text, xdag_com_generator);
     return (matches);
-}
-
-char* dupstr(char* s){
-    char *r;
-    r = malloc(strlen(s) + 1);
-    strcpy(r, s);
-    return (r);
 }
 
 char* xdag_com_generator(const char* text, int state) {
@@ -199,7 +197,7 @@ char* xdag_com_generator(const char* text, int state) {
     while ((name = commands[list_index].name)) {
         list_index++;
         if (strncmp(name, text, len) == 0)
-            return (dupstr(name));
+            return (strdup(name));
     }
     return ((char *)NULL);
 }
@@ -214,27 +212,35 @@ XDAG_COMMAND* find_xdag_command(char *name) {
 
 void startCommandProcessing(int transportFlags)
 {
-    char *cmd;
+    char cmd[XDAG_COMMAND_MAX];
     if(!(transportFlags & XDAG_DAEMON)) printf("Type command, help for example.\n");
     
-    // readline lib
+#if !defined(_WIN32) && !defined(_WIN64)
     rl_readline_name = "xdag";
     rl_attempted_completion_function = xdag_com_completion;
+#endif
     
     for (;;) {
         if(transportFlags & XDAG_DAEMON) {
             sleep(100);
         } else {
-            cmd = readline("xdag> ");
-            if (*cmd){
-                add_history(cmd);
+#if !defined(_WIN32) && !defined(_WIN64)
+            char * pcmd = NULL;
+            pcmd = readline("xdag> ");
+            add_history(pcmd);
+            strcpy(cmd, pcmd);
+            free(pcmd);
+#else
+            printf("%s> ", g_progname);
+            fflush(stdout);
+            fgets(cmd, XDAG_COMMAND_MAX, stdin);
+#endif
+            if ( strlen(cmd)>0 ){
                 int ret = xdag_command(cmd, stdout);
-                free(cmd);
                 if(ret < 0) {
                     break;
                 }
             }
-            
         }
     }
 }
@@ -285,7 +291,7 @@ void processAccountCommand(char *nextParam, FILE *out)
 void processBalanceCommand(char *nextParam, FILE *out)
 {
 	if(g_xdag_state < XDAG_STATE_XFER) {
-		fprintf(out, "Not ready to show a balance. Type 'state' command to see the reason.\n");
+        fprintf(out, "Not ready to show a balance. Type 'state' command to see the reason.\n");
 	} else {
 		xdag_hash_t hash;
 		xdag_amount_t balance;
