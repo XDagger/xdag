@@ -5,6 +5,8 @@
 
 static char *str_hosttype[] = { "host ipv4", "host ipv6", "host domain", NULL };
 
+void parse_query(url_field_t *url, char *query);
+
 //static char *strndup(const char *str, int n)
 //{
 //	char *dst;
@@ -34,10 +36,9 @@ static int host_is_ipv4(char *str)
 	return 1;
 }
 
-void parse_query(url_field_t *url, char *query);
 void parse_query(url_field_t *url, char *query)
 {
-	int length;
+	size_t length;
 	int offset;
 	char *chr;
 	length = strlen(query);
@@ -67,7 +68,7 @@ void parse_query(url_field_t *url, char *query)
 		}
 	}
 }
-url_field_t *url_parse (const char *str)
+url_field_t *url_parse(const char *str)
 {
 	const char *pch;
 	char *query;
