@@ -47,7 +47,7 @@ int terminal(void)
 		printf("Can't initialize sockets");
 	}
 
-	char cmd[XDAG_COMMAND_MAX];
+    char cmd[XDAG_COMMAND_MAX];
 	char cmd2[XDAG_COMMAND_MAX];
 
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -67,18 +67,18 @@ int terminal(void)
         fgets(cmd, XDAG_COMMAND_MAX, stdin);
 #endif
         strcpy(cmd2, cmd);
-		char *ptr = strtok_r(cmd2, " \t\r\n", &lasts);
-		if (!ptr) continue;
-		if (!strcmp(ptr, "exit")) break;
-		if (!strcmp(ptr, "xfer")) {
-			uint32_t pwd[4];
-			xdag_user_crypt_action(pwd, 0, 4, 4);
-			sprintf(cmd2, "pwd=%08x%08x%08x%08x ", pwd[0], pwd[1], pwd[2], pwd[3]);
-			ispwd = 1;
+        char *ptr = strtok_r(cmd2, " \t\r\n", &lasts);
+        if (!ptr) continue;
+        if (!strcmp(ptr, "exit")) break;
+        if (!strcmp(ptr, "xfer")) {
+            uint32_t pwd[4];
+            xdag_user_crypt_action(pwd, 0, 4, 4);
+            sprintf(cmd2, "pwd=%08x%08x%08x%08x ", pwd[0], pwd[1], pwd[2], pwd[3]);
+            ispwd = 1;
 		}
 #if !defined(_WIN32) && !defined(_WIN64)
 		if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-			printf("Can't open unix domain socket errno:%d.\n", errno);
+            printf("Can't open unix domain socket errno:%d.\n", errno);
 			continue;
 		}
 		struct sockaddr_un addr;

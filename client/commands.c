@@ -275,7 +275,7 @@ int xdag_command(char *cmd, FILE *out)
 
 void processAccountCommand(char *nextParam, FILE *out)
 {
-	struct account_callback_data d;
+    struct account_callback_data d;
 	d.out = out;
 	d.count = (g_is_miner ? 1 : 20);
 	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
