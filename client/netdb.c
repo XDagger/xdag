@@ -287,22 +287,20 @@ static void *refresh_thread(void *arg)
 		xdag_mess("try to refresh white-list...");
 		
 		char *resp = http_get(WHITE_URL);
-		if(!resp) {
-			goto nextloop;
+		if(resp) {
+			pthread_mutex_lock(&g_white_list_mutex);
+			FILE *f = xdag_open_file(DATABASEWHITE, "w");
+			if(f) {
+				fwrite(resp, 1, strlen(resp), f);
+				fclose(f);
+			}
+			pthread_mutex_unlock(&g_white_list_mutex);
+			
+			xdag_info("\n%s", resp);
+			free(resp);
 		}
-		pthread_mutex_lock(&g_white_list_mutex);
-		FILE *f = xdag_open_file(DATABASEWHITE, "w");
-		if(f) {
-			fwrite(resp, 1, strlen(resp), f);
-			fclose(f);
-		}
-		pthread_mutex_unlock(&g_white_list_mutex);
 		
-		xdag_info(resp);
-		free(resp);
-		
-nextloop:
-		while (time(0) - t < 67) {
+		while (time(0) - t < 900) { // refresh every 15 minutes
 			sleep(1);
 		}
 	}
