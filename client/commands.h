@@ -41,4 +41,6 @@ int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_
 long double amount2xdags(xdag_amount_t amount);
 xdag_amount_t xdags2amount(const char *str);
 
+char** xdag_com_completion(const char *, int, int);
+
 #endif // !XDAG_COMMANDS_H
