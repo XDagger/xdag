@@ -203,7 +203,7 @@ char* xdag_com_generator(const char* text, int state) {
 }
 
 XDAG_COMMAND* find_xdag_command(char *name) {
-    register int i;
+    int i;
     for (i = 0; commands[i].name; i++)
         if (strcmp(name, commands[i].name) == 0)
             return (&commands[i]);
