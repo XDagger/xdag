@@ -85,6 +85,8 @@ connection * tcpConnect(const char* h, int port)
 			server.sin_addr = *((struct in_addr *) host->h_addr);
 			bzero(&(server.sin_zero), 8);
 			
+			uint32_t timeout = 1000*10;
+			setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 			error = connect(sock,(struct sockaddr *) &server, sizeof(struct sockaddr));
 			if(error == -1)
 			{
