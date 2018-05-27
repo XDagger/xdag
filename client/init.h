@@ -5,6 +5,7 @@
 
 #include <time.h>
 #include "block.h"
+#include "system.h"
 
 enum xdag_states
 {
