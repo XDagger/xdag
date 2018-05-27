@@ -38,8 +38,6 @@ static int host_is_ipv4(char *str)
 
 static void parse_query(url_field_t *url, char *query)
 {
-	size_t length = strlen(query);
-	int offset = 0;
 	char *chr = strchr(query, '=');
 	while (chr)
 	{

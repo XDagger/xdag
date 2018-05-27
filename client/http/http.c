@@ -14,12 +14,12 @@
 #include <openssl/x509v3.h>
 
 #if !defined(_WIN32) && !defined(_WIN64)
-//#include <errno.h>
-//#include <sys/socket.h>
-//#include <sys/ioctl.h>
-//#include <netdb.h>
-//#include <netinet/in.h>
-//#include <arpa/inet.h>
+#include <errno.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 
 #include <stdio.h>
