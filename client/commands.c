@@ -182,7 +182,7 @@ int xdag_com_help(char *args, FILE* out) {
 char ** xdag_com_completion(const char *text, int start, int end) {
 	char **matches = (char **)NULL;;
 	if (start == 0)
-        	matches = rl_completion_matches(text, xdag_com_generator);
+		matches = rl_completion_matches(text, xdag_com_generator);
 	return (matches);
 }
 
@@ -190,9 +190,9 @@ char* xdag_com_generator(const char* text, int state) {
 	static int list_index, len;
 	char *name;
 	if (!state) {
-        	list_index = 0;
-        	len = strlen(text);
-	 }
+		list_index = 0;
+		len = strlen(text);
+	}
     
 	while ((name = commands[list_index].name)) {
 		list_index++;
