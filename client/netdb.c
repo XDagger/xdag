@@ -14,6 +14,7 @@
 #include "sync.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "http/http.h"
 
 #define MAX_SELECTED_HOSTS  64
 #define MAX_BLOCKED_IPS     64
@@ -21,6 +22,12 @@
 #define MAX_ALLOWED_FROM_IP 4
 #define DATABASE            (g_xdag_testnet ? "netdb-testnet.txt" : "netdb.txt")
 #define DATABASEWHITE       (g_xdag_testnet ? "netdb-white-testnet.txt" : "netdb-white.txt")
+
+#define whitelist_url            "https://raw.githubusercontent.com/XDagger/xdag/master/client/netdb-white.txt"
+#define whitelist_url_testnet    "https://raw.githubusercontent.com/XDagger/xdag/master/client/netdb-white-testnet.txt"
+#define WHITE_URL                (g_xdag_testnet ? whitelist_url_testnet : whitelist_url)
+
+pthread_mutex_t g_white_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 enum host_flags {
 	HOST_OUR        = 1,
@@ -256,13 +263,48 @@ static void *monitor_thread(void *arg)
 		
 		g_xdag_n_white_ips = 0;
 		
+		pthread_mutex_lock(&g_white_list_mutex);
 		read_database(DATABASEWHITE, HOST_WHITE);
+		pthread_mutex_unlock(&g_white_list_mutex);
 
 		while (time(0) - t < 67) {
 			sleep(1);
 		}
 	}
 
+	return 0;
+}
+
+static void *refresh_thread(void *arg)
+{
+	while (!g_xdag_sync_on) {
+		sleep(1);
+	}
+	
+	for (;;) {
+		time_t t = time(0);
+		
+		xdag_mess("try to refresh white-list...");
+		
+		char *resp = http_get(WHITE_URL);
+		if(resp) {
+			pthread_mutex_lock(&g_white_list_mutex);
+			FILE *f = xdag_open_file(DATABASEWHITE, "w");
+			if(f) {
+				fwrite(resp, 1, strlen(resp), f);
+				fclose(f);
+			}
+			pthread_mutex_unlock(&g_white_list_mutex);
+			
+			xdag_info("\n%s", resp);
+			free(resp);
+		}
+		
+		while (time(0) - t < 900) { // refresh every 15 minutes
+			sleep(1);
+		}
+	}
+	
 	return 0;
 }
 
@@ -294,6 +336,10 @@ int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port
 	
 	if (pthread_create(&t, 0, monitor_thread, 0)) {
 		xdag_fatal("Can't start netdb thread\n"); return -1;
+	}
+	
+	if (pthread_create(&t, 0, refresh_thread, 0)) {
+		xdag_fatal("Can't start refresh white-list netdb thread\n"); return -1;
 	}
 	
 	return 0;

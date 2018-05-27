@@ -10,8 +10,6 @@
 		383256BB206BF099006CAE67 /* miner.c in Sources */ = {isa = PBXBuildFile; fileRef = 383256B7206BF098006CAE67 /* miner.c */; };
 		383256BC206BF099006CAE67 /* pool.c in Sources */ = {isa = PBXBuildFile; fileRef = 383256B8206BF098006CAE67 /* pool.c */; };
 		38439AFB206BF6D100D563A8 /* mining_common.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6020544F3F00598EC2 /* mining_common.c */; };
-		384A29DE2062194800DD9D3B /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 384A29DC2062194700DD9D3B /* libcrypto.a */; };
-		384A29DF2062194800DD9D3B /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 384A29DD2062194800DD9D3B /* libssl.a */; };
 		384A29E12062195400DD9D3B /* libcrypto.a in Resources */ = {isa = PBXBuildFile; fileRef = 384A29DC2062194700DD9D3B /* libcrypto.a */; };
 		384A29E22062195400DD9D3B /* libssl.a in Resources */ = {isa = PBXBuildFile; fileRef = 384A29DD2062194800DD9D3B /* libssl.a */; };
 		385827B420737CC6009C83CB /* log.c in Sources */ = {isa = PBXBuildFile; fileRef = 385827A520737CC6009C83CB /* log.c */; };
@@ -21,6 +19,10 @@
 		385827B820737CC6009C83CB /* rpc_procedures.c in Sources */ = {isa = PBXBuildFile; fileRef = 385827AE20737CC6009C83CB /* rpc_procedures.c */; };
 		385827B920737CC6009C83CB /* rpc_service.c in Sources */ = {isa = PBXBuildFile; fileRef = 385827B020737CC6009C83CB /* rpc_service.c */; };
 		385827BA20737CC6009C83CB /* rpc_wrapper.c in Sources */ = {isa = PBXBuildFile; fileRef = 385827B220737CC6009C83CB /* rpc_wrapper.c */; };
+		386E313520B736ED000F165C /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 386E313320B736ED000F165C /* libssl.a */; };
+		386E313620B736ED000F165C /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 386E313420B736ED000F165C /* libcrypto.a */; };
+		38931ED720B8599D00FDD32F /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = 38931ED320B8599D00FDD32F /* http.c */; };
+		38931ED820B8599D00FDD32F /* url.c in Sources */ = {isa = PBXBuildFile; fileRef = 38931ED520B8599D00FDD32F /* url.c */; };
 		38A15E7520544F3F00598EC2 /* crc_c.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E0B20544F3E00598EC2 /* crc_c.c */; };
 		38A15E7620544F3F00598EC2 /* dfslib_crypt.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E0F20544F3E00598EC2 /* dfslib_crypt.c */; };
 		38A15E7720544F3F00598EC2 /* dfslib_random.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E1120544F3E00598EC2 /* dfslib_random.c */; };
@@ -95,8 +97,24 @@
 		385827B120737CC6009C83CB /* rpc_service.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_service.h; sourceTree = "<group>"; };
 		385827B220737CC6009C83CB /* rpc_wrapper.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rpc_wrapper.c; sourceTree = "<group>"; };
 		385827B320737CC6009C83CB /* rpc_wrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_wrapper.h; sourceTree = "<group>"; };
+		386E312920B735F5000F165C /* libevent_pthreads.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libevent_pthreads.a; path = ../../../../../../usr/local/Cellar/libevent/2.1.8/lib/libevent_pthreads.a; sourceTree = "<group>"; };
+		386E312A20B735F5000F165C /* libevent_openssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libevent_openssl.a; path = ../../../../../../usr/local/Cellar/libevent/2.1.8/lib/libevent_openssl.a; sourceTree = "<group>"; };
+		386E312B20B735F5000F165C /* libevent_core.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libevent_core.a; path = ../../../../../../usr/local/Cellar/libevent/2.1.8/lib/libevent_core.a; sourceTree = "<group>"; };
+		386E312C20B735F6000F165C /* libevent_extra.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libevent_extra.a; path = ../../../../../../usr/local/Cellar/libevent/2.1.8/lib/libevent_extra.a; sourceTree = "<group>"; };
+		386E312D20B735F6000F165C /* libevent.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libevent.a; path = ../../../../../../usr/local/Cellar/libevent/2.1.8/lib/libevent.a; sourceTree = "<group>"; };
+		386E313320B736ED000F165C /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libssl.a; path = lib/openssl/lib/libssl.a; sourceTree = "<group>"; };
+		386E313420B736ED000F165C /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = lib/openssl/lib/libcrypto.a; sourceTree = "<group>"; };
+		386E313720B736F9000F165C /* libevent_openssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libevent_openssl.a; path = lib/libevent/lib/libevent_openssl.a; sourceTree = "<group>"; };
+		386E313820B736F9000F165C /* libevent_pthreads.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libevent_pthreads.a; path = lib/libevent/lib/libevent_pthreads.a; sourceTree = "<group>"; };
+		386E313920B736F9000F165C /* libevent.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libevent.a; path = lib/libevent/lib/libevent.a; sourceTree = "<group>"; };
+		386E313A20B736F9000F165C /* libevent_extra.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libevent_extra.a; path = lib/libevent/lib/libevent_extra.a; sourceTree = "<group>"; };
+		386E313B20B736F9000F165C /* libevent_core.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libevent_core.a; path = lib/libevent/lib/libevent_core.a; sourceTree = "<group>"; };
 		388CB2CC208E328B00F2AA96 /* uthash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uthash.h; sourceTree = "<group>"; };
 		388CB2CD208E328B00F2AA96 /* utlist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utlist.h; sourceTree = "<group>"; };
+		38931ED320B8599D00FDD32F /* http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = http.c; sourceTree = "<group>"; };
+		38931ED420B8599D00FDD32F /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = http.h; sourceTree = "<group>"; };
+		38931ED520B8599D00FDD32F /* url.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = url.c; sourceTree = "<group>"; };
+		38931ED620B8599D00FDD32F /* url.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = url.h; sourceTree = "<group>"; };
 		3895BF47205520AD00344AE0 /* bundle1.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; name = bundle1.o; path = usr/lib/bundle1.o; sourceTree = SDKROOT; };
 		389F043620544EDC003F3084 /* xdag */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xdag; sourceTree = BUILT_PRODUCTS_DIR; };
 		38A15E0920544F3E00598EC2 /* crc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crc.h; sourceTree = "<group>"; };
@@ -187,8 +205,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				384A29DE2062194800DD9D3B /* libcrypto.a in Frameworks */,
-				384A29DF2062194800DD9D3B /* libssl.a in Frameworks */,
+				386E313520B736ED000F165C /* libssl.a in Frameworks */,
+				386E313620B736ED000F165C /* libcrypto.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -230,6 +248,17 @@
 				388CB2CD208E328B00F2AA96 /* utlist.h */,
 			);
 			path = uthash;
+			sourceTree = "<group>";
+		};
+		38931ED220B8599D00FDD32F /* http */ = {
+			isa = PBXGroup;
+			children = (
+				38931ED320B8599D00FDD32F /* http.c */,
+				38931ED420B8599D00FDD32F /* http.h */,
+				38931ED520B8599D00FDD32F /* url.c */,
+				38931ED620B8599D00FDD32F /* url.h */,
+			);
+			path = http;
 			sourceTree = "<group>";
 		};
 		389F042D20544EDC003F3084 = {
@@ -422,6 +451,7 @@
 		38A15E4220544F3F00598EC2 /* client */ = {
 			isa = PBXGroup;
 			children = (
+				38931ED220B8599D00FDD32F /* http */,
 				388CB2CB208E328B00F2AA96 /* uthash */,
 				385827A920737CC6009C83CB /* json-rpc */,
 				385827A420737CC6009C83CB /* utils */,
@@ -477,6 +507,18 @@
 		38A15E9E20545CCE00598EC2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				386E313B20B736F9000F165C /* libevent_core.a */,
+				386E313A20B736F9000F165C /* libevent_extra.a */,
+				386E313720B736F9000F165C /* libevent_openssl.a */,
+				386E313820B736F9000F165C /* libevent_pthreads.a */,
+				386E313920B736F9000F165C /* libevent.a */,
+				386E313420B736ED000F165C /* libcrypto.a */,
+				386E313320B736ED000F165C /* libssl.a */,
+				386E312B20B735F5000F165C /* libevent_core.a */,
+				386E312C20B735F6000F165C /* libevent_extra.a */,
+				386E312A20B735F5000F165C /* libevent_openssl.a */,
+				386E312920B735F5000F165C /* libevent_pthreads.a */,
+				386E312D20B735F6000F165C /* libevent.a */,
 				384A29DC2062194700DD9D3B /* libcrypto.a */,
 				384A29DD2062194800DD9D3B /* libssl.a */,
 				38B3951F2056FC04004DD3EA /* libsystem_pthread.tbd */,
@@ -577,8 +619,10 @@
 				38A15E8320544F3F00598EC2 /* dnet_tap.c in Sources */,
 				38A15E9720544F3F00598EC2 /* storage.c in Sources */,
 				38A15E9920544F3F00598EC2 /* terminal.c in Sources */,
+				38931ED820B8599D00FDD32F /* url.c in Sources */,
 				385827B720737CC6009C83CB /* cJSON_Utils.c in Sources */,
 				38A15E9220544F3F00598EC2 /* netdb.c in Sources */,
+				38931ED720B8599D00FDD32F /* http.c in Sources */,
 				38A15E9A20544F3F00598EC2 /* transport.c in Sources */,
 				383256BC206BF099006CAE67 /* pool.c in Sources */,
 				38A15E8A20544F3F00598EC2 /* commands.c in Sources */,
@@ -728,11 +772,13 @@
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_UNUSED_PARAMETER = YES;
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/..";
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/..",
+					"$(PROJECT_DIR)/lib",
+				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SDKROOT)/usr/lib/system/introspection",
-					"$(PROJECT_DIR)/lib",
+					"$(PROJECT_DIR)/lib/**",
 				);
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -761,11 +807,13 @@
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_UNUSED_PARAMETER = YES;
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/..";
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/..",
+					"$(PROJECT_DIR)/lib",
+				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SDKROOT)/usr/lib/system/introspection",
-					"$(PROJECT_DIR)/lib",
+					"$(PROJECT_DIR)/lib/**",
 				);
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
