@@ -1046,7 +1046,9 @@ static int precalculate_payments(uint64_t *hash, int confirmation_index, struct 
 
 static void transfer_payment(struct miner_pool_data *miner, xdag_amount_t payment_sum, struct xdag_field *fields, int payments_per_block, int *field_index)
 {
-	if(!payment_sum) return;
+	if(payment_sum < 5) {   // payment less than 0.000000001 XDAG is ignored
+		return;
+	}
 
 	memcpy(fields[*field_index].data, miner->id.data, sizeof(xdag_hashlow_t));
 	fields[*field_index].amount = payment_sum;
