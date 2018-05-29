@@ -46,6 +46,9 @@
     <Filter Include="client\uthash">
       <UniqueIdentifier>{045ecca6-4308-47a2-bf89-229740ba9751}</UniqueIdentifier>
     </Filter>
+    <Filter Include="client\http">
+      <UniqueIdentifier>{083ad2d2-3218-4c42-9ae3-55fb52fe25bb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\client\address.c">
@@ -170,6 +173,12 @@
     </ClCompile>
     <ClCompile Include="..\..\client\json-rpc\rpc_wrapper.c">
       <Filter>client\json-rpc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\http\url.c">
+      <Filter>client\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\http\http.c">
+      <Filter>client\http</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -355,6 +364,12 @@
     </ClInclude>
     <ClInclude Include="..\..\client\uthash\uthash.h">
       <Filter>client\uthash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\http\http.h">
+      <Filter>client\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\http\url.h">
+      <Filter>client\http</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

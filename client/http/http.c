@@ -7,24 +7,28 @@
 //
 
 #include "http.h"
-#include "url.h"
-#include "../utils/log.h"
 
 #include <signal.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
 
-#include <stdio.h>
-#include <strings.h>
+#if !defined(_WIN32) && !defined(_WIN64)
 #include <errno.h>
-#include <stdbool.h>
-
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif
+
+#include <stdio.h>
+#include <stdint.h>
+
+#include "url.h"
+#include "../utils/log.h"
+#include "../system.h"
+
 
 #if defined(_WIN32) || defined(_WIN64)
 #if defined(_WIN64)
@@ -83,7 +87,7 @@ connection * tcpConnect(const char* h, int port)
 			server.sin_family = AF_INET;
 			server.sin_port = htons(port);
 			server.sin_addr = *((struct in_addr *) host->h_addr);
-			bzero(&(server.sin_zero), 8);
+			memset(&(server.sin_zero), 0, 8);
 			
 			uint32_t timeout = 1000*10;
 			setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
@@ -163,7 +167,7 @@ void tcpWrite(connection *c, char *text)
 // Establish a connection using an SSL layer
 connection *sslConnect(const char* h, int port)
 {
-	int error, sock = 0 ;
+	int sock = 0 ;
 	struct sockaddr_in server;
 	if(!strcmp(h, "any")) {
 		server.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -177,9 +181,9 @@ connection *sslConnect(const char* h, int port)
 			server.sin_family = AF_INET;
 			server.sin_port = htons(port);
 			server.sin_addr = *((struct in_addr *) host->h_addr);
-			bzero(&(server.sin_zero), 8);
+			memset(&(server.sin_zero), 0, 8);
 			
-			error = connect(sock,(struct sockaddr *) &server, sizeof(struct sockaddr));
+			int error = connect(sock,(struct sockaddr *) &server, sizeof(struct sockaddr));
 			if(error == -1)
 			{
 				xdag_err("Connect error, %s", strerror(error));

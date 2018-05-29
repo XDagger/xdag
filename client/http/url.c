@@ -5,23 +5,23 @@
 
 static char *str_hosttype[] = { "host ipv4", "host ipv6", "host domain", NULL };
 
-void parse_query(url_field_t *url, char *query);
+#if defined(_WIN32) || defined(_WIN64)
+static char *strndup(const char *str, int n)
+{
+	char *dst;
+	if (!str) return NULL;
+	if (n < 0) n = strlen(str);
+	if (n == 0) return NULL;
+	if ((dst = (char *)malloc(n + 1)) == NULL)
+	{
+		return NULL;
+	}
 
-//static char *strndup(const char *str, int n)
-//{
-//	char *dst;
-//	if (!str) return NULL;
-//	if (n < 0) n = strlen(str);
-//	if (n == 0) return NULL;
-//	if ((dst = (char *)malloc(n + 1)) == NULL)
-//	{
-//		return NULL;
-//	}
-//
-//	memcpy(dst, str, n);
-//	dst[n] = 0;
-//	return dst;
-//}
+	memcpy(dst, str, n);
+	dst[n] = 0;
+	return dst;
+}
+#endif
 
 static int host_is_ipv4(char *str)
 {
@@ -36,14 +36,9 @@ static int host_is_ipv4(char *str)
 	return 1;
 }
 
-void parse_query(url_field_t *url, char *query)
+static void parse_query(url_field_t *url, char *query)
 {
-	size_t length;
-	int offset;
-	char *chr;
-	length = strlen(query);
-	offset = 0;
-	chr = strchr(query, '=');
+	char *chr = strchr(query, '=');
 	while (chr)
 	{
 		if (url->query)
@@ -70,17 +65,15 @@ void parse_query(url_field_t *url, char *query)
 }
 url_field_t *url_parse(const char *str)
 {
-	const char *pch;
-	char *query;
 	url_field_t *url;
-	query = NULL;
+	char *query = NULL;
 	if ((url = (url_field_t *)malloc(sizeof(url_field_t))) == NULL)
 		return NULL;
 	memset(url, 0, sizeof(url_field_t));
 	if (str && str[0])
 	{
 		url->href = strndup(str, -1);
-		pch = strchr(str, ':');   /* parse schema */
+		const char *pch = strchr(str, ':');   /* parse schema */
 		if (pch && pch[1] == '/' && pch[2] == '/')
 		{
 			url->schema = strndup(str, pch - str);

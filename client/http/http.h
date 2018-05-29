@@ -9,8 +9,6 @@
 #ifndef http_h
 #define http_h
 
-#include <stdio.h>
-
 // simple http get, pass url, and return the content with malloc. Need free returned value.
 extern char *http_get(const char* url);
 
