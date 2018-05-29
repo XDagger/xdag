@@ -59,6 +59,7 @@
 		38B3951A2056DE70004DD3EA /* netdb-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5A20544F3F00598EC2 /* netdb-testnet.txt */; };
 		38B3951B2056DE70004DD3EA /* netdb-white-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5B20544F3F00598EC2 /* netdb-white-testnet.txt */; };
 		38B3951C2056DE70004DD3EA /* netdb-white.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5C20544F3F00598EC2 /* netdb-white.txt */; };
+		4107BDCE20B8868A006B1337 /* libreadline.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4107BDCD20B8868A006B1337 /* libreadline.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -198,6 +199,7 @@
 		38B395172056D68E004DD3EA /* sha256-mb-x86_64-mac.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = "sha256-mb-x86_64-mac.s"; sourceTree = "<group>"; };
 		38B3951D2056FBBA004DD3EA /* libpthread.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libpthread.tbd; path = usr/lib/libpthread.tbd; sourceTree = SDKROOT; };
 		38B3951F2056FC04004DD3EA /* libsystem_pthread.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsystem_pthread.tbd; path = usr/lib/system/introspection/libsystem_pthread.tbd; sourceTree = SDKROOT; };
+		4107BDCD20B8868A006B1337 /* libreadline.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libreadline.a; path = lib/libreadline.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -205,6 +207,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4107BDCE20B8868A006B1337 /* libreadline.a in Frameworks */,
 				386E313520B736ED000F165C /* libssl.a in Frameworks */,
 				386E313620B736ED000F165C /* libcrypto.a in Frameworks */,
 			);
@@ -507,20 +510,9 @@
 		38A15E9E20545CCE00598EC2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				386E313B20B736F9000F165C /* libevent_core.a */,
-				386E313A20B736F9000F165C /* libevent_extra.a */,
-				386E313720B736F9000F165C /* libevent_openssl.a */,
-				386E313820B736F9000F165C /* libevent_pthreads.a */,
-				386E313920B736F9000F165C /* libevent.a */,
+				4107BDCD20B8868A006B1337 /* libreadline.a */,
 				386E313420B736ED000F165C /* libcrypto.a */,
 				386E313320B736ED000F165C /* libssl.a */,
-				386E312B20B735F5000F165C /* libevent_core.a */,
-				386E312C20B735F6000F165C /* libevent_extra.a */,
-				386E312A20B735F5000F165C /* libevent_openssl.a */,
-				386E312920B735F5000F165C /* libevent_pthreads.a */,
-				386E312D20B735F6000F165C /* libevent.a */,
-				384A29DC2062194700DD9D3B /* libcrypto.a */,
-				384A29DD2062194800DD9D3B /* libssl.a */,
 				38B3951F2056FC04004DD3EA /* libsystem_pthread.tbd */,
 				38B3951D2056FBBA004DD3EA /* libpthread.tbd */,
 				3895BF47205520AD00344AE0 /* bundle1.o */,
