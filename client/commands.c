@@ -44,6 +44,7 @@ void printHelp(FILE *out);
 int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
 long double hashrate(xdag_diff_t *diff);
 const char *get_state(void);
+
 void processAccountCommand(char *nextParam, FILE *out);
 void processBalanceCommand(char *nextParam, FILE *out);
 void processBlockCommand(char *nextParam, FILE *out);
@@ -94,6 +95,7 @@ XDAG_COMMAND commands[] = {
 	{ "state"      , xdag_com_state},
 	{ "stats"      , xdag_com_stats},
 	{ "terminate"  , xdag_com_terminate},
+	{ "exit"       , xdag_com_exit},
 	{ "xfer"       ,(xdag_com_func_t)NULL},
 	{ "help"       , xdag_com_help},
 	{ (char *)NULL ,(xdag_com_func_t)NULL}
