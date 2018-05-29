@@ -510,7 +510,7 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 {
 	const xdag_time_t task_time = task->task_time;
 
-	if(conn_data->task_time <= task_time) {
+	if(conn_data->task_time <= task_time) { // At the beginning conn_data->task_time=0. conn_data->task_time > task_time isn't accepted.
 		double diff = ((uint64_t*)hash)[2];
 		int i = task_time & (CONFIRMATIONS_COUNT - 1);	// CONFIRMATION_COUNT-1=15d=1111b, thus it just cut task_time to its 4 least significant bit
 		
@@ -543,16 +543,18 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 					      // like hash[3]=FFFFFFFFFFFFFFFF and hash[2]<=FFFFFFFFFFFFFBFF, in this case we have 46-log(FFFFFFFFFFFFFFFF)=46-19=27.
 					      // At this point diff seems to have a range [46;27], where higher value is higher difficulty.
 		// Adding share for connection
-		if(conn_data->task_time < task_time) {
-			conn_data->task_time = task_time;
+		if(conn_data->task_time < task_time) { // conn_data->task_time will keep old value until pool doesn't accept the share of the task.
+			conn_data->task_time = task_time; // this will prevent to count more share for the same task
 
-			if(conn_data->maxdiff[i] > 0) {
+			if(conn_data->maxdiff[i] > 0) { // avoid first iteration
+		// Each accepted share is the previous share's diff to be added to the total, not the actual one.
 				conn_data->prev_diff += conn_data->maxdiff[i];
 				conn_data->prev_diff_count++;
 			}
 
 			conn_data->maxdiff[i] = diff;
 			conn_data->balance_sent = 0;
+		// share already counted, but we will update the maxdiff so the most difficult share will be counted.
 		} else if(diff > conn_data->maxdiff[i]) {
 			conn_data->maxdiff[i] = diff;
 		}
