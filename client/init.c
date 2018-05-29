@@ -178,11 +178,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	printf("Transport module: ");
 	if (xdag_transport_start(transport_flags, bindto, n_addrports, addrports)) return -1;
 	
-	/* initialize log system */
 	if (xdag_log_init()) return -1;
-	
-	/* initialize json rpc */
-	if(is_rpc && xdag_rpc_service_init(rpc_port)) return -1;
 	
 	if (!is_miner) {
 		xdag_mess("Reading hosts database...");
@@ -194,6 +190,10 @@ int xdag_init(int argc, char **argv, int isGui)
 	if (xdag_wallet_init()) return -1;
 	xdag_mess("Initializing addresses...");
 	if (xdag_address_init()) return -1;
+	if(is_rpc) {
+		xdag_mess("Initializing RPC service...");
+		if(!!xdag_rpc_service_init(rpc_port)) return -1;
+	}
 	xdag_mess("Starting blocks engine...");
 	if (xdag_blocks_start((is_miner ? ~n_mining_threads : n_mining_threads), !!miner_address)) return -1;
 	xdag_mess("Starting pool engine...");
