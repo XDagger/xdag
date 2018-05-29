@@ -25,7 +25,7 @@ extern struct xdag_stats
     uint32_t nhosts, total_nhosts, reserved1, reserved2;
 } g_xdag_stats;
 
-#define HASHRATE_LAST_MAX_TIME	(64 * 4) // numbers of main blocks in about 4H, to calculate the mean hashrate
+#define HASHRATE_LAST_MAX_TIME	(64 * 4) // numbers of main blocks in about 4H, to calculate the pool and network mean hashrate
 
 extern struct xdag_ext_stats
 {
