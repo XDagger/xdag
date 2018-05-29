@@ -36,11 +36,14 @@ void xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount);
 int out_balances(void);
 int xdag_show_state(xdag_hash_t hash);
 
-
 int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
 long double amount2xdags(xdag_amount_t amount);
 xdag_amount_t xdags2amount(const char *str);
 
+void read_command(char* buffer);
+
+#if !defined(_WIN32) && !defined(_WIN64)
 char** xdag_com_completion(const char *, int, int);
+#endif
 
 #endif // !XDAG_COMMANDS_H
