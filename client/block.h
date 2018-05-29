@@ -8,14 +8,15 @@
 #include "hash.h"
 
 enum xdag_field_type {
-	XDAG_FIELD_NONCE,
-	XDAG_FIELD_HEAD,
-	XDAG_FIELD_IN,
-	XDAG_FIELD_OUT,
-	XDAG_FIELD_SIGN_IN,
-	XDAG_FIELD_SIGN_OUT,
-	XDAG_FIELD_PUBLIC_KEY_0,
-	XDAG_FIELD_PUBLIC_KEY_1,
+	XDAG_FIELD_NONCE,        //0
+	XDAG_FIELD_HEAD,         //1
+	XDAG_FIELD_IN,           //2
+	XDAG_FIELD_OUT,          //3
+	XDAG_FIELD_SIGN_IN,      //4
+	XDAG_FIELD_SIGN_OUT,     //5
+	XDAG_FIELD_PUBLIC_KEY_0, //6
+	XDAG_FIELD_PUBLIC_KEY_1, //7
+	XDAG_FIELD_HEAD_TEST     //8
 };
 
 enum xdag_message_type {
