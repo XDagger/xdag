@@ -5,6 +5,7 @@
 
 #include <time.h>
 #include "block.h"
+#include "system.h"
 
 enum xdag_states
 {
@@ -55,6 +56,10 @@ extern char *g_coinname, *g_progname;
 
 //defines if client runs as miner or pool
 extern int g_is_miner;
+
+//Default type of the block header
+//Test network and main network have different types of the block headers, so blocks from different networks are incompatible
+extern enum xdag_field_type g_block_header_type;
 
 extern int xdag_init(int argc, char **argv, int isGui);
 

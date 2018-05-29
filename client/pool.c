@@ -22,6 +22,7 @@
 #include "storage.h"
 #include "transport.h"
 #include "wallet.h"
+#include "system.h"
 #include "utils/log.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
 #include "../dus/programs/dar/source/include/crc.h"
@@ -1120,7 +1121,7 @@ int pay_miners(xdag_time_t time)
 	pthread_mutex_unlock(&g_descriptors_mutex);
 	if(!miners_count) return -1;
 
-	int confirmation_index = time & (CONFIRMATIONS_COUNT - 1);
+	const int confirmation_index = time & (CONFIRMATIONS_COUNT - 1);
 	uint64_t *hash = g_xdag_mined_hashes[confirmation_index];
 	uint64_t *nonce = g_xdag_mined_nonce[confirmation_index];
 
@@ -1135,7 +1136,7 @@ int pay_miners(xdag_time_t time)
 
 	if(!xdag_wallet_default_key(&defkey)) return -5;
 
-	int payments_per_block = (key == defkey ? 12 : 10);
+	const int payments_per_block = (key == defkey ? 12 : 10);
 
 	int64_t pos = xdag_get_block_pos(hash, &time);
 	if(pos < 0) return -6;
@@ -1292,12 +1293,12 @@ int xdag_print_miners(FILE *out, int printOnlyConnections)
 	fprintf(out, "List of miners:\n"
 		" NN  Address for payment to            Status   IP and port            in/out bytes      nopaid shares\n"
 		"------------------------------------------------------------------------------------------------------\n");
-	
-	int count_active = printOnlyConnections ? print_connections(out) : print_miners(out);
+
+	const int count_active = printOnlyConnections ? print_connections(out) : print_miners(out);
 
 	fprintf(out,
 		"------------------------------------------------------------------------------------------------------\n"
-		"Total %d active miners.\n", count_active);
+		"Total %d active {%s}.\n", count_active, printOnlyConnections ? "connections" : "miners");
 
 	return count_active;
 }
