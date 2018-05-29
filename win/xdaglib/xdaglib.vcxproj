@@ -32,6 +32,8 @@
     <ClCompile Include="..\..\client\commands.c" />
     <ClCompile Include="..\..\client\crypt.c" />
     <ClCompile Include="..\..\client\hash.c" />
+    <ClCompile Include="..\..\client\http\http.c" />
+    <ClCompile Include="..\..\client\http\url.c" />
     <ClCompile Include="..\..\client\init.c" />
     <ClCompile Include="..\..\client\json-rpc\cJSON.c" />
     <ClCompile Include="..\..\client\json-rpc\cJSON_Utils.c" />
@@ -75,6 +77,8 @@
     <ClInclude Include="..\..\client\commands.h" />
     <ClInclude Include="..\..\client\crypt.h" />
     <ClInclude Include="..\..\client\hash.h" />
+    <ClInclude Include="..\..\client\http\http.h" />
+    <ClInclude Include="..\..\client\http\url.h" />
     <ClInclude Include="..\..\client\init.h" />
     <ClInclude Include="..\..\client\json-rpc\cJSON.h" />
     <ClInclude Include="..\..\client\json-rpc\cJSON_Utils.h" />

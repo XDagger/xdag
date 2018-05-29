@@ -37,6 +37,7 @@ int g_is_miner = 0;
 static int g_is_pool = 0;
 int g_xdag_run = 0;
 time_t g_xdag_xfer_last = 0;
+enum xdag_field_type g_block_header_type = XDAG_FIELD_HEAD;
 struct xdag_stats g_xdag_stats;
 struct xdag_ext_stats g_xdag_extstats;
 int(*g_xdag_show_state)(const char *state, const char *balance, const char *address) = 0;
@@ -168,6 +169,11 @@ int xdag_init(int argc, char **argv, int isGui)
 			bindto = strdup(str);
 		}
 	}
+
+	if(g_xdag_testnet) {
+		g_block_header_type = XDAG_FIELD_HEAD_TEST; //block header has the different type in the test network
+	}
+
 	memset(&g_xdag_stats, 0, sizeof(g_xdag_stats));
 	memset(&g_xdag_extstats, 0, sizeof(g_xdag_extstats));
 
@@ -203,7 +209,7 @@ int xdag_init(int argc, char **argv, int isGui)
 		if (is_pool || (transport_flags & XDAG_DAEMON) > 0) {
 			xdag_mess("Starting terminal server...");
 			pthread_t th;
-			int err = pthread_create(&th, 0, &terminal_thread, 0);
+			const int err = pthread_create(&th, 0, &terminal_thread, 0);
 			if(err != 0) {
 				printf("create terminal_thread failed, error : %s\n", strerror(err));
 				return -1;
