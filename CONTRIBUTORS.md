@@ -3,9 +3,11 @@ Contributors
 
 Original Author: Daniel Cheatoshin
 
-Current contributors: 
+Current maintainers: 
 * [Evgeniy](https://github.com/jonano614)
-* [Rui Xie](https://github.com/xrdavies)
+* [Frozen](https://github.com/xrdavies)
+
+Contributors:
 * [trueserve](https://github.com/trueserve)
 * [sgaragagghu](https://github.com/sgaragagghu)
 

@@ -4,7 +4,7 @@
 #pragma once
 
 #include "afxwin.h"
-#include "CEditWalletAddr.h"
+#include "CEditWalletAddrMine.h"
 
 #define WM_UPDATE_STATE (WM_USER+1)
 #define ID_TIMER_HASHRATE 100
@@ -22,6 +22,8 @@ public:
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
+	LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+
 
 // Implementation
 protected:
@@ -42,13 +44,13 @@ private:
 	CString _balance;
 	CEdit _balanceEdit;
 	CString _accountAddress;
-	CEditWalletAddr _accountAddressEdit;
+	CEditWalletAddrMine _accountAddressEdit;
 	CString _transferAmount;
 	CString _transferAddress;
 	CString _state;
 	CStatic _stateControl;
 	CEdit _transferAmountEdit;
-	CEdit _transferAddressEdit;
+	CEditWalletAddr _transferAddressEdit;
 	CButton _xferButton;
 
 	afx_msg void OnClickedButtonConnect();
