@@ -22,6 +22,7 @@
 #include "storage.h"
 #include "transport.h"
 #include "wallet.h"
+#include "system.h"
 #include "utils/log.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
 #include "../dus/programs/dar/source/include/crc.h"
@@ -357,19 +358,15 @@ static int open_pool_connection(const char *pool_arg)
 static int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 {
 	connection_list_element *elt;
-	uint32_t count;
-	uint32_t count_accept;
 
 	//firstly we check that total count of connection did not exceed max count of connection
-	LL_COUNT(g_connection_list_head, elt, count);
-	LL_COUNT(g_accept_connection_list_head, elt, count_accept);
-	if(count + count_accept >= g_max_connections_count) {
+	if(g_connections_count >= g_max_connections_count) {
 		xdag_warn("Max connections %d exceed, new connections are not accepted.", g_max_connections_count);
 		return 0;
 	}
 
 	//then we check that count of connections with the same IP address did not exceed the limit
-	count = 0;
+	uint32_t count = 0;
 	LL_FOREACH(g_connection_list_head, elt)
 	{
 		if(elt->connection_data.ip == peeraddr->sin_addr.s_addr) {
@@ -450,8 +447,6 @@ void *pool_net_thread(void *arg)
 		new_connection->connection_data.port = peeraddr.sin_port;
 
 		LL_APPEND(g_accept_connection_list_head, new_connection);
-//		LL_APPEND(g_connection_list_head, new_connection);
-//		rebuild_descriptors_array();
 		++g_connections_count;
 		pthread_mutex_unlock(&g_descriptors_mutex);
 
@@ -1050,9 +1045,11 @@ static int precalculate_payments(uint64_t *hash, int confirmation_index, struct 
 	return data->prev_sum;
 }
 
-static void transfer_payment(struct miner_pool_data *miner, xdag_amount_t payment_sum, struct xdag_field *fields, int fields_count, int *field_index)
+static void transfer_payment(struct miner_pool_data *miner, xdag_amount_t payment_sum, struct xdag_field *fields, int payments_per_block, int *field_index)
 {
-	if(!payment_sum) return;
+	if(payment_sum < 5) {   // payment less than 0.000000001 XDAG is ignored
+		return;
+	}
 
 	memcpy(fields[*field_index].data, miner->id.data, sizeof(xdag_hashlow_t));
 	fields[*field_index].amount = payment_sum;
@@ -1060,14 +1057,14 @@ static void transfer_payment(struct miner_pool_data *miner, xdag_amount_t paymen
 
 	xdag_log_xfer(fields[0].data, fields[*field_index].data, payment_sum);
 
-	if(++*field_index == fields_count) {
+	if(++*field_index == payments_per_block) {
 		xdag_create_block(fields, 1, *field_index - 1, 0, 0, NULL);
 		*field_index = 1;
 		fields[0].amount = 0;
 	}
 }
 
-static void do_payments(uint64_t *hash, int fields_count, struct payment_data *data, double *diff, double *prev_diff)
+static void do_payments(uint64_t *hash, int payments_per_block, struct payment_data *data, double *diff, double *prev_diff)
 {
 	miner_list_element *elt;
 	struct xdag_field fields[12];
@@ -1095,13 +1092,13 @@ static void do_payments(uint64_t *hash, int fields_count, struct payment_data *d
 			payment_sum += data->reward;
 		}
 
-		transfer_payment(miner, payment_sum, fields, fields_count, &field_index);
+		transfer_payment(miner, payment_sum, fields, payments_per_block, &field_index);
 		++index;
 	}
 	pthread_mutex_unlock(&g_descriptors_mutex);
 
 	if(g_fund_miner.state != MINER_UNKNOWN) {
-		transfer_payment(&g_fund_miner, data->fund, fields, fields_count, &field_index);
+		transfer_payment(&g_fund_miner, data->fund, fields, payments_per_block, &field_index);
 	}
 
 	if(field_index > 1) {
@@ -1124,7 +1121,7 @@ int pay_miners(xdag_time_t time)
 	pthread_mutex_unlock(&g_descriptors_mutex);
 	if(!miners_count) return -1;
 
-	int confirmation_index = time & (CONFIRMATIONS_COUNT - 1);
+	const int confirmation_index = time & (CONFIRMATIONS_COUNT - 1);
 	uint64_t *hash = g_xdag_mined_hashes[confirmation_index];
 	uint64_t *nonce = g_xdag_mined_nonce[confirmation_index];
 
@@ -1139,7 +1136,7 @@ int pay_miners(xdag_time_t time)
 
 	if(!xdag_wallet_default_key(&defkey)) return -5;
 
-	int fields_count = (key == defkey ? 12 : 10);
+	const int payments_per_block = (key == defkey ? 12 : 10);
 
 	int64_t pos = xdag_get_block_pos(hash, &time);
 	if(pos < 0) return -6;
@@ -1157,7 +1154,7 @@ int pay_miners(xdag_time_t time)
 		return -9;
 	}
 
-	do_payments(hash, fields_count, &data, diff, prev_diff);
+	do_payments(hash, payments_per_block, &data, diff, prev_diff);
 
 	free(diff);
 
@@ -1296,12 +1293,12 @@ int xdag_print_miners(FILE *out, int printOnlyConnections)
 	fprintf(out, "List of miners:\n"
 		" NN  Address for payment to            Status   IP and port            in/out bytes      nopaid shares\n"
 		"------------------------------------------------------------------------------------------------------\n");
-	
-	int count_active = printOnlyConnections ? print_connections(out) : print_miners(out);
+
+	const int count_active = printOnlyConnections ? print_connections(out) : print_miners(out);
 
 	fprintf(out,
 		"------------------------------------------------------------------------------------------------------\n"
-		"Total %d active miners.\n", count_active);
+		"Total %d active {%s}.\n", count_active, printOnlyConnections ? "connections" : "miners");
 
 	return count_active;
 }

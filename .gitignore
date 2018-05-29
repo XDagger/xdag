@@ -20,3 +20,7 @@ mac/xdag.xcodeproj/project.xcworkspace
 autoscan.log
 *.o
 .dirstamp
+/win/x64/
+/win/xdag/x64/
+/win/xdaglib/x64/
+/win/xdagwallet/x64/

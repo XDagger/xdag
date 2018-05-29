@@ -61,6 +61,8 @@ sources = \
 	./json-rpc/rpc_procedures.c	\
 	./json-rpc/rpc_service.c		\
 	./json-rpc/rpc_wrapper.c		\
+	./http/url.c				\
+	./http/http.c				\
 
 
 headers = \
@@ -110,6 +112,8 @@ headers = \
 	./json-rpc/rpc_procedures.h	\
 	./json-rpc/rpc_service.h		\
 	./json-rpc/rpc_wrapper.h		\
+	./http/url.h					\
+	./http/http.h					\
 
 
 
