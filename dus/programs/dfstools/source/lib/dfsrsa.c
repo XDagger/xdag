@@ -119,12 +119,16 @@ static int dfsrsa_getlen(dfsrsa_t *num, int len) {
 	return len + 1;
 }
 
-/* сравнивает два длинных числа и возвращает -1, 0, 1
+/* This function will compare two array with amount <len> of elements dfsrsa_t
+   starting from the most significative element.
+   left < right -1 
+   equal 	 0
+   left > right  1
 */
-int dfsrsa_cmp(dfsrsa_t *left, dfsrsa_t *right, int len) {
-	left += len, right += len;
-	while (len-- && *--left == *--right);
-	if (len < 0) return 0;
+int dfsrsa_cmp(dfsrsa_t *left, dfsrsa_t *right, int len) {  // dfsrsa_t is just uint32 in xdag
+	left += len, right += len; 		// set pointers to the most significants
+	while (len-- && *--left == *--right);   // until ends elements or find different elements of same significant level
+	if (len < 0) return 0;			// equality case!
 	else if (*left < *right) return -1;
 	else return 1;
 }
