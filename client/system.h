@@ -20,6 +20,7 @@ typedef struct {
 } xdag_diff_t;
 
 #define xdag_diff_max      { -1, -1, -1, -1 }
+// just check if l > r (l and r are 4 element array of 32bit, (so hashes))
 #define xdag_diff_gt(l, r) (dfsrsa_cmp((l).num, (r).num, 4) > 0)
 #define xdag_diff_args(d)  (unsigned long long)(*(uint64_t*)&d.num[2]), (unsigned long long)(*(uint64_t*)&d.num[0])
 #define xdag_diff_shr32(p) ((p)->num[0] = (p)->num[1], (p)->num[1] = (p)->num[2], (p)->num[2] = (p)->num[3], (p)->num[3] = 0)
