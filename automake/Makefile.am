@@ -51,11 +51,12 @@ sources = \
 	$(dar)/lib/crc_c.c                              \
 	$(utils)/log.c                                  \
 	$(utils)/utils.c                                \
-    $(jsonrpc)/cJSON.c                              \
-    $(jsonrpc)/cJSON_Utils.c                        \
-    $(jsonrpc)/rpc_procedures.c                     \
-    $(jsonrpc)/rpc_service.c                        \
-    $(jsonrpc)/rpc_wrapper.c
+	$(utils)/linenoise.c                            \
+	$(jsonrpc)/cJSON.c                              \
+	$(jsonrpc)/cJSON_Utils.c                        \
+	$(jsonrpc)/rpc_procedures.c                     \
+	$(jsonrpc)/rpc_service.c                        \
+	$(jsonrpc)/rpc_wrapper.c
 
 
 headers = \
@@ -100,11 +101,12 @@ headers = \
 	$(ldusinc)/rbtree.h                             \
 	$(utils)/log.h                                  \
 	$(utils)/utils.h                                \
-    $(jsonrpc)/cJSON.h                              \
-    $(jsonrpc)/cJSON_Utils.h                        \
-    $(jsonrpc)/rpc_procedures.h                     \
-    $(jsonrpc)/rpc_service.h                        \
-    $(jsonrpc)/rpc_wrapper.h
+	$(utils)/linenoise.h                            \
+	$(jsonrpc)/cJSON.h                              \
+	$(jsonrpc)/cJSON_Utils.h                        \
+	$(jsonrpc)/rpc_procedures.h                     \
+	$(jsonrpc)/rpc_service.h                        \
+	$(jsonrpc)/rpc_wrapper.h
 
 #program
 bin_PROGRAMS = xdag
@@ -125,7 +127,7 @@ _INCLUDES =                                         \
 	-I$(dar)                                        \
 	-I$(ldusinc)                                    \
 	-I$(utils)                                      \
-    -I$(jsonrpc)
+	-I$(jsonrpc)
 
 xdag_SOURCES = $(sources)
 #xdag_LDADD = -lpthread -lcrypto -lssl -lm
