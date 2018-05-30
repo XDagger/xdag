@@ -521,7 +521,7 @@ static long double diff2log(xdag_diff_t diff)
 long double hashrate(xdag_diff_t *diff)
 {
 	// just doing mean of last HASHRATE_LAST_MAX_TIME
-	// hash difficulty in log form
+	// difficulty in log form
 	long double sum = 0;
 	for(int i = 0; i < HASHRATE_LAST_MAX_TIME; ++i) {
 		sum += diff2log(diff[i]); // return log(diff*2^64)
