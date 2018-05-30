@@ -315,12 +315,22 @@ static inline void hash_for_signature(struct xdag_block b[2], const struct xdag_
 					xdag_log_array(b, sizeof(struct xdag_block) + sizeof(xdag_hash_t) + 1));
 }
 
+
 static inline xdag_diff_t hash_difficulty(xdag_hash_t hash)
 {
-	xdag_diff_t res = ((xdag_diff_t*)hash)[1], max = xdag_diff_max;
-
+	// Let's explain next function with a draw.
+	// consider [- - - -] = unint64 [--] = uint32, leftmost [--]/[- - - -] is the start location of the array
+	// [- - - -] [- - - -] [- - - -] [- - - -]  HASH - uint64, 4elements array
+	//           [--] [--] [--] [--]            DIFF - uint32, 4elements array
+	// we took the middle of the hash!
+	xdag_diff_t res = ((xdag_diff_t*)hash)[1], max = xdag_diff_max; // max is 999...9 (32b*4elements)
+	
+	// Let's explain next function with a draw.
+	//         [--][--][--][00]    ate least significant uint32 and pushed zeros
 	xdag_diff_shr32(&res);
 	
+	// simple division, it's the ratio between max and res, (not the contrary)
+	// thus we will have higher diff with lower hash!
 	return xdag_diff_div(max, res);
 }
 
@@ -476,7 +486,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	keysCount = j;
-	tmpNodeBlock.difficulty = diff0 = hash_difficulty(tmpNodeBlock.hash);
+	tmpNodeBlock.difficulty = diff0 = hash_difficulty(tmpNodeBlock.hash); // hash to difficulty
 	sum_out += newBlock->field[0].amount;
 	tmpNodeBlock.fee = newBlock->field[0].amount;
 
@@ -652,17 +662,26 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	
 	log_block((tmpNodeBlock.flags & BI_OURS ? "Good +" : "Good  "), tmpNodeBlock.hash, tmpNodeBlock.time, tmpNodeBlock.storage_pos);
 	
+	// MAIN_TIME grow by 1 each 64s, it should represent the number of main blocks since start,
+	// so {& (HASHRATE_LAST_MAX_TIME - 1)} will bound it to HASHRATE_LAST_MAX_TIME values,
+	// that is our index to store the hash.
 	i = MAIN_TIME(nodeBlock->time) & (HASHRATE_LAST_MAX_TIME - 1);
+	// each new main block it will re-init memory.
 	if (MAIN_TIME(nodeBlock->time) > MAIN_TIME(g_xdag_extstats.hashrate_last_time)) {
 		memset(g_xdag_extstats.hashrate_total + i, 0, sizeof(xdag_diff_t));
 		memset(g_xdag_extstats.hashrate_ours + i, 0, sizeof(xdag_diff_t));
 		g_xdag_extstats.hashrate_last_time = nodeBlock->time;
 	}
 	
-	if (xdag_diff_gt(diff0, g_xdag_extstats.hashrate_total[i])) {
+	// it will take the highest difficulty main block for this MAIN_TIME 
+	// (thus even in the case we receive the same main block but with highest difficulty)
+	if (xdag_diff_gt(diff0, g_xdag_extstats.hashrate_total[i])) { // data type is full hash here, 4*32bit
 		g_xdag_extstats.hashrate_total[i] = diff0;
 	}
 	
+	// {& BI_OURS} if the main block is our, will count for our pool hashrate
+	//TODO check if this block of code is entered at least one time for each MAIN_TIME
+	// to improve hashrate calculation (?).
 	if (tmpNodeBlock.flags & BI_OURS && xdag_diff_gt(diff0, g_xdag_extstats.hashrate_ours[i])) {
 		g_xdag_extstats.hashrate_ours[i] = diff0;
 	}
