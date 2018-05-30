@@ -366,7 +366,8 @@ err:
 	pthread_mutex_lock(&g_miner_mutex);
 
 	if(g_socket != INVALID_SOCKET) {
-		close(g_socket); g_socket = INVALID_SOCKET;
+		close(g_socket); 
+		g_socket = INVALID_SOCKET;
 	}
 
 	pthread_mutex_unlock(&g_miner_mutex);

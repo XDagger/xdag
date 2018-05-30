@@ -89,7 +89,7 @@ struct connection_pool_data {
 	uint8_t block_size;
 	struct pollfd connection_descriptor;
 	struct miner_pool_data *miner;
-	xdag_amount_t balance;                  // allows to track and refresh wallet balance
+	time_t balance_refreshed_time;
 	uint32_t shares_count;
 };
 
@@ -766,20 +766,19 @@ static int send_data_to_connection(connection_list_element *connection, int *pro
 
 	uint64_t task_index = g_xdag_pool_task_index;
 	struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
+	time_t current_time = time(0);
 
 	if(conn_data->task_index < task_index) {
 		conn_data->task_index = task_index;
 		conn_data->shares_count = 0;
 		fields_count = 2;
 		memcpy(data, task->task, fields_count * sizeof(struct xdag_field));
-	} else if(conn_data->miner && time(0) >= (conn_data->task_time << 6) + 4) {
-		const xdag_amount_t actual_balance = xdag_get_balance(data[0].data);
-		if(actual_balance != conn_data->balance) {
-			conn_data->balance = actual_balance;
-			memcpy(data[0].data, conn_data->miner->id.data, sizeof(xdag_hash_t));
-			data[0].amount = actual_balance;
-			fields_count = 1;
-		}
+	} else if(conn_data->miner && current_time - conn_data->balance_refreshed_time >= 10) {  //refresh balance each 10 seconds
+		//TODO: optimize refreshing of balance
+		conn_data->balance_refreshed_time = current_time;
+		memcpy(data[0].data, conn_data->miner->id.data, sizeof(xdag_hash_t));
+		data[0].amount = xdag_get_balance(data[0].data);
+		fields_count = 1;
 	}
 
 	if(fields_count) {
@@ -1299,7 +1298,7 @@ int xdag_print_miners(FILE *out, int printOnlyConnections)
 
 	fprintf(out,
 		"------------------------------------------------------------------------------------------------------\n"
-		"Total %d active {%s}.\n", count_active, printOnlyConnections ? "connections" : "miners");
+		"Total %d active %s.\n", count_active, printOnlyConnections ? "connections" : "miners");
 
 	return count_active;
 }
