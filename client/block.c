@@ -315,10 +315,18 @@ static inline void hash_for_signature(struct xdag_block b[2], const struct xdag_
 					xdag_log_array(b, sizeof(struct xdag_block) + sizeof(xdag_hash_t) + 1));
 }
 
+
 static inline xdag_diff_t hash_difficulty(xdag_hash_t hash)
 {
-	xdag_diff_t res = ((xdag_diff_t*)hash)[1], max = xdag_diff_max;
-
+	// Let's explain next function with a draw.
+	// consider [- - - -] = unint64 [--] = uint32, leftmost [--]/[- - - -] is the start location of the array
+	// [- - - -] [- - - -] [- - - -] [- - - -]  HASH - uint64, 4elements array
+	//           [--] [--] [--] [--]            DIFF - uint32, 4elements array
+	// we took the middle of the hash!
+	xdag_diff_t res = ((xdag_diff_t*)hash)[1], max = xdag_diff_max; // max is 999...9 (32b*4elements)
+	
+	// Let's explain next function with a draw.
+	//         [--][--][--][00]    ate least significant uint32 and pushed zeros
 	xdag_diff_shr32(&res);
 	
 	return xdag_diff_div(max, res);
@@ -476,7 +484,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	keysCount = j;
-	tmpNodeBlock.difficulty = diff0 = hash_difficulty(tmpNodeBlock.hash);
+	tmpNodeBlock.difficulty = diff0 = hash_difficulty(tmpNodeBlock.hash); // hash to difficulty
 	sum_out += newBlock->field[0].amount;
 	tmpNodeBlock.fee = newBlock->field[0].amount;
 
