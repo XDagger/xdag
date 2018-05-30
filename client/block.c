@@ -670,7 +670,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 	
 	// {& BI_OURS} if the main block is our, will count for our pool hashrate
-	// to check if this block is entered at least one time for each MAIN_TIME
+	//TODO check if this block of code is entered at least one time for each MAIN_TIME
 	// to improve hashrate calculation.
 	if (tmpNodeBlock.flags & BI_OURS && xdag_diff_gt(diff0, g_xdag_extstats.hashrate_ours[i])) {
 		g_xdag_extstats.hashrate_ours[i] = diff0;
