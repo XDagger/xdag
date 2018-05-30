@@ -50,10 +50,7 @@ int terminal(void)
 	char cmd[XDAG_COMMAND_MAX];
 	char cmd2[XDAG_COMMAND_MAX];
 
-#if !defined(_WIN32) && !defined(_WIN64)
-	rl_readline_name = "xdag";
-	rl_attempted_completion_function = xdag_com_completion;
-#endif
+	xdag_init_commands();
 
 	while(1) {
 		int ispwd = 0, c = 0;
