@@ -508,18 +508,28 @@ static long double diff2log(xdag_diff_t diff)
 	xdag_diff_shr32(&diff);
 	xdag_diff_shr32(&diff);
 	if(xdag_diff_to64(diff)) {
+		// [actual] diff * 2^64 ,probably to not lose precision after log, and
+		// diff * 2^64 >> diff's lower 64b (since its max value is 2^64!)
+		// diff's lower 64b will be just "dust" in res after the following line.
 		res += ldexpl((long double)xdag_diff_to64(diff), 64);
 	}
+	// (clearly log(x) is not defined for 0)
+	// it will switch in logarithmic form to avoid overflow in function [long double hashrate(xdag_diff_t *)]
 	return (res > 0 ? logl(res) : 0);
 }
 
 long double hashrate(xdag_diff_t *diff)
 {
+	// just doing mean of last HASHRATE_LAST_MAX_TIME
+	// hash difficulty in log form
 	long double sum = 0;
 	for(int i = 0; i < HASHRATE_LAST_MAX_TIME; ++i) {
-		sum += diff2log(diff[i]);
+		sum += diff2log(diff[i]); // return log(diff*2^64)
 	}
-	sum /= HASHRATE_LAST_MAX_TIME;
+	sum /= HASHRATE_LAST_MAX_TIME; // E(log((diff_i)*2^64))
+	// First expl: expl(E(log((diff_i)*2^64))) =(easy to show)= E(expl(log((diff_i)*2^64))) =
+	// = E((diff_i)*2^64). Second ldexpl: E((diff_i)*2^64)*2^-58 = E((diff_i)*2^6)
+	// Eventually it returns just the mean of [ diff's lower64b + ( diff's higher 64b ) * 2^6 ]
 	return ldexpl(expl(sum), -58);
 }
 
