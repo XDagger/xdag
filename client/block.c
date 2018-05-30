@@ -663,7 +663,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		g_xdag_extstats.hashrate_last_time = nodeBlock->time;
 	}
 	
-	// it will take the highest difficulty main block hash for this MAIN_TIME 
+	// it will take the highest difficulty main block for this MAIN_TIME 
 	// (thus even in the case we receive the same main block but with highest difficulty)
 	if (xdag_diff_gt(diff0, g_xdag_extstats.hashrate_total[i])) { // data type is full hash here, 4*32bit
 		g_xdag_extstats.hashrate_total[i] = diff0;
@@ -671,7 +671,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	
 	// {& BI_OURS} if the main block is our, will count for our pool hashrate
 	//TODO check if this block of code is entered at least one time for each MAIN_TIME
-	// to improve hashrate calculation.
+	// to improve hashrate calculation (?).
 	if (tmpNodeBlock.flags & BI_OURS && xdag_diff_gt(diff0, g_xdag_extstats.hashrate_ours[i])) {
 		g_xdag_extstats.hashrate_ours[i] = diff0;
 	}
