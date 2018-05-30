@@ -329,6 +329,8 @@ static inline xdag_diff_t hash_difficulty(xdag_hash_t hash)
 	//         [--][--][--][00]    ate least significant uint32 and pushed zeros
 	xdag_diff_shr32(&res);
 	
+	// simple division, it's the ratio between max and res, (not the contrary)
+	// thus we will have higher diff with lower hash!
 	return xdag_diff_div(max, res);
 }
 
