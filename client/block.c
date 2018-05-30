@@ -652,17 +652,26 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	
 	log_block((tmpNodeBlock.flags & BI_OURS ? "Good +" : "Good  "), tmpNodeBlock.hash, tmpNodeBlock.time, tmpNodeBlock.storage_pos);
 	
+	// MAIN_TIME grow by 1 each 64s, it should represent the number of main blocks since start,
+	// so {& (HASHRATE_LAST_MAX_TIME - 1)} will bound it to HASHRATE_LAST_MAX_TIME values,
+	// that is our index to store the hash.
 	i = MAIN_TIME(nodeBlock->time) & (HASHRATE_LAST_MAX_TIME - 1);
+	// each new main block it will re-init memory.
 	if (MAIN_TIME(nodeBlock->time) > MAIN_TIME(g_xdag_extstats.hashrate_last_time)) {
 		memset(g_xdag_extstats.hashrate_total + i, 0, sizeof(xdag_diff_t));
 		memset(g_xdag_extstats.hashrate_ours + i, 0, sizeof(xdag_diff_t));
 		g_xdag_extstats.hashrate_last_time = nodeBlock->time;
 	}
 	
-	if (xdag_diff_gt(diff0, g_xdag_extstats.hashrate_total[i])) {
+	// it will take the highest difficulty main block hash for this MAIN_TIME 
+	// (thus even in the case we receive the same main block but with highest difficulty)
+	if (xdag_diff_gt(diff0, g_xdag_extstats.hashrate_total[i])) { // data type is full hash here, 4*32bit
 		g_xdag_extstats.hashrate_total[i] = diff0;
 	}
 	
+	// {& BI_OURS} if the main block is our, will count for our pool hashrate
+	// to check if this block is entered at least one time for each MAIN_TIME
+	// to improve hashrate calculation.
 	if (tmpNodeBlock.flags & BI_OURS && xdag_diff_gt(diff0, g_xdag_extstats.hashrate_ours[i])) {
 		g_xdag_extstats.hashrate_ours[i] = diff0;
 	}
