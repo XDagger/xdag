@@ -529,7 +529,7 @@ long double hashrate(xdag_diff_t *diff)
 	sum /= HASHRATE_LAST_MAX_TIME; // E(log((diff_i)*2^64))
 	// First expl: expl(E(log((diff_i)*2^64))) =(easy to show)= E(expl(log((diff_i)*2^64))) =
 	// = E((diff_i)*2^64). Second ldexpl: E((diff_i)*2^64)*2^-58 = E((diff_i)*2^6)
-	// Eventually it returns just the mean of [ diff's lower64b + ( diff's higher 64b ) * 2^6 ]
+	// Eventually it returns just the mean of [((diff's lower64b)*2^-58)+(diff's higher 64b)*2^6]
 	return ldexpl(expl(sum), -58);
 }
 
