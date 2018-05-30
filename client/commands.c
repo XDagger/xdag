@@ -344,7 +344,10 @@ void processLastBlocksCommand(char *nextParam, FILE *out)
 
 static long double diff2log(xdag_diff_t diff)
 {
+	// it takes the 64 least significant bit
 	long double res = (long double)xdag_diff_to64(diff);
+	// eating two times the least significant 32 bit, so in diff will remain the 64 most significant bit
+	// (it is pushing zeros from the left)
 	xdag_diff_shr32(&diff);
 	xdag_diff_shr32(&diff);
 	if(xdag_diff_to64(diff)) {
