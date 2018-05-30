@@ -476,6 +476,18 @@ static void abFree(struct abuf *ab) {
     free(ab->b);
 }
 
+// Function declarations
+void refreshShowHints(struct abuf *ab, struct linenoiseState *l, int plen);
+int linenoiseEditInsert(struct linenoiseState *l, char c);
+void linenoiseEditMoveLeft(struct linenoiseState *l);
+void linenoiseEditMoveRight(struct linenoiseState *l);
+void linenoiseEditMoveHome(struct linenoiseState *l);
+void linenoiseEditMoveEnd(struct linenoiseState *l);
+void linenoiseEditHistoryNext(struct linenoiseState *l, int dir);
+void linenoiseEditDelete(struct linenoiseState *l);
+void linenoiseEditBackspace(struct linenoiseState *l);
+void linenoiseEditDeletePrevWord(struct linenoiseState *l);
+
 /* Helper of refreshSingleLine() and refreshMultiLine() to show hints
  * to the right of the prompt. */
 void refreshShowHints(struct abuf *ab, struct linenoiseState *l, int plen) {
