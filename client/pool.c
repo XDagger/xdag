@@ -534,7 +534,7 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 		// At this point, diff, seems to be a condensate approximated representation 
 		// of the 256 bit number hash[3] || hash[2] || hash[1] || hash[0].
 
-		diff = ldexp(diff, -64);
+		diff = ldexp(diff, -64);				/********THE BELOW COMMENT IS WRONG********/
 		diff += ((uint64_t*)hash)[3]; // Since diff is unsigned, diff < 1 implies diff=0 and log(diff) function is not defined for diff=0, it is needed to eliminate
 						  // the diff=0 case (if(diff < 1) diff = 1). The "most difficult" hash sent by miner implies diff=1 (since this is the case of hash[3] is 0) 
 		if(diff < 1) diff = 1;	      // and log(1)=0, thus maximum diff value, at this point, is 46. The "easiest" hash, instead, would lay on
