@@ -661,7 +661,7 @@ static int share_can_be_accepted(struct miner_pool_data *miner, xdag_hash_t shar
 	return 1;
 }
 
-static int recieve_data_from_connection(connection_list_element *connection)
+static int receive_data_from_connection(connection_list_element *connection)
 {
 #if _DEBUG
 	int ip = connection->connection_data.ip;
@@ -857,7 +857,7 @@ void *pool_main_thread(void *arg)
 
 			if(p->revents & POLLIN) {
 				processed = 1;
-				if(!recieve_data_from_connection(elt)) {
+				if(!receive_data_from_connection(elt)) {
 					continue;
 				}
 			}
