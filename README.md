@@ -18,7 +18,6 @@ Copyright (C) 2018  Marco Scarlino <marco.scarlino@students-live.uniroma2.it>.
 Donations:
 ----------
 _For my comments (sgaragagghu):_                               
-BTC:          1sgara1W4Q37t5K1uhCdfJU17N1Z6odzf                                                 
 ETH:          0x948Ff08e447e0a9F1e14f630E74b1D2a0B852dDA                                         
 XDAG:         X8ly22h7XtKwemVDCFwQhQiNgm7oQkmB
 
