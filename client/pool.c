@@ -546,8 +546,10 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 		if(conn_data->task_time < task_time) { // conn_data->task_time will keep old value until pool doesn't accept the share of the task.
 			conn_data->task_time = task_time; // this will prevent to count more share for the same task, cannot join this block a new time for same task.
 
-			if(conn_data->maxdiff[i] > 0) { // avoid first iteration
-				// Each accepted share is the previous share's diff to be added to the total, not the actual one.
+			// Avoid to rewrite maxdiff[i] with a new value if there are still the old one unpaid
+			// index i are just about 20, and it is chosen in a pseudo-random way, so it may happen that
+			// you take a i for which maxdiff isn't clean.
+			if(conn_data->maxdiff[i] > 0) { 
 				conn_data->prev_diff += conn_data->maxdiff[i];
 				conn_data->prev_diff_count++;
 			}
