@@ -13,6 +13,9 @@
 #include "netdb.h"
 #include "memory.h"
 #include "crypt.h"
+#if !defined(_WIN32) && !defined(_WIN64)
+#include "utils/linenoise.h"
+#endif
 
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <unistd.h>
@@ -215,7 +218,6 @@ int xdag_command(char *cmd, FILE *out)
 	uint32_t pwd[4];
 	char *nextParam;
 	int ispwd = 0;
-	XDAG_COMMAND* command;
 
 	cmd = strtok_r(cmd, " \t\r\n", &nextParam);
 	if(!cmd) return 0;
@@ -224,7 +226,7 @@ int xdag_command(char *cmd, FILE *out)
 		cmd = strtok_r(0, " \t\r\n", &nextParam);
 	}
 
-	command = find_xdag_command(cmd);
+	XDAG_COMMAND *command = find_xdag_command(cmd);
 
 	if(!command) {
 		fprintf(out, "Illegal command.\n");
@@ -232,7 +234,7 @@ int xdag_command(char *cmd, FILE *out)
 		if(!strcmp(command->name, "xfer")) {
 			processXferCommand(nextParam, out, ispwd, pwd);
 		} else {
-			return ((*(command->func)) (nextParam, out));
+			return ((*(command->func))(nextParam, out));
 		}
 	}
 	return 0;
@@ -780,12 +782,13 @@ double xdagGetHashRate(void)
 }
 
 int read_command(char *cmd)
-{	
+{
+#if !defined(_WIN32) && !defined(_WIN64)
 	char* line = linenoise("xdag> ");
 	if(line == NULL) return 0;
 	
 	if(strlen(line) > XDAG_COMMAND_MAX) {
-		printf("exceed max length");
+		printf("exceed max length\n");
 		strncpy(cmd, line, XDAG_COMMAND_MAX - 1);
 		cmd[XDAG_COMMAND_MAX-1] = '\0';
 	} else {
@@ -797,22 +800,31 @@ int read_command(char *cmd)
 		linenoiseHistoryAdd(cmd);
 		linenoiseHistorySave(COMMAND_HISTORY);
 	}
-	
+#else
+	printf("%s> ", g_progname);
+	fflush(stdout);
+	fgets(cmd, XDAG_COMMAND_MAX, stdin);
+#endif
+
 	return 0;
 }
 
-void xdag_init_commands(void)
-{
-	linenoiseSetCompletionCallback(xdag_com_completion); //set completion
-	linenoiseHistorySetMaxLen(50); //set max line for history
-	linenoiseHistoryLoad(COMMAND_HISTORY); //load history
-}
-
-void xdag_com_completion(const char *buf, linenoiseCompletions *lc)
+#if !defined(_WIN32) && !defined(_WIN64)
+static void xdag_com_completion(const char *buf, linenoiseCompletions *lc)
 {
 	for(int index = 0; commands[index].name; index++) {
 		if(!strncmp(buf, commands[index].name, strlen(buf))) {
 			linenoiseAddCompletion(lc, commands[index].name);
 		}
 	}
+}
+#endif
+
+void xdag_init_commands(void)
+{
+#if !defined(_WIN32) && !defined(_WIN64)
+	linenoiseSetCompletionCallback(xdag_com_completion); //set completion
+	linenoiseHistorySetMaxLen(50); //set max line for history
+	linenoiseHistoryLoad(COMMAND_HISTORY); //load history
+#endif
 }
