@@ -318,11 +318,12 @@ static inline void hash_for_signature(struct xdag_block b[2], const struct xdag_
 
 static inline xdag_diff_t hash_difficulty(xdag_hash_t hash)
 {
+	/************ IT DOESN'T MAKE SENSE, TO REVIEW****************** /
 	// Let's explain next function with a draw.
 	// consider [- - - -] = unint64 [--] = uint32, leftmost [--]/[- - - -] is the start location of the array
 	// [- - - -] [- - - -] [- - - -] [- - - -]  HASH - uint64, 4elements array
-	//           [--] [--] [--] [--]            DIFF - uint32, 4elements array
-	// we took the middle of the hash!
+	//      [--] [--] [--] [--]                 DIFF - uint32, 4elements array
+	// we took the highest significant part of the hash!
 	xdag_diff_t res = ((xdag_diff_t*)hash)[1], max = xdag_diff_max; // max is 999...9 (32b*4elements)
 	
 	// Let's explain next function with a draw.
