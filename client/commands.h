@@ -3,6 +3,7 @@
 
 #include <time.h>
 #include "block.h"
+#include "utils/linenoise.h"
 
 #define XDAG_COMMAND_MAX	0x1000
 
@@ -36,11 +37,13 @@ void xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount);
 int out_balances(void);
 int xdag_show_state(xdag_hash_t hash);
 
-
 int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
 long double amount2xdags(xdag_amount_t amount);
 xdag_amount_t xdags2amount(const char *str);
 
-char** xdag_com_completion(const char *, int, int);
+int read_command(char* cmd);
+
+void xdag_init_commands(void);
+void xdag_com_completion(const char *buf, linenoiseCompletions *lc);
 
 #endif // !XDAG_COMMANDS_H

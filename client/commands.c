@@ -3,10 +3,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <ctype.h>
-#if !defined(_WIN32) && !defined(_WIN64)
-#include <readline/readline.h>
-#include <readline/history.h>
-#endif
 #include "init.h"
 #include "address.h"
 #include "wallet.h"
@@ -17,11 +13,13 @@
 #include "netdb.h"
 #include "memory.h"
 #include "crypt.h"
+
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <unistd.h>
 #endif
 
 #define Nfields(d) (2 + d->fieldsCount + 3 * d->keysCount + 2 * d->outsig)
+#define COMMAND_HISTORY ".cmd.history"
 
 struct account_callback_data {
 	FILE *out;
@@ -35,12 +33,11 @@ struct out_balances_data {
 
 typedef int (*xdag_com_func_t)(char*, FILE *);
 typedef struct {
-	char *name;                  /* User printable name of the function. */
-	xdag_com_func_t func;        /* Function to call to do the job.      */
+	char *name;				/* command name */
+	xdag_com_func_t func;	/* command function */
 } XDAG_COMMAND;
 
 // Function declarations
-void printHelp(FILE *out);
 int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
 long double hashrate(xdag_diff_t *diff);
 const char *get_state(void);
@@ -58,6 +55,7 @@ void processExitCommand(void);
 void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd);
 void processLastBlocksCommand(char *nextParam, FILE *out);
 void processMinersCommand(char *nextParam, FILE *out);
+void processHelpCommand(FILE *out);
 
 int xdag_com_account(char *, FILE*);
 int xdag_com_balance(char *, FILE*);
@@ -69,7 +67,6 @@ int xdag_com_mining(char *, FILE*);
 int xdag_com_net(char *, FILE*);
 int xdag_com_pool(char *, FILE*);
 int xdag_com_miners(char *, FILE*);
-int xdag_com_xfer(char *, FILE*);
 int xdag_com_stats(char *, FILE*);
 int xdag_com_state(char *, FILE*);
 int xdag_com_help(char *, FILE*);
@@ -177,72 +174,39 @@ int xdag_com_exit(char * args, FILE* out) {
 }
 
 int xdag_com_help(char *args, FILE* out) {
-	printHelp(out);
+	processHelpCommand(out);
 	return 0;
 }
 
-char ** xdag_com_completion(const char *text, int start, int end) {
-	char **matches = (char **)NULL;;
-	if (start == 0)
-		matches = rl_completion_matches(text, xdag_com_generator);
-	return (matches);
-}
-
-char* xdag_com_generator(const char* text, int state) {
-	static int list_index, len;
-	char *name;
-	if (!state) {
-		list_index = 0;
-		len = strlen(text);
-	}
-    
-	while ((name = commands[list_index].name)) {
-		list_index++;
-		if (strncmp(name, text, len) == 0)
-			return (strdup(name));
-	}
-	return ((char *)NULL);
-}
-
 XDAG_COMMAND* find_xdag_command(char *name) {
-	int i;
-	for (i = 0; commands[i].name; i++)
-	if (strcmp(name, commands[i].name) == 0)
-		return (&commands[i]);
-	return ((XDAG_COMMAND *)NULL);
+	for(int i = 0; commands[i].name; i++) {
+		if(strcmp(name, commands[i].name) == 0) {
+			return (&commands[i]);
+		}
+	}
+	return (XDAG_COMMAND *)NULL;
 }
 
 void startCommandProcessing(int transportFlags)
 {
 	char cmd[XDAG_COMMAND_MAX];
 	if(!(transportFlags & XDAG_DAEMON)) printf("Type command, help for example.\n");
-    
-#if !defined(_WIN32) && !defined(_WIN64)
-	rl_readline_name = "xdag";
-	rl_attempted_completion_function = xdag_com_completion;
-#endif
-	for (;;) {
+
+	xdag_init_commands();
+	
+	for(;;) {
 		if(transportFlags & XDAG_DAEMON) {
 			sleep(100);
-		} else {
-#if !defined(_WIN32) && !defined(_WIN64)
-			char * pcmd = NULL;
-			pcmd = readline("xdag> ");
-			add_history(pcmd);
-			strcpy(cmd, pcmd);
-			free(pcmd);
-#else
-			printf("%s> ", g_progname);
-			fflush(stdout);
-			fgets(cmd, XDAG_COMMAND_MAX, stdin);
-#endif
-			if ( strlen(cmd)>0 ){
+		}
+		else {
+			read_command(cmd);
+			if(strlen(cmd) > 0) {
 				int ret = xdag_command(cmd, stdout);
 				if(ret < 0) {
 					break;
 				}
 			}
-        	}
+		}
 	}
 }
 
@@ -252,24 +216,24 @@ int xdag_command(char *cmd, FILE *out)
 	char *nextParam;
 	int ispwd = 0;
 	XDAG_COMMAND* command;
-    
+
 	cmd = strtok_r(cmd, " \t\r\n", &nextParam);
 	if(!cmd) return 0;
 	if(sscanf(cmd, "pwd=%8x%8x%8x%8x", pwd, pwd + 1, pwd + 2, pwd + 3) == 4) {
 		ispwd = 1;
 		cmd = strtok_r(0, " \t\r\n", &nextParam);
 	}
-    
+
 	command = find_xdag_command(cmd);
-    
-	if (!command) {
+
+	if(!command) {
 		fprintf(out, "Illegal command.\n");
 	}else {
 		if(!strcmp(command->name, "xfer")) {
 			processXferCommand(nextParam, out, ispwd, pwd);
 		} else {
 			return ((*(command->func)) (nextParam, out));
-        	}
+		}
 	}
 	return 0;
 }
@@ -775,7 +739,7 @@ int xdag_show_state(xdag_hash_t hash)
 	return (*g_xdag_show_state)(state, balance, address);
 }
 
-void printHelp(FILE *out)
+void processHelpCommand(FILE *out)
 {
 	fprintf(out, "Commands:\n"
 		"  account [N]     - print first N (20 by default) our addresses with their amounts\n"
@@ -813,4 +777,42 @@ void xdagSetCountMiningTread(int miningThreadsCount)
 double xdagGetHashRate(void)
 {
 	return g_xdag_extstats.hashrate_s / (1024 * 1024);
+}
+
+int read_command(char *cmd)
+{	
+	char* line = linenoise("xdag> ");
+	if(line == NULL) return 0;
+	
+	if(strlen(line) > XDAG_COMMAND_MAX) {
+		printf("exceed max length");
+		strncpy(cmd, line, XDAG_COMMAND_MAX - 1);
+		cmd[XDAG_COMMAND_MAX-1] = '\0';
+	} else {
+		strcpy(cmd, line);
+	}
+	free(line);
+	
+	if(strlen(cmd) > 0) {
+		linenoiseHistoryAdd(cmd);
+		linenoiseHistorySave(COMMAND_HISTORY);
+	}
+	
+	return 0;
+}
+
+void xdag_init_commands(void)
+{
+	linenoiseSetCompletionCallback(xdag_com_completion); //set completion
+	linenoiseHistorySetMaxLen(50); //set max line for history
+	linenoiseHistoryLoad(COMMAND_HISTORY); //load history
+}
+
+void xdag_com_completion(const char *buf, linenoiseCompletions *lc)
+{
+	for(int index = 0; commands[index].name; index++) {
+		if(!strncmp(buf, commands[index].name, strlen(buf))) {
+			linenoiseAddCompletion(lc, commands[index].name);
+		}
+	}
 }
