@@ -67,7 +67,8 @@ uint64_t xdag_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, int st
 		sha256_init(&ctx);
 		sha256_update(&ctx, (uint8_t*)hash0, sizeof(xdag_hash_t));
 		sha256_final(&ctx, (uint8_t*)hash0);
-// is the new hash, smaller than the already found minimal hash? !i fix, probably an issue about the first iteration.
+// is the new hash, smaller than the already found minimal hash? !i fix, probably an issue about the first iteratio.
+// it will reause the minimal hash, even for the futher recall of this function until a lowe hash is found or task is changed.
 		if (!i || xdag_cmphash(hash0, hash) < 0) { 
 			memcpy(hash, hash0, sizeof(xdag_hash_t)); // calculated hash
 			min_nonce = *nonce; // nonce that give the minimal hash, so far.
