@@ -896,14 +896,17 @@ void *pool_block_thread(void *arg)
 		const uint64_t task_index = g_xdag_pool_task_index;
 		struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
 		const xdag_time_t current_task_time = task->task_time;
-
+		
+		// new task, let's pay miners 
+		// Will pay the hash old CONFIRMATIONS_COUNT (if the block was got by this pool!)
+		// (it clean paid shares counting variables about that task's hash)
 		if(current_task_time > prev_task_time) {
 			uint64_t *hash = g_xdag_mined_hashes[(current_task_time - CONFIRMATIONS_COUNT + 1) & (CONFIRMATIONS_COUNT - 1)];
 
 			processed = 1;
-			prev_task_time = current_task_time;
+			prev_task_time = current_task_time; // new task time
 
-			res = pay_miners(current_task_time - CONFIRMATIONS_COUNT + 1);
+			res = pay_miners(current_task_time - CONFIRMATIONS_COUNT + 1); // res tells if paid or not (and more things)
 			remove_inactive_miners();
 
 			xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
