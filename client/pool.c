@@ -88,8 +88,8 @@ struct connection_pool_data {
 	uint8_t data_size;
 	uint8_t block_size;
 	struct pollfd connection_descriptor;
-	struct miner_pool_data *miner; 		// More than one connection may lead to the same miner, it is needed to track 
-	int balance_sent;			// this behaviour to avoid potential exploit of the service.
+	struct miner_pool_data *miner;
+	time_t balance_refreshed_time;
 	uint32_t shares_count;
 };
 
@@ -296,7 +296,6 @@ static int open_pool_connection(const char *pool_arg)
 {
 	struct linger linger_opt = { 1, 0 }; // Linger active, timeout 0
 	struct sockaddr_in peeraddr;
-	//	socklen_t peeraddr_len = sizeof(peeraddr);
 	int rcvbufsize = 1024;
 	int reuseaddr = 1;
 	char buf[0x100];
@@ -536,15 +535,15 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 
 		diff = ldexp(diff, -64);				/********THE BELOW COMMENT IS WRONG********/
 		diff += ((uint64_t*)hash)[3]; // Since diff is unsigned, diff < 1 implies diff=0 and log(diff) function is not defined for diff=0, it is needed to eliminate
-						  // the diff=0 case (if(diff < 1) diff = 1). The "most difficult" hash sent by miner implies diff=1 (since this is the case of hash[3] is 0) 
-		if(diff < 1) diff = 1;	      // and log(1)=0, thus maximum diff value, at this point, is 46. The "easiest" hash, instead, would lay on
-						  // the same result that is diff 46 (that's the case hash[3]=hash[2]=0xFFFFFFFFFFFFFFFF, hash[3]+1=0 
+					      // the diff=0 case (if(diff < 1) diff = 1). The "most difficult" hash sent by miner implies diff=1 (since this is the case of hash[3] is 0) 
+		if(diff < 1) diff = 1;        // and log(1)=0, thus maximum diff value, at this point, is 46. The "easiest" hash, instead, would lay on
+					      // the same result that is diff 46 (that's the case hash[3]=hash[2]=0xFFFFFFFFFFFFFFFF, hash[3]+1=0 
 		diff = 46 - log(diff);	      // thus it's the same as the most difficult hash), it is probably a bug. Let's consider an "almost easiest" hash
-						  // like hash[3]=FFFFFFFFFFFFFFFF and hash[2]<=FFFFFFFFFFFFFBFF, in this case we have 46-log(FFFFFFFFFFFFFFFF)=46-19=27.
-						  // At this point diff seems to have a range [46;27], where higher value is higher difficulty.
+					      // like hash[3]=FFFFFFFFFFFFFFFF and hash[2]<=FFFFFFFFFFFFFBFF, in this case we have 46-log(FFFFFFFFFFFFFFFF)=46-19=27.
+					      // At this point diff seems to have a range [46;27], where higher value is higher difficulty.
 		// Adding share for connection
 		if(conn_data->task_time < task_time) { // conn_data->task_time will keep old value until pool doesn't accept the share of the task.
-			conn_data->task_time = task_time; // this will prevent to count more share for the same task, cannot join this block a new time for same task.
+			conn_data->task_time = task_time;  // this will prevent to count more share for the same task, cannot join this block a new time for same task.
 
 			// Avoid to rewrite maxdiff[i] with a new value if there are still the old one uncounted
 			// index i are just about 20, and it is chosen in a pseudo-random way, so it may happen that
@@ -557,7 +556,6 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 			}
 
 			conn_data->maxdiff[i] = diff;
-			conn_data->balance_sent = 0;
 			// share already counted, but we will update the maxdiff so the most difficult share will be counted.
 		} else if(diff > conn_data->maxdiff[i]) {
 			conn_data->maxdiff[i] = diff;
@@ -774,14 +772,16 @@ static int send_data_to_connection(connection_list_element *connection, int *pro
 
 	uint64_t task_index = g_xdag_pool_task_index;
 	struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
+	time_t current_time = time(0);
 
 	if(conn_data->task_index < task_index) {
 		conn_data->task_index = task_index;
 		conn_data->shares_count = 0;
 		fields_count = 2;
 		memcpy(data, task->task, fields_count * sizeof(struct xdag_field));
-	} else if(!conn_data->balance_sent && conn_data->miner && time(0) >= (conn_data->task_time << 6) + 4) {
-		conn_data->balance_sent = 1;
+	} else if(conn_data->miner && current_time - conn_data->balance_refreshed_time >= 10) {  //refresh balance each 10 seconds
+		//TODO: optimize refreshing of balance
+		conn_data->balance_refreshed_time = current_time;
 		memcpy(data[0].data, conn_data->miner->id.data, sizeof(xdag_hash_t));
 		data[0].amount = xdag_get_balance(data[0].data);
 		fields_count = 1;
@@ -1307,7 +1307,7 @@ int xdag_print_miners(FILE *out, int printOnlyConnections)
 
 	fprintf(out,
 		"------------------------------------------------------------------------------------------------------\n"
-		"Total %d active {%s}.\n", count_active, printOnlyConnections ? "connections" : "miners");
+		"Total %d active %s.\n", count_active, printOnlyConnections ? "connections" : "miners");
 
 	return count_active;
 }
