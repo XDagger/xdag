@@ -755,6 +755,8 @@ static int receive_data_from_connection(connection_list_element *connection)
 			if(share_can_be_accepted(conn_data->miner, (uint64_t*)conn_data->data, task_index)) {
 				xdag_hash_t hash;
 				xdag_hash_final(task->ctx0, conn_data->data, sizeof(struct xdag_field), hash);
+				// just set the new hash as the minimum one for the actual task (it checks that 
+				// it is lower than the old hash, anyway)
 				xdag_set_min_share(task, conn_data->miner->id.data, hash);
 				calculate_nopaid_shares(conn_data, task, hash);
 			}
