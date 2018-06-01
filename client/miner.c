@@ -395,7 +395,12 @@ static void *mining_thread(void *arg)
 			memcpy(last.data, task->nonce.data, sizeof(xdag_hash_t));
 			nonce = last.amount + nthread;
 		}
-
+		
+		// calling the function that will perform the mining
+		// 4096 are the number of iterations, note that,
+		// there isn't any target! Just send the best hash that we have found in these 4096
+		// iterations!
+		// g_xdag_mining_threads is the number of mining threads
 		last.amount = xdag_hash_final_multi(task->ctx, &nonce, 4096, g_xdag_mining_threads, hash);
 		g_xdag_extstats.nhashes += 4096;
 
