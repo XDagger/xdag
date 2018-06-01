@@ -46,6 +46,7 @@ static int g_socket = -1, g_stop_mining = 1, g_stop_general_mining = 1;
 
 static int can_send_share(time_t current_time, time_t task_time, time_t share_time)
 {
+	// it will send share about every SEND_PERIOD
 	int can_send = current_time - share_time >= SEND_PERIOD && current_time - task_time <= 64;
 	if(g_xdag_mining_threads == 0 && share_time >= task_time) {
 		can_send = 0;  //we send only one share per task if mining is turned off
