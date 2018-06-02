@@ -18,7 +18,7 @@
 #include "netdb.h"
 #include "init.h"
 #include "sync.h"
-#include "pool.h"
+#include "mining_common.h"
 #include "commands.h"
 #include "terminal.h"
 #include "memory.h"

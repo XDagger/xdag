@@ -91,6 +91,7 @@ struct connection_pool_data {
 	struct miner_pool_data *miner;
 	time_t balance_refreshed_time;
 	uint32_t shares_count;
+	int deleted;
 };
 
 typedef struct connection_list_element {
@@ -839,6 +840,11 @@ void *pool_main_thread(void *arg)
 		{
 			struct pollfd *p = g_fds + index++;
 
+			if(elt->connection_data.deleted) {
+				close_connection(elt, "manually disconnected");
+				continue;
+			}
+
 			if(p->revents & POLLNVAL) {
 				continue;
 			}
@@ -1301,4 +1307,35 @@ int xdag_print_miners(FILE *out, int printOnlyConnections)
 		"Total %d active %s.\n", count_active, printOnlyConnections ? "connections" : "miners");
 
 	return count_active;
+}
+
+// disconnect connections by condition
+// condition type: all, ip or address
+// value: address of ip depending on type
+void disconnect_connections(enum disconnect_type type, char *value)
+{
+	connection_list_element *elt;
+	xdag_hash_t hash;
+	uint32_t ip = 0;
+
+	if(type == DISCONNECT_BY_ADRESS) {
+		xdag_address2hash(value, hash);
+	} else if(type == DISCONNECT_BY_IP) {
+		ip = inet_addr(value);
+	}
+
+	LL_FOREACH(g_connection_list_head, elt)
+	{
+		if(type == DISCONNECT_ALL) {
+			elt->connection_data.deleted = 1;
+		} else if(type == DISCONNECT_BY_ADRESS) {
+			if(memcmp(elt->connection_data.data, hash, sizeof(xdag_hashlow_t)) == 0) {
+				elt->connection_data.deleted = 1;
+			}
+		} else if(type == DISCONNECT_BY_IP) {
+			if(elt->connection_data.ip == ip) {
+				elt->connection_data.deleted = 1;
+			}
+		}
+	}
 }
