@@ -9,6 +9,7 @@
 #if defined(_WIN32) || defined(_WIN64)
 #else
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/fcntl.h>
 #include <errno.h>
