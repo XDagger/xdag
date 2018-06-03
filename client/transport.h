@@ -26,7 +26,7 @@ extern int xdag_generate_random_array(void *array, unsigned long size);
 extern int xdag_send_new_block(struct xdag_block *b);
 
 /* requests all blocks from the remote host, that are in specified time interval;
- * calls callback() for each block, callback recieved the block and data as paramenters;
+ * calls callback() for each block, callback received the block and data as paramenters;
  * return -1 in case of error
  */
 extern int xdag_request_blocks(xdag_time_t start_time, xdag_time_t end_time, void *data,

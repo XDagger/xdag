@@ -25,9 +25,9 @@ int xdag_address_init(void)
 int xdag_address2hash(const char *address, xdag_hash_t hash)
 {
 	uint8_t *fld = (uint8_t*)hash;
-	int i, c, d, e, n;
+	int i, c, d, n;
 
-	for (e = n = i = 0; i < 32; ++i) {
+	for (int e = n = i = 0; i < 32; ++i) {
 		do {
 			if (!(c = (uint8_t)*address++))
 				return -1;
@@ -51,25 +51,19 @@ int xdag_address2hash(const char *address, xdag_hash_t hash)
 }
 
 // converts hash to address
-const char *xdag_hash2address(const xdag_hash_t hash)
+void xdag_hash2address(const xdag_hash_t hash, char *address)
 {
-	static char bufs[4][33];
-	static int k = 0;
-	char *buf = &bufs[k++ & 3][0], *ptr = buf;
-	int i, c, d;
+	int c, d;
 	const uint8_t *fld = (const uint8_t*)hash;
 
-	for (i = c = d = 0; i < 32; ++i) {
+	for (int i = c = d = 0; i < 32; ++i) {
 		if (d < 6) {
 			d += 8;
 			c <<= 8;
 			c |= *fld++;
 		}
 		d -= 6;
-		*ptr++ = bits2mime[c >> d & 0x3F];
+		*address++ = bits2mime[c >> d & 0x3F];
 	}
-
-	*ptr = 0;
-	
-	return buf;
+	*address = 0;
 }

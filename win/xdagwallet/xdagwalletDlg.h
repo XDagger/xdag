@@ -21,16 +21,14 @@ public:
 #endif
 
 protected:
-	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
-	LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-
-
-// Implementation
-protected:
 	HICON m_hIcon;
+
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
+	LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);	
 
 	// Generated message map functions
 	BOOL OnInitDialog() override;
+	void OnOK() override;
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
