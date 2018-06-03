@@ -9,6 +9,7 @@
 #if defined(_WIN32) || defined(_WIN64)
 #else
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/fcntl.h>
 #include <errno.h>
@@ -91,6 +92,9 @@ struct connection_pool_data {
 	struct miner_pool_data *miner;
 	time_t balance_refreshed_time;
 	uint32_t shares_count;
+	time_t last_share_time;
+	int deleted;
+	char* disconnection_reason;
 };
 
 typedef struct connection_list_element {
@@ -130,6 +134,11 @@ static pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int pay_miners(xdag_time_t time);
 void remove_inactive_miners(void);
+
+void *pool_net_thread(void *arg);
+void *pool_main_thread(void *arg);
+void *pool_block_thread(void *arg);
+void *pool_remove_inactive_connections(void *arg);
 
 /* initialization of the pool */
 int xdag_initialize_pool(const char *pool_arg)
@@ -178,6 +187,18 @@ int xdag_initialize_pool(const char *pool_arg)
 	err = pthread_detach(th);
 	if(err != 0) {
 		printf("detach pool_block_thread failed: %s\n", strerror(err));
+		return -1;
+	}
+
+	err = pthread_create(&th, 0, pool_remove_inactive_connections, 0);
+	if(err != 0) {
+		printf("create pool_remove_inactive_connections failed: %s\n", strerror(err));
+		return -1;
+	}
+
+	err = pthread_detach(th);
+	if(err != 0) {
+		printf("detach pool_remove_inactive_connections failed: %s\n", strerror(err));
 		return -1;
 	}
 
@@ -444,6 +465,7 @@ void *pool_net_thread(void *arg)
 		new_connection->connection_data.connection_descriptor.revents = 0;
 		int ip = new_connection->connection_data.ip = peeraddr.sin_addr.s_addr;
 		new_connection->connection_data.port = peeraddr.sin_port;
+		new_connection->connection_data.last_share_time = time(0); // we set time of last share to the current time in order to avoid immediate disconnection
 
 		LL_APPEND(g_accept_connection_list_head, new_connection);
 		++g_connections_count;
@@ -469,6 +491,9 @@ static void close_connection(connection_list_element *connection, const char *me
 
 	if(conn_data->block) {
 		free(conn_data->block);
+	}
+	if(conn_data->disconnection_reason) {
+		free(conn_data->disconnection_reason);
 	}
 
 	if(conn_data->miner) {
@@ -750,6 +775,8 @@ static int receive_data_from_connection(connection_list_element *connection)
 				memcpy(conn_data->miner->id.data, conn_data->data, sizeof(struct xdag_field));	//TODO:do I need to copy whole field?
 			}
 
+			conn_data->last_share_time = time(0);
+
 			if(share_can_be_accepted(conn_data->miner, (uint64_t*)conn_data->data, task_index)) {
 				xdag_hash_t hash;
 				xdag_hash_final(task->ctx0, conn_data->data, sizeof(struct xdag_field), hash);
@@ -770,7 +797,7 @@ static int send_data_to_connection(connection_list_element *connection, int *pro
 	int fields_count = 0;
 	struct connection_pool_data *conn_data = &connection->connection_data;
 
-	uint64_t task_index = g_xdag_pool_task_index;
+	const uint64_t task_index = g_xdag_pool_task_index;
 	struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
 	time_t current_time = time(0);
 
@@ -844,6 +871,11 @@ void *pool_main_thread(void *arg)
 		LL_FOREACH_SAFE(g_connection_list_head, elt, eltmp)
 		{
 			struct pollfd *p = g_fds + index++;
+
+			if(elt->connection_data.deleted) {
+				close_connection(elt, elt->connection_data.disconnection_reason);
+				continue;
+			}
 
 			if(p->revents & POLLNVAL) {
 				continue;
@@ -1311,3 +1343,63 @@ int xdag_print_miners(FILE *out, int printOnlyConnections)
 
 	return count_active;
 }
+
+// disconnect connections by condition
+// condition type: all, ip or address
+// value: address of ip depending on type
+void disconnect_connections(enum disconnect_type type, char *value)
+{
+	connection_list_element *elt;
+	xdag_hash_t hash;
+	uint32_t ip = 0;
+
+	if(type == DISCONNECT_BY_ADRESS) {
+		xdag_address2hash(value, hash);
+	} else if(type == DISCONNECT_BY_IP) {
+		ip = inet_addr(value);
+	}
+
+	pthread_mutex_lock(&g_descriptors_mutex);
+	LL_FOREACH(g_connection_list_head, elt)
+	{
+		if(type == DISCONNECT_ALL) {
+			elt->connection_data.deleted = 1;
+			elt->connection_data.disconnection_reason = strdup("disconnected manually");
+		} else if(type == DISCONNECT_BY_ADRESS) {
+			if(memcmp(elt->connection_data.data, hash, sizeof(xdag_hashlow_t)) == 0) {
+				elt->connection_data.deleted = 1;
+				elt->connection_data.disconnection_reason = strdup("disconnected manually");
+			}
+		} else if(type == DISCONNECT_BY_IP) {
+			if(elt->connection_data.ip == ip) {
+				elt->connection_data.deleted = 1;
+				elt->connection_data.disconnection_reason = strdup("disconnected manually");
+			}
+		}
+	}
+	pthread_mutex_unlock(&g_descriptors_mutex);
+}
+
+void* pool_remove_inactive_connections(void* arg)
+{
+	connection_list_element *elt;
+
+	for(;;) {
+		time_t current_time = time(0);
+
+		pthread_mutex_lock(&g_descriptors_mutex);
+		LL_FOREACH(g_connection_list_head, elt)
+		{
+			if(current_time - elt->connection_data.last_share_time > 180) { //last share is received more than 3 minutes ago
+				elt->connection_data.deleted = 1;
+				elt->connection_data.disconnection_reason = strdup("inactive connection");
+			}
+		}
+		pthread_mutex_unlock(&g_descriptors_mutex);
+
+		sleep(60);
+	}
+
+	return NULL;
+}
+

@@ -8,7 +8,7 @@
 
 #define VERSION_MAJOR               0
 #define VERSION_MINOR               2
-#define VERSION_REVISION            3
+#define VERSION_REVISION            4
 
 #define XDAG_VERSION STRINGIZE(VERSION_MAJOR) "." STRINGIZE(VERSION_MINOR) "." STRINGIZE(VERSION_REVISION)
 
