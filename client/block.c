@@ -1486,3 +1486,9 @@ int xdagGetLastMainBlocks(int count, char** addressArray)
 	}
 	return i;
 }
+
+xdag_diff_t hash2difficulty(xdag_hash_t hash)
+{
+        return hash_difficulty(hash);
+}
+

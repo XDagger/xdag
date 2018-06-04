@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "hash.h"
+#include "system.h"
 
 enum xdag_field_type {
 	XDAG_FIELD_NONCE,        //0
@@ -111,5 +112,8 @@ extern int xdag_print_block_info(xdag_hash_t hash, FILE *out);
 // retrieves addresses of N last main blocks
 // return count of retrieved blocks
 extern int xdagGetLastMainBlocks(int count, char** addressArray);
+
+// calculate difficulty from hash
+xdag_diff_t hash2difficulty(xdag_hash_t hash);
 
 #endif
