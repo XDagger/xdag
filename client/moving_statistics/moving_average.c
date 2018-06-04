@@ -16,27 +16,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ***************************************************************************/
 
 #include "moving_average.h"
-#define NSAMPLES_MAX 112; // Number of blocks in 2 hours (60*60*2/64)
 
 
-/*
-void welford_one_pass(long double* mean, long double sample,int nsamples){
-	*mean=*mean+(sample-*mean)/(long double)(nsamples);
-}
-*/
-void welford_one_pass(long double* mean, long double sample, int nsamples){
-        *mean=*mean+(sample-*mean)/(long double)(nsamples);
+void welford_one_pass(long double* mean, long double sample, uint16_t nsamples){
+	if(nsamples)
+        	*mean=*mean+(sample-*mean)/(long double)(nsamples);
 }
 
 
-
-void movingAverage(double* mean,double sample,int nsamples){
-/*
+void moving_average(long double* mean, long double sample, uint16_t nsamples){
+	if(nsamples<2)
+		*mean=sample;
 	if(nsamples>=NSAMPLES_MAX){
-		return wellfordOnePass(*mean, sample, NSAMPLES_MAX);
+		welford_one_pass(mean, sample, NSAMPLES_MAX);
 	}
 	else{
-		return wellfordOnePass(*mean, sample, nsamples);
+		welford_one_pass(mean, sample, nsamples);
 	}
-*/
 }

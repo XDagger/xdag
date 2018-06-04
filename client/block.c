@@ -320,8 +320,10 @@ static inline xdag_diff_t hash_difficulty(xdag_hash_t hash)
 	xdag_diff_t res = ((xdag_diff_t*)hash)[1], max = xdag_diff_max;
 
 	xdag_diff_shr32(&res);
-	
-	return xdag_diff_div(max, res);
+
+	if(res)	
+		return xdag_diff_div(max, res);
+	return res;
 }
 
 // returns a number of public key from 'keys' array with lengh 'keysLength', which conforms to the signature starting from field signo_r of the block b

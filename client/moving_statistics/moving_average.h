@@ -18,7 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MOVING_AVERAGE_H
 #define _MOVING_AVERAGE_H
 
-extern void welford_one_pass(long double* mean, long double sample, int nsamples);
-void movingAverage(double* mean,double sample,int nsamples);
+#include <stdint.h>
+
+#ifndef NSAMPLES_MAX
+#define NSAMPLES_MAX 20 
+#endif
+
+extern void welford_one_pass(long double* mean, long double sample, uint16_t nsamples);
+void moving_average(long double* mean, long double sample, uint16_t nsamples);
 
 #endif

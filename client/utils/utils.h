@@ -62,5 +62,7 @@ do {\
 
 long double difficulty2hashrate(xdag_diff_t *diff);
 
+long double log_difficulty2hashrate(long double log_diff);
+
 
 #endif /* utils_h */

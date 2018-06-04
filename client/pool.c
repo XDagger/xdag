@@ -25,10 +25,12 @@
 #include "wallet.h"
 #include "system.h"
 #include "utils/log.h"
+#include "utils/utils.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
 #include "../dus/programs/dar/source/include/crc.h"
 #include "uthash/utlist.h"
 #include "uthash/uthash.h"
+#include "moving_statistics/moving_average.h"
 
 //TODO: why do we need these two definitions?
 #define START_MINERS_COUNT     256
@@ -38,6 +40,7 @@
 #define FUND_ADDRESS                       "FQglVQtb60vQv2DOWEUL7yh3smtj7g1s" /* community fund */
 #define SHARES_PER_TASK_LIMIT              20                                 /* maximum count of shares per task */
 #define DEFAUL_CONNECTIONS_PER_MINER_LIMIT 100
+#define NSAMPLES_MAX 20
 
 struct nonce_hash {
 	uint64_t key;
@@ -61,6 +64,9 @@ struct miner_pool_data {
 	uint32_t connections_count;
 	uint64_t task_index;
 	struct nonce_hash *nonces;
+	xdag_hash_t last_min_hash;
+	long double mean_log_difficulty;
+	uint16_t bounded_task_counter;
 };
 
 typedef struct miner_list_element {
@@ -95,6 +101,10 @@ struct connection_pool_data {
 	time_t last_share_time;
 	int deleted;
 	char* disconnection_reason;
+        xdag_hash_t last_min_hash;
+	long double mean_log_difficulty;
+        uint16_t bounded_task_counter;
+
 };
 
 typedef struct connection_list_element {
@@ -577,9 +587,17 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 			}
 
 			conn_data->maxdiff[i] = diff;
+
+	
+			moving_average(&conn_data->mean_log_difficulty, diff2log(hash2difficulty(conn_data->last_min_hash)),conn_data->bounded_task_counter);
+                        if(conn_data->bounded_task_counter<NSAMPLES_MAX)
+                                ++conn_data->bounded_task_counter;
+			memcpy(conn_data->last_min_hash,hash,sizeof(xdag_hash_t));
 			// share already counted, but we will update the maxdiff so the most difficult share will be counted.
 		} else if(diff > conn_data->maxdiff[i]) {
 			conn_data->maxdiff[i] = diff;
+                        memcpy(conn_data->last_min_hash,hash,sizeof(xdag_hash_t));
+
 		}
 		// Adding share for miner
 		if(conn_data->miner) {
@@ -592,8 +610,15 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 				}
 
 				conn_data->miner->maxdiff[i] = diff;
+
+
+	                        moving_average(&conn_data->miner->mean_log_difficulty, diff2log(hash2difficulty(conn_data->miner->last_min_hash)),conn_data->miner->bounded_task_counter);
+                                if(conn_data->miner->bounded_task_counter<NSAMPLES_MAX)
+                                        ++conn_data->miner->bounded_task_counter;
+	                        memcpy(conn_data->miner->last_min_hash,hash,sizeof(xdag_hash_t));
 			} else if(diff > conn_data->miner->maxdiff[i]) {
 				conn_data->miner->maxdiff[i] = diff;
+	                        memcpy(conn_data->miner->last_min_hash,hash,sizeof(xdag_hash_t));
 			}
 		} else {
 			xdag_err("conn_data->miner is null");
@@ -1245,8 +1270,8 @@ static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int 
 	char address_buf[33];
 	xdag_hash2address(miner->id.data, address_buf);
 
-	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", index, address_buf,
-		miner_state_to_string(miner->state), "-", "-", miner_calculate_unpaid_shares(miner));
+	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %-16lf  %Lf\n", index, address_buf,
+		miner_state_to_string(miner->state), "-", "-", miner_calculate_unpaid_shares(miner), log_difficulty2hashrate(miner->mean_log_difficulty));
 
 	if(print_connections) {
 		connection_list_element *elt;
@@ -1260,8 +1285,8 @@ static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int 
 				sprintf(in_out_str, "%llu/%llu", (unsigned long long)conn_data->nfield_in * sizeof(struct xdag_field),
 					(unsigned long long)conn_data->nfield_out * sizeof(struct xdag_field));
 
-				fprintf(out, " C%d. -                                 -        %-21s  %-16s  %lf\n", ++index,
-					ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data));
+				fprintf(out, " C%d. -                                 -        %-21s  %-16s  %-16lf  %Lf\n", ++index,
+					ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data),log_difficulty2hashrate(conn_data->mean_log_difficulty));
 			}
 		}
 	}
@@ -1300,8 +1325,9 @@ static void print_connection(FILE *out, int index, struct connection_pool_data *
 	} else {
 		strcpy(address, "-                               ");
 	}
-	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", index, address,
-		connection_state_to_string(conn_data->state), ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data));
+	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %-16lf  %Lf\n", index, address,
+		connection_state_to_string(conn_data->state), ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data), log_difficulty2hashrate(conn_data->mean_log_difficulty));
+
 }
 
 static int print_connections(FILE *out)
@@ -1323,13 +1349,13 @@ static int print_connections(FILE *out)
 int xdag_print_miners(FILE *out, int printOnlyConnections)
 {
 	fprintf(out, "List of miners:\n"
-		" NN  Address for payment to            Status   IP and port            in/out bytes      nopaid shares\n"
-		"------------------------------------------------------------------------------------------------------\n");
+		" NN  Address for payment to            Status   IP and port            in/out bytes      nopaid shares     hashrate\n"
+		"-------------------------------------------------------------------------------------------------------------------\n");
 
 	const int count_active = printOnlyConnections ? print_connections(out) : print_miners(out);
 
 	fprintf(out,
-		"------------------------------------------------------------------------------------------------------\n"
+		"-------------------------------------------------------------------------------------------------------------------\n"
 		"Total %d active %s.\n", count_active, printOnlyConnections ? "connections" : "miners");
 
 	return count_active;

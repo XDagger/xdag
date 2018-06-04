@@ -43,6 +43,7 @@ typedef struct {
 
 // Function declarations
 int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
+long double hashrate(xdag_diff_t *diff);
 const char *get_state(void);
 
 void processAccountCommand(char *nextParam, FILE *out);
@@ -523,8 +524,8 @@ void processDisconnectCommand(char *nextParam, FILE *out)
 
 	disconnect_connections(type, value);
 }
-/*
-static long double diff2log(xdag_diff_t diff)
+
+long double diff2log(xdag_diff_t diff)
 {
 	long double res = (long double)xdag_diff_to64(diff);
 	xdag_diff_shr32(&diff);
@@ -534,20 +535,15 @@ static long double diff2log(xdag_diff_t diff)
 	}
 	return (res > 0 ? logl(res) : 0);
 }
-*/
+
 long double hashrate(xdag_diff_t *diff)
 {
-	long double mean = 0;
+	long double sum = 0;
 	for(int i = 0; i < HASHRATE_LAST_MAX_TIME; ++i) {
-		//sum += diff2log(diff[i]);
-		xdag_diff_shr32(diff+i);
-		xdag_diff_shr32(diff+i);
-		if(xdag_diff_to64(diff[i]))
-			welford_one_pass(&mean,(long double)xdag_diff_to64(diff[i]),i+1);
+		sum += diff2log(diff[i]);
 	}
-	//sum /= HASHRATE_LAST_MAX_TIME;
-	//return ldexpl(expl(sum), -58);
-	return ldexpl(mean,6);
+	sum /= HASHRATE_LAST_MAX_TIME;
+	return ldexpl(expl(sum), -59);
 }
 
 const char *get_state()
