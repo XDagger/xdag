@@ -574,7 +574,7 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 			// index i are just about 20, and it is chosen in a pseudo-random way, so it may happen that
 			// you take a i for which maxdiff isn't clean.
 			// accounting and thus cleaning of maxdiff[i] is done after CONFIRMATIONS_COUNT tasks!
-			// thus it may happen to take the same i more times.
+			// thus it may happen to take the same i more times. Thus maxdiff is cleaned, adding the amount in prev_diff.
 			if(conn_data->maxdiff[i] > 0) { 
 				conn_data->prev_diff += conn_data->maxdiff[i];
 				conn_data->prev_diff_count++;
