@@ -187,6 +187,7 @@
 		38B395172056D68E004DD3EA /* sha256-mb-x86_64-mac.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = "sha256-mb-x86_64-mac.s"; sourceTree = "<group>"; };
 		38B3951D2056FBBA004DD3EA /* libpthread.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libpthread.tbd; path = usr/lib/libpthread.tbd; sourceTree = SDKROOT; };
 		38B3951F2056FC04004DD3EA /* libsystem_pthread.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsystem_pthread.tbd; path = usr/lib/system/introspection/libsystem_pthread.tbd; sourceTree = SDKROOT; };
+		4107BDCD20B8868A006B1337 /* libreadline.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libreadline.a; path = lib/libreadline.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -252,6 +253,15 @@
 			path = http;
 			sourceTree = "<group>";
 		};
+		38983A8E20BEDC15000EE509 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				384A29DC2062194700DD9D3B /* libcrypto.a */,
+				384A29DD2062194800DD9D3B /* libssl.a */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		389F042D20544EDC003F3084 = {
 			isa = PBXGroup;
 			children = (
@@ -261,6 +271,7 @@
 				38A15E1A20544F3E00598EC2 /* ldus */,
 				389F043720544EDC003F3084 /* Products */,
 				38A15E9E20545CCE00598EC2 /* Frameworks */,
+				38983A8E20BEDC15000EE509 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
