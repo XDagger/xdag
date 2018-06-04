@@ -998,15 +998,40 @@ static double connection_calculate_unpaid_shares(struct connection_pool_data *co
 	return diff2pay(sum, count);
 }
 
+// calculates the rest of shares and clear shares
+static double process_outdated_miner(struct miner_pool_data *miner)
+{
+	double sum = 0;
+	int diff_count = 0;
+
+	for(int i = 0; i < CONFIRMATIONS_COUNT; ++i) {
+		if(miner->maxdiff[i] > 0) {
+			sum += miner->maxdiff[i];
+			miner->maxdiff[i] = 0;
+			++diff_count;
+		}
+	}
+
+	if(diff_count > 0) {
+		sum /= diff_count;
+	}
+
+	return sum;
+}
+
 static double countpay(struct miner_pool_data *miner, int confirmation_index, double *pay)
 {
 	double sum = 0;
 	int diff_count = 0;
 
-	if(miner->maxdiff[confirmation_index] > 0) {
+	//if miner is in archive state and last connection was disconnected more than 16 minutes ago we pay for the rest of shares and clear shares
+	if(miner->state == MINER_ARCHIVE && g_xdag_pool_task_index - miner->task_index > XDAG_POOL_CONFIRMATIONS_COUNT) {
+		sum += process_outdated_miner(miner);
+		diff_count++;
+	} else if(miner->maxdiff[confirmation_index] > 0) {
 		sum += miner->maxdiff[confirmation_index];
 		miner->maxdiff[confirmation_index] = 0;
-		diff_count++;
+		++diff_count;
 	}
 
 	*pay = diff2pay(sum, diff_count);
@@ -1381,7 +1406,7 @@ void* pool_remove_inactive_connections(void* arg)
 		pthread_mutex_lock(&g_descriptors_mutex);
 		LL_FOREACH(g_connection_list_head, elt)
 		{
-			if(current_time - elt->connection_data.last_share_time > 180) { //last share is received more than 3 minutes ago
+			if(current_time - elt->connection_data.last_share_time > 300) { //last share is received more than 5 minutes ago
 				elt->connection_data.deleted = 1;
 				elt->connection_data.disconnection_reason = strdup("inactive connection");
 			}
