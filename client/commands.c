@@ -3,10 +3,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <ctype.h>
-#if !defined(_WIN32) && !defined(_WIN64)
-#include <readline/readline.h>
-#include <readline/history.h>
-#endif
 #include "init.h"
 #include "address.h"
 #include "wallet.h"
@@ -199,7 +195,6 @@ int xdag_com_exit(char * args, FILE* out)
 }
 
 int xdag_com_help(char *args, FILE* out)
-<<<<<<< HEAD
 {
 	processHelpCommand(out);
 	return 0;
@@ -221,29 +216,6 @@ XDAG_COMMAND* find_xdag_command(char *name)
 	return (XDAG_COMMAND *)NULL;
 }
 
-=======
-{
-	processHelpCommand(out);
-	return 0;
-}
-
-int xdag_com_disconnect(char *args, FILE *out)
-{
-	processDisconnectCommand(args, out);
-	return 0;
-}
-
-XDAG_COMMAND* find_xdag_command(char *name)
-{
-	for(int i = 0; commands[i].name; i++) {
-		if(strcmp(name, commands[i].name) == 0) {
-			return (&commands[i]);
-		}
-	}
-	return (XDAG_COMMAND *)NULL;
-}
-
->>>>>>> cf24ac21a8a5c57072134d70f9f2bef1365d937e
 void startCommandProcessing(int transportFlags)
 {
 	char cmd[XDAG_COMMAND_MAX];
@@ -262,7 +234,7 @@ void startCommandProcessing(int transportFlags)
 					break;
 				}
 			}
-        }
+		}
 	}
 }
 
@@ -271,8 +243,7 @@ int xdag_command(char *cmd, FILE *out)
 	uint32_t pwd[4];
 	char *nextParam;
 	int ispwd = 0;
-	XDAG_COMMAND* command;
-    
+
 	cmd = strtok_r(cmd, " \t\r\n", &nextParam);
 	if(!cmd) return 0;
 	if(sscanf(cmd, "pwd=%8x%8x%8x%8x", pwd, pwd + 1, pwd + 2, pwd + 3) == 4) {
@@ -280,11 +251,7 @@ int xdag_command(char *cmd, FILE *out)
 		cmd = strtok_r(0, " \t\r\n", &nextParam);
 	}
 
-<<<<<<< HEAD
-	command = find_xdag_command(cmd);
-=======
 	XDAG_COMMAND *command = find_xdag_command(cmd);
->>>>>>> cf24ac21a8a5c57072134d70f9f2bef1365d937e
 
 	if(!command) {
 		fprintf(out, "Illegal command.\n");
@@ -316,7 +283,7 @@ void processAccountCommand(char *nextParam, FILE *out)
 void processBalanceCommand(char *nextParam, FILE *out)
 {
 	if(g_xdag_state < XDAG_STATE_XFER) {
-        fprintf(out, "Not ready to show a balance. Type 'state' command to see the reason.\n");
+		fprintf(out, "Not ready to show a balance. Type 'state' command to see the reason.\n");
 	} else {
 		xdag_hash_t hash;
 		xdag_amount_t balance;
@@ -911,3 +878,4 @@ void xdag_init_commands(void)
 	linenoiseHistoryLoad(COMMAND_HISTORY); //load history
 #endif
 }
+

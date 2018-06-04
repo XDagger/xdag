@@ -492,7 +492,6 @@ static void close_connection(connection_list_element *connection, const char *me
 	if(conn_data->block) {
 		free(conn_data->block);
 	}
-
 	if(conn_data->disconnection_reason) {
 		free(conn_data->disconnection_reason);
 	}
