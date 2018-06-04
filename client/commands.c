@@ -543,7 +543,7 @@ long double hashrate(xdag_diff_t *diff)
 		sum += diff2log(diff[i]);
 	}
 	sum /= HASHRATE_LAST_MAX_TIME;
-	return ldexpl(expl(sum), -59);
+	return ldexpl(expl(sum), -58)*(0.6);
 }
 
 const char *get_state()
