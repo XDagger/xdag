@@ -567,7 +567,7 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 		diff = 46 - log(diff);		// At this point diff seems to have a range [46;2], where higher value is higher difficulty.
 		
 		// Adding share for connection
-		if(conn_data->task_time < task_time) { // conn_data->task_time will keep old value until pool doesn't accept the share of the task.
+		if(conn_data->task_time < task_time) { 	   // conn_data->task_time will keep old value until pool doesn't accept the share of the task.
 			conn_data->task_time = task_time;  // this will prevent to count more share for the same task, cannot join this block a new time for same task.
 
 			// Avoid to rewrite maxdiff[i] with a new value if there are still the old one uncounted
@@ -575,6 +575,7 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 			// you take a i for which maxdiff isn't clean.
 			// accounting and thus cleaning of maxdiff[i] is done after CONFIRMATIONS_COUNT tasks!
 			// thus it may happen to take the same i more times. Thus maxdiff is cleaned, adding the amount in prev_diff.
+			// Basically, it start to accumulate shares in prev_diff after about CONFIRMATIONS_COUNT
 			if(conn_data->maxdiff[i] > 0) { 
 				conn_data->prev_diff += conn_data->maxdiff[i];
 				conn_data->prev_diff_count++;
