@@ -97,7 +97,7 @@ static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
 
 ldus_rbtree_define_prefix(lessthan, static inline, )
 
-static struct block_internal *block_by_hash(const xdag_hashlow_t hash)
+static inline struct block_internal *block_by_hash(const xdag_hashlow_t hash)
 {
 	return (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
 }
@@ -1225,7 +1225,7 @@ xdag_amount_t xdag_get_balance(xdag_hash_t hash)
 }
 
 /* sets current balance for the specified address */
-extern int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
+int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 {
 	if (!hash) return -1;
 	
