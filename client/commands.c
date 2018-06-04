@@ -199,6 +199,7 @@ int xdag_com_exit(char * args, FILE* out)
 }
 
 int xdag_com_help(char *args, FILE* out)
+<<<<<<< HEAD
 {
 	processHelpCommand(out);
 	return 0;
@@ -220,6 +221,29 @@ XDAG_COMMAND* find_xdag_command(char *name)
 	return (XDAG_COMMAND *)NULL;
 }
 
+=======
+{
+	processHelpCommand(out);
+	return 0;
+}
+
+int xdag_com_disconnect(char *args, FILE *out)
+{
+	processDisconnectCommand(args, out);
+	return 0;
+}
+
+XDAG_COMMAND* find_xdag_command(char *name)
+{
+	for(int i = 0; commands[i].name; i++) {
+		if(strcmp(name, commands[i].name) == 0) {
+			return (&commands[i]);
+		}
+	}
+	return (XDAG_COMMAND *)NULL;
+}
+
+>>>>>>> cf24ac21a8a5c57072134d70f9f2bef1365d937e
 void startCommandProcessing(int transportFlags)
 {
 	char cmd[XDAG_COMMAND_MAX];
@@ -256,7 +280,11 @@ int xdag_command(char *cmd, FILE *out)
 		cmd = strtok_r(0, " \t\r\n", &nextParam);
 	}
 
+<<<<<<< HEAD
 	command = find_xdag_command(cmd);
+=======
+	XDAG_COMMAND *command = find_xdag_command(cmd);
+>>>>>>> cf24ac21a8a5c57072134d70f9f2bef1365d937e
 
 	if(!command) {
 		fprintf(out, "Illegal command.\n");

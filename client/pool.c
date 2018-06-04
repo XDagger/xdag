@@ -92,7 +92,7 @@ struct connection_pool_data {
 	struct miner_pool_data *miner;
 	time_t balance_refreshed_time;
 	uint32_t shares_count;
-    time_t last_share_time;
+	time_t last_share_time;
 	int deleted;
 	char* disconnection_reason;
 };
@@ -1394,3 +1394,4 @@ void* pool_remove_inactive_connections(void* arg)
 
 	return NULL;
 }
+

@@ -36,9 +36,4 @@ extern int xdag_print_miners(FILE *out, int printOnlyConnections);
 // value: address of ip depending on type
 extern void disconnect_connections(enum disconnect_type type, char *value);
 
-// disconnect connections by condition
-// condition type: all, ip or address
-// value: address of ip depending on type
-extern void disconnect_connections(enum disconnect_type type, char *value);
-
 #endif

@@ -509,6 +509,7 @@
 		38A15E9E20545CCE00598EC2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				4107BDCD20B8868A006B1337 /* libreadline.a */,
 				386E313420B736ED000F165C /* libcrypto.a */,
 				386E313320B736ED000F165C /* libssl.a */,
 				38B3951F2056FC04004DD3EA /* libsystem_pthread.tbd */,
