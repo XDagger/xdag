@@ -372,6 +372,6 @@ long double difficulty2hashrate(xdag_diff_t *diff)
 
 long double log_difficulty2hashrate(long double log_diff)
 {
-        return ldexpl(expl(log_diff), -59);
+        return ldexpl(expl(log_diff), -58)*(0.6);
 }
 
