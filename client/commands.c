@@ -878,4 +878,3 @@ void xdag_init_commands(void)
 	linenoiseHistoryLoad(COMMAND_HISTORY); //load history
 #endif
 }
-
