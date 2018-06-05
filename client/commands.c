@@ -543,7 +543,7 @@ long double hashrate(xdag_diff_t *diff)
 		sum += diff2log(diff[i]);
 	}
 	sum /= HASHRATE_LAST_MAX_TIME;
-	return ldexpl(expl(sum), -58)*(0.75);
+	return ldexpl(expl(sum), -58); //shown hashrate seems to be around 30% higher than real, to consider *(0.7) correction. Deeper study is needed.
 }
 
 const char *get_state()
