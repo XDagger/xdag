@@ -323,7 +323,7 @@ static inline xdag_diff_t hash_difficulty(xdag_hash_t hash)
 
 	if(res)	
 		return xdag_diff_div(max, res);
-	return res;
+	return res; //TODO add a warning if it happens, which level?
 }
 
 // returns a number of public key from 'keys' array with lengh 'keysLength', which conforms to the signature starting from field signo_r of the block b
