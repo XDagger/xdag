@@ -58,7 +58,7 @@ sources = 							\
 	$(utils)/utils.c					\
 	$(utils)/log.c						\
 	$(utils)/linenoise.c					\
-	$(moving_statistics)/moving_average.c			\
+	$(utils)/$(moving_statistics)/moving_average.c		\
 	./json-rpc/cJSON.c					\
 	./json-rpc/cJSON_Utils.c				\
 	./json-rpc/rpc_procedures.c				\
@@ -111,7 +111,7 @@ headers = 							\
 	$(utils)/utils.h					\
 	$(utils)/log.h						\
 	$(utils)/linenoise.h					\
-	$(moving_statistics)/moving_average.h			\
+	$(utils)/$(moving_statistics)/moving_average.h			\
 	./json-rpc/cJSON.h					\
 	./json-rpc/cJSON_Utils.h				\
 	./json-rpc/rpc_procedures.h				\
