@@ -10,10 +10,10 @@
  */
 extern int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port_pairs);
 
-/* writes data to the array for transmission to another host */
+/* writes host list to the array for transmission to another host */
 extern unsigned xdag_netdb_send(uint8_t *data, unsigned len);
 
-/* reads data sent by another host */
+/* reads host list sent by another host */
 extern unsigned xdag_netdb_receive(const uint8_t *data, unsigned len);
 
 /* completes the work with the host database */

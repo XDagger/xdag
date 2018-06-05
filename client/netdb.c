@@ -15,6 +15,20 @@
 #include "utils/utils.h"
 #include "http/http.h"
 
+#if !defined(_WIN32) && !defined(_WIN64)
+#include <errno.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#else
+#include <netinet/in.h>
+#include <unistd.h>
+#include <sys/fcntl.h>
+#include <errno.h>
+#endif
+
 #define MAX_SELECTED_HOSTS  64
 #define MAX_BLOCKED_IPS     64
 #define MAX_WHITE_IPS       64
@@ -29,14 +43,16 @@
 #define PREVENT_AUTO_REFRESH 0 //for test purposes
 
 pthread_mutex_t g_white_list_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t g_netdb_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 enum host_flags {
-	HOST_OUR        = 1,
-	HOST_CONNECTED  = 2,
-	HOST_SET        = 4,
-	HOST_INDB       = 8,
-	HOST_NOT_ADD    = 0x10,
-	HOST_WHITE      = 0x20,
+	HOST_OUR        = 1,		//our host
+	HOST_CONNECTED  = 2,		//host connected
+	HOST_SET        = 4,		//host from init command
+	HOST_INDB       = 8,		//host in netdb.txt
+	HOST_NOT_ADD    = 0x10,		//host not added
+	HOST_WHITE      = 0x20,		//host in whitelist
+	HOST_ACTIVE		= 0x40,		//host is active
 };
 
 struct host {
@@ -44,6 +60,7 @@ struct host {
 	uint32_t ip;
 	uint16_t port;
 	uint16_t flags;
+	time_t lasttime;
 };
 
 static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
@@ -55,7 +72,7 @@ static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
 
 ldus_rbtree_define_prefix(lessthan, static inline, )
 
-static struct ldus_rbtree *root = 0;
+static struct ldus_rbtree *hosts_tree_root = 0;
 static pthread_mutex_t host_mutex = PTHREAD_MUTEX_INITIALIZER;
 static struct host *selected_hosts[MAX_SELECTED_HOSTS], *our_host;
 static unsigned n_selected_hosts = 0;
@@ -64,41 +81,74 @@ static unsigned n_selected_hosts = 0;
 uint32_t *g_xdag_blocked_ips, *g_xdag_white_ips;
 int g_xdag_n_blocked_ips = 0, g_xdag_n_white_ips = 0;
 
+static void* check_alive_thread(void *host);
+
 static struct host *find_add_host(struct host *h)
 {
-	struct host *h0;
+	struct host *the_host;
 
 	pthread_mutex_lock(&host_mutex);
 
-	if ((h0 = (struct host *)ldus_rbtree_find(root, &h->node))) {
-		if (h->flags & HOST_SET) h0->flags = h->flags;
-	} else if (!(h->flags & HOST_NOT_ADD) && (h0 = malloc(sizeof(struct host)))) {
-		memcpy(h0, h, sizeof(struct host));
-		ldus_rbtree_insert(&root, &h0->node);
-		g_xdag_stats.nhosts++;
+	if ((the_host = (struct host *)ldus_rbtree_find(hosts_tree_root, &h->node))) {
+		if (h->flags & HOST_SET) {
+			the_host->flags = h->flags;
+		}
 		
+		if (!(the_host->flags & HOST_ACTIVE)) {
+			if (!(the_host->flags & HOST_INDB)) {
+				time_t now_time = time(0);
+				
+				if(now_time > (the_host->lasttime + 64)) {
+					pthread_t th;
+					int err = pthread_create(&th, 0, check_alive_thread, the_host);
+					if(err != 0) {
+						xdag_err("create check_alive_thread failed! %s", strerror(err));
+					}
+					
+					err = pthread_detach(th);
+					if(err != 0) {
+						xdag_err("detach check_alive_thread failed! %s", strerror(err));
+					}
+				}
+			}
+		}
+	} else if (!(h->flags & HOST_NOT_ADD) && (the_host = malloc(sizeof(struct host)))) {
+		memcpy(the_host, h, sizeof(struct host));
+		
+		ldus_rbtree_insert(&hosts_tree_root, &the_host->node);
+		
+		g_xdag_stats.nhosts++;
 		if (g_xdag_stats.nhosts > g_xdag_stats.total_nhosts) {
 			g_xdag_stats.total_nhosts = g_xdag_stats.nhosts;
 		}
-
+		
 		if (!(h->flags & HOST_INDB)) {
-			FILE *f = xdag_open_file(DATABASE, "a");
-			if (f) {
-				fprintf(f, "%u.%u.%u.%u:%u\n", h->ip & 0xff, h->ip >> 8 & 0xff, h->ip >> 16 & 0xff, h->ip >> 24 & 0xff, h->port);
-				xdag_close_file(f);
+			time_t now_time = time(0);
+			
+			if(now_time > (h->lasttime + 64)) {
+				pthread_t th;
+				int err = pthread_create(&th, 0, check_alive_thread, the_host);
+				if(err != 0) {
+					xdag_err("create check_alive_thread failed! %s", strerror(err));
+				}
+				
+				err = pthread_detach(th);
+				if(err != 0) {
+					xdag_err("detach check_alive_thread failed! %s", strerror(err));
+				}
 			}
 		}
 	}
 
 	if (h->flags & HOST_WHITE) {
 		if (g_xdag_n_white_ips < MAX_WHITE_IPS) {
-			g_xdag_white_ips[g_xdag_n_white_ips++] = h0->ip;
+			g_xdag_white_ips[g_xdag_n_white_ips++] = h->ip;
 		}
 	}
 
 	pthread_mutex_unlock(&host_mutex);
 	
-	return h0;
+	return the_host;
 }
 
 static struct host *random_host(int mask)
@@ -108,7 +158,8 @@ static struct host *random_host(int mask)
 	for (int i = 0; !p && i < 10; ++i) {
 		pthread_mutex_lock(&host_mutex);
 
-		r = root, p = 0;
+		r = hosts_tree_root;
+		p = 0;
 		int n = g_xdag_stats.nhosts;
 
 		while (r) {
@@ -118,7 +169,9 @@ static struct host *random_host(int mask)
 			n >>= 1;
 		}
 
-		if (p && (((struct host *)p)->flags & mask)) p = 0;
+		if (p && (((struct host *)p)->flags & mask)) {
+			p = 0;
+		}
 
 		pthread_mutex_unlock(&host_mutex);
 	}
@@ -173,9 +226,11 @@ static int read_database(const char *fname, int flags)
 			for (i = 0; i < n_ips && ips[i] != h0.ip; ++i);
 
 			if (i == n_ips && i < MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP) {
-				ips[i] = h0.ip, ips_count[i] = 1, n_ips++;
+				ips[i] = h0.ip;
+				ips_count[i] = 1;
+				n_ips++;
 			} else if (i < n_ips && ips_count[i] < MAX_ALLOWED_FROM_IP
-				       && ++ips_count[i] == MAX_ALLOWED_FROM_IP && n_blocked < MAX_BLOCKED_IPS) {
+					   && ++ips_count[i] == MAX_ALLOWED_FROM_IP && n_blocked < MAX_BLOCKED_IPS) {
 				g_xdag_blocked_ips[n_blocked++] = ips[i];
 			}
 		}
@@ -184,14 +239,18 @@ static int read_database(const char *fname, int flags)
 
 		xdag_debug("Netdb : host=%lx, flags=%x, read '%s'", (long)h, h->flags, str);
 		
-		if (flags & HOST_CONNECTED && n_selected_hosts < MAX_SELECTED_HOSTS / 2) selected_hosts[n_selected_hosts++] = h;
+		if (flags & HOST_CONNECTED && n_selected_hosts < MAX_SELECTED_HOSTS / 2) {
+			selected_hosts[++n_selected_hosts] = h;
+		}
 		
 		n++;
 	}
 
 	xdag_close_file(f);
 	
-	if (flags & HOST_CONNECTED) g_xdag_n_blocked_ips = n_blocked;
+	if (flags & HOST_CONNECTED) {
+		g_xdag_n_blocked_ips = n_blocked;
+	}
 	
 	return n;
 }
@@ -221,14 +280,15 @@ static void *monitor_thread(void *arg)
 		
 		pthread_mutex_lock(&host_mutex);
 		
-		ldus_rbtree_walk_right(root, reset_callback);
+		ldus_rbtree_walk_right(hosts_tree_root, reset_callback);
 		
 		pthread_mutex_unlock(&host_mutex);
 		
 		n_selected_hosts = 0;
 		
-		if (our_host)
-			selected_hosts[n_selected_hosts++] = our_host;
+		if (our_host) {
+			selected_hosts[++n_selected_hosts] = our_host;
+		}
 
 		int n = read_database("netdb.tmp", HOST_CONNECTED | HOST_SET | HOST_NOT_ADD);
 		if (n < 0) n = 0;
@@ -255,7 +315,9 @@ static void *monitor_thread(void *arg)
 
 			h->flags |= HOST_CONNECTED;
 			
-			if (n_selected_hosts < MAX_SELECTED_HOSTS) selected_hosts[n_selected_hosts++] = h;
+			if (n_selected_hosts < MAX_SELECTED_HOSTS) {
+				selected_hosts[n_selected_hosts++] = h;
+			}
 		}
 
 		if (f) xdag_close_file(f);
@@ -307,6 +369,41 @@ static void *refresh_thread(void *arg)
 	return 0;
 }
 
+// connect to host 
+static void *check_alive_thread(void *arg)
+{
+	struct host* the_host = (struct host *)arg;
+	struct sockaddr_in peeraddr;
+	
+	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (sock == INVALID_SOCKET) {
+		return 0;
+	}
+	
+	memset(&peeraddr, 0, sizeof(peeraddr));
+	peeraddr.sin_family = AF_INET;
+	peeraddr.sin_addr.s_addr = the_host->ip;
+	peeraddr.sin_port = htons(the_host->port);
+	
+	int res = connect(sock, (struct sockaddr*) &peeraddr, sizeof(peeraddr));
+	if (res == 0) {
+		
+		the_host->flags |= HOST_ACTIVE;
+		
+		pthread_mutex_lock(&g_netdb_mutex);
+		
+		FILE *f = xdag_open_file(DATABASE, "a");
+		if (f) {
+			fprintf(f, "%u.%u.%u.%u:%u\n", the_host->ip & 0xff, the_host->ip >> 8 & 0xff, the_host->ip >> 16 & 0xff, the_host->ip >> 24 & 0xff, the_host->port);
+			xdag_close_file(f);
+		}
+		pthread_mutex_unlock(&g_netdb_mutex);
+		
+		close(sock);
+	}
+	return 0;
+}
+
 /* initialized hosts base, 'our_host_str' - exteranal address of our host (ip:port),
 * 'addr_port_pairs' - addresses of other 'npairs' hosts in the same format
 */
@@ -347,14 +444,19 @@ int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port
 	return 0;
 }
 
-/* writes data to the array for transmission to another host */
+/* writes host list to the array for transmission to another host */
 unsigned xdag_netdb_send(uint8_t *data, unsigned len)
 {
 	unsigned i;
 
-	for (i = 0; i < n_selected_hosts && len >= 6; ++i, len -= 6, data += 6) {
-		memcpy(data, &selected_hosts[i]->ip, 4);
-		memcpy(data + 4, &selected_hosts[i]->port, 2);
+	for (i = 0; i < n_selected_hosts && len >= 6; ++i) {
+		if (selected_hosts[i]->flags & HOST_ACTIVE) {
+			memcpy(data, &selected_hosts[i]->ip, 4);
+			memcpy(data + 4, &selected_hosts[i]->port, 2);
+			
+			len -= 6;
+			data += 6;
+		}
 	}
 	
 	memset(data, 0, len);
@@ -362,7 +464,7 @@ unsigned xdag_netdb_send(uint8_t *data, unsigned len)
 	return i * 6;
 }
 
-/* reads data sent by another host */
+/* reads host list sent by another host */
 unsigned xdag_netdb_receive(const uint8_t *data, unsigned len)
 {
 	struct host h;
