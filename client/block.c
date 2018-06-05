@@ -1401,7 +1401,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 			(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
 	fprintf(out, "difficulty: %llx%016llx\n", xdag_diff_args(bi->difficulty));
-	xdag_hash2address(h, address);
+	xdag_hash2address(h, address); // to show balance in next command
 	fprintf(out, "   balance: %s  %10u.%09u\n", address, pramount(bi->amount));
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
 	fprintf(out, "                               block as transaction: details\n");
