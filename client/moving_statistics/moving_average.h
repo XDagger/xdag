@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 
 #ifndef NSAMPLES_MAX
-#define NSAMPLES_MAX 20 
+#define NSAMPLES_MAX 255 
 #endif
 
 extern void welford_one_pass(long double* mean, long double sample, uint16_t nsamples);
