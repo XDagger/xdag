@@ -524,7 +524,7 @@ void processDisconnectCommand(char *nextParam, FILE *out)
 	disconnect_connections(type, value);
 }
 
-static long double diff2log(xdag_diff_t diff)
+long double diff2log(xdag_diff_t diff)
 {
 	long double res = (long double)xdag_diff_to64(diff);
 	xdag_diff_shr32(&diff);
@@ -542,7 +542,7 @@ long double hashrate(xdag_diff_t *diff)
 		sum += diff2log(diff[i]);
 	}
 	sum /= HASHRATE_LAST_MAX_TIME;
-	return ldexpl(expl(sum), -58);
+	return ldexpl(expl(sum), -58); //shown pool and network hashrate seems to be around 35% higher than real, to consider *(0.65) about correction. Deeper study is needed.
 }
 
 const char *get_state()
