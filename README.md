@@ -191,5 +191,4 @@ _A new transport layer will come in the future._
 Maintainers:
 ---------------
 [Evgeniy](https://github.com/jonano614) ( XDAG: gKNRtSL1pUaTpzMuPMznKw49ILtP6qX3, BTC: 1Jonano4esJzZvqNtUY6NwfPme3EMpVs7n )  
-[Frozen](https://github.com/xrdavies) ( XDAG: +L5dzSh1QZv1We3wi8Of31M8eHwQJq4K )  
-[trueserve](https://github.com/trueserve) ( rvKaJSbP9DE6sg6XetYtSpaK+2aDbUq8 )  
+[Frozen](https://github.com/xrdavies) ( XDAG: +L5dzSh1QZv1We3wi8Of31M8eHwQJq4K ) 
