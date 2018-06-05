@@ -103,7 +103,6 @@ struct connection_pool_data {
         xdag_hash_t last_min_hash;
 	long double mean_log_difficulty;
         uint16_t bounded_task_counter;
-
 };
 
 typedef struct connection_list_element {
@@ -585,12 +584,10 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 			}
 
 			conn_data->maxdiff[i] = diff;
-
 			// share already counted, but we will update the maxdiff so the most difficult share will be counted.
 		} else if(diff > conn_data->maxdiff[i]) {
 			conn_data->maxdiff[i] = diff;
 		}
-
 		// Adding share for miner
 		if(conn_data->miner) {
 			if(conn_data->miner->task_time < task_time) {
