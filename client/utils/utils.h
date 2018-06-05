@@ -2,8 +2,7 @@
 //  utils.h
 //  xdag
 //
-//  Created by Rui Xie on 3/16/18.
-//  Copyright © 2018 xrdavies. All rights reserved.
+//  Copyright © 2018 xdag contributors.
 //
 
 #ifndef XDAG_UTILS_HEADER_H
@@ -12,6 +11,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
+#include "math.h"
 
 #ifdef _WIN32
 #define DELIMITER "\\"
@@ -59,6 +59,6 @@ do {\
 #define XDAG_MUTEX_UNLOCK(x) pthread_mutex_unlock(&x)
 #endif
 
-
+long double log_difficulty2hashrate(long double log_diff);
 
 #endif /* utils_h */
