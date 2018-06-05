@@ -1037,11 +1037,11 @@ static double countpay(struct miner_pool_data *miner, int confirmation_index, do
 	//if miner is in archive state and last connection was disconnected more than 16 minutes ago we pay for the rest of shares and clear shares
 	if(miner->state == MINER_ARCHIVE && g_xdag_pool_task_index - miner->task_index > XDAG_POOL_CONFIRMATIONS_COUNT) {
 		sum += process_outdated_miner(miner);
-		diff_count++;
+		++diff_count;
 	} else if(miner->maxdiff[confirmation_index] > 0) {
 		sum += miner->maxdiff[confirmation_index];
 		miner->maxdiff[confirmation_index] = 0;
-		diff_count++;
+		++diff_count;
 	}
 
 	*pay = diff2pay(sum, diff_count);
