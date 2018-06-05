@@ -472,9 +472,9 @@ void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd)
 
 void processLastBlocksCommand(char *nextParam, FILE *out)
 {
-	int blocksCount = 20;
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
-	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
+	int blocksCount = 20; // standard block amount
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam); // retrieve string
+	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) { //parse string, is it a number?
 		fprintf(out, "Illegal number.\n");
 	} else {
 		//100 is limit
