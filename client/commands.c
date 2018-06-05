@@ -13,7 +13,6 @@
 #include "netdb.h"
 #include "memory.h"
 #include "crypt.h"
-#include "moving_statistics/moving_average.h"
 #if !defined(_WIN32) && !defined(_WIN64)
 #include "utils/linenoise.h"
 #endif

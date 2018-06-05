@@ -19,7 +19,7 @@
 #include "mining_common.h"
 #include "pool.h"
 #include "address.h"
-#include "moving_statistics/moving_average.h"
+#include "utils/moving_statistics/moving_average.h"
 #include "commands.h"
 #include "storage.h"
 #include "transport.h"
