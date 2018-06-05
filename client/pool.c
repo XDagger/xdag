@@ -587,8 +587,9 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 			conn_data->maxdiff[i] = diff;
 
 			// share already counted, but we will update the maxdiff so the most difficult share will be counted.
-		} else if(diff > conn_data->maxdiff[i])
+		} else if(diff > conn_data->maxdiff[i]){
 			conn_data->maxdiff[i] = diff;
+		}
 
 		// Adding share for miner
 		if(conn_data->miner) {
@@ -602,8 +603,9 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 
 				conn_data->miner->maxdiff[i] = diff;
 
-			} else if(diff > conn_data->miner->maxdiff[i])
+			} else if(diff > conn_data->miner->maxdiff[i]){
 				conn_data->miner->maxdiff[i] = diff;
+			}
 		} else {
 			xdag_err("conn_data->miner is null");
 		}
