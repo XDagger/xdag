@@ -1339,7 +1339,6 @@ static void print_connection(FILE *out, int index, struct connection_pool_data *
 	}
 	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %-16lf  %Lf\n", index, address,
 		connection_state_to_string(conn_data->state), ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data), log_difficulty2hashrate(conn_data->mean_log_difficulty));
-
 }
 
 static int print_connections(FILE *out)
