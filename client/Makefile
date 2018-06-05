@@ -7,51 +7,63 @@ dfslib	 = $(dfstools)/dfslib
 dar		 = ../dus/programs/dar/source
 ldusinc	 = ../ldus/source/include/ldus
 utils    = ./utils
+OS	:= $(shell uname)
+
+ifeq ($(OS), Darwin)
+	asm_src = \
+		sha256-mb-x86_64-mac.s		\
+		x86_64cpuid-mac.s
+else
+	asm_src = \
+		sha256-mb-x86_64.s			\
+		x86_64cpuid.s
+endif
 
 sources = \
-	address.c					\
-	block.c						\
-	crypt.c						\
-	hash.c						\
-	init.c						\
-	main.c						\
-	memory.c					\
-	netdb.c						\
-	pool.c						\
-	miner.c						\
-	mining_common.c				\
-	sha256.c					\
-	sha256-mb-x86_64.s			\
-	storage.c					\
-	sync.c						\
-	transport.c					\
-	wallet.c					\
-	commands.c					\
-	terminal.c					\
-	x86_64cpuid.s				\
-	$(dnet)/dnet_crypt.c		\
-	$(dnet)/dnet_database.c		\
-	$(dnet)/dnet_main.c			\
-	$(dnet)/dnet_threads.c		\
-	$(dnet)/dnet_connection.c	\
-	$(dnet)/dnet_stream.c		\
-	$(dnet)/dnet_packet.c		\
-	$(dnet)/dnet_command.c		\
-	$(dnet)/dnet_log.c			\
-	$(dnet)/dnet_files.c		\
-	$(dnet)/dnet_tap.c			\
-	$(dfslib)/dfslib_crypt.c	\
-	$(dfslib)/dfslib_random.c	\
-	$(dfslib)/dfslib_string.c	\
-	$(dfstools)/lib/dfsrsa.c	\
-	$(dar)/lib/crc_c.c			\
-	$(utils)/utils.c			\
-	$(utils)/log.c				\
-	./json-rpc/cJSON.c	\
+	address.c						\
+	block.c							\
+	crypt.c							\
+	hash.c							\
+	init.c							\
+	main.c							\
+	memory.c						\
+	netdb.c							\
+	pool.c							\
+	miner.c							\
+	mining_common.c					\
+	sha256.c						\
+	storage.c						\
+	sync.c							\
+	transport.c						\
+	wallet.c						\
+	commands.c						\
+	terminal.c						\
+	$(dnet)/dnet_crypt.c			\
+	$(dnet)/dnet_database.c			\
+	$(dnet)/dnet_main.c				\
+	$(dnet)/dnet_threads.c			\
+	$(dnet)/dnet_connection.c		\
+	$(dnet)/dnet_stream.c			\
+	$(dnet)/dnet_packet.c			\
+	$(dnet)/dnet_command.c			\
+	$(dnet)/dnet_log.c				\
+	$(dnet)/dnet_files.c			\
+	$(dnet)/dnet_tap.c				\
+	$(dfslib)/dfslib_crypt.c		\
+	$(dfslib)/dfslib_random.c		\
+	$(dfslib)/dfslib_string.c		\
+	$(dfstools)/lib/dfsrsa.c		\
+	$(dar)/lib/crc_c.c				\
+	$(utils)/utils.c				\
+	$(utils)/log.c					\
+	$(utils)/linenoise.c			\
+	./json-rpc/cJSON.c				\
 	./json-rpc/cJSON_Utils.c		\
-	./json-rpc/rpc_procedures.c	\
+	./json-rpc/rpc_procedures.c		\
 	./json-rpc/rpc_service.c		\
 	./json-rpc/rpc_wrapper.c		\
+	./http/url.c					\
+	./http/http.c					\
 
 
 headers = \
@@ -96,20 +108,30 @@ headers = \
 	$(ldusinc)/rbtree.h				\
 	$(utils)/utils.h				\
 	$(utils)/log.h					\
-	./json-rpc/cJSON.h	\
+	$(utils)/linenoise.h			\
+	./json-rpc/cJSON.h				\
 	./json-rpc/cJSON_Utils.h		\
-	./json-rpc/rpc_procedures.h	\
+	./json-rpc/rpc_procedures.h		\
 	./json-rpc/rpc_service.h		\
 	./json-rpc/rpc_wrapper.h		\
+	./http/url.h					\
+	./http/http.h					\
 
 
-flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
+
+ifeq ($(OS), Darwin)
+
+	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result
+else
+	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
+
+endif
 
 
 all: xdag
 
 xdag: $(sources) $(headers) Makefile
-	gcc -o xdag $(sources) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) $(flags)
+	gcc -o xdag $(sources) $(asm_src) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) $(flags)
 
 clean:
 	rm xdag

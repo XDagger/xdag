@@ -28,6 +28,7 @@
 #include "cJSON_Utils.h"
 #include "rpc_wrapper.h"
 #include "rpc_service.h"
+#include "../version.h"
 #include "../init.h"
 #include "../block.h"
 #include "../address.h"
@@ -38,19 +39,6 @@
 #include "../../dus/programs/dfstools/source/dfslib/dfslib_string.h"
 #include "../../dnet/dnet_main.h"
 #include "../utils/log.h"
-
-#if defined(_WIN32) || defined(_WIN64)
-#define poll WSAPoll
-#else
-#include <poll.h>
-#endif
-
-#if !defined(_WIN32) && !defined(_WIN64)
-#define UNIX_SOCK  "unix_sock.dat"
-#else
-const uint32_t LOCAL_HOST_IP = 0x7f000001; // 127.0.0.1
-const uint32_t APPLICATION_DOMAIN_PORT = 7676;
-#endif
 
 #define rpc_query_func(command) \
 cJSON * method_xdag_##command (struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version); \
@@ -67,6 +55,37 @@ cJSON * method_xdag_##command (struct xdag_rpc_context * ctx, cJSON * params, cJ
 
 rpc_query_func(state)
 rpc_query_func(stats)
+
+cJSON * method_xdag_version(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version);
+int rpc_account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
+cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version);
+cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version);
+cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version);
+
+/* version */
+/*
+ request:
+ "method":"xdag_version", "params":[], "id":1
+ "jsonrpc":"2.0", "method":"xdag_version", "params":[], "id":1
+ "version":"1.1", "method":"xdag_version", "params":[], "id":1
+ 
+ reponse:
+ "result":[{"version":"0.2.1"}], "error":null, "id":1
+ "jsonrpc":"2.0", "result":[{"version":"0.2.1"}], "error":null, "id":1
+ "version":"1.1", "result":[{"version":"0.2.1"}], "error":null, "id":1
+ */
+cJSON * method_xdag_version(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version)
+{
+	xdag_debug("rpc call method version, version %s",version);
+	cJSON * ret = NULL;
+	cJSON* item = cJSON_CreateObject();
+	
+	cJSON_AddItemToObject(item, "version", cJSON_CreateString(XDAG_VERSION));
+	
+	ret = cJSON_CreateArray();
+	cJSON_AddItemToArray(ret, item);
+	return ret;
+}
 
 /* account */
 /*
@@ -86,13 +105,15 @@ struct rpc_account_callback_data {
 	int count;
 };
 
-int rpc_account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
 int rpc_account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key)
 {
 	struct rpc_account_callback_data *d = (struct rpc_account_callback_data*)data;
 	if(d->count-- <=0) return -1;
 	
-	cJSON* address = cJSON_CreateString(xdag_hash2address(hash));
+	char address_buf[33];
+	xdag_hash2address(hash, address_buf);
+
+	cJSON* address = cJSON_CreateString(address_buf);
 	char str[128] = {0};
 	sprintf(str, "%.9Lf",  amount2xdags(amount));
 	cJSON* balance = cJSON_CreateString(str);
@@ -108,7 +129,6 @@ int rpc_account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xda
 	return 0;
 }
 
-cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version);
 cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version)
 {
 	xdag_debug("rpc call method get_account, version %s",version);
@@ -159,7 +179,6 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
  "jsonrpc":"2.0", "result":[{"balance":"10.111111"}], "error":null, "id":1
  "version":"1.1", "result":[{"balance":"10.111111"}], "error":null, "id":1
  */
-cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version);
 cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version)
 {
 	xdag_debug("rpc call method get_balance, version %s", version);
@@ -225,7 +244,6 @@ cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON * params, c
  "version":"1.1", "result":[{"block":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}], "error":null, "id":1
  */
 
-cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version);
 cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version)
 {
 	//todo: need password or not?
@@ -287,10 +305,13 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON * params, cJSON
 			g_xdag_state = XDAG_STATE_XFER;
 			g_xdag_xfer_last = time(0);
 			xdag_traverse_our_blocks(&xfer, &xfer_callback);
-			
+
+			char address_buf[33];
+			xdag_hash2address(xfer.transactionBlockHash, address_buf);
+
 			cJSON * ret = NULL;
 			cJSON* item = cJSON_CreateObject();				
-			cJSON_AddItemToObject(item, "block", cJSON_CreateString(xdag_hash2address(xfer.transactionBlockHash)));
+			cJSON_AddItemToObject(item, "block", cJSON_CreateString(address_buf));
 			
 			ret = cJSON_CreateArray();
 			cJSON_AddItemToArray(ret, item);
@@ -307,6 +328,7 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON * params, cJSON
 int xdag_rpc_init_procedures(void)
 {
 	/* register query func */
+	rpc_register_func(xdag_version);
 	rpc_register_func(xdag_state);
 	rpc_register_func(xdag_stats);
 	

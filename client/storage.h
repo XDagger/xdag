@@ -5,7 +5,7 @@
 
 #include "block.h"
 
-#define MULTI_THREAD_LOADING 1 /* flag to use multi-thread loading for storage files. */
+#define MULTI_THREAD_LOADING 0 /* flag to use multi-thread loading for storage files. */
 
 struct xdag_storage_sum {
 	uint64_t sum;

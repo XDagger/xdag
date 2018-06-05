@@ -5,6 +5,7 @@
 
 #include <time.h>
 #include <stdint.h>
+#include <pthread.h>
 #include "block.h"
 #include "storage.h"
 
@@ -25,7 +26,7 @@ extern int xdag_generate_random_array(void *array, unsigned long size);
 extern int xdag_send_new_block(struct xdag_block *b);
 
 /* requests all blocks from the remote host, that are in specified time interval;
- * calls callback() for each block, callback recieved the block and data as paramenters;
+ * calls callback() for each block, callback received the block and data as paramenters;
  * return -1 in case of error
  */
 extern int xdag_request_blocks(xdag_time_t start_time, xdag_time_t end_time, void *data,
@@ -49,6 +50,7 @@ extern int xdag_send_packet(struct xdag_block *b, void *conn);
 /* see dnet_user_crypt_action */
 extern int xdag_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action);
 
+extern pthread_mutex_t g_transport_mutex;
 extern time_t g_xdag_last_received;
 
 #endif

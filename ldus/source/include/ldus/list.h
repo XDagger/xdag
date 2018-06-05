@@ -3,36 +3,43 @@
 #ifndef	LDUS_LIST_H_INCLUDED
 #define LDUS_LIST_H_INCLUDED
 
-#define container_of(ptr, type, member) \
-	((type *)((char *)(ptr) - (size_t)&((type *)0)->member))
+#include <stddef.h>
 
-/* циклический список */
+// get rid of access memory 0x0000000000000000 runtime error which will cause dnet restart.
+#define container_of(ptr, type, member) ((type *)((char *)(ptr) - (size_t)offsetof(type, member)))
+//#define container_of(ptr, type, member) ((type *)((char *)(ptr) - (size_t)&((type *)0)->member))
+
+/* doubly linked list */
 struct list {
 	struct list *prev;
 	struct list *next;
 };
 
-/* создать пустой список с данной головой */
+/* initialize an empty list */
 static inline void list_init(struct list *head) {
 	head->prev = head->next = head;
 }
 
-/* добавить узел в список */
+/* adds a node to the end of the list */
 static inline void list_insert(struct list *head, struct list *node) {
-	node->prev = head, node->next = head->next;
+	node->prev = head;
+	node->next = head->next;
 	node->next->prev = head->next = node;
 }
 
-/* добавить узел в список с конца */
+/* adds the node to the beginning of the list */
 static inline void list_insert_before(struct list *head, struct list *node) {
-	node->next = head, node->prev = head->prev;
+	node->next = head;
+	node->prev = head->prev;
 	node->prev->next = head->prev = node;
 }
 
-/* удалить узел из списка */
+/* remove the node from the list */
 static inline void list_remove(struct list *node) {
-	struct list *prev = node->prev, *next = node->next;
-	prev->next = next, next->prev = prev;
+	struct list *prev = node->prev;
+	struct list *next = node->next;
+	prev->next = next;
+	next->prev = prev;
 	node->prev = node->next = node;
 }
 

@@ -5,7 +5,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "system.h"
 
 typedef uint64_t xdag_hash_t[4];
 typedef uint64_t xdag_hashlow_t[3];
@@ -14,9 +13,8 @@ extern void xdag_hash(void *data, size_t size, xdag_hash_t hash);
 
 static inline int xdag_cmphash(xdag_hash_t l, xdag_hash_t r)
 {
-    int i;
-    for(i = 3; i >= 0; --i) if(l[i] != r[i]) return (l[i] < r[i] ? -1 : 1);
-    return 0;
+	for(int i = 3; i >= 0; --i) if(l[i] != r[i]) return (l[i] < r[i] ? -1 : 1);
+	return 0;
 }
 
 extern unsigned xdag_hash_ctx_size(void);

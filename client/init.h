@@ -5,6 +5,7 @@
 
 #include <time.h>
 #include "block.h"
+#include "system.h"
 
 enum xdag_states
 {
@@ -24,7 +25,7 @@ extern struct xdag_stats
     uint32_t nhosts, total_nhosts, reserved1, reserved2;
 } g_xdag_stats;
 
-#define HASHRATE_LAST_MAX_TIME	(64 * 4)
+#define HASHRATE_LAST_MAX_TIME	(64 * 4) // numbers of main blocks in about 4H, to calculate the pool and network mean hashrate
 
 extern struct xdag_ext_stats
 {
@@ -55,6 +56,10 @@ extern char *g_coinname, *g_progname;
 
 //defines if client runs as miner or pool
 extern int g_is_miner;
+
+//Default type of the block header
+//Test network and main network have different types of the block headers, so blocks from different networks are incompatible
+extern enum xdag_field_type g_block_header_type;
 
 extern int xdag_init(int argc, char **argv, int isGui);
 
