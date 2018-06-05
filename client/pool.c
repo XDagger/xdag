@@ -1417,7 +1417,7 @@ void* pool_remove_inactive_connections(void* arg)
 		pthread_mutex_lock(&g_descriptors_mutex);
 		LL_FOREACH(g_connection_list_head, elt)
 		{
-			if(current_time - elt->connection_data.last_share_time > 300) { //last share is received more than 3 minutes ago
+			if(current_time - elt->connection_data.last_share_time > 300) { //last share is received more than 5 minutes ago
 				elt->connection_data.deleted = 1;
 				elt->connection_data.disconnection_reason = strdup("inactive connection");
 			}
