@@ -599,7 +599,6 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 				}
 
 				conn_data->miner->maxdiff[i] = diff;
-
 			} else if(diff > conn_data->miner->maxdiff[i]) {
 				conn_data->miner->maxdiff[i] = diff;
 			}
