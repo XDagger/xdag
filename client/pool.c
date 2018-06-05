@@ -1039,7 +1039,6 @@ static double countpay(struct miner_pool_data *miner, int confirmation_index, do
 -		sum += process_outdated_miner(miner);
 -		diff_count++;
 -	} else if(miner->maxdiff[confirmation_index] > 0) {
-	if(miner->maxdiff[confirmation_index] > 0) {
 		sum += miner->maxdiff[confirmation_index];
 		miner->maxdiff[confirmation_index] = 0;
 		diff_count++;
