@@ -1497,8 +1497,12 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 int xdagGetLastMainBlocks(int count, char** addressArray)
 {
 	int i = 0;
+	// top_main_chain is actual latest main block,
+	// b->link[b->max_diff_link] will return another struct block_internal
+	// that's the one with index b->max_diff_link
+	// max_diff_link is (usually) the previous mined main block.
 	for (struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
-		if (b->flags & BI_MAIN) {
+		if (b->flags & BI_MAIN) { // check that is is main (it could be not, for example if it was mined one, but it wasn't the one with lowest hash)
 			xdag_hash2address(b->hash, addressArray[i]);
 			++i;
 		}
