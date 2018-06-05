@@ -20,7 +20,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #define NSAMPLES_MAX 255 
 #endif
 
-extern void welford_one_pass(long double* mean, long double sample, uint16_t nsamples);
+void welford_one_pass(long double* mean, long double sample, uint16_t nsamples);
 void moving_average(long double* mean, long double sample, uint16_t nsamples);
 
 #endif
