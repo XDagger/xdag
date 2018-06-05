@@ -19,6 +19,7 @@
 #include "mining_common.h"
 #include "pool.h"
 #include "address.h"
+#include "moving_statistics/moving_average.h"
 #include "commands.h"
 #include "storage.h"
 #include "transport.h"
@@ -30,7 +31,6 @@
 #include "../dus/programs/dar/source/include/crc.h"
 #include "uthash/utlist.h"
 #include "uthash/uthash.h"
-#include "moving_statistics/moving_average.h"
 
 //TODO: why do we need these two definitions?
 #define START_MINERS_COUNT     256
@@ -40,7 +40,6 @@
 #define FUND_ADDRESS                       "FQglVQtb60vQv2DOWEUL7yh3smtj7g1s" /* community fund */
 #define SHARES_PER_TASK_LIMIT              20                                 /* maximum count of shares per task */
 #define DEFAUL_CONNECTIONS_PER_MINER_LIMIT 100
-#define NSAMPLES_MAX 20
 
 struct nonce_hash {
 	uint64_t key;
@@ -149,6 +148,8 @@ void *pool_net_thread(void *arg);
 void *pool_main_thread(void *arg);
 void *pool_block_thread(void *arg);
 void *pool_remove_inactive_connections(void *arg);
+
+static inline void update_mean_log_diff(struct connection_pool_data *, struct xdag_pool_task *, xdag_hash_t);
 
 /* initialization of the pool */
 int xdag_initialize_pool(const char *pool_arg)
@@ -569,36 +570,26 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 		// of the 256 bit number hash[3] || hash[2] || hash[1] || hash[0].
 
 		diff = ldexp(diff, -64);
-		diff += ((uint64_t*)hash)[3]; // Since diff is unsigned, diff < 1 implies diff=0 and log(diff) function is not defined for diff=0, it is needed to eliminate
-					      // the diff=0 case (if(diff < 1) diff = 1). The "most difficult" hash sent by miner implies diff=1 (since this is the case of hash[3] is 0) 
-		if(diff < 1) diff = 1;        // and log(1)=0, thus maximum diff value, at this point, is 46. The "easiest" hash, instead, would lay on
-					      // the same result that is diff 46 (that's the case hash[3]=hash[2]=0xFFFFFFFFFFFFFFFF, hash[3]+1=0 
-		diff = 46 - log(diff);	      // thus it's the same as the most difficult hash), it is probably a bug. Let's consider an "almost easiest" hash
-					      // like hash[3]=FFFFFFFFFFFFFFFF and hash[2]<=FFFFFFFFFFFFFBFF, in this case we have 46-log(FFFFFFFFFFFFFFFF)=46-19=27.
-					      // At this point diff seems to have a range [46;27], where higher value is higher difficulty.
+		diff += ((uint64_t*)hash)[3]; 
+					      
+		if(diff < 1) diff = 1;        			      
+		diff = 46 - log(diff);	      			      
+					      
 		// Adding share for connection
 		if(conn_data->task_time < task_time) { // conn_data->task_time will keep old value until pool doesn't accept the share of the task.
 			conn_data->task_time = task_time;  // this will prevent to count more share for the same task, cannot join this block a new time for same task.
 
-			if(conn_data->maxdiff[i] > 0) { // avoid first iteration
-				// Each accepted share is the previous share's diff to be added to the total, not the actual one.
+			if(conn_data->maxdiff[i] > 0) {
 				conn_data->prev_diff += conn_data->maxdiff[i];
 				conn_data->prev_diff_count++;
 			}
 
 			conn_data->maxdiff[i] = diff;
 
-	
-			moving_average(&conn_data->mean_log_difficulty, diff2log(hash2difficulty(conn_data->last_min_hash)),conn_data->bounded_task_counter);
-                        if(conn_data->bounded_task_counter<NSAMPLES_MAX)
-                                ++conn_data->bounded_task_counter;
-			memcpy(conn_data->last_min_hash,hash,sizeof(xdag_hash_t));
 			// share already counted, but we will update the maxdiff so the most difficult share will be counted.
-		} else if(diff > conn_data->maxdiff[i]) {
+		} else if(diff > conn_data->maxdiff[i])
 			conn_data->maxdiff[i] = diff;
-                        memcpy(conn_data->last_min_hash,hash,sizeof(xdag_hash_t));
 
-		}
 		// Adding share for miner
 		if(conn_data->miner) {
 			if(conn_data->miner->task_time < task_time) {
@@ -611,15 +602,8 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 
 				conn_data->miner->maxdiff[i] = diff;
 
-
-	                        moving_average(&conn_data->miner->mean_log_difficulty, diff2log(hash2difficulty(conn_data->miner->last_min_hash)),conn_data->miner->bounded_task_counter);
-                                if(conn_data->miner->bounded_task_counter<NSAMPLES_MAX)
-                                        ++conn_data->miner->bounded_task_counter;
-	                        memcpy(conn_data->miner->last_min_hash,hash,sizeof(xdag_hash_t));
-			} else if(diff > conn_data->miner->maxdiff[i]) {
+			} else if(diff > conn_data->miner->maxdiff[i])
 				conn_data->miner->maxdiff[i] = diff;
-	                        memcpy(conn_data->miner->last_min_hash,hash,sizeof(xdag_hash_t));
-			}
 		} else {
 			xdag_err("conn_data->miner is null");
 		}
@@ -802,6 +786,7 @@ static int receive_data_from_connection(connection_list_element *connection)
 				xdag_hash_t hash;
 				xdag_hash_final(task->ctx0, conn_data->data, sizeof(struct xdag_field), hash);
 				xdag_set_min_share(task, conn_data->miner->id.data, hash);
+				update_mean_log_diff(conn_data, task, hash);
 				calculate_nopaid_shares(conn_data, task, hash);
 			}
 		}
@@ -1023,40 +1008,15 @@ static double connection_calculate_unpaid_shares(struct connection_pool_data *co
 	return diff2pay(sum, count);
 }
 
-// calculates the rest of shares and clear shares
-static double process_outdated_miner(struct miner_pool_data *miner)
-{
-	double sum = 0;
-	int diff_count = 0;
-
-	for(int i = 0; i < CONFIRMATIONS_COUNT; ++i) {
-		if(miner->maxdiff[i] > 0) {
-			sum += miner->maxdiff[i];
-			miner->maxdiff[i] = 0;
-			++diff_count;
-		}
-	}
-
-	if(diff_count > 0) {
-		sum /= diff_count;
-	}
-
-	return sum;
-}
-
 static double countpay(struct miner_pool_data *miner, int confirmation_index, double *pay)
 {
 	double sum = 0;
 	int diff_count = 0;
 
-	//if miner is in archive state and last connection was disconnected more than 16 minutes ago we pay for the rest of shares and clear shares
-	if(miner->state == MINER_ARCHIVE && g_xdag_pool_task_index - miner->task_index > XDAG_POOL_CONFIRMATIONS_COUNT) {
-		sum += process_outdated_miner(miner);
-		diff_count++;
-	} else if(miner->maxdiff[confirmation_index] > 0) {
+	if(miner->maxdiff[confirmation_index] > 0) {
 		sum += miner->maxdiff[confirmation_index];
 		miner->maxdiff[confirmation_index] = 0;
-		++diff_count;
+		diff_count++;
 	}
 
 	*pay = diff2pay(sum, diff_count);
@@ -1432,7 +1392,7 @@ void* pool_remove_inactive_connections(void* arg)
 		pthread_mutex_lock(&g_descriptors_mutex);
 		LL_FOREACH(g_connection_list_head, elt)
 		{
-			if(current_time - elt->connection_data.last_share_time > 300) { //last share is received more than 5 minutes ago
+			if(current_time - elt->connection_data.last_share_time > 180) { //last share is received more than 3 minutes ago
 				elt->connection_data.deleted = 1;
 				elt->connection_data.disconnection_reason = strdup("inactive connection");
 			}
@@ -1445,3 +1405,27 @@ void* pool_remove_inactive_connections(void* arg)
 	return NULL;
 }
 
+static inline void update_mean_log_diff(struct connection_pool_data *conn_data, struct xdag_pool_task *task, xdag_hash_t hash)
+{
+	const xdag_time_t task_time = task->task_time;
+
+	if(conn_data->task_time < task_time) {
+		moving_average(&conn_data->mean_log_difficulty, diff2log(hash2difficulty(conn_data->last_min_hash)),conn_data->bounded_task_counter); 
+                if(conn_data->bounded_task_counter<NSAMPLES_MAX)
+			++conn_data->bounded_task_counter;
+		memcpy(conn_data->last_min_hash,hash,sizeof(xdag_hash_t));
+	} else if(xdag_cmphash(hash, conn_data->last_min_hash) < 0)
+		memcpy(conn_data->last_min_hash,hash,sizeof(xdag_hash_t));
+
+	if(conn_data->miner) {
+		if(conn_data->miner->task_time < task_time) {
+	        	moving_average(&conn_data->miner->mean_log_difficulty, diff2log(hash2difficulty(conn_data->miner->last_min_hash)),conn_data->miner->bounded_task_counter);
+                	if(conn_data->miner->bounded_task_counter<NSAMPLES_MAX)
+                		++conn_data->miner->bounded_task_counter;
+	                memcpy(conn_data->miner->last_min_hash,hash,sizeof(xdag_hash_t));
+			} else if(xdag_cmphash(hash, conn_data->miner->last_min_hash) < 0) 
+				memcpy(conn_data->miner->last_min_hash,hash,sizeof(xdag_hash_t));
+	} else {
+		xdag_err("conn_data->miner is null");
+	}
+}
