@@ -50,7 +50,7 @@ struct block_internal {
 	struct ldus_rbtree node;
 	xdag_hash_t hash;
 	xdag_diff_t difficulty;
-	xdag_amount_t amount, linkamount[MAX_LINKS], fee;
+	xdag_amount_t amount, linkamount[MAX_LINKS], fee; //amount=amount of coins
 	xdag_time_t time;
 	uint64_t storage_pos;
 	struct block_internal *ref, *link[MAX_LINKS];
