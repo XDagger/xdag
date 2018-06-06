@@ -37,6 +37,7 @@
 #define FUND_ADDRESS                       "FQglVQtb60vQv2DOWEUL7yh3smtj7g1s" /* community fund */
 #define SHARES_PER_TASK_LIMIT              20                                 /* maximum count of shares per task */
 #define DEFAUL_CONNECTIONS_PER_MINER_LIMIT 100
+#define WORKERNAME_HEADER_WORD             0xf46b9853u
 
 struct nonce_hash {
 	uint64_t key;
@@ -94,6 +95,7 @@ struct connection_pool_data {
 	time_t last_share_time;
 	int deleted;
 	char* disconnection_reason;
+	char* worker_name;
 };
 
 typedef struct connection_list_element {
@@ -494,6 +496,9 @@ static void close_connection(connection_list_element *connection, const char *me
 	if(conn_data->disconnection_reason) {
 		free(conn_data->disconnection_reason);
 	}
+	if(conn_data->worker_name) {
+		free(conn_data->worker_name);
+	}
 
 	if(conn_data->miner) {
 		--conn_data->miner->connections_count;
@@ -738,6 +743,27 @@ static int is_block_data_received(connection_list_element *connection)
 	return 1;
 }
 
+// checks if received data belongs to worker name
+// returns:
+// 0 - received data does not belong to worker name
+// 1 - worker name is processed
+static int is_worker_name_received(connection_list_element *connection)
+{
+	struct connection_pool_data *conn_data = &connection->connection_data;
+
+	if(conn_data->nfield_in == 17 && conn_data->data[0] == WORKERNAME_HEADER_WORD) {
+		size_t worker_name_len = strnlen((const char*)&conn_data->data[1], 28);
+		if(worker_name_len) {
+			conn_data->worker_name = (char*)malloc(worker_name_len + 1);
+			memcpy(conn_data->worker_name, (const char*)&conn_data->data[1], worker_name_len);
+			conn_data->worker_name[worker_name_len] = 0;
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 // processes received share
 // returns:
 // 0 - error
@@ -806,13 +832,20 @@ static int receive_data_from_connection(connection_list_element *connection)
 		int result = is_block_data_received(connection);
 		if(result < 0) {
 			return 0;
-		}		
+		}
 		if(result > 0) {
 			return 1;
 		}
-		
+
+		result = is_worker_name_received(connection);
+		if(result > 0) {
+			return 1;
+		}
+
 		//share is received
-		process_received_share(connection);
+		if(!process_received_share(connection)) {
+			return 0;
+		}
 	}
 
 	return 1;
@@ -1303,7 +1336,7 @@ static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int 
 	char address_buf[33];
 	xdag_hash2address(miner->id.data, address_buf);
 
-	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", index, address_buf,
+	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %-13lf  -\n", index, address_buf,
 		miner_state_to_string(miner->state), "-", "-", miner_calculate_unpaid_shares(miner));
 
 	if(print_connections) {
@@ -1318,8 +1351,10 @@ static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int 
 				sprintf(in_out_str, "%llu/%llu", (unsigned long long)conn_data->nfield_in * sizeof(struct xdag_field),
 					(unsigned long long)conn_data->nfield_out * sizeof(struct xdag_field));
 
-				fprintf(out, " C%d. -                                 -        %-21s  %-16s  %lf\n", ++conn_index,
-					ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data));
+				//TODO: fix that logic
+				fprintf(out, " C%d. -                                 -        %-21s  %-16s  %-13lf  %s\n", ++conn_index,
+					ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data), 
+					conn_data->worker_name ? conn_data->worker_name : "-");
 			}
 		}
 	}
@@ -1358,8 +1393,10 @@ static void print_connection(FILE *out, int index, struct connection_pool_data *
 	} else {
 		strcpy(address, "-                               ");
 	}
-	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %lf\n", index, address,
-		connection_state_to_string(conn_data->state), ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data));
+	//TODO: fix that logic
+	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %-13lf  %s\n", index, address,
+		connection_state_to_string(conn_data->state), ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data),
+		conn_data->worker_name ? conn_data->worker_name : "-");
 }
 
 static int print_connections(FILE *out)
@@ -1381,13 +1418,13 @@ static int print_connections(FILE *out)
 int xdag_print_miners(FILE *out, int printOnlyConnections)
 {
 	fprintf(out, "List of miners:\n"
-		" NN  Address for payment to            Status   IP and port            in/out bytes      nopaid shares\n"
-		"------------------------------------------------------------------------------------------------------\n");
+		" NN  Address for payment to            Status   IP and port            in/out bytes     nopaid shares   worker name\n"
+		"-------------------------------------------------------------------------------------------------------------------\n");
 
 	const int count_active = printOnlyConnections ? print_connections(out) : print_miners(out);
 
 	fprintf(out,
-		"------------------------------------------------------------------------------------------------------\n"
+		"-------------------------------------------------------------------------------------------------------------------\n"
 		"Total %d active %s.\n", count_active, printOnlyConnections ? "connections" : "miners");
 
 	return count_active;
