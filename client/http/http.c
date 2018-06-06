@@ -20,6 +20,11 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <unistd.h>
+#include <sys/fcntl.h>
+#include <errno.h>
+#else
+
 #endif
 
 #include <stdio.h>
@@ -31,24 +36,6 @@
 #include "../system.h"
 
 
-#if defined(_WIN32) || defined(_WIN64)
-#if defined(_WIN64)
-#define poll WSAPoll
-#else
-#define poll(a, b, c)((a)->revents =(a)->events,(b))
-#endif
-#else
-#include <poll.h>
-#endif
-
-#if defined(_WIN32) || defined(_WIN64)
-#else
-#include <netinet/in.h>
-#include <unistd.h>
-#include <sys/fcntl.h>
-#include <errno.h>
-#endif
-
 
 // Simple structure to keep track of the handle, and
 // of what needs to be freed later.
@@ -57,9 +44,6 @@ typedef struct {
 	SSL *sslHandle;
 	SSL_CTX *sslContext;
 } connection;
-
-#define SERVER  "raw.githubusercontent.com"
-#define PORT 443
 
 connection * tcpConnect(const char* h, int port);
 void tcpDisconnect(connection *c);
@@ -73,31 +57,32 @@ void sslWrite(connection *c, char *text);
 
 // Establish a regular tcp connection
 connection * tcpConnect(const char* h, int port)
-{	
-	int error, sock = 0 ;
+{
+	int sock = 0 ;
 	struct sockaddr_in server;
 	if(!strcmp(h, "any")) {
 		server.sin_addr.s_addr = htonl(INADDR_ANY);
 	} else if(!inet_aton(h, &server.sin_addr)) {
 		struct hostent *host = gethostbyname(h);
-		sock = socket(AF_INET, SOCK_STREAM, 0);
-		if(sock == -1) {
-			xdag_err("Create sock error, %s", strerror(sock));
+		server.sin_addr = *((struct in_addr *) host->h_addr);
+	}
+	
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if(sock == -1) {
+		xdag_err("Create sock error, %s", strerror(sock));
+		sock = 0;
+	} else {
+		server.sin_family = AF_INET;
+		server.sin_port = htons(port);
+		
+		memset(&(server.sin_zero), 0, 8);
+		
+		uint32_t timeout = 1000*10;
+		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+		int error = connect(sock,(struct sockaddr *) &server, sizeof(struct sockaddr));
+		if(error == -1) {
+			xdag_err("Connect error, %s", strerror(error));
 			sock = 0;
-		} else {
-			server.sin_family = AF_INET;
-			server.sin_port = htons(port);
-			server.sin_addr = *((struct in_addr *) host->h_addr);
-			memset(&(server.sin_zero), 0, 8);
-			
-			uint32_t timeout = 1000*10;
-			setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
-			error = connect(sock,(struct sockaddr *) &server, sizeof(struct sockaddr));
-			if(error == -1)
-			{
-				xdag_err("Connect error, %s", strerror(error));
-				sock = 0;
-			}
 		}
 	}
 	
@@ -174,22 +159,25 @@ connection *sslConnect(const char* h, int port)
 		server.sin_addr.s_addr = htonl(INADDR_ANY);
 	} else if(!inet_aton(h, &server.sin_addr)) {
 		struct hostent *host = gethostbyname(h);
-		sock = socket(AF_INET, SOCK_STREAM, 0);
-		if(sock == -1) {
-			xdag_err("Create sock error, %s", strerror(sock));
+		server.sin_addr = *((struct in_addr *) host->h_addr);
+	}
+	
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if(sock == -1) {
+		xdag_err("Create sock error, %s", strerror(sock));
+		sock = 0;
+	} else {
+		server.sin_family = AF_INET;
+		server.sin_port = htons(port);
+		
+		memset(&(server.sin_zero), 0, 8);
+		
+		uint32_t timeout = 1000*10;
+		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+		int error = connect(sock,(struct sockaddr *) &server, sizeof(struct sockaddr));
+		if(error == -1) {
+			xdag_err("Connect error, %s", strerror(error));
 			sock = 0;
-		} else {
-			server.sin_family = AF_INET;
-			server.sin_port = htons(port);
-			server.sin_addr = *((struct in_addr *) host->h_addr);
-			memset(&(server.sin_zero), 0, 8);
-			
-			int error = connect(sock,(struct sockaddr *) &server, sizeof(struct sockaddr));
-			if(error == -1)
-			{
-				xdag_err("Connect error, %s", strerror(error));
-				sock = 0;
-			}
 		}
 	}
 	
@@ -304,7 +292,6 @@ char *http_get(const char *url)
 	char *resp = NULL;
 	
 	url_field_t *fields = url_parse(url);
-//	url_field_print(fields);
 	
 	if(fields->host) {
 		char *path = "";
@@ -363,7 +350,7 @@ int test_https(void)
 	connection *c;
 	char *resp;
 	
-	c = sslConnect(SERVER, PORT);
+	c = sslConnect("raw.githubusercontent.com", 443);
 	
 	sslWrite(c, "GET /XDagger/xdag/master/client/netdb-white.txt HTTP/1.1\r\nHost: raw.githubusercontent.com\r\nconnection: close\r\n\r\n");
 	resp = sslRead(c);
@@ -381,7 +368,7 @@ int test_http(void)
 	connection *c;
 	char *resp;
 	
-	c = tcpConnect(SERVER, 80);
+	c = tcpConnect("raw.githubusercontent.com", 80);
 	
 	tcpWrite(c, "GET /XDagger/xdag/master/client/netdb-white.txt HTTP/1.1\r\nHost: raw.githubusercontent.com\r\nconnection: close\r\n\r\n");
 	resp = tcpRead(c);
