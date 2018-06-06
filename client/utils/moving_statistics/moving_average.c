@@ -13,13 +13,31 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 #include "moving_average.h"
 
-
+// this function update the (old) mean, adding a new sample to this mean.
+// it recalculate the mean without keep an array of all old samples
 void welford_one_pass(long double* mean, long double sample, uint16_t nsamples){
 	if(nsamples)
         	*mean=*mean+(sample-*mean)/(long double)(nsamples);
 }
 
 
+// Moving average explanation: SX represent the sample, --------------- represent out window (4h in our case), TX represent the time (task time in our case)
+// 			S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 ...
+// T1			--------------			mean=(S1+S2+S3)/3
+// T2			   --------------		mean=(S2+S3+S4)/3
+// T3			      --------------		mean=(S3+S4+S5)/3
+// and so on.
+// moving_average is an approximation, thus it does (mathematically, semantic level):
+// 			S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 ...
+// T1			--------------			mean=(S1+S2+S3)/3
+// T2			   --------------		mean=(S1+S2+S3+S4 -mean/3)/3
+// T3			      --------------		mean=(S1+S2+S3+S4+S5 -mean/3 -mean/3)/3
+// and so on. Computationally it doesn't start from S1 each time (in fact you can see that it only keep the mean, not every S1,S2,.. etc)
+
+// this function will call normal welford_one_pass at the start, but when number of
+// samples will arrive at NSAMPLES_MAX (that represent our 4h mean) it will force 
+// welford_one_pass to remove a ideal sample (with mean value) from the mean calculation
+// and will add the new sample in the mean, in the same time.
 void moving_average(long double* mean, long double sample, uint16_t nsamples){
 	if(nsamples<2)
 		*mean=sample;
