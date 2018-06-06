@@ -100,9 +100,9 @@ struct connection_pool_data {
 	time_t last_share_time;
 	int deleted;
 	char* disconnection_reason;
-        xdag_hash_t last_min_hash;
+	xdag_hash_t last_min_hash;
 	long double mean_log_difficulty;
-        uint16_t bounded_task_counter;
+	uint16_t bounded_task_counter;
 };
 
 typedef struct connection_list_element {
@@ -148,7 +148,7 @@ void *pool_main_thread(void *arg);
 void *pool_block_thread(void *arg);
 void *pool_remove_inactive_connections(void *arg);
 
-static inline void update_mean_log_diff(struct connection_pool_data *, struct xdag_pool_task *, xdag_hash_t);
+static void update_mean_log_diff(struct connection_pool_data *, struct xdag_pool_task *, xdag_hash_t);
 
 /* initialization of the pool */
 int xdag_initialize_pool(const char *pool_arg)
@@ -1427,7 +1427,7 @@ void* pool_remove_inactive_connections(void* arg)
 	return NULL;
 }
 
-static inline void update_mean_log_diff(struct connection_pool_data *conn_data, struct xdag_pool_task *task, xdag_hash_t hash)
+static void update_mean_log_diff(struct connection_pool_data *conn_data, struct xdag_pool_task *task, xdag_hash_t hash)
 {
 	const xdag_time_t task_time = task->task_time;
 

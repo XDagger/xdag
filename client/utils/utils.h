@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
-#include "math.h"
 
 #ifdef _WIN32
 #define DELIMITER "\\"
