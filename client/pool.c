@@ -1445,8 +1445,8 @@ static inline void update_mean_log_diff(struct connection_pool_data *conn_data, 
                 	if(conn_data->miner->bounded_task_counter<NSAMPLES_MAX)
                 		++conn_data->miner->bounded_task_counter;
 	                memcpy(conn_data->miner->last_min_hash,hash,sizeof(xdag_hash_t));
-			} else if(xdag_cmphash(hash, conn_data->miner->last_min_hash) < 0) 
-				memcpy(conn_data->miner->last_min_hash,hash,sizeof(xdag_hash_t));
+		} else if(xdag_cmphash(hash, conn_data->miner->last_min_hash) < 0) 
+			memcpy(conn_data->miner->last_min_hash,hash,sizeof(xdag_hash_t));
 	} else {
 		xdag_err("conn_data->miner is null");
 	}
