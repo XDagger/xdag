@@ -13,6 +13,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 #include "moving_average.h"
 
+void welford_one_pass(long double*, long double, uint16_t);
+
 // this function update the (old) mean, adding a new sample to this mean.
 // it recalculate the mean without keep an array of all old samples
 void welford_one_pass(long double* mean, long double sample, uint16_t nsamples){
