@@ -27,7 +27,6 @@
 #define MINERS_PWD             "minersgonnamine"
 #define SECTOR0_BASE           0x1947f3acu
 #define SECTOR0_OFFSET         0x82e9d1b5u
-#define HEADER_WORD            0x3fca9e2bu
 #define SEND_PERIOD            10                                  /* share period of sending shares */
 
 struct miner {
@@ -94,7 +93,7 @@ static int send_to_pool(struct xdag_field *fld, int nfld)
 
 		xdag_hash(f, sizeof(struct xdag_block), h);
 
-		f[0].transport_header = HEADER_WORD;
+		f[0].transport_header = BLOCK_HEADER_WORD;
 
 		uint32_t crc = crc_of_array((uint8_t*)f, sizeof(struct xdag_block));
 
