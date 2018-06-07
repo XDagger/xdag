@@ -13,8 +13,7 @@
 #include <poll.h>
 #endif
 
-#define DATA_SIZE          (sizeof(struct xdag_field) / sizeof(uint32_t))
-#define BLOCK_HEADER_WORD  0x3fca9e2bu
+#define DATA_SIZE     (sizeof(struct xdag_field) / sizeof(uint32_t))
 
 struct xdag_pool_task {
 	struct xdag_field task[2], lastfield, minhash, nonce;
