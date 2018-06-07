@@ -1345,8 +1345,8 @@ static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int 
 	char address_buf[33];
 	xdag_hash2address(miner->id.data, address_buf);
 
-	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %-13lf  -  -\n", index, address_buf,
-		miner_state_to_string(miner->state), "-", "-", miner_calculate_unpaid_shares(miner));
+	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %-13lf  -             %Lf\n", index, address_buf,
+		miner_state_to_string(miner->state), "-", "-", miner_calculate_unpaid_shares(miner), log_difficulty2hashrate(miner->mean_log_difficulty));
 
 	if(print_connections) {
 		connection_list_element *elt;
@@ -1361,7 +1361,7 @@ static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int 
 					(unsigned long long)conn_data->nfield_out * sizeof(struct xdag_field));
 
 				//TODO: fix that logic
-				fprintf(out, " C%d. -                                 -        %-21s  %-16s  %-13lf  %-13s  %Lf\n", ++conn_index,
+				fprintf(out, " C%d. -                                 -        %-21s  %-16s  %-13lf  %-12s  %Lf\n", ++conn_index,
 					ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data), 
 					conn_data->worker_name ? conn_data->worker_name : "-", log_difficulty2hashrate(conn_data->mean_log_difficulty));
 			}
@@ -1404,7 +1404,7 @@ static void print_connection(FILE *out, int index, struct connection_pool_data *
 	}
 
 	//TODO: fix that logic
-	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %-13lf  %s  %Lf\n", index, address,
+	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %-13lf  %-12s  %Lf\n", index, address,
 		connection_state_to_string(conn_data->state), ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data),
 		conn_data->worker_name ? conn_data->worker_name : "-", log_difficulty2hashrate(conn_data->mean_log_difficulty));
 }
@@ -1428,13 +1428,13 @@ static int print_connections(FILE *out)
 int xdag_print_miners(FILE *out, int printOnlyConnections)
 {
 	fprintf(out, "List of miners:\n"
-		" NN  Address for payment to            Status   IP and port            in/out bytes     nopaid shares   worker name    hashrate MH/s\n"
-		"------------------------------------------------------------------------------------------------------------------------------------\n");
+		" NN  Address for payment to            Status   IP and port            in/out bytes     nopaid shares   worker name   hashrate MH/s\n"
+		"-----------------------------------------------------------------------------------------------------------------------------------\n");
 
 	const int count_active = printOnlyConnections ? print_connections(out) : print_miners(out);
 
 	fprintf(out,
-		"------------------------------------------------------------------------------------------------------------------------------------\n"
+		"-----------------------------------------------------------------------------------------------------------------------------------\n"
 		"Total %d active %s.\n", count_active, printOnlyConnections ? "connections" : "miners");
 
 	return count_active;
@@ -1504,7 +1504,8 @@ static void update_mean_log_diff(struct connection_pool_data *conn_data, struct 
 	const xdag_time_t task_time = task->task_time;
 
 	if(conn_data->task_time < task_time) {
-		moving_average(&conn_data->mean_log_difficulty, diff2log(hash2difficulty(conn_data->last_min_hash)),conn_data->bounded_task_counter); 
+		if(conn_data->last_min_hash)
+			moving_average(&conn_data->mean_log_difficulty, diff2log(hash2difficulty(conn_data->last_min_hash)),conn_data->bounded_task_counter);
                 if(conn_data->bounded_task_counter<NSAMPLES_MAX)
 			++conn_data->bounded_task_counter;
 		memcpy(conn_data->last_min_hash,hash,sizeof(xdag_hash_t));
@@ -1513,7 +1514,8 @@ static void update_mean_log_diff(struct connection_pool_data *conn_data, struct 
 
 	if(conn_data->miner) {
 		if(conn_data->miner->task_time < task_time) {
-	        	moving_average(&conn_data->miner->mean_log_difficulty, diff2log(hash2difficulty(conn_data->miner->last_min_hash)),conn_data->miner->bounded_task_counter);
+			if(conn_data->miner->last_min_hash)
+	        		moving_average(&conn_data->miner->mean_log_difficulty, diff2log(hash2difficulty(conn_data->miner->last_min_hash)),conn_data->miner->bounded_task_counter);
                 	if(conn_data->miner->bounded_task_counter<NSAMPLES_MAX)
                 		++conn_data->miner->bounded_task_counter;
 	                memcpy(conn_data->miner->last_min_hash,hash,sizeof(xdag_hash_t));
