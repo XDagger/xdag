@@ -55,7 +55,7 @@ struct block_internal {
 	uint64_t storage_pos;
 	struct block_internal *ref, *link[MAX_LINKS]; // ref is the block that this block is referred from! ,link are the tx (aka blocks) that the block is referring
 	struct block_backrefs *backrefs; // backrefs struct 
-	uint8_t flags, nlinks, max_diff_link, reserved;
+	uint8_t flags, nlinks, max_diff_link, reserved; // index of link with max_diff_link, usually the previous main block (if we are checking a main block)
 	uint16_t in_mask; // each bit tell you if i transaction is in or out (in fact MAX_LINKS is 16)
 	uint16_t n_our_key;
 };
