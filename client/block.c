@@ -1054,7 +1054,7 @@ static void *work_thread(void *arg)
 		
 		pthread_mutex_lock(&block_mutex);
 		
-		if (g_xdag_state == XDAG_STATE_REST) {
+		if (g_xdag_state == XDAG_STATE_REST) { // rest mode, not sure when it goes in this state.
 			g_xdag_sync_on = 0;
 			pthread_mutex_unlock(&block_mutex);
 			xdag_mining_start(g_light_mode ? ~0 : 0);
@@ -1069,7 +1069,7 @@ static void *work_thread(void *arg)
 				ldus_rbtree_walk_up(root, reset_callback);
 			}
 
-			root = 0;
+			root = 0; //tree of nodes by hash is resetted
 			g_balance = 0;
 			top_main_chain = pretop_main_chain = 0;
 			ourfirst = ourlast = noref_first = noref_last = 0;
