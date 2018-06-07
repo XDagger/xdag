@@ -812,6 +812,7 @@ static int process_received_share(connection_list_element *connection)
 		update_mean_log_diff(conn_data, task, hash);
 		calculate_nopaid_shares(conn_data, task, hash);
 	}
+
 	return 1;
 }
 
