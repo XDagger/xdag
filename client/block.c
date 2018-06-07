@@ -1383,7 +1383,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	int i;
 
 	pthread_mutex_lock(&block_mutex);
-	struct block_internal *bi = block_by_hash(hash);
+	struct block_internal *bi = block_by_hash(hash); //just search the hash in the tree, that is ordered by hash.
 	pthread_mutex_unlock(&block_mutex);
 	
 	if (!bi) {
