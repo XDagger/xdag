@@ -1429,9 +1429,11 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, " direction  transaction                                amount       time                   \n");
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
 	
-	if (bi->flags & BI_MAIN) {
-		xdag_hash2address(h, address);
+	// just a fake transaction that represent the earnings.
+	if (bi->flags & BI_MAIN) { // if it is a main block.
+		xdag_hash2address(h, address); 
 		fprintf(out, "   earning: %s  %10u.%09u  %s.%03d\n", address,
+			//just calculating the amount earned (it need to check if halvings happened)
 				pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)),
 				tbuf, (int)((bi->time & 0x3ff) * 1000) >> 10);
 	}
