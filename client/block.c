@@ -582,7 +582,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 	
 	memcpy(nodeBlock, &tmpNodeBlock, sizeof(struct block_internal));
-	ldus_rbtree_insert(&root, &nodeBlock->node);
+	ldus_rbtree_insert(&root, &nodeBlock->node); // this is the only call that populate the tree.
 	g_xdag_stats.nblocks++;
 	
 	if (g_xdag_stats.nblocks > g_xdag_stats.total_nblocks) {
