@@ -1,138 +1,32 @@
 The Dagger (XDAG) cryptocurrency
 ================================
 
-- Community site: https://xdag.io
-- The Main net was launched January 5, 2018 at 22:45 GMT.
+- Community site: https://xdag.io  
+- The Main net was launched January 5, 2018 at 22:45 GMT  
 
 
 Principles:
 ----------
 
-- Directed acyclic graph (DAG), not blockchain
-- Block = transaction = address
-- Original idea and implementation
-- Mineable, no premine, no ICO
-- Mining new money every 64 seconds
+- Directed acyclic graph (DAG), not blockchain  
+- Block = transaction = address  
+- Original idea and implementation  
+- Mineable, no premine, no ICO  
+- Mining new money every 64 seconds  
 
+HOW-TO:  
+----------
 
-Install and run (Linux):
------------------------
+- [How to get a wallet](https://github.com/XDagger/xdag/wiki/Get-a-wallet)  
+- [How to getting started](https://github.com/XDagger/xdag/wiki/Getting-started)  
+- [How to find pools](https://github.com/XDagger/xdag/wiki/Mineable-Pool-List)  
+- [How to contribute](https://github.com/XDagger/xdag/blob/master/Contributing.md)  
 
-- Install dependencies:
-
-		$ sudo dnf install git gcc openssl-devel
-		or
-		$ sudo apt-get install git gcc libssl-dev
-
-- Clone from the git repository:
-
-        $ git clone https://github.com/XDagger/xdag
-
-- Make:
-
-        $ cd xdag/client
-        $ make
-        
-- or automake
-
-        $ cd xdag/automake
-        $ autoreconf -if
-        $ ./configure
-        $ make
-
-- Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool put.xdag.server.here:13654
-
-        $ ./xdag -m 2 -d put.xdag.server.here:13654
-        Enter random characters: [enter]
-        
-- Already have an account
-
-		Put your wallet.dat, dnet_key.dat and storage folder in this folder.
-		Then run below command
-		$./xdag -m 2 -d put.xdag.server.here:13654
-
-- Run terminal connected to the daemon in the same folder:
-
-        $ ./xdag -i
-        xdag> help
-        [see help]
-
-- See if you are connected to the pool:
-
-        xdag> state
-        [see state]
-
-- See your balance:
-
-        xdag> balance
-        [balance]
-
-- See your address:
-
-        xdag> account
-        [address]
-
-- Transfer funds to another address:
-
-        xdag> xfer [amount] [address]
-        
-
-Run (Mac OS):
------------------------
-
-- Install:
-Download binary file from [release page](https://github.com/XDagger/xdag/releases).  
-Unzip the zip file to what folder you want.
-
-- Run, for example, the miner with 2 CPU mining threads, in daemon mode, connected to the pool put.xdag.server.here:13654
-
-		$ ./xdag -m 2 -d put.xdag.server.here:13654
-		Enter random characters: [enter]
-		
-- Already have an account
-Put your wallet.dat, dnet_key.dat and storage folder in this folder.
-Then run below command
-		
-		$./xdag -m 2 -d put.xdag.server.here:13654
-
-- Run terminal connected to the daemon in the same folder:
-
-		$ ./xdag -i
-		xdag> help
-		[see help]
-
-- See if you are connected to the pool:
-
-		xdag> state
-		[see state]
-
-- See your balance:
-
-		xdag> balance
-		[balance]
-
-- See your address:
-
-		xdag> account
-		[address]
-
-- Transfer funds to another address:
-
-		xdag> xfer [amount] [address]
-
-Build (Mac Os):
------------------------
-- Install dependencies:
-
-        $ brew install openssl
-        $ ln -s /usr/local/opt/openssl/include/openssl /usr/local/include
-        $ ln -s /usr/local/opt/openssl/lib/libssl.1.0.0.dylib /usr/local/lib/
-    
-- Make
-  
-        $ cd xdag/client
-        $ make
-
+Docs:  
+----------
+- [Whitepaper](https://github.com/XDagger/xdag/blob/master/WhitePaper.md)  [中文版](https://github.com/XDagger/xdag/blob/master/WhitePaper%20zh-cn.md)  
+- [Protocol](https://github.com/XDagger/xdag/blob/master/Protocol.md)  [中文版](https://github.com/XDagger/xdag/blob/master/Protocol-cn.md)  
+- [License](https://github.com/XDagger/xdag/blob/master/LICENSE)  
 
 Main chain idea:
 ---------------
@@ -192,3 +86,5 @@ Maintainers:
 ---------------
 [Evgeniy](https://github.com/jonano614) ( XDAG: gKNRtSL1pUaTpzMuPMznKw49ILtP6qX3, BTC: 1Jonano4esJzZvqNtUY6NwfPme3EMpVs7n )  
 [Frozen](https://github.com/xrdavies) ( XDAG: +L5dzSh1QZv1We3wi8Of31M8eHwQJq4K ) 
+
+[Full list of contributors](https://github.com/XDagger/xdag/blob/master/CONTRIBUTORS.md)  
