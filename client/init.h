@@ -73,7 +73,7 @@ extern int(*g_xdag_show_state)(const char *state, const char *balance, const cha
 
 // amount is uint64_t so xdag_amount2xdag just will show most significant 32 bit
 #define xdag_amount2xdag(amount) ((unsigned)((amount) >> 32))
-// amount is uint64_t so xdag_amount2xdag just will show most significant 32 bit
+// For xdag_amount2cheato, see xdags2amount comments
 #define xdag_amount2cheato(amount) ((unsigned)(((uint64_t)(unsigned)(amount) * 1000000000) >> 32))
 
 #endif
