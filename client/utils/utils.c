@@ -2,8 +2,7 @@
 //  utils.c
 //  xdag
 //
-//  Created by Rui Xie on 3/16/18.
-//  Copyright © 2018 xrdavies. All rights reserved.
+//  Copyright © 2018 xdag contributors.
 //
 
 #include "utils.h"
@@ -26,6 +25,7 @@
 #include "../uthash/utlist.h"
 #include "log.h"
 #include "../system.h"
+#include "math.h"
 
 static pthread_mutex_t g_detect_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -364,3 +364,9 @@ int xdag_mkdir(const char *path)
 	return mkdir(abspath, 0770);
 #endif	
 }
+
+long double log_difficulty2hashrate(long double log_diff)
+{
+        return ldexpl(expl(log_diff), -58)*(0.65);
+}
+
