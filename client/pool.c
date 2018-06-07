@@ -1506,7 +1506,7 @@ static void update_mean_log_diff(struct connection_pool_data *conn_data, struct 
 	if(conn_data->task_time < task_time) {
 		if(conn_data->last_min_hash)
 			moving_average(&conn_data->mean_log_difficulty, diff2log(hash2difficulty(conn_data->last_min_hash)),conn_data->bounded_task_counter);
-                if(conn_data->bounded_task_counter<NSAMPLES_MAX)
+		if(conn_data->bounded_task_counter<NSAMPLES_MAX)
 			++conn_data->bounded_task_counter;
 		memcpy(conn_data->last_min_hash,hash,sizeof(xdag_hash_t));
 	} else if(xdag_cmphash(hash, conn_data->last_min_hash) < 0)
@@ -1516,7 +1516,7 @@ static void update_mean_log_diff(struct connection_pool_data *conn_data, struct 
 		if(conn_data->miner->task_time < task_time) {
 			if(conn_data->miner->last_min_hash)
 	        		moving_average(&conn_data->miner->mean_log_difficulty, diff2log(hash2difficulty(conn_data->miner->last_min_hash)),conn_data->miner->bounded_task_counter);
-                	if(conn_data->miner->bounded_task_counter<NSAMPLES_MAX)
+			if(conn_data->miner->bounded_task_counter<NSAMPLES_MAX)
                 		++conn_data->miner->bounded_task_counter;
 	                memcpy(conn_data->miner->last_min_hash,hash,sizeof(xdag_hash_t));
 		} else if(xdag_cmphash(hash, conn_data->miner->last_min_hash) < 0) 
