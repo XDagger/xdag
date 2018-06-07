@@ -571,15 +571,15 @@ const char *get_state()
 xdag_amount_t xdags2amount(const char *str)
 {
 	long double sum;
-	if(sscanf(str, "%Lf", &sum) != 1 || sum <= 0) {
+	if(sscanf(str, "%Lf", &sum) != 1 || sum <= 0) { //amount is represented by a Lf (long double) 
 		return 0;
 	}
-	long double flr = floorl(sum);
-	xdag_amount_t res = (xdag_amount_t)flr << 32;
-	sum -= flr;
-	sum = ldexpl(sum, 32);
-	flr = ceill(sum);
-	return res + (xdag_amount_t)flr;
+	long double flr = floorl(sum); // take only the integer low part. (like 45.7 become  45)
+	xdag_amount_t res = (xdag_amount_t)flr << 32; // move it in the higher 32 bit (xdag_amount_t is a 64bit uint)
+	sum -= flr; //keep only the after the dot part (like 45.7 become 0.7)
+	sum = ldexpl(sum, 32); // multiply it for 2^32 (it's like a shift BUT... ONE = 0.0000000001 * 2^32 so you will remain in 32bit even with 2^32 multiplication!)
+	flr = ceill(sum); // take the integer upper part, this time (45.7 become 46)
+	return res + (xdag_amount_t)flr; // join the two pieces, integer part is in upper 32bit and after the dot part is in lower 32 bit(but it's multiplied for 2^32 and divided by 1000000000)
 }
 
 long double amount2xdags(xdag_amount_t amount)
