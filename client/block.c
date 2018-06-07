@@ -1337,7 +1337,7 @@ static int bi_compar(const void *l, const void *r)
 {
 	xdag_time_t tl = (*(struct block_internal **)l)->time, tr = (*(struct block_internal **)r)->time;
 
-	return (tl > tr) - (tl < tr);
+	return (tl < tr) - (tl > tr);
 }
 //TODO comments
 static const char* xdag_get_block_state_info(struct block_internal *block)

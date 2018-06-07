@@ -804,6 +804,8 @@ static int process_received_share(connection_list_element *connection)
 		xdag_set_min_share(task, conn_data->miner->id.data, hash);
 		calculate_nopaid_shares(conn_data, task, hash);
 	}
+	
+	return 1;
 }
 
 static int receive_data_from_connection(connection_list_element *connection)
