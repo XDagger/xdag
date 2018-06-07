@@ -1443,7 +1443,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 				tbuf, (int)((bi->time & 0x3ff) * 1000) >> 10);
 	}
 	
-	int N = 0x10000; 
+	int N = 0x10000; // 2^16
 	int n = 0;
 	struct block_internal **ba = malloc(N * sizeof(struct block_internal *));
 	
