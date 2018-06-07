@@ -50,13 +50,13 @@ struct block_internal {
 	struct ldus_rbtree node;
 	xdag_hash_t hash;
 	xdag_diff_t difficulty;
-	xdag_amount_t amount, linkamount[MAX_LINKS], fee; //amount=amount of coins
+	xdag_amount_t amount, linkamount[MAX_LINKS], fee; //amount=amount of coins, fee=amount of paid fee(?), linkamount[i] amount of the i transaction
 	xdag_time_t time;
 	uint64_t storage_pos;
 	struct block_internal *ref, *link[MAX_LINKS];
 	struct block_backrefs *backrefs;
 	uint8_t flags, nlinks, max_diff_link, reserved;
-	uint16_t in_mask;
+	uint16_t in_mask; // each bit tell you if i transaction is in or out (in fact MAX_LINKS is 16)
 	uint16_t n_our_key;
 };
 
@@ -1408,17 +1408,18 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "                               block as transaction: details\n");
 	fprintf(out, " direction  address                                    amount\n");
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
-	if(bi->ref) {
+	if(bi->ref) { // light wallet case? fee address
 		xdag_hash2address(bi->ref->hash, address);
 	}
 	else {
 		strcpy(address, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 	}
+	// show fee address and amount (amount of what? total paid fee?)
 	fprintf(out, "       fee: %s  %10u.%09u\n", address,
 			pramount(bi->fee));
 
 	for (i = 0; i < bi->nlinks; ++i) {
-		xdag_hash2address(bi->link[i]->hash, address);
+		xdag_hash2address(bi->link[i]->hash, address); // show transactions (block as transaction)
 		fprintf(out, "    %6s: %s  %10u.%09u\n", (1 << i & bi->in_mask ? " input" : "output"),
 			address, pramount(bi->linkamount[i]));
 	}
