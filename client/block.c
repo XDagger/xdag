@@ -53,13 +53,15 @@ struct block_internal {
 	xdag_amount_t amount, linkamount[MAX_LINKS], fee; //amount=amount of coins, fee=amount of paid fee(?), linkamount[i] amount of the i transaction
 	xdag_time_t time;
 	uint64_t storage_pos;
-	struct block_internal *ref, *link[MAX_LINKS];
-	struct block_backrefs *backrefs;
+	struct block_internal *ref, *link[MAX_LINKS]; // ref is the block that this block is referred from! ,link are the tx (aka blocks) that the block is referring
+	struct block_backrefs *backrefs; // backrefs struct 
 	uint8_t flags, nlinks, max_diff_link, reserved;
 	uint16_t in_mask; // each bit tell you if i transaction is in or out (in fact MAX_LINKS is 16)
 	uint16_t n_our_key;
 };
 
+// we want to have 	struct block_internal *backrefs[N_BACKREFS]; to be more or less as big as block_internal
+// probably for balacing? 
 #define N_BACKREFS      (sizeof(struct block_internal) / sizeof(struct block_internal *) - 1)
 
 struct block_backrefs {
@@ -1447,47 +1449,49 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	int n = 0;
 	struct block_internal **ba = malloc(N * sizeof(struct block_internal *));
 	
-	if (!ba) return -1;
-
+	if (!ba) return -1; // check malloc error
+	
+	// getting out of block_internal the block_backrefs
 	for (struct block_backrefs *br = bi->backrefs; br; br = br->next) {
+		// until i==0 or there aren't backrefs finished.
 		for (i = N_BACKREFS; i && !br->backrefs[i - 1]; i--);
 			
-		if (!i) {
+		if (!i) { // there aren't backrefs, go to next br->next
 			continue;
 		}
 
-		if (n + i > N) {
+		if (n + i > N) { // stupid algorithm to make the struct block_internal **b bigger if we finish the space.
 			N *= 2;
 			struct block_internal **ba1 = realloc(ba, N * sizeof(struct block_internal *));
-			if (!ba1) {
+			if (!ba1) {// check error of realloc
 				free(ba);
 				return -1;
 			}
 
-			ba = ba1;
+			ba = ba1; // realloc free ba itself
 		}
-
-		memcpy(ba + n, br->backrefs, i * sizeof(struct block_internal *));
-		n += i;
+		// start the algorithm here
+		memcpy(ba + n, br->backrefs, i * sizeof(struct block_internal *)); //saving the backrefs in the heap space
+		n += i;		//adding adding i to n,
 	}
 
-	if (!n) {
+	if (!n) { // no backrefs has been found. exit.
 		free(ba);
 		return 0;
 	}
-
+	//quick sort, bi_compar is the compare function (it compare the time)
 	qsort(ba, n, sizeof(struct block_internal *), bi_compar);
 
-	for (i = 0; i < n; ++i) {
-		if (!i || ba[i] != ba[i - 1]) {
-			struct block_internal *ri = ba[i];
-			if (ri->flags & BI_APPLIED) {
-				for (int j = 0; j < ri->nlinks; j++) {
-					if(ri->link[j] == bi && ri->linkamount[j]) {
-						t = ri->time >> 10;
-						localtime_r(&t, &tm);
-						strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
-						xdag_hash2address(ri->hash, address);
+	for (i = 0; i < n; ++i) { // until we don't checked every backref
+		if (!i || ba[i] != ba[i - 1]) { //clearly can't compare when i=0
+			struct block_internal *ri = ba[i]; // refer internal (real block that contain tx)
+			if (ri->flags & BI_APPLIED) { // is it applied? (hide flag 18 blocks)
+				for (int j = 0; j < ri->nlinks; j++) { // check every link
+					if(ri->link[j] == bi && ri->linkamount[j]) { //check in the link our block(the one that we have to show all txs), and check if the amount is above 0xdag, or hide it.						t = ri->time >> 10;
+						localtime_r(&t, &tm); // convert time to local time, why?
+						strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm); // setting time
+						xdag_hash2address(ri->hash, address); // retrieving address
+						// print, as before, no difference.
 						fprintf(out, "    %6s: %s  %10u.%09u  %s.%03d\n",
 							(1 << j & ri->in_mask ? "output" : " input"), address,
 							pramount(ri->linkamount[j]), tbuf, (int)((ri->time & 0x3ff) * 1000) >> 10);
