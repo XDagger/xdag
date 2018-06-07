@@ -6,8 +6,7 @@
 #include "hash.h"
 
 #define MAX_CONNECTIONS_COUNT          8192
-#define XDAG_POOL_CONFIRMATIONS_COUNT  16
-#define CONFIRMATIONS_COUNT            XDAG_POOL_CONFIRMATIONS_COUNT   /*16*/
+#define CONFIRMATIONS_COUNT            16
 
 enum disconnect_type
 {
@@ -16,8 +15,8 @@ enum disconnect_type
 	DISCONNECT_ALL = 3
 };
 
-extern xdag_hash_t g_xdag_mined_hashes[XDAG_POOL_CONFIRMATIONS_COUNT];
-extern xdag_hash_t g_xdag_mined_nonce[XDAG_POOL_CONFIRMATIONS_COUNT];
+extern xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT];
+extern xdag_hash_t g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
 
 /* initialization of the pool */
 extern int xdag_initialize_pool(const char *pool_arg);
