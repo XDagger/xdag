@@ -580,9 +580,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	
 	if (!(transportHeader & (sizeof(struct xdag_block) - 1))) {
 		// only in these two commands here we set storage_pos
-		tmpNodeBlock.storage_pos = transportHeader;
+		tmpNodeBlock.storage_pos = transportHeader; // particular case? transport of something?
 	} else {
-		tmpNodeBlock.storage_pos = xdag_storage_save(newBlock); 
+		tmpNodeBlock.storage_pos = xdag_storage_save(newBlock); // pointer to the FILE stream.
 	}
 	
 	memcpy(nodeBlock, &tmpNodeBlock, sizeof(struct block_internal));
