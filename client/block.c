@@ -577,11 +577,12 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		err = 0xC; 
 		goto end;
 	}
-
+	
 	if (!(transportHeader & (sizeof(struct xdag_block) - 1))) {
+		// only in these two commands here we set storage_pos
 		tmpNodeBlock.storage_pos = transportHeader;
 	} else {
-		tmpNodeBlock.storage_pos = xdag_storage_save(newBlock);
+		tmpNodeBlock.storage_pos = xdag_storage_save(newBlock); 
 	}
 	
 	memcpy(nodeBlock, &tmpNodeBlock, sizeof(struct block_internal));
