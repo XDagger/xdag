@@ -69,6 +69,7 @@ struct block_backrefs {
 	struct block_backrefs *next;
 };
 
+// lest two link of block_internal are reserver to internal blocks
 #define ourprev link[MAX_LINKS - 2]
 #define ournext link[MAX_LINKS - 1]
 
