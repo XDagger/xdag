@@ -402,14 +402,14 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 
 	if (block_by_hash(tmpNodeBlock.hash)) return 0; //if block already in dag, return sucessful
 	
-	if (xdag_type(newBlock, 0) != g_block_header_type) {
-		i = xdag_type(newBlock, 0);
+	if (xdag_type(newBlock, 0) != g_block_header_type) {// g_block_header_type is just 1
+		i = xdag_type(newBlock, 0); //write i for errorr handler
 		err = 1;
-		goto end;
+		goto end; //exit with error
 	}
 
-	tmpNodeBlock.time = newBlock->field[0].time;
-
+	tmpNodeBlock.time = newBlock->field[0].time; //copying the time in the block internal tmpNodeBlock
+	// setting the maximum time errors (and arbitrary time limit)
 	if (tmpNodeBlock.time > timestamp + MAIN_CHAIN_PERIOD / 4 || tmpNodeBlock.time < XDAG_ERA
 		|| (limit && timestamp - tmpNodeBlock.time > limit)) {
 		i = 0;
@@ -418,7 +418,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	if (!g_light_mode) {
-		check_new_main();
+		check_new_main(); // each added block, we check the new main block
 	}
 
 	for (i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
