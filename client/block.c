@@ -397,10 +397,10 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	xdag_diff_t diff0, diff;
 
 	memset(&tmpNodeBlock, 0, sizeof(struct block_internal));
-	newBlock->field[0].transport_header = 0;
-	xdag_hash(newBlock, sizeof(struct xdag_block), tmpNodeBlock.hash);
+	newBlock->field[0].transport_header = 0; //header to zero, but already saved (field 0 is about header, but contain more than ( .transport_heade)
+	xdag_hash(newBlock, sizeof(struct xdag_block), tmpNodeBlock.hash);  // block2hash (need transport header to 0!)
 
-	if (block_by_hash(tmpNodeBlock.hash)) return 0;
+	if (block_by_hash(tmpNodeBlock.hash)) return 0; //if block already in dag, return sucessful
 	
 	if (xdag_type(newBlock, 0) != g_block_header_type) {
 		i = xdag_type(newBlock, 0);
