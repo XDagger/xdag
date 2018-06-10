@@ -868,9 +868,9 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	res = xdag_add_block(block);
 	if (res > 0) {
 		if (mining) {
-			memcpy(g_xdag_mined_hashes[MAIN_TIME(send_time) & (XDAG_POOL_CONFIRMATIONS_COUNT - 1)],
+			memcpy(g_xdag_mined_hashes[MAIN_TIME(send_time) & (CONFIRMATIONS_COUNT - 1)],
                 newBlockHash, sizeof(xdag_hash_t));
-			memcpy(g_xdag_mined_nonce[MAIN_TIME(send_time) & (XDAG_POOL_CONFIRMATIONS_COUNT - 1)],
+			memcpy(g_xdag_mined_nonce[MAIN_TIME(send_time) & (CONFIRMATIONS_COUNT - 1)],
                 block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
 		}
 
@@ -1337,7 +1337,7 @@ static int bi_compar(const void *l, const void *r)
 {
 	xdag_time_t tl = (*(struct block_internal **)l)->time, tr = (*(struct block_internal **)r)->time;
 
-	return (tl > tr) - (tl < tr);
+	return (tl < tr) - (tl > tr);
 }
 //TODO comments
 static const char* xdag_get_block_state_info(struct block_internal *block)
