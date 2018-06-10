@@ -389,7 +389,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	const uint64_t timestamp = get_timestamp();
 	uint64_t sum_in = 0, sum_out = 0, *psum;
 	const uint64_t transportHeader = newBlock->field[0].transport_header;
-	struct xdag_public_key public_keys[16], *our_keys = 0;
+	struct xdag_public_key public_keys[16], *our_keys = 0; // max 16 p.key (16 link!)
 	int i, j, k;
 	int keysCount = 0, ourKeysCount = 0;
 	int signInCount = 0, signOutCount = 0;
@@ -429,22 +429,22 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		case XDAG_FIELD_NONCE:
 			break;
 		case XDAG_FIELD_IN:
-			inmask |= 1 << i;
-			break;
+			inmask |= 1 << i; // just counting how many input are there (one field, one input)
+			break;			// it is adding 0000000000000001..000000000000011...etc (really each is 32bit) BUT the position of the ONE correspond to the number(position)  of the block
 		case XDAG_FIELD_OUT:
-			outmask |= 1 << i;
+			outmask |= 1 << i; // same as inpiut
 			break;
 		case XDAG_FIELD_SIGN_IN:
-			if (++signInCount & 1) {
+			if (++signInCount & 1) { // same as signout, but one field shoould be enought, in fact error in not checked for only one signin
 				signinmask |= 1 << i;
 			}
 			break;
 		case XDAG_FIELD_SIGN_OUT:
-			if (++signOutCount & 1) {
+			if (++signOutCount & 1) { // it count every TWO signin field because each signin is composed by two field
 				signoutmask |= 1 << i;
 			}
 			break;
-		case XDAG_FIELD_PUBLIC_KEY_0:
+		case XDAG_FIELD_PUBLIC_KEY_0: // two public key field, one for even and one for odd
 		case XDAG_FIELD_PUBLIC_KEY_1:
 			if ((public_keys[keysCount].key = xdag_public_to_key(newBlock->field[i].data, type - XDAG_FIELD_PUBLIC_KEY_0))) {
 				public_keys[keysCount++].pub = (uint64_t*)((uintptr_t)&newBlock->field[i].data | (type - XDAG_FIELD_PUBLIC_KEY_0));
@@ -457,17 +457,17 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	if (g_light_mode) {
-		outmask = 0;
+		outmask = 0; // avoid to search for the block to which we send coin (?) we havent all the blocks.. understandable
 	}
 
-	if (signOutCount & 1) {
+	if (signOutCount & 1) { // only one signout -> error
 		i = signOutCount;
 		err = 4;
 		goto end;
 	}
 
-	if (signOutCount) {
-		our_keys = xdag_wallet_our_keys(&ourKeysCount);
+	if (signOutCount) { // retrieve all of our (private) keys... and number of keys
+		our_keys = xdag_wallet_our_keys(&ourKeysCount); // it is created only one time (if it command from commaline to gen a new key is not called)
 	}
 
 	for (i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
@@ -522,7 +522,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 					}
 
 					for (j = k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
-						if (xdag_type(bref, j) == XDAG_FIELD_SIGN_OUT && (++k & 1)
+						if (xdag_type(bref, j) == XDAG_FIELD_SIGN_OUT && (++k & 1) // it need to sign the first field only (why?)
 							&& valid_signature(bref, j, keysCount, public_keys) >= 0) {
 							break;
 						}
