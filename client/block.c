@@ -423,7 +423,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	if (!g_light_mode) {
 		check_new_main(); // each added block, we check the new main block
 	}
-
+	// 16 fields
 	for (i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
 		switch ((type = xdag_type(newBlock, i))) {
 		case XDAG_FIELD_NONCE:
