@@ -151,56 +151,57 @@ static uint64_t apply_block(struct block_internal *bi)
 {
 	xdag_amount_t sum_in, sum_out;
 
-	if (bi->flags & BI_MAIN_REF) {
+	if (bi->flags & BI_MAIN_REF) { // if already checked exit
 		return -1l;
 	}
 	
-	bi->flags |= BI_MAIN_REF;
-
-	for (int i = 0; i < bi->nlinks; ++i) {
-		xdag_amount_t ref_amount = apply_block(bi->link[i]);
-		if (ref_amount == -1l) {
+	bi->flags |= BI_MAIN_REF; // so we do not apply iy two times
+	// applying each node and leaf of the tree represented that are under the main block.
+	for (int i = 0; i < bi->nlinks; ++i) { 
+		xdag_amount_t ref_amount = apply_block(bi->link[i]);// recursive, all the tree to get all the fee s
+		if (ref_amount == -1l) { // if alrady referred, go ahed (for example the latest main block is referred but already checked!)
 			continue;
 		}
-		bi->link[i]->ref = bi;
-		if (bi->amount + ref_amount >= bi->amount) {
-			accept_amount(bi, ref_amount);
+		bi->link[i]->ref = bi; // each node need to refer to the father (so at the end every node and leaf will refer to the main block)
+		if (bi->amount + ref_amount >= bi->amount) { // if we have fee amount (incoming)
+			accept_amount(bi, ref_amount); // we add this fee to the father
 		}
 	}
 
-	sum_in = 0, sum_out = bi->fee;
+	sum_in = 0, sum_out = bi->fee; //(outgoing fee)
 
-	for (int i = 0; i < bi->nlinks; ++i) {
-		if (1 << i & bi->in_mask) {
-			if (bi->link[i]->amount < bi->linkamount[i]) {
-				return 0;
+	for (int i = 0; i < bi->nlinks; ++i) { // checking all the links, aka TX
+		if (1 << i & bi->in_mask) { // input or output?
+			if (bi->link[i]->amount < bi->linkamount[i]) { // check if there are the amount to send (to us)
+				return 0; // error?
 			}
-			if (sum_in + bi->linkamount[i] < sum_in) {
-				return 0;
+			if (sum_in + bi->linkamount[i] < sum_in) { // sum_in+linkamount, should be greater than sum_in, error
+				return 0; 
 			}
-			sum_in += bi->linkamount[i];
+			sum_in += bi->linkamount[i]; // apply the link
 		} else {
-			if (sum_out + bi->linkamount[i] < sum_out) {
+			if (sum_out + bi->linkamount[i] < sum_out) { // same as sum_in first error check
 				return 0;
 			}
-			sum_out += bi->linkamount[i];
+			sum_out += bi->linkamount[i]; // apply
 		}
 	}
 
-	if (sum_in + bi->amount < sum_in || sum_in + bi->amount < sum_out) {
+	if (sum_in + bi->amount < sum_in || sum_in + bi->amount < sum_out) {  // final check after all tx are applied
 		return 0;
 	}
-
-	for (int i = 0; i < bi->nlinks; ++i) {
-		if (1 << i & bi->in_mask) {
+	
+	// after we checked all possible error, we can apply officially.
+	for (int i = 0; i < bi->nlinks; ++i) { 
+		if (1 << i & bi->in_mask) { 
 			accept_amount(bi->link[i], (xdag_amount_t)0 - bi->linkamount[i]);
 		} else {
 			accept_amount(bi->link[i], bi->linkamount[i]);
 		}
 	}
-
+	// set amount of this block, after all the recursion are finished, this recursive function is fantastic !
 	accept_amount(bi, sum_in - sum_out);
-	bi->flags |= BI_APPLIED;
+	bi->flags |= BI_APPLIED; // apply applied flag
 	
 	return bi->fee;
 }
@@ -253,19 +254,19 @@ xdag_amount_t xdag_get_supply(uint64_t nmain)
 }
 
 static void set_main(struct block_internal *m)
-{
+{	//already exaplined in the block command. this file below.
 	xdag_amount_t amount = MAIN_START_AMOUNT >> (g_xdag_stats.nmain >> MAIN_BIG_PERIOD_LOG);
-
+	//set as main
 	m->flags |= BI_MAIN;
-	accept_amount(m, amount);
-	g_xdag_stats.nmain++;
+	accept_amount(m, amount); // just setting the xdag amount of the block
+	g_xdag_stats.nmain++; //update main amount
 
 	if (g_xdag_stats.nmain > g_xdag_stats.total_nmain) {
-		g_xdag_stats.total_nmain = g_xdag_stats.nmain;
+		g_xdag_stats.total_nmain = g_xdag_stats.nmain;// update nmain of network
 	}
 
 	accept_amount(m, apply_block(m));
-	m->ref = m;
+	m->ref = m; // main refer to itself  
 	log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time, m->storage_pos);
 }
 
@@ -282,16 +283,18 @@ static void unset_main(struct block_internal *m)
 
 static void check_new_main(void)
 {
-	struct block_internal *b, *p = 0;
+	struct block_internal *b, *p = 0; // two bi initialization
 	int i;
-
+		//going in depth searching MAIN block, when it get it, checking if it is BI MAIN CHAIN, if not it doesn't do nothing else
 	for (b = top_main_chain, i = 0; b && !(b->flags & BI_MAIN); b = b->link[b->max_diff_link]) {
 		if (b->flags & BI_MAIN_CHAIN) {
 			p = b;
 			++i;
 		}
 	}
-
+		// if 0 (thus it isn't main chain, and i++ set depth level to get the first main(and in main chain)
+		// MAX_WAITING_MAIN is just 1 block
+		//TODO CHECK HOW MUCH IS 2* 1024
 	if (p && i > MAX_WAITING_MAIN && get_timestamp() >= p->time + 2 * 1024) {
 		set_main(p);
 	}
