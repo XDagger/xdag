@@ -439,7 +439,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 				signinmask |= 1 << i;
 			}
 			break;
-		case XDAG_FIELD_SIGN_OUT:
+			case XDAG_FIELD_SIGN_OUT:// thre should be max only one signou_out field each block
 			if (++signOutCount & 1) { // it count every TWO signin field because each signin is composed by two field
 				signoutmask |= 1 << i;
 			}
