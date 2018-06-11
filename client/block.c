@@ -343,6 +343,9 @@ static inline xdag_diff_t hash_difficulty(xdag_hash_t hash)
 
 // returns a number of public key from 'keys' array with lengh 'keysLength', which conforms to the signature starting from field signo_r of the block b
 // returns -1 if nothing is found
+// not sure about above comment
+
+//signo_r is index of first field with signout(or signin)
 static int valid_signature(const struct xdag_block *b, int signo_r, int keysLength, struct xdag_public_key *keys)
 {
 	struct xdag_block buf[2];
@@ -350,21 +353,21 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int keysLeng
 	int i, signo_s = -1;
 
 	memcpy(buf, b, sizeof(struct xdag_block));
-
+	//just seaching for the index of the next signin or signout after signo_r SAME TYPE! signout1 and get signout2 or signin1 and get signin2
 	for (i = signo_r; i < XDAG_BLOCK_FIELDS; ++i) {
 		if (xdag_type(b, i) == XDAG_FIELD_SIGN_IN || xdag_type(b, i) == XDAG_FIELD_SIGN_OUT) {
 			memset(&buf[0].field[i], 0, sizeof(struct xdag_field));
-			if (i > signo_r && signo_s < 0 && xdag_type(b, i) == xdag_type(b, signo_r)) {
-				signo_s = i;
+			if (i > signo_r && signo_s < 0 && xdag_type(b, i) == xdag_type(b, signo_r)) { // check that signo_s isn't already set and che that THE TYPE IS HE SAME!
+				signo_s = i; // set index of second singin/signout
 			}
 		}
 	}
 
-	if (signo_s >= 0) {
-		for (i = 0; i < keysLength; ++i) {
-			hash_for_signature(buf, keys + i, hash);
+	if (signo_s >= 0) { // if second sign is found
+		for (i = 0; i < keysLength; ++i) { (really, this is amount of keys)
+			hash_for_signature(buf, keys + i, hash); // calulate the hash to check signature
 			if (!xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data)) {
-				return i;
+				return i; // when first good key is found, it exit..
 			}
 		}
 	}
