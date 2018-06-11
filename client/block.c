@@ -367,7 +367,7 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int keysLeng
 		for (i = 0; i < keysLength; ++i) { (really, this is amount of keys)
 			hash_for_signature(buf, keys + i, hash); // calulate the hash to check signature
 			if (!xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data)) {
-				return i; // when first good key is found, it exit.. with value of key
+				return i; // when first good key is found, it exit.. with index of the key
 			}
 		}
 	}
