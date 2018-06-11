@@ -748,8 +748,8 @@ int xdag_add_block(struct xdag_block *b)
 }
 
 #define setfld(fldtype, src, hashtype) ( \
-		block[0].field[0].type |= (uint64_t)(fldtype) << (i << 2), \
-			memcpy(&block[0].field[i++], (void*)(src), sizeof(hashtype)) \
+		block[0].field[0].type |= (uint64_t)(fldtype) << (i << 2), \ //just setting the type
+			memcpy(&block[0].field[i++], (void*)(src), sizeof(hashtype)) \ // copying source AS POINTER in block0 field i++ (why i++ now?)
 		)
 
 #define pretop_block() (top_main_chain && MAIN_TIME(top_main_chain->time) == MAIN_TIME(send_time) ? pretop_main_chain : top_main_chain)
@@ -836,8 +836,8 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 		key = keys + keysnum[j];
         block[0].field[0].type |= (uint64_t)((j == outsigkeyind ? XDAG_FIELD_SIGN_OUT : XDAG_FIELD_SIGN_IN) * 0x11) << ((i + j + nkeysnum) * 4);
 		setfld(XDAG_FIELD_PUBLIC_KEY_0 + ((uintptr_t)key->pub & 1), (uintptr_t)key->pub & ~1l, xdag_hash_t);
-	}
-	
+	}//   				^^^	^^^^ just setting XDAG_FIELD_PUBLIC_KEY_0 if even or XDAG_FIELD_PUBLIC_KEY_1 if odd
+							//				^^^^^^^^^^ just taking 
     if(outsigkeyind < 0) {
         block[0].field[0].type |= (uint64_t)(XDAG_FIELD_SIGN_OUT * 0x11) << ((i + j + nkeysnum) * 4);
     }
