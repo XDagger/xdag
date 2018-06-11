@@ -143,6 +143,10 @@ void CXDagWalletDlg::OnSysCommand(UINT nID, LPARAM lParam)
 	}
 }
 
+void CXDagWalletDlg::OnOK()
+{	
+}
+
 // If you add a minimize button to your dialog, you will need the code below
 //  to draw the icon.  For MFC applications using the document/view model,
 //  this is automatically done for you by the framework.

@@ -10,10 +10,10 @@
 #include "transport.h"
 #include "netdb.h"
 #include "init.h"
-#include "block.h"
 #include "sync.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "http/http.h"
 
 #define MAX_SELECTED_HOSTS  64
 #define MAX_BLOCKED_IPS     64
@@ -21,6 +21,14 @@
 #define MAX_ALLOWED_FROM_IP 4
 #define DATABASE            (g_xdag_testnet ? "netdb-testnet.txt" : "netdb.txt")
 #define DATABASEWHITE       (g_xdag_testnet ? "netdb-white-testnet.txt" : "netdb-white.txt")
+
+#define whitelist_url            "https://raw.githubusercontent.com/XDagger/xdag/master/client/netdb-white.txt"
+#define whitelist_url_testnet    "https://raw.githubusercontent.com/XDagger/xdag/master/client/netdb-white-testnet.txt"
+#define WHITE_URL                (g_xdag_testnet ? whitelist_url_testnet : whitelist_url)
+
+#define PREVENT_AUTO_REFRESH 0 //for test purposes
+
+pthread_mutex_t g_white_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 enum host_flags {
 	HOST_OUR        = 1,
@@ -96,13 +104,12 @@ static struct host *find_add_host(struct host *h)
 static struct host *random_host(int mask)
 {
 	struct ldus_rbtree *r, *p = 0;
-	int i, n;
 
-	for (i = 0; !p && i < 10; ++i) {
+	for (int i = 0; !p && i < 10; ++i) {
 		pthread_mutex_lock(&host_mutex);
 
 		r = root, p = 0;
-		n = g_xdag_stats.nhosts;
+		int n = g_xdag_stats.nhosts;
 
 		while (r) {
 			p = _rbtree_ptr(r);
@@ -148,7 +155,7 @@ static int read_database(const char *fname, int flags)
 {
 	uint32_t ips[MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP];
 	uint8_t ips_count[MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP];
-	struct host h0, *h;
+	struct host h0;
 	char str[64], *p;
 	FILE *f = xdag_open_file(fname, "r");
 	int n = 0, n_ips = 0, n_blocked = 0, i;
@@ -160,7 +167,7 @@ static int read_database(const char *fname, int flags)
 		if (!p || !p[1]) continue;
 	
 		h0.flags = 0;
-		h = find_add_ipport(&h0, str, flags);
+		struct host *h = find_add_ipport(&h0, str, flags);
 		
 		if (flags & HOST_CONNECTED && h0.flags & HOST_CONNECTED) {
 			for (i = 0; i < n_ips && ips[i] != h0.ip; ++i);
@@ -204,8 +211,7 @@ static void *monitor_thread(void *arg)
 
 	for (;;) {
 		FILE *f = xdag_open_file("netdb.tmp", "w");
-		int n, i, j;
-		time_t t = time(0);
+		time_t prev_time = time(0);
 
 		if (!f) continue;
 
@@ -224,19 +230,19 @@ static void *monitor_thread(void *arg)
 		if (our_host)
 			selected_hosts[n_selected_hosts++] = our_host;
 
-		n = read_database("netdb.tmp", HOST_CONNECTED | HOST_SET | HOST_NOT_ADD);
+		int n = read_database("netdb.tmp", HOST_CONNECTED | HOST_SET | HOST_NOT_ADD);
 		if (n < 0) n = 0;
 
 		f = xdag_open_file("netdb.log", "a");
 
-		for (i = 0; i < MAX_SELECTED_HOSTS; ++i) {
+		for (int i = 0; i < MAX_SELECTED_HOSTS; ++i) {
 			struct host *h = random_host(HOST_CONNECTED | HOST_OUR);
 			char str[64];
 
 			if (!h) continue;
 
 			if (n < MAX_SELECTED_HOSTS) {
-				for (j = 0; j < g_xdag_n_white_ips; ++j) {
+				for (int j = 0; j < g_xdag_n_white_ips; ++j) {
 					if (h->ip == g_xdag_white_ips[j]) {
 						sprintf(str, "connect %u.%u.%u.%u:%u", h->ip & 0xff, h->ip >> 8 & 0xff, h->ip >> 16 & 0xff, h->ip >> 24 & 0xff, h->port);
 						xdag_debug("Netdb : host=%lx flags=%x query='%s'", (long)h, h->flags, str);
@@ -256,13 +262,48 @@ static void *monitor_thread(void *arg)
 		
 		g_xdag_n_white_ips = 0;
 		
+		pthread_mutex_lock(&g_white_list_mutex);
 		read_database(DATABASEWHITE, HOST_WHITE);
+		pthread_mutex_unlock(&g_white_list_mutex);
 
-		while (time(0) - t < 67) {
+		while (time(0) - prev_time < 67) {
 			sleep(1);
 		}
 	}
 
+	return 0;
+}
+
+static void *refresh_thread(void *arg)
+{
+	while (!g_xdag_sync_on) {
+		sleep(1);
+	}
+	
+	for (;;) {
+		time_t prev_time = time(0);
+		
+		xdag_mess("try to refresh white-list...");
+		
+		char *resp = http_get(WHITE_URL);
+		if(resp) {
+			pthread_mutex_lock(&g_white_list_mutex);
+			FILE *f = xdag_open_file(DATABASEWHITE, "w");
+			if(f) {
+				fwrite(resp, 1, strlen(resp), f);
+				fclose(f);
+			}
+			pthread_mutex_unlock(&g_white_list_mutex);
+			
+			xdag_info("\n%s", resp);
+			free(resp);
+		}
+		
+		while (time(0) - prev_time < 900) { // refresh every 15 minutes
+			sleep(1);
+		}
+	}
+	
 	return 0;
 }
 
@@ -273,7 +314,6 @@ int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port
 {
 	struct host h;
 	pthread_t t;
-	int i;
 
 	g_xdag_blocked_ips = malloc(MAX_BLOCKED_IPS * sizeof(uint32_t));
 	g_xdag_white_ips = malloc(MAX_WHITE_IPS * sizeof(uint32_t));
@@ -288,13 +328,21 @@ int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port
 	
 	our_host = find_add_ipport(&h, our_host_str, HOST_OUR | HOST_SET);
 
-	for (i = 0; i < npairs; ++i) {
+	for (int i = 0; i < npairs; ++i) {
 		find_add_ipport(&h, addr_port_pairs[i], 0);
 	}
 	
 	if (pthread_create(&t, 0, monitor_thread, 0)) {
-		xdag_fatal("Can't start netdb thread\n"); return -1;
+		xdag_fatal("Can't start netdb thread\n");
+		return -1;
 	}
+
+#if !PREVENT_AUTO_REFRESH
+	if(pthread_create(&t, 0, refresh_thread, 0)) {
+		xdag_fatal("Can't start refresh white-list netdb thread\n");
+		return -1;
+	}
+#endif
 	
 	return 0;
 }

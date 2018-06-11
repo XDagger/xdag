@@ -97,7 +97,7 @@ static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
 
 ldus_rbtree_define_prefix(lessthan, static inline, )
 
-static struct block_internal *block_by_hash(const xdag_hashlow_t hash)
+static inline struct block_internal *block_by_hash(const xdag_hashlow_t hash)
 {
 	return (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
 }
@@ -388,7 +388,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 
 	if (block_by_hash(tmpNodeBlock.hash)) return 0;
 	
-	if (xdag_type(newBlock, 0) != XDAG_FIELD_HEAD) {
+	if (xdag_type(newBlock, 0) != g_block_header_type) {
 		i = xdag_type(newBlock, 0);
 		err = 1;
 		goto end;
@@ -773,7 +773,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	res = res0;
 	memset(block, 0, sizeof(struct xdag_block));
     i = 1;
-    block[0].field[0].type = XDAG_FIELD_HEAD | (mining ? (uint64_t)XDAG_FIELD_SIGN_IN << ((XDAG_BLOCK_FIELDS - 1) * 4) : 0);
+    block[0].field[0].type = g_block_header_type | (mining ? (uint64_t)XDAG_FIELD_SIGN_IN << ((XDAG_BLOCK_FIELDS - 1) * 4) : 0);
     block[0].field[0].time = send_time;
     block[0].field[0].amount = fee;
 	
@@ -1225,7 +1225,7 @@ xdag_amount_t xdag_get_balance(xdag_hash_t hash)
 }
 
 /* sets current balance for the specified address */
-extern int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
+int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 {
 	if (!hash) return -1;
 	
@@ -1339,16 +1339,16 @@ static int bi_compar(const void *l, const void *r)
 
 	return (tl > tr) - (tl < tr);
 }
-
+//TODO comments
 static const char* xdag_get_block_state_info(struct block_internal *block)
 {
-	if(block->flags == (BI_REF | BI_MAIN_REF | BI_APPLIED | BI_MAIN | BI_MAIN_CHAIN)) { //1F
+	if((block->flags & ~BI_OURS) == (BI_REF | BI_MAIN_REF | BI_APPLIED | BI_MAIN | BI_MAIN_CHAIN)) { //1F
 		return "Main";
 	}
-	if(block->flags == (BI_REF | BI_MAIN_REF | BI_APPLIED)) { //1C
+	if((block->flags & ~BI_OURS) == (BI_REF | BI_MAIN_REF | BI_APPLIED)) { //1C
 		return "Accepted";
 	}
-	if(block->flags == (BI_REF | BI_MAIN_REF)) { //18
+	if((block->flags & ~BI_OURS) == (BI_REF | BI_MAIN_REF)) { //18
 		return "Rejected";
 	}
 	return "Pending";
@@ -1359,6 +1359,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 {
 	struct tm tm;
 	char tbuf[64];
+	char address[33];
 	int i;
 
 	pthread_mutex_lock(&block_mutex);
@@ -1381,17 +1382,25 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 			(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
 	fprintf(out, "difficulty: %llx%016llx\n", xdag_diff_args(bi->difficulty));
-	fprintf(out, "   balance: %s  %10u.%09u\n", xdag_hash2address(h), pramount(bi->amount));
+	xdag_hash2address(h, address);
+	fprintf(out, "   balance: %s  %10u.%09u\n", address, pramount(bi->amount));
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
 	fprintf(out, "                               block as transaction: details\n");
 	fprintf(out, " direction  address                                    amount\n");
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
-	fprintf(out, "       fee: %s  %10u.%09u\n", (bi->ref ? xdag_hash2address(bi->ref->hash) : "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+	if(bi->ref) {
+		xdag_hash2address(bi->ref->hash, address);
+	}
+	else {
+		strcpy(address, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+	}
+	fprintf(out, "       fee: %s  %10u.%09u\n", address,
 			pramount(bi->fee));
 
 	for (i = 0; i < bi->nlinks; ++i) {
+		xdag_hash2address(bi->link[i]->hash, address);
 		fprintf(out, "    %6s: %s  %10u.%09u\n", (1 << i & bi->in_mask ? " input" : "output"),
-				xdag_hash2address(bi->link[i]->hash), pramount(bi->linkamount[i]));
+			address, pramount(bi->linkamount[i]));
 	}
 	
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
@@ -1400,7 +1409,8 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
 	
 	if (bi->flags & BI_MAIN) {
-		fprintf(out, "   earning: %s  %10u.%09u  %s.%03d\n", xdag_hash2address(h),
+		xdag_hash2address(h, address);
+		fprintf(out, "   earning: %s  %10u.%09u  %s.%03d\n", address,
 				pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)),
 				tbuf, (int)((bi->time & 0x3ff) * 1000) >> 10);
 	}
@@ -1445,13 +1455,14 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 			struct block_internal *ri = ba[i];
 			if (ri->flags & BI_APPLIED) {
 				for (int j = 0; j < ri->nlinks; j++) {
-					if (ri->link[j] == bi && ri->linkamount[j]) {
+					if(ri->link[j] == bi && ri->linkamount[j]) {
 						t = ri->time >> 10;
 						localtime_r(&t, &tm);
 						strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
+						xdag_hash2address(ri->hash, address);
 						fprintf(out, "    %6s: %s  %10u.%09u  %s.%03d\n",
-								(1 << j & ri->in_mask ? "output" : " input"), xdag_hash2address(ri->hash),
-								pramount(ri->linkamount[j]), tbuf, (int)((ri->time & 0x3ff) * 1000) >> 10);
+							(1 << j & ri->in_mask ? "output" : " input"), address,
+							pramount(ri->linkamount[j]), tbuf, (int)((ri->time & 0x3ff) * 1000) >> 10);
 					}
 				}
 			}
@@ -1469,7 +1480,7 @@ int xdagGetLastMainBlocks(int count, char** addressArray)
 	int i = 0;
 	for (struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
 		if (b->flags & BI_MAIN) {
-			strcpy(addressArray[i], xdag_hash2address(b->hash));
+			xdag_hash2address(b->hash, addressArray[i]);
 			++i;
 		}
 	}
