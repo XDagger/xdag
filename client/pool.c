@@ -865,7 +865,9 @@ static int receive_data_from_connection(connection_list_element *connection)
 	data_size = read(conn_data->connection_descriptor.fd, (uint8_t*)conn_data->data + conn_data->data_size, data_size);
 
 	if(data_size <= 0) {
-		close_connection(connection, "read error");
+		char message[100];
+		sprintf(message, "read error : %s", strerror(errno));
+		close_connection(connection, message);
 		return 0;
 	}
 
@@ -929,7 +931,9 @@ static int send_data_to_connection(connection_list_element *connection, int *pro
 		size_t length = write(conn_data->connection_descriptor.fd, (void*)data, fields_count * sizeof(struct xdag_field));
 
 		if(length != fields_count * sizeof(struct xdag_field)) {
-			close_connection(connection, "write error");
+			char message[100];
+			sprintf(message, "write error  %s : write %zu bytes of %lu bytes", strerror(errno), length, fields_count * sizeof(struct xdag_field));
+			close_connection(connection, message);
 			return 0;
 		}
 	}
