@@ -836,8 +836,8 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 		key = keys + keysnum[j];
         block[0].field[0].type |= (uint64_t)((j == outsigkeyind ? XDAG_FIELD_SIGN_OUT : XDAG_FIELD_SIGN_IN) * 0x11) << ((i + j + nkeysnum) * 4);
 		setfld(XDAG_FIELD_PUBLIC_KEY_0 + ((uintptr_t)key->pub & 1), (uintptr_t)key->pub & ~1l, xdag_hash_t);
-	}//   				^^^	^^^^ just setting XDAG_FIELD_PUBLIC_KEY_0 if even or XDAG_FIELD_PUBLIC_KEY_1 if odd
-							//				^^^^^^^^^^ just taking 
+	}//   				^^^	^^^^ just setting XDAG_FIELD_PUBLIC_KEY_0 if address even or XDAG_FIELD_PUBLIC_KEY_1 if address odd
+							//				^^^^^^^^^^ just taking an xdag_hash_t moved behind of 1byte if address is even.
     if(outsigkeyind < 0) {
         block[0].field[0].type |= (uint64_t)(XDAG_FIELD_SIGN_OUT * 0x11) << ((i + j + nkeysnum) * 4);
     }
