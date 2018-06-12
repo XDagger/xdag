@@ -116,6 +116,6 @@ extern void xdag_list_main_blocks(int count, int print_only_addresses, FILE *out
 extern void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out);
 
 // calculate difficulty from hash
-xdag_diff_t hash2difficulty(xdag_hash_t hash);
+xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash);
 
 #endif

@@ -567,17 +567,6 @@ void processDisconnectCommand(char *nextParam, FILE *out)
 	disconnect_connections(type, value);
 }
 
-long double diff2log(xdag_diff_t diff)
-{
-	long double res = (long double)xdag_diff_to64(diff);
-	xdag_diff_shr32(&diff);
-	xdag_diff_shr32(&diff);
-	if(xdag_diff_to64(diff)) {
-		res += ldexpl((long double)xdag_diff_to64(diff), 64);
-	}
-	return (res > 0 ? logl(res) : 0);
-}
-
 long double hashrate(xdag_diff_t *diff)
 {
 	long double sum = 0;

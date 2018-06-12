@@ -13,13 +13,14 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 #include "moving_average.h"
 
-void welford_one_pass(long double*, long double, uint16_t);
-
 // this function update the (old) mean, adding a new sample to this mean.
 // it recalculate the mean without keep an array of all old samples
-void welford_one_pass(long double* mean, long double sample, uint16_t nsamples){
-	if(nsamples)
-        	*mean=*mean+(sample-*mean)/(long double)(nsamples);
+static long double welford_one_pass(long double mean, long double sample, uint16_t nsamples)
+{
+	if(nsamples) {
+		mean = mean + (sample - mean) / (long double)(nsamples);
+	}
+	return mean;
 }
 
 
@@ -40,13 +41,15 @@ void welford_one_pass(long double* mean, long double sample, uint16_t nsamples){
 // samples will arrive at NSAMPLES_MAX (that represent our 4h mean) it will force 
 // welford_one_pass to remove a ideal sample (with mean value) from the mean calculation
 // and will add the new sample in the mean, in the same time.
-void moving_average(long double* mean, long double sample, uint16_t nsamples){
-	if(nsamples<2)
-		*mean=sample;
-	if(nsamples>=NSAMPLES_MAX){
-		welford_one_pass(mean, sample, NSAMPLES_MAX);
+long double moving_average(long double mean, long double sample, uint16_t nsamples)
+{
+	if(nsamples < 2) {
+		mean = sample;
 	}
-	else{
-		welford_one_pass(mean, sample, nsamples);
+	if(nsamples >= NSAMPLES_MAX) {
+		mean = welford_one_pass(mean, sample, NSAMPLES_MAX);
+	} else {
+		mean = welford_one_pass(mean, sample, nsamples);
 	}
+	return mean;
 }
