@@ -99,7 +99,7 @@ struct connection_pool_data {
 	uint32_t shares_count;
 	time_t last_share_time;
 	int deleted;
-	char* disconnection_reason;
+	const char* disconnection_reason;
 	xdag_hash_t last_min_hash;
 	long double mean_log_difficulty;
 	uint16_t bounded_task_counter;
@@ -502,9 +502,6 @@ static void close_connection(connection_list_element *connection, const char *me
 
 	if(conn_data->block) {
 		free(conn_data->block);
-	}
-	if(conn_data->disconnection_reason) {
-		free(conn_data->disconnection_reason);
 	}
 	if(conn_data->worker_name) {
 		free(conn_data->worker_name);
@@ -1461,16 +1458,16 @@ void disconnect_connections(enum disconnect_type type, char *value)
 	{
 		if(type == DISCONNECT_ALL) {
 			elt->connection_data.deleted = 1;
-			elt->connection_data.disconnection_reason = strdup("disconnected manually");
+			elt->connection_data.disconnection_reason = "disconnected manually";
 		} else if(type == DISCONNECT_BY_ADRESS) {
 			if(memcmp(elt->connection_data.data, hash, sizeof(xdag_hashlow_t)) == 0) {
 				elt->connection_data.deleted = 1;
-				elt->connection_data.disconnection_reason = strdup("disconnected manually");
+				elt->connection_data.disconnection_reason = "disconnected manually";
 			}
 		} else if(type == DISCONNECT_BY_IP) {
 			if(elt->connection_data.ip == ip) {
 				elt->connection_data.deleted = 1;
-				elt->connection_data.disconnection_reason = strdup("disconnected manually");
+				elt->connection_data.disconnection_reason = "disconnected manually";
 			}
 		}
 	}
@@ -1489,7 +1486,7 @@ void* pool_remove_inactive_connections(void* arg)
 		{
 			if(current_time - elt->connection_data.last_share_time > 300) { //last share is received more than 5 minutes ago
 				elt->connection_data.deleted = 1;
-				elt->connection_data.disconnection_reason = strdup("inactive connection");
+				elt->connection_data.disconnection_reason = "inactive connection";
 			}
 		}
 		pthread_mutex_unlock(&g_descriptors_mutex);
