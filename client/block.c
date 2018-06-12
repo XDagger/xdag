@@ -1487,9 +1487,9 @@ void xdag_print_block_list(struct block_internal **block_list, int count, int pr
 	char time_buf[64];
 
 	if(!print_only_addresses) {
-		fprintf(out, "--------------------------------------------------------------------------------------\n");
-		fprintf(out, "address                                 time                            state\n");
-		fprintf(out, "--------------------------------------------------------------------------------------\n");
+		fprintf(out, "-----------------------------------------------------------------------\n");
+		fprintf(out, "address                            time                      state\n");
+		fprintf(out, "-----------------------------------------------------------------------\n");
 	}
 
 	for(int i = 0; i < count; ++i) {
@@ -1500,7 +1500,7 @@ void xdag_print_block_list(struct block_internal **block_list, int count, int pr
 			fprintf(out, "%s\n", address);
 		} else {
 			block_time_to_string(block, time_buf);
-			fprintf(out, "%s\t%s\t\t%s\n", address, time_buf, get_block_state_info(block));
+			fprintf(out, "%s   %s   %s\n", address, time_buf, get_block_state_info(block));
 		}
 	}
 }
