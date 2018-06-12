@@ -7,7 +7,7 @@
 
 struct xdag_public_key {
 	void *key;
-	uint64_t *pub; /* lower bit contains parity */
+	uint64_t *pub; /* lowest bit contains parity */
 };
 
 /* initializes a wallet */
