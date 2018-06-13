@@ -1711,8 +1711,6 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
 
 int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t))
 {
-	struct tm tm;
-	
 	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
 	pthread_mutex_unlock(&block_mutex);
@@ -1721,14 +1719,11 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 		return -1;
 	}
 	
-	time_t t;
-	localtime_r(&t, &tm);
-	
-	int N = 0x10000; 
+	int size = 0x10000; 
 	int n = 0;
-	struct block_internal **ba = malloc(N * sizeof(struct block_internal *));
+	struct block_internal **block_array = malloc(size * sizeof(struct block_internal *));
 	
-	if (!ba) return -1;
+	if (!block_array) return -1;
 	
 	int i;
 	for (struct block_backrefs *br = bi->backrefs; br; br = br->next) {
@@ -1738,36 +1733,36 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 			continue;
 		}
 		
-		if (n + i > N) {
-			N *= 2;
-			struct block_internal **ba1 = realloc(ba, N * sizeof(struct block_internal *));
-			if (!ba1) {
-				free(ba);
+		if (n + i > size) {
+			size *= 2;
+			struct block_internal **tmp_array = realloc(block_array, size * sizeof(struct block_internal *));
+			if (!tmp_array) {
+				free(block_array);
 				return -1;
 			}
 			
-			ba = ba1;
+			block_array = tmp_array;
 		}
 		
-		memcpy(ba + n, br->backrefs, i * sizeof(struct block_internal *));
+		memcpy(block_array + n, br->backrefs, i * sizeof(struct block_internal *));
 		n += i;
 	}
 	
 	if (!n) {
-		free(ba);
+		free(block_array);
 		return 0;
 	}
 	
-	qsort(ba, n, sizeof(struct block_internal *), bi_compar);
+	qsort(block_array, n, sizeof(struct block_internal *), bi_compar);
 	
 	for (i = 0; i < n; ++i) {
-		if (!i || ba[i] != ba[i - 1]) {
-			struct block_internal *ri = ba[i];
+		if (!i || block_array[i] != block_array[i - 1]) {
+			struct block_internal *ri = block_array[i];
 			if (ri->flags & BI_APPLIED) {
 				for (int j = 0; j < ri->nlinks; j++) {
 					if(ri->link[j] == bi && ri->linkamount[j]) {
 						if(callback(data, 1 << j & ri->in_mask, ri->hash, ri->linkamount[j], ri->time)) {
-							free(ba);
+							free(block_array);
 							return 0;
 						}
 					}
@@ -1775,6 +1770,8 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 			}
 		}
 	}
+	
+	free(block_array);
 	
 	return 0;
 }
