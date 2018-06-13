@@ -35,4 +35,6 @@ extern int xdag_print_miners(FILE *out, int printOnlyConnections);
 // value: address of ip depending on type
 extern void disconnect_connections(enum disconnect_type type, char *value);
 
+long double diff2log(xdag_diff_t diff);
+
 #endif

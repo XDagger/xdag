@@ -315,15 +315,20 @@ static inline void hash_for_signature(struct xdag_block b[2], const struct xdag_
 					xdag_log_array(b, sizeof(struct xdag_block) + sizeof(xdag_hash_t) + 1));
 }
 
-static inline xdag_diff_t hash_difficulty(xdag_hash_t hash)
+xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash)
 {
-	xdag_diff_t res = ((xdag_diff_t*)hash)[1], max = xdag_diff_max;
+	xdag_diff_t res = ((xdag_diff_t*)hash)[1];
+	xdag_diff_t max = xdag_diff_max;
 
 	xdag_diff_shr32(&res);
 
-	if(res)	
-		return xdag_diff_div(max, res);
-	return res; //TODO add a warning if it happens, which level?
+#if !defined(_WIN32) && !defined(_WIN64)
+	if(!res) {
+		xdag_warn("hash_difficulty higher part of hash is equal zero");
+		return max;
+	}
+#endif
+	return xdag_diff_div(max, res);
 }
 
 // returns a number of public key from 'keys' array with lengh 'keysLength', which conforms to the signature starting from field signo_r of the block b
@@ -478,7 +483,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	keysCount = j;
-	tmpNodeBlock.difficulty = diff0 = hash_difficulty(tmpNodeBlock.hash);
+	tmpNodeBlock.difficulty = diff0 = xdag_hash_difficulty(tmpNodeBlock.hash);
 	sum_out += newBlock->field[0].amount;
 	tmpNodeBlock.fee = newBlock->field[0].amount;
 
@@ -1547,9 +1552,3 @@ void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out)
 
 	free(block_list);
 }
-
-xdag_diff_t hash2difficulty(xdag_hash_t hash)
-{
-        return hash_difficulty(hash);
-}
-
