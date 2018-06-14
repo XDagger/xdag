@@ -57,8 +57,6 @@ void processStatsCommand(FILE *out);
 void processExitCommand(void);
 void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd);
 void processLastBlocksCommand(char *nextParam, FILE *out);
-void processMainBlocksCommand(char *nextParam, FILE *out);
-void processMinedBlocksCommand(char *nextParam, FILE *out);
 void processMinersCommand(char *nextParam, FILE *out);
 void processHelpCommand(FILE *out);
 void processDisconnectCommand(char *nextParam, FILE *out);
@@ -67,8 +65,6 @@ int xdag_com_account(char *, FILE*);
 int xdag_com_balance(char *, FILE*);
 int xdag_com_block(char *, FILE*);
 int xdag_com_lastblocks(char *, FILE*);
-int xdag_com_mainblocks(char *, FILE*);
-int xdag_com_minedblocks(char *, FILE*);
 int xdag_com_keyGen(char *, FILE*);
 int xdag_com_level(char *, FILE*);
 int xdag_com_mining(char *, FILE*);
@@ -91,8 +87,6 @@ XDAG_COMMAND commands[] = {
 	{ "balance"    , xdag_com_balance },
 	{ "block"      , xdag_com_block },
 	{ "lastblocks" , xdag_com_lastblocks },
-	{ "mainblocks" , xdag_com_mainblocks },
-	{ "minedblocks", xdag_com_minedblocks },
 	{ "keyGen"     , xdag_com_keyGen },
 	{ "level"      , xdag_com_level },
 	{ "miners"     , xdag_com_miners },
@@ -131,18 +125,6 @@ int xdag_com_block(char * args, FILE* out)
 int xdag_com_lastblocks(char * args, FILE* out)
 {
 	processLastBlocksCommand(args, out);
-	return 0;
-}
-
-int xdag_com_mainblocks(char * args, FILE* out)
-{
-	processMainBlocksCommand(args, out);
-	return 0;
-}
-
-int xdag_com_minedblocks(char * args, FILE* out)
-{
-	processMinedBlocksCommand(args, out);
 	return 0;
 }
 
@@ -499,37 +481,12 @@ void processLastBlocksCommand(char *nextParam, FILE *out)
 		if(blocksCount > 100) {
 			blocksCount = 100;
 		}
-		xdag_list_main_blocks(blocksCount, 1, out);
-	}
-}
-
-void processMainBlocksCommand(char *nextParam, FILE *out)
-{
-	int blocksCount = 20;
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
-	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
-		fprintf(out, "Illegal number.\n");
-	} else {
-		//100 is limit
-		if(blocksCount > 100) {
-			blocksCount = 100;
+		char** addressList = xdagCreateStringArray(blocksCount, 40);	//lets assume max address length as 39 symbols + null terminator
+		const int retrievedBlocks = xdagGetLastMainBlocks(blocksCount, addressList);
+		for(int i = 0; i < retrievedBlocks; ++i) {
+			fprintf(out, "%s\n", addressList[i]);
 		}
-		xdag_list_main_blocks(blocksCount, 0, out);
-	}
-}
-
-void processMinedBlocksCommand(char *nextParam, FILE *out)
-{
-	int blocksCount = 20;
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
-	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
-		fprintf(out, "Illegal number.\n");
-	} else {
-		//100 is limit
-		if(blocksCount > 100) {
-			blocksCount = 100;
-		}
-		xdag_list_mined_blocks(blocksCount, 0, out);
+		xdagFreeStringArray(addressList, blocksCount);
 	}
 }
 
@@ -565,6 +522,17 @@ void processDisconnectCommand(char *nextParam, FILE *out)
 	}
 
 	disconnect_connections(type, value);
+}
+
+long double diff2log(xdag_diff_t diff)
+{
+	long double res = (long double)xdag_diff_to64(diff);
+	xdag_diff_shr32(&diff);
+	xdag_diff_shr32(&diff);
+	if(xdag_diff_to64(diff)) {
+		res += ldexpl((long double)xdag_diff_to64(diff), 64);
+	}
+	return (res > 0 ? logl(res) : 0);
 }
 
 long double hashrate(xdag_diff_t *diff)

@@ -109,13 +109,11 @@ extern int xdag_blocks_reset(void);
 // prints detailed information about block
 extern int xdag_print_block_info(xdag_hash_t hash, FILE *out);
 
-// prints list of N last main blocks
-extern void xdag_list_main_blocks(int count, int print_only_addresses, FILE *out);
-
-// prints list of N last blocks mined by current pool
-extern void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out);
+// retrieves addresses of N last main blocks
+// return count of retrieved blocks
+extern int xdagGetLastMainBlocks(int count, char** addressArray);
 
 // calculate difficulty from hash
-xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash);
+xdag_diff_t hash2difficulty(xdag_hash_t hash);
 
 #endif

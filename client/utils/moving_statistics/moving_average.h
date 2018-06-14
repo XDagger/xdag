@@ -20,6 +20,6 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #define NSAMPLES_MAX 255 
 #endif
 
-long double moving_average(long double mean, long double sample, uint16_t nsamples);
+void moving_average(long double*, long double, uint16_t);
 
 #endif
