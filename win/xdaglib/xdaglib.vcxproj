@@ -51,6 +51,7 @@
     <ClCompile Include="..\..\client\terminal.c" />
     <ClCompile Include="..\..\client\transport.c" />
     <ClCompile Include="..\..\client\utils\log.c" />
+    <ClCompile Include="..\..\client\utils\moving_statistics\moving_average.c" />
     <ClCompile Include="..\..\client\utils\utils.c" />
     <ClCompile Include="..\..\client\wallet.c" />
     <ClCompile Include="..\..\dnet\dnet_command.c" />
@@ -100,6 +101,7 @@
     <ClInclude Include="..\..\client\uthash\uthash.h" />
     <ClInclude Include="..\..\client\uthash\utlist.h" />
     <ClInclude Include="..\..\client\utils\log.h" />
+    <ClInclude Include="..\..\client\utils\moving_statistics\moving_average.h" />
     <ClInclude Include="..\..\client\utils\utils.h" />
     <ClInclude Include="..\..\client\version.h" />
     <ClInclude Include="..\..\client\wallet.h" />

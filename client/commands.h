@@ -44,6 +44,4 @@ int read_command(char* cmd);
 
 void xdag_init_commands(void);
 
-long double diff2log(xdag_diff_t diff);
-
 #endif // !XDAG_COMMANDS_H
