@@ -22,18 +22,22 @@
 #include "commands.h"
 #include "utils/utils.h"
 
-#define MAIN_CHAIN_PERIOD       (64 << 10)
-#define MAX_WAITING_MAIN        1
-#define DEF_TIME_LIMIT          0 // (MAIN_CHAIN_PERIOD / 2)
-#define XDAG_TEST_ERA           0x16900000000ll
-#define XDAG_MAIN_ERA           0x16940000000ll
-#define XDAG_ERA                xdag_era
-#define MAIN_START_AMOUNT       (1ll << 42)
-#define MAIN_BIG_PERIOD_LOG     21
-#define MAIN_TIME(t)            ((t) >> 16)
-#define MAX_LINKS               15
-#define MAKE_BLOCK_PERIOD       13
-#define QUERY_RETRIES           2
+#define MAIN_CHAIN_PERIOD       	(64 << 10)
+#define MAX_WAITING_MAIN        	1
+#define DEF_TIME_LIMIT          	0 // (MAIN_CHAIN_PERIOD / 2)
+#define XDAG_TEST_ERA           	0x16900000000ll
+#define XDAG_MAIN_ERA           	0x16940000000ll
+#define XDAG_ERA                	xdag_era
+#define MAIN_START_AMOUNT       	(1ll << 42)
+#define MAIN_BIG_PERIOD_LOG     	21
+#define MAIN_TIME(t)            	((t) >> 16)
+#define MAX_LINKS               	15
+#define MAKE_BLOCK_PERIOD       	13
+#define QUERY_RETRIES           	2
+
+#define EXPENSIVE_RAM			1
+#define OPENSSL				0
+#define TEST_OPENSSL_VS_SECP256K1	0
 
 enum bi_flags {
 	BI_MAIN         = 0x01,
@@ -58,6 +62,9 @@ struct block_internal {
 	uint8_t flags, nlinks, max_diff_link, reserved;
 	uint16_t in_mask;
 	uint16_t n_our_key;
+#if EXPENSIVE_RAM == 1
+	struct xdag_block block;
+#endif
 };
 
 #define N_BACKREFS      (sizeof(struct block_internal) / sizeof(struct block_internal *) - 1)
@@ -348,7 +355,22 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int keysLeng
 	if (signo_s >= 0) {
 		for (i = 0; i < keysLength; ++i) {
 			hash_for_signature(buf, keys + i, hash);
+#if OPENSSL == 1
 			if (!xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data)) {
+#elif OPENSSL == 0
+			if (!xdag_verify_signature_noopenssl(keys[i].pub, hash, b->field[signo_r].data, b->field[signo_s].data)) {
+#elif TEST_OPENSSL_VS_SECP256K1 ==1
+			int res1=0,res2=0;
+			res1=!xdag_verify_signature_noopenssl(keys[i].pub, hash, b->field[signo_r].data, b->field[signo_s].data);
+			res2=!xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data);
+			if (res1!=res2){
+				printf("ERRORE");
+				fflush(stdout);
+			}
+			if(res2){
+#else
+			if (!xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data)) {
+#endif
 				return i;
 			}
 		}
@@ -498,6 +520,20 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 				goto end;
 			}
 			if (1 << i & inmask) {
+#if EXPENSIVE_RAM == 1
+				if (blockRef->block.field[i].amount) {
+					for (j = k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
+						if (xdag_type(&blockRef->block, j) == XDAG_FIELD_SIGN_OUT && (++k & 1)
+							&& valid_signature(&blockRef->block, j, keysCount, public_keys)>= 0) {
+							break;
+						}
+					}
+					if (j == XDAG_BLOCK_FIELDS) {
+						err = 9;
+						goto end;
+					}
+				}
+#else
 				if (newBlock->field[i].amount) {
 					struct xdag_block buf;
 					struct xdag_block *bref = xdag_storage_load(blockRef->hash, blockRef->time, blockRef->storage_pos, &buf);
@@ -517,6 +553,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 						goto end;
 					}
 				}
+#endif
 				psum = &sum_in;
 				tmpNodeBlock.in_mask |= 1 << tmpNodeBlock.nlinks;
 			} else {

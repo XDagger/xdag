@@ -15,6 +15,10 @@
 #include "utils/log.h"
 #include "system.h"
 
+#include "../secp256k1/include/secp256k1.h"
+
+secp256k1_context *ctx_noopenssl;
+
 static EC_GROUP *group;
 
 extern unsigned int xOPENSSL_ia32cap_P[4];
@@ -30,6 +34,8 @@ int xdag_crypt_init(int withrandom)
 		xdag_debug("Seed  : [%s]", xdag_log_array(buf, sizeof(buf)));
 		RAND_seed(buf, sizeof(buf));
 	}
+
+	ctx_noopenssl = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
 
 	group = EC_GROUP_new_by_curve_name(NID_secp256k1);
 	if (!group) return -1;
@@ -300,7 +306,13 @@ static uint8_t *add_number_to_sign(uint8_t *sign, const xdag_hash_t num)
 	leadzero = (i < sizeof(xdag_hash_t) && n[i] & 0x80);
 	len = (sizeof(xdag_hash_t) - i) + leadzero;
 	*sign++ = 0x02;
-	*sign++ = len;
+	if(len)
+		*sign++ = len;
+	else{
+		*sign++ = 1;
+		*sign++ = 0;
+		return sign;
+	}
 	
 	if (leadzero) {
 		*sign++ = 0;
@@ -330,4 +342,259 @@ int xdag_verify_signature(const void *key, const xdag_hash_t hash, const xdag_ha
 		xdag_log_array(buf, ptr - buf), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
 	
 	return res != 1;
+}
+
+// returns 0 on success
+int xdag_verify_signature_noopenssl(const void *key, const xdag_hash_t hash, const xdag_hash_t sign_r, const xdag_hash_t sign_s)
+{
+
+	uint8_t buf_pubkey[sizeof(xdag_hash_t) + 1];
+	//xdag_hash_t pubkey={0};
+//	secp256k1_context *ctx_noopenssl = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
+	secp256k1_pubkey pubkey_noopenssl;
+	size_t pubkeylen =sizeof(xdag_hash_t)+1;
+	secp256k1_ecdsa_signature sig_noopenssl;
+        secp256k1_ecdsa_signature sig_noopenssl_normalized;
+
+
+
+/*
+	if((pubkey=malloc(sizeof(xdag_hash_t) + 1))){
+                printf("malloc noopensll failed");
+                fflush(stdout);i
+	
+	}
+*/	
+/*
+
+	if (!group) {
+		printf("group is not defined?");
+                fflush(stdout);
+	}
+*/
+/*
+ 	
+	const EC_POINT *ec_point = NULL;
+	if(!(ec_point = EC_KEY_get0_public_key(key))){
+		printf("cannot create EC_POINT");
+		fflush(stdout);
+	}
+*/
+/*
+        BN_CTX *ctx = 0;
+	if (!(ctx = BN_CTX_new())) {
+		printf("cannot create BN_CTX");
+                fflush(stdout);
+
+	}
+
+	BN_CTX_start(ctx);
+*/
+/*	
+        if(EC_POINT_point2oct(group, ec_point, POINT_CONVERSION_COMPRESSED, buf, sizeof(xdag_hash_t)+1, ctx)!=sizeof(xdag_hash_t) + 1){
+         //       printf("cannot create oct");
+                fflush(stdout);
+        }
+*/
+
+
+
+
+        //   printf("public key right \n %02hhx%016llx%016llx%016llx%016llx \n", buf[0] );
+	//	fflush(stdout);
+
+	//memcpy(pubkey, buf , sizeof(xdag_hash_t)+1);
+	// *pubkey_bit = *buf & 1;
+int odd=0;
+if((uintptr_t)key & 1){
+	odd=1;
+//	printf("ODD");
+//	fflush(stdout);
+}
+//else{
+//printf("EVEN");
+//fflush(stdout);
+//}
+
+buf_pubkey[0]=2+odd;
+memcpy(&(buf_pubkey[1]),(xdag_hash_t*)((uintptr_t)key & ~1l), sizeof(xdag_hash_t));
+
+
+
+int i=0;
+	if((i=secp256k1_ec_pubkey_parse(ctx_noopenssl, &pubkey_noopenssl,buf_pubkey, pubkeylen))!=1){
+		printf("cannot parse key, %i",i );
+		fflush(stdout);
+	}
+
+        uint8_t sign_buf[72], *ptr;
+        //int res;
+
+        ptr = add_number_to_sign(sign_buf + 2, sign_r);
+        ptr = add_number_to_sign(ptr, sign_s);
+        sign_buf[0] = 0x30;
+        sign_buf[1] = ptr - sign_buf - 2;
+
+
+//printf("noopenssl sign_r \n %08llx%016llx%016llx%016llx \n", &sign_r );
+//printf("noopenssl sign_s \n %08llx%016llx%016llx%016llx \n", &sign_s );
+//printf("noopenssl signature \n %08llx%016llx%016llx%016llx%016llx%016llx%016llx%016llx \n", *sign_buf );
+//printf("noopenssl signature \n %02hhx \n", *sign_buf );
+//printf("sig_r\n %02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx   \n", &sign_r );
+//printf("sig_r\n %s   \n", xdag_log_array(&sign_r,sizeof(xdag_hash_t)) );
+//printf("sig_s\n %02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx   \n", &sign_s );
+//printf("sig_r\n %s   \n", xdag_log_array(&sign_s,sizeof(xdag_hash_t)) );
+
+//printf("sign_buf\n %02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx   \n", &sign_buf );
+
+//printf("sign_buf\n %s   \n", xdag_log_array(&sign_buf,72) );
+
+
+//fflush(stdout);
+
+
+/*
+
+
+ECDSA_SIG* ec_sig = ECDSA_SIG_new(); // TODO FREE
+
+if (NULL == BN_bin2bn((const unsigned char *)sign_r, 32, (ec_sig->r))) {
+ // dumpOpenSslErrors();
+                printf("failed to load sign_r" );
+                fflush(stdout);
+
+ }
+//DBG("post r  :%s\n", BN_bn2hex(ec_sig->r));
+
+if (NULL == BN_bin2bn((const unsigned char *)sign_s, 32, (ec_sig->s))) {
+ // dumpOpenSslErrors();    
+            printf("failed to load sign_s" );
+                fflush(stdout);
+
+ }
+//DBG("post s  :%s\n", BN_bn2hex(ec_sig->s));
+
+int sig_size = i2d_ECDSA_SIG(ec_sig, NULL);
+if (sig_size > 255) {
+//  DBG("signature is too large wants %d\n", sig_size);
+            printf("signature too much big" );
+                fflush(stdout);
+
+ }
+
+unsigned char rsig_bytes[256]={0};
+unsigned char ** sig_bytes = &rsig_bytes;
+//memset(sig_bytes, 6, 256);
+
+if(!(sig_size = i2d_ECDSA_SIG(ec_sig, (sig_bytes)))){
+            printf("signature NOT completed" );
+                fflush(stdout);
+}
+
+//printf("signature good\n %02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx   \n", &sig_noopenssl );
+
+//printf("sig_noopenssl\n %s   \n", xdag_log_array(*sig_bytes,256) );
+//printf("size %i \n", ptr - sign_buf);
+//fflush(stdout);
+
+//printf("pubkey 32 \n %s   \n", xdag_log_array(((uintptr_t)key & ~1l),32) );
+//printf("pubkey 33\n %s   \n", xdag_log_array(buf_pubkey,33) );
+//fflush(stdout);
+
+*/
+        if(secp256k1_ecdsa_signature_parse_der(ctx_noopenssl, &sig_noopenssl,sign_buf/* *sig_bytes*/, /*sig_size*/  ptr - sign_buf)!=1){
+               printf("cannot parse signature \n" );
+
+               fflush(stdout);
+//return 1;
+
+ //       }
+/*
+printf("sig_noopenssl\n %s   \n", xdag_log_array(*sig_bytes,256) );
+printf("size %i \n", sig_size);
+*/
+
+
+printf("sig_noopenssl\n %s   \n", xdag_log_array(sign_buf,72) );
+printf("size %ld \n", ptr - sign_buf);
+printf("sig_r \n %s   \n", xdag_log_array(sign_r,32) );
+printf("sig_s \n %s   \n", xdag_log_array(sign_s,32) );
+
+
+               fflush(stdout);
+return 1;
+        }
+
+
+
+     /*   if(*/secp256k1_ecdsa_signature_normalize(ctx_noopenssl, &sig_noopenssl_normalized,&sig_noopenssl);//!=1){
+/*
+                printf("already normalized" );
+                fflush(stdout);
+        }
+	else{
+		printf("NORMALIZED");
+		fflush(stdout);
+	}
+
+*/
+
+
+        if(secp256k1_ecdsa_verify(ctx_noopenssl, &sig_noopenssl_normalized,(unsigned char*) hash, &pubkey_noopenssl)!=1){
+         //       printf("cannot verify" );
+         //       fflush(stdout);
+		return 1;
+        }
+/*
+else{
+printf("VERIFIED");
+fflush(stdout);
+}
+
+*/
+return 0;
+//DBG("New size %d\n", sig_size);
+//DBG("post i2d:%s\n", BN_bn2hex(ec_sig->s));
+
+//hexDump("Sig ", (const byte*)sig_bytes, sig_size);
+
+
+//DBG("post i2d:%s\n", BN_bn2hex(ec_sig->s));
+
+
+//	free(pubkey);
+      //  if (ctx) {
+       //         BN_CTX_free(ctx);
+      // }
+//	EC_POINT_free(ec_point); 
+
+/*
+
+        uint8_t buf[72], *ptr;
+        int res;
+
+        ptr = add_number_to_sign(buf + 2, sign_r);
+        ptr = add_number_to_sign(ptr, sign_s);
+        buf[0] = 0x30;
+        buf[1] = ptr - buf - 2;
+        res = ECDSA_verify(0, (const uint8_t*)hash, sizeof(xdag_hash_t), buf, ptr - buf, (EC_KEY*)key);
+
+        xdag_debug("Verify: res=%2d key=%lx hash=[%s] sign=[%s] r=[%s], s=[%s]", res, (long)key, xdag_log_hash(hash),
+                xdag_log_array(buf, ptr - buf), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
+
+        return res != 1;
+
+  fail:
+        if (ctx) {
+                BN_CTX_free(ctx);
+        }
+
+        if (res && eckey) {
+                EC_KEY_free(eckey);
+        }
+
+        return res ? 0 : eckey;
+i
+*/
+//return 1;
 }
