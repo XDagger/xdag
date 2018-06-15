@@ -1497,7 +1497,7 @@ void* pool_remove_inactive_connections(void* arg)
 	return NULL;
 }
 
-static void update_mean_log_diff(struct connection_pool_data *conn_data, struct xdag_pool_task *task, xdag_hash_t hash)
+void update_mean_log_diff(struct connection_pool_data *conn_data, struct xdag_pool_task *task, xdag_hash_t hash)
 {
 	const xdag_time_t task_time = task->task_time;
 
