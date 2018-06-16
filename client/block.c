@@ -328,12 +328,12 @@ xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash)
 
 	xdag_diff_shr32(&res);
 
-	#if !defined(_WIN32) && !defined(_WIN64)
+#if !defined(_WIN32) && !defined(_WIN64)
 	if(!res) {
 		xdag_warn("hash_difficulty higher part of hash is equal zero");
 		return max;
 	}
-	#endif
+#endif
 	return xdag_diff_div(max, res);
 }
 
