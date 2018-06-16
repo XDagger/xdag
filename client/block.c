@@ -97,7 +97,7 @@ static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
 
 ldus_rbtree_define_prefix(lessthan, static inline, )
 
-static struct block_internal *block_by_hash(const xdag_hashlow_t hash)
+static inline struct block_internal *block_by_hash(const xdag_hashlow_t hash)
 {
 	return (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
 }
@@ -386,9 +386,11 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	newBlock->field[0].transport_header = 0;
 	xdag_hash(newBlock, sizeof(struct xdag_block), tmpNodeBlock.hash);
 
-	if (block_by_hash(tmpNodeBlock.hash)) return 0;
+	if (block_by_hash(tmpNodeBlock.hash)) {
+		return 0;
+	}
 	
-	if (xdag_type(newBlock, 0) != XDAG_FIELD_HEAD) {
+	if (xdag_type(newBlock, 0) != g_block_header_type) {
 		i = xdag_type(newBlock, 0);
 		err = 1;
 		goto end;
@@ -773,7 +775,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	res = res0;
 	memset(block, 0, sizeof(struct xdag_block));
     i = 1;
-    block[0].field[0].type = XDAG_FIELD_HEAD | (mining ? (uint64_t)XDAG_FIELD_SIGN_IN << ((XDAG_BLOCK_FIELDS - 1) * 4) : 0);
+    block[0].field[0].type = g_block_header_type | (mining ? (uint64_t)XDAG_FIELD_SIGN_IN << ((XDAG_BLOCK_FIELDS - 1) * 4) : 0);
     block[0].field[0].time = send_time;
     block[0].field[0].amount = fee;
 	
@@ -1225,7 +1227,7 @@ xdag_amount_t xdag_get_balance(xdag_hash_t hash)
 }
 
 /* sets current balance for the specified address */
-extern int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
+int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 {
 	if (!hash) return -1;
 	
@@ -1339,16 +1341,16 @@ static int bi_compar(const void *l, const void *r)
 
 	return (tl > tr) - (tl < tr);
 }
-
+//TODO comments
 static const char* xdag_get_block_state_info(struct block_internal *block)
 {
-	if(block->flags == (BI_REF | BI_MAIN_REF | BI_APPLIED | BI_MAIN | BI_MAIN_CHAIN)) { //1F
+	if((block->flags & ~BI_OURS) == (BI_REF | BI_MAIN_REF | BI_APPLIED | BI_MAIN | BI_MAIN_CHAIN)) { //1F
 		return "Main";
 	}
-	if(block->flags == (BI_REF | BI_MAIN_REF | BI_APPLIED)) { //1C
+	if((block->flags & ~BI_OURS) == (BI_REF | BI_MAIN_REF | BI_APPLIED)) { //1C
 		return "Accepted";
 	}
-	if(block->flags == (BI_REF | BI_MAIN_REF)) { //18
+	if((block->flags & ~BI_OURS) == (BI_REF | BI_MAIN_REF)) { //18
 		return "Rejected";
 	}
 	return "Pending";

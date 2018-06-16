@@ -1,4 +1,5 @@
 #include "terminal.h"
+#include <stdio.h>
 #include <stdlib.h>
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <sys/types.h>
@@ -39,30 +40,31 @@ int terminal(void)
 {
 	char *lasts;
 	int sock;
-	
-	if (system_init() != 0) {
+
+	if(system_init() != 0) {
 		printf("Can't initialize sockets");
 	}
 
 	char cmd[XDAG_COMMAND_MAX];
 	char cmd2[XDAG_COMMAND_MAX];
 
-	while (1) {
+	xdag_init_commands();
+
+	while(1) {
 		int ispwd = 0, c = 0;
-		printf("%s> ", g_progname); fflush(stdout);
-		fgets(cmd, XDAG_COMMAND_MAX, stdin);
+		read_command(cmd);
 		strcpy(cmd2, cmd);
 		char *ptr = strtok_r(cmd2, " \t\r\n", &lasts);
-		if (!ptr) continue;
-		if (!strcmp(ptr, "exit")) break;
-		if (!strcmp(ptr, "xfer")) {
+		if(!ptr) continue;
+		if(!strcmp(ptr, "exit")) break;
+		if(!strcmp(ptr, "xfer")) {
 			uint32_t pwd[4];
 			xdag_user_crypt_action(pwd, 0, 4, 4);
 			sprintf(cmd2, "pwd=%08x%08x%08x%08x ", pwd[0], pwd[1], pwd[2], pwd[3]);
 			ispwd = 1;
 		}
 #if !defined(_WIN32) && !defined(_WIN64)
-		if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+		if((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
 			printf("Can't open unix domain socket errno:%d.\n", errno);
 			continue;
 		}
@@ -70,12 +72,12 @@ int terminal(void)
 		memset(&addr, 0, sizeof(addr));
 		addr.sun_family = AF_UNIX;
 		strcpy(addr.sun_path, UNIX_SOCK);
-		if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+		if(connect(sock, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
 			printf("Can't connect to unix domain socket errno:%d\n", errno);
 			continue;
 		}
 #else
-		if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		if((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 			printf("Can't create domain socket errno:%d", WSAGetLastError());
 			return 0;
 		}
@@ -83,26 +85,25 @@ int terminal(void)
 		addrLocal.sin_family = AF_INET;
 		addrLocal.sin_port = htons(APPLICATION_DOMAIN_PORT);
 		addrLocal.sin_addr.s_addr = htonl(LOCAL_HOST_IP);
-		if (connect(sock, (struct sockadr*)&addrLocal, sizeof(addrLocal)) == -1) {
+		if(connect(sock, (struct sockadr*)&addrLocal, sizeof(addrLocal)) == -1) {
 			printf("Can't connect to domain socket errno:%d", errno);
 			return 0;
 		}
 #endif
-		if (ispwd) {
+		if(ispwd) {
 			write(sock, cmd2, strlen(cmd2));
 		}
 		write(sock, cmd, strlen(cmd) + 1);
-		if (!strcmp(ptr, "terminate")) {
+		if(!strcmp(ptr, "terminate")) {
 			sleep(1);
 			close(sock);
 			break;
 		}
-		while (read(sock, &c, 1) == 1 && c) {
+		while(read(sock, &c, 1) == 1 && c) {
 			putchar(c);
 		}
 		close(sock);
 	}
-
 	return 0;
 }
 
