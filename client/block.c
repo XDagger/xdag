@@ -36,7 +36,7 @@
 #define QUERY_RETRIES           2
 
 #define EXPENSIVE_RAM		1
-#define OPENSSL			2 // 0 disactivate, 1 activated, 2 test openssl vs secp256k1
+#define OPENSSL			0 // 0 disactivate, 1 activated, 2 test openssl vs secp256k1
 
 enum bi_flags {
 	BI_MAIN         = 0x01,
