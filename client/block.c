@@ -36,8 +36,7 @@
 #define QUERY_RETRIES           	2
 
 #define EXPENSIVE_RAM			1
-#define OPENSSL				0
-#define TEST_OPENSSL_VS_SECP256K1	0
+#define OPENSSL				0 // 0 disactivate, 1 activated, 2 test openssl vs secp256k1
 
 enum bi_flags {
 	BI_MAIN         = 0x01,
@@ -359,13 +358,13 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int keysLeng
 			if (!xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data)) {
 #elif OPENSSL == 0
 			if (!xdag_verify_signature_noopenssl(keys[i].pub, hash, b->field[signo_r].data, b->field[signo_s].data)) {
-#elif TEST_OPENSSL_VS_SECP256K1 ==1
+#elif OPENSSL == 2
 			int res1=0,res2=0;
 			res1=!xdag_verify_signature_noopenssl(keys[i].pub, hash, b->field[signo_r].data, b->field[signo_s].data);
 			res2=!xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data);
-			if (res1!=res2){
-				printf("ERRORE");
-				fflush(stdout);
+			if (res1==res2){
+		                xdag_debug("Different result between openssl and secp256k1: res openssl=%2d res secp256k1=%2d key=%lx hash=[%s] r=[%s], s=[%s]", res2, res1, (long)((uintptr_t)keys[i].pub & ~1l), xdag_log_hash(hash),
+                                                                        xdag_log_hash(b->field[signo_r].data), xdag_log_hash(b->field[signo_s].data));
 			}
 			if(res2){
 #else
@@ -498,6 +497,12 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 			memcpy(public_keys + j++, public_keys + i, sizeof(struct xdag_public_key));
 		}
 	}
+
+#if EXPENSIVE_RAM == 1
+
+	memcpy(&tmpNodeBlock.block, newBlock, sizeof(struct xdag_block));
+
+#endif
 
 	keysCount = j;
 	tmpNodeBlock.difficulty = diff0 = hash_difficulty(tmpNodeBlock.hash);
