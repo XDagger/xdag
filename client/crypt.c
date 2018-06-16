@@ -298,6 +298,30 @@ int xdag_sign(const void *key, const xdag_hash_t hash, xdag_hash_t sign_r, xdag_
 
 static uint8_t *add_number_to_sign(uint8_t *sign, const xdag_hash_t num)
 {
+        uint8_t *n = (uint8_t*)num;
+        int i, len, leadzero;
+
+        for (i = 0; i < sizeof(xdag_hash_t) && !n[i]; ++i);
+
+        leadzero = (i < sizeof(xdag_hash_t) && n[i] & 0x80);
+        len = (sizeof(xdag_hash_t) - i) + leadzero;
+        *sign++ = 0x02;
+        *sign++ = len;
+
+        if (leadzero) { 
+                *sign++ = 0;
+        }
+
+        while (i < sizeof(xdag_hash_t)) {
+                *sign++ = n[i++];
+        }
+
+        return sign;
+}
+
+
+static uint8_t *add_number_to_sign_noopenssl(uint8_t *sign, const xdag_hash_t num)
+{
 	uint8_t *n = (uint8_t*)num;
 	int i, len, leadzero;
 
@@ -430,8 +454,8 @@ int i=0;
         uint8_t sign_buf[72], *ptr;
         //int res;
 
-        ptr = add_number_to_sign(sign_buf + 2, sign_r);
-        ptr = add_number_to_sign(ptr, sign_s);
+        ptr = add_number_to_sign_noopenssl(sign_buf + 2, sign_r);
+        ptr = add_number_to_sign_noopenssl(ptr, sign_s);
         sign_buf[0] = 0x30;
         sign_buf[1] = ptr - sign_buf - 2;
 
