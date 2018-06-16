@@ -84,6 +84,9 @@ static struct block_internal *ourfirst = 0, *ourlast = 0, *noref_first = 0, *nor
 static pthread_mutex_t block_mutex;
 static int g_light_mode = 0;
 
+// functions
+void xdag_print_block_list(struct block_internal**, int, int, FILE*);
+
 // returns a time period index, where a period is 64 seconds long
 xdag_time_t xdag_main_time(void)
 {
@@ -531,7 +534,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 			}
 			if (1 << i & inmask) {
 #if EXPENSIVE_RAM == 1
-				if (blockRef->block.field[i].amount) {
+				if (newBlock->field[i].amount) {
 					for (j = k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
 						if (xdag_type(&blockRef->block, j) == XDAG_FIELD_SIGN_OUT && (++k & 1)
 							&& valid_signature(&blockRef->block, j, keysCount, public_keys)>= 0) {
