@@ -22,21 +22,21 @@
 #include "commands.h"
 #include "utils/utils.h"
 
-#define MAIN_CHAIN_PERIOD       	(64 << 10)
-#define MAX_WAITING_MAIN        	1
-#define DEF_TIME_LIMIT          	0 // (MAIN_CHAIN_PERIOD / 2)
-#define XDAG_TEST_ERA           	0x16900000000ll
-#define XDAG_MAIN_ERA           	0x16940000000ll
-#define XDAG_ERA                	xdag_era
-#define MAIN_START_AMOUNT       	(1ll << 42)
-#define MAIN_BIG_PERIOD_LOG     	21
-#define MAIN_TIME(t)            	((t) >> 16)
-#define MAX_LINKS               	15
-#define MAKE_BLOCK_PERIOD       	13
-#define QUERY_RETRIES           	2
+#define MAIN_CHAIN_PERIOD       (64 << 10)
+#define MAX_WAITING_MAIN        1
+#define DEF_TIME_LIMIT          0 // (MAIN_CHAIN_PERIOD / 2)
+#define XDAG_TEST_ERA           0x16900000000ll
+#define XDAG_MAIN_ERA           0x16940000000ll
+#define XDAG_ERA                xdag_era
+#define MAIN_START_AMOUNT       (1ll << 42)
+#define MAIN_BIG_PERIOD_LOG     21
+#define MAIN_TIME(t)            ((t) >> 16)
+#define MAX_LINKS               15
+#define MAKE_BLOCK_PERIOD       13
+#define QUERY_RETRIES           2
 
-#define EXPENSIVE_RAM			1
-#define OPENSSL				2 // 0 disactivate, 1 activated, 2 test openssl vs secp256k1
+#define EXPENSIVE_RAM		1
+#define OPENSSL			2 // 0 disactivate, 1 activated, 2 test openssl vs secp256k1
 
 enum bi_flags {
 	BI_MAIN         = 0x01,
@@ -79,7 +79,7 @@ struct block_backrefs {
 static xdag_amount_t g_balance = 0;
 static xdag_time_t time_limit = DEF_TIME_LIMIT, xdag_era = XDAG_MAIN_ERA;
 static struct ldus_rbtree *root = 0;
-static struct block_internal * volatile top_main_chain = 0, *volatile pretop_main_chain = 0;
+static struct block_internal *volatile top_main_chain = 0, *volatile pretop_main_chain = 0;
 static struct block_internal *ourfirst = 0, *ourlast = 0, *noref_first = 0, *noref_last = 0;
 static pthread_mutex_t block_mutex;
 static int g_light_mode = 0;
@@ -321,15 +321,20 @@ static inline void hash_for_signature(struct xdag_block b[2], const struct xdag_
 					xdag_log_array(b, sizeof(struct xdag_block) + sizeof(xdag_hash_t) + 1));
 }
 
-static inline xdag_diff_t hash_difficulty(xdag_hash_t hash)
+xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash)
 {
-	xdag_diff_t res = ((xdag_diff_t*)hash)[1], max = xdag_diff_max;
+	xdag_diff_t res = ((xdag_diff_t*)hash)[1];
+	xdag_diff_t max = xdag_diff_max;
 
 	xdag_diff_shr32(&res);
 
-	if(res)	
-		return xdag_diff_div(max, res);
-	return res; //TODO add a warning if it happens, which level?
+	#if !defined(_WIN32) && !defined(_WIN64)
+	if(!res) {
+		xdag_warn("hash_difficulty higher part of hash is equal zero");
+		return max;
+	}
+	#endif
+	return xdag_diff_div(max, res);
 }
 
 // returns a number of public key from 'keys' array with lengh 'keysLength', which conforms to the signature starting from field signo_r of the block b
@@ -505,7 +510,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 #endif
 
 	keysCount = j;
-	tmpNodeBlock.difficulty = diff0 = hash_difficulty(tmpNodeBlock.hash);
+	tmpNodeBlock.difficulty = diff0 = xdag_hash_difficulty(tmpNodeBlock.hash);
 	sum_out += newBlock->field[0].amount;
 	tmpNodeBlock.fee = newBlock->field[0].amount;
 
@@ -806,7 +811,8 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	}
 	
 	if (!send_time) {
-		send_time = get_timestamp(), mining = 0;
+		send_time = get_timestamp();
+		mining = 0;
 	} else {
 		mining = (send_time > get_timestamp() && res0 + 1 <= XDAG_BLOCK_FIELDS);
 	}
@@ -1383,26 +1389,37 @@ static int bi_compar(const void *l, const void *r)
 
 	return (tl < tr) - (tl > tr);
 }
-//TODO comments
-static const char* xdag_get_block_state_info(struct block_internal *block)
+
+// returns string representation for the block state. Ignores BI_OURS flag
+static const char* get_block_state_info(struct block_internal *block)
 {
-	if((block->flags & ~BI_OURS) == (BI_REF | BI_MAIN_REF | BI_APPLIED | BI_MAIN | BI_MAIN_CHAIN)) { //1F
+	const uint8_t flag = block->flags & ~BI_OURS;
+	if(flag == (BI_REF | BI_MAIN_REF | BI_APPLIED | BI_MAIN | BI_MAIN_CHAIN)) { //1F
 		return "Main";
 	}
-	if((block->flags & ~BI_OURS) == (BI_REF | BI_MAIN_REF | BI_APPLIED)) { //1C
+	if(flag == (BI_REF | BI_MAIN_REF | BI_APPLIED)) { //1C
 		return "Accepted";
 	}
-	if((block->flags & ~BI_OURS) == (BI_REF | BI_MAIN_REF)) { //18
+	if(flag == (BI_REF | BI_MAIN_REF)) { //18
 		return "Rejected";
 	}
 	return "Pending";
 }
 
-/* prints detailed information about block */
-int xdag_print_block_info(xdag_hash_t hash, FILE *out)
+static void block_time_to_string(struct block_internal *block, char *buf)
 {
 	struct tm tm;
-	char tbuf[64];
+	char tmp[64];
+	time_t t = block->time >> 10;
+	localtime_r(&t, &tm);
+	strftime(tmp, 64, "%Y-%m-%d %H:%M:%S", &tm);
+	sprintf(buf, "%s.%03d", tmp, (int)((block->time & 0x3ff) * 1000) >> 10);
+}
+
+/* prints detailed information about block */
+int xdag_print_block_info(xdag_hash_t hash, FILE *out)
+{	
+	char time_buf[64];
 	char address[33];
 	int i;
 
@@ -1415,13 +1432,11 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	}
 	
 	uint64_t *h = bi->hash;
-	time_t t = bi->time >> 10;
-	localtime_r(&t, &tm);
-	strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
-	fprintf(out, "      time: %s.%03d\n", tbuf, (int)((bi->time & 0x3ff) * 1000) >> 10);
+	block_time_to_string(bi, time_buf);
+	fprintf(out, "      time: %s\n", time_buf);
 	fprintf(out, " timestamp: %llx\n", (unsigned long long)bi->time);
 	fprintf(out, "     flags: %x\n", bi->flags & ~BI_OURS);
-	fprintf(out, "     state: %s\n", xdag_get_block_state_info(bi));
+	fprintf(out, "     state: %s\n", get_block_state_info(bi));
 	fprintf(out, "  file pos: %llx\n", (unsigned long long)bi->storage_pos);
 	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 			(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
@@ -1438,8 +1453,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	else {
 		strcpy(address, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 	}
-	fprintf(out, "       fee: %s  %10u.%09u\n", address,
-			pramount(bi->fee));
+	fprintf(out, "       fee: %s  %10u.%09u\n", address, pramount(bi->fee));
 
 	for (i = 0; i < bi->nlinks; ++i) {
 		xdag_hash2address(bi->link[i]->hash, address);
@@ -1454,9 +1468,9 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	
 	if (bi->flags & BI_MAIN) {
 		xdag_hash2address(h, address);
-		fprintf(out, "   earning: %s  %10u.%09u  %s.%03d\n", address,
-				pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)),
-				tbuf, (int)((bi->time & 0x3ff) * 1000) >> 10);
+		fprintf(out, "   earning: %s  %10u.%09u  %s\n", address,
+			pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)), 
+			time_buf);
 	}
 	
 	int N = 0x10000; 
@@ -1500,39 +1514,83 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 			if (ri->flags & BI_APPLIED) {
 				for (int j = 0; j < ri->nlinks; j++) {
 					if(ri->link[j] == bi && ri->linkamount[j]) {
-						t = ri->time >> 10;
-						localtime_r(&t, &tm);
-						strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
+						block_time_to_string(ri, time_buf);
 						xdag_hash2address(ri->hash, address);
-						fprintf(out, "    %6s: %s  %10u.%09u  %s.%03d\n",
+						fprintf(out, "    %6s: %s  %10u.%09u  %s\n",
 							(1 << j & ri->in_mask ? "output" : " input"), address,
-							pramount(ri->linkamount[j]), tbuf, (int)((ri->time & 0x3ff) * 1000) >> 10);
+							pramount(ri->linkamount[j]), time_buf);
 					}
 				}
 			}
 		}
 	}
-	
+
 	free(ba);
-	
+
 	return 0;
 }
 
-// retrieves addresses of N last main blocks
-int xdagGetLastMainBlocks(int count, char** addressArray)
+void xdag_print_block_list(struct block_internal **block_list, int count, int print_only_addresses, FILE *out)
 {
-	int i = 0;
-	for (struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
-		if (b->flags & BI_MAIN) {
-			xdag_hash2address(b->hash, addressArray[i]);
-			++i;
+	char address[33];
+	char time_buf[64];
+
+	if(!print_only_addresses) {
+		fprintf(out, "-----------------------------------------------------------------------\n");
+		fprintf(out, "address                            time                      state\n");
+		fprintf(out, "-----------------------------------------------------------------------\n");
+	}
+
+	for(int i = 0; i < count; ++i) {
+		struct block_internal *block = block_list[i];
+		xdag_hash2address(block->hash, address);
+
+		if(print_only_addresses) {
+			fprintf(out, "%s\n", address);
+		} else {
+			block_time_to_string(block, time_buf);
+			fprintf(out, "%s   %s   %s\n", address, time_buf, get_block_state_info(block));
 		}
 	}
-	return i;
 }
 
-xdag_diff_t hash2difficulty(xdag_hash_t hash)
+// prints list of N last main blocks
+void xdag_list_main_blocks(int count, int print_only_addresses, FILE *out)
 {
-        return hash_difficulty(hash);
+	int i = 0;
+	struct block_internal **block_list = malloc(count * sizeof(struct block_internal *));
+	if(!block_list) return;
+
+	pthread_mutex_lock(&block_mutex);
+	for (struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
+		if (b->flags & BI_MAIN) {
+			block_list[i++] = b;
+		}
+	}
+	pthread_mutex_unlock(&block_mutex);
+
+	xdag_print_block_list(block_list, i, print_only_addresses, out);
+
+	free(block_list);
 }
 
+// prints list of N last blocks mined by current pool
+// TODO: find a way to find non-payed mined blocks or remove 'include_non_payed' parameter
+void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out)
+{
+	int i = 0;
+	struct block_internal **block_list = malloc(count * sizeof(struct block_internal *));
+	if(!block_list) return;
+
+	pthread_mutex_lock(&block_mutex);
+	for(struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
+		if(b->flags & BI_MAIN && b->flags & BI_OURS) {
+			block_list[i++] = b;
+		}
+	}
+	pthread_mutex_unlock(&block_mutex);
+
+	xdag_print_block_list(block_list, i, 0, out);
+
+	free(block_list);
+}
