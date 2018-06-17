@@ -495,10 +495,6 @@ void processLastBlocksCommand(char *nextParam, FILE *out)
 	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
 		fprintf(out, "Illegal number.\n");
 	} else {
-		//100 is limit
-		if(blocksCount > 100) {
-			blocksCount = 100;
-		}
 		xdag_list_main_blocks(blocksCount, 1, out);
 	}
 }
@@ -510,10 +506,6 @@ void processMainBlocksCommand(char *nextParam, FILE *out)
 	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
 		fprintf(out, "Illegal number.\n");
 	} else {
-		//100 is limit
-		if(blocksCount > 100) {
-			blocksCount = 100;
-		}
 		xdag_list_main_blocks(blocksCount, 0, out);
 	}
 }
@@ -525,10 +517,6 @@ void processMinedBlocksCommand(char *nextParam, FILE *out)
 	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
 		fprintf(out, "Illegal number.\n");
 	} else {
-		//100 is limit
-		if(blocksCount > 100) {
-			blocksCount = 100;
-		}
 		xdag_list_mined_blocks(blocksCount, 0, out);
 	}
 }
