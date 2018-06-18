@@ -50,6 +50,8 @@ void processBalanceCommand(char *nextParam, FILE *out);
 void processBlockCommand(char *nextParam, FILE *out);
 void processKeyGenCommand(FILE *out);
 void processLevelCommand(char *nextParam, FILE *out);
+void processMinerCommand(char *nextParam, FILE *out);
+void processMinersCommand(char *nextParam, FILE *out);
 void processMiningCommand(char *nextParam, FILE *out);
 void processNetCommand(char *nextParam, FILE *out);
 void processPoolCommand(char *nextParam, FILE *out);
@@ -59,7 +61,6 @@ void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd);
 void processLastBlocksCommand(char *nextParam, FILE *out);
 void processMainBlocksCommand(char *nextParam, FILE *out);
 void processMinedBlocksCommand(char *nextParam, FILE *out);
-void processMinersCommand(char *nextParam, FILE *out);
 void processHelpCommand(FILE *out);
 void processDisconnectCommand(char *nextParam, FILE *out);
 
@@ -71,10 +72,11 @@ int xdag_com_mainblocks(char *, FILE*);
 int xdag_com_minedblocks(char *, FILE*);
 int xdag_com_keyGen(char *, FILE*);
 int xdag_com_level(char *, FILE*);
+int xdag_com_miner(char *, FILE*);
+int xdag_com_miners(char *, FILE*);
 int xdag_com_mining(char *, FILE*);
 int xdag_com_net(char *, FILE*);
 int xdag_com_pool(char *, FILE*);
-int xdag_com_miners(char *, FILE*);
 int xdag_com_stats(char *, FILE*);
 int xdag_com_state(char *, FILE*);
 int xdag_com_help(char *, FILE*);
@@ -83,7 +85,6 @@ int xdag_com_terminate(char *, FILE*);
 int xdag_com_exit(char *, FILE*);
 int xdag_com_disconnect(char *, FILE*);
 
-char* xdag_com_generator(const char*, int);
 XDAG_COMMAND* find_xdag_command(char*);
 
 XDAG_COMMAND commands[] = {
@@ -95,6 +96,7 @@ XDAG_COMMAND commands[] = {
 	{ "minedblocks", xdag_com_minedblocks },
 	{ "keyGen"     , xdag_com_keyGen },
 	{ "level"      , xdag_com_level },
+	{ "miner"      , xdag_com_miner },
 	{ "miners"     , xdag_com_miners },
 	{ "mining"     , xdag_com_mining },
 	{ "net"        , xdag_com_net },
@@ -173,6 +175,12 @@ int xdag_com_net(char * args, FILE* out)
 int xdag_com_pool(char * args, FILE* out)
 {
 	processPoolCommand(args, out);
+	return 0;
+}
+
+int xdag_com_miner(char * args, FILE* out)
+{
+	processMinerCommand(args, out);
 	return 0;
 }
 
@@ -392,6 +400,24 @@ void processMiningCommand(char *nextParam, FILE *out)
 	} else {
 		xdag_mining_start(g_is_miner ? ~nthreads : nthreads);
 		fprintf(out, "%d mining threads running\n", g_xdag_mining_threads);
+	}
+}
+
+void processMinerCommand(char *nextParam, FILE *out)
+{
+	xdag_hash_t hash;
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	if(cmd) {
+		size_t len = strlen(cmd);
+		if(len == 32) {
+			if(xdag_print_miner_stats(hash, out)) {
+				fprintf(out, "Block is not found.\n");
+			}
+		} else {
+			fprintf(out, "Argument is incorrect.\n");
+		}
+	} else {
+		fprintf(out, "Miner is not specified.\n");
 	}
 }
 

@@ -66,6 +66,7 @@ struct miner_pool_data {
 	xdag_hash_t last_min_hash;
 	long double mean_log_difficulty;
 	uint32_t bounded_task_counter;
+	time_t registered_time;
 };
 
 typedef struct miner_list_element {
@@ -104,6 +105,7 @@ struct connection_pool_data {
 	long double mean_log_difficulty;
 	uint32_t bounded_task_counter;
 	char* worker_name;
+	time_t connected_time;
 };
 
 typedef struct connection_list_element {
@@ -476,7 +478,8 @@ void *pool_net_thread(void *arg)
 		new_connection->connection_data.connection_descriptor.revents = 0;
 		int ip = new_connection->connection_data.ip = peeraddr.sin_addr.s_addr;
 		new_connection->connection_data.port = peeraddr.sin_port;
-		new_connection->connection_data.last_share_time = time(0); // we set time of last share to the current time in order to avoid immediate disconnection
+		new_connection->connection_data.connected_time = time(0);
+		new_connection->connection_data.last_share_time = new_connection->connection_data.connected_time; // we set time of last share to the current time in order to avoid immediate disconnection
 
 		LL_APPEND(g_accept_connection_list_head, new_connection);
 		++g_connections_count;
@@ -611,8 +614,8 @@ static int register_new_miner(connection_list_element *connection)
 	miner_list_element *elt;
 	struct connection_pool_data *conn_data = &connection->connection_data;
 
-	xdag_time_t time;
-	const int64_t position = xdag_get_block_pos((const uint64_t*)conn_data->data, &time);
+	xdag_time_t tm;
+	const int64_t position = xdag_get_block_pos((const uint64_t*)conn_data->data, &tm);
 	if(position < 0) {
 		char address_buf[33];
 		char message[100];
@@ -650,6 +653,7 @@ static int register_new_miner(connection_list_element *connection)
 		memcpy(new_miner->miner_data.id.data, conn_data->data, sizeof(struct xdag_field));
 		new_miner->miner_data.connections_count = 1;
 		new_miner->miner_data.state = MINER_ACTIVE;
+		new_miner->miner_data.registered_time = time(0);
 		LL_APPEND(g_miner_list_head, new_miner);
 		conn_data->miner = &new_miner->miner_data;
 		conn_data->state = ACTIVE_CONNECTION;
@@ -1537,4 +1541,9 @@ long double diff2log(xdag_diff_t diff)
 		res += ldexpl((long double)xdag_diff_to64(diff), 64);
 	}
 	return (res > 0 ? logl(res) : 0);
+}
+
+int xdag_print_miner_stats(const char* address, FILE *out)
+{
+	
 }
