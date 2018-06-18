@@ -40,10 +40,7 @@ int xdag_crypt_init(int withrandom)
 	}
 
 #if OPENSSL == 0 || OPENSSL == 2
-
-
 	ctx_noopenssl = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
-
 #endif
 
 	group = EC_GROUP_new_by_curve_name(NID_secp256k1);

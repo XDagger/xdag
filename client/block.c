@@ -77,10 +77,10 @@ struct block_backrefs {
 #define ournext link[MAX_LINKS - 1]
 
 struct cache_block {
-        struct ldus_rbtree node;
+	struct ldus_rbtree node;
 	xdag_hash_t hash;
-        struct xdag_block block;
-        struct cache_block *next;
+	struct xdag_block block;
+	struct cache_block *next;
 };
 
 
@@ -563,8 +563,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 							err = 9;
 							goto end;
 						}
-					}
-					else{
+					}else{
 						cache_miss++;
 						struct xdag_block buf;
 						struct xdag_block *bref = xdag_storage_load(blockRef->hash, blockRef->time, blockRef->storage_pos, &buf);
@@ -715,12 +714,10 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
                         cache_last = cacheBlock;
                         ldus_rbtree_insert(&cache_root, &cacheBlock->node);
                         g_xdag_extstats.cache_usage++;
-                }
-                else{
+                }else{
                         xdag_warn("cache malloc failed");
                 }
-        }
-        else{
+        }else{
                 xdag_warn("maximum cache reached");
         }
 #endif
