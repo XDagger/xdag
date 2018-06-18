@@ -524,28 +524,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 
 #if CACHE == 1
 	int32_t cache_hit = 0, cache_miss = 0;
-	if(g_xdag_extstats.cache_usage<=CACHE_MAX_SIZE && signOutCount){	
-       		struct cache_block *cacheBlock = malloc(sizeof(struct cache_block));
-		if(cacheBlock != NULL){
-		        memset(cacheBlock, 0, sizeof(struct cache_block));
-			memcpy(&(cacheBlock->block), newBlock, sizeof(struct xdag_block));
-			memcpy(&(cacheBlock->hash), tmpNodeBlock.hash, sizeof(xdag_hash_t));
-			
-			if(cache_first == NULL)	
-				cache_first = cacheBlock;
-			if(cache_last != NULL)
-				cache_last->next = cacheBlock;
-			cache_last = cacheBlock;
-			ldus_rbtree_insert(&cache_root, &cacheBlock->node);
-			g_xdag_extstats.cache_usage++;
-		}
-		else{
-			xdag_warn("cache malloc failed");
-		}
-	}
-	else{
-		xdag_warn("maximum cache reached");
-	}
 #endif
 
 	keysCount = j;
@@ -721,6 +699,31 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		err = 0xC; 
 		goto end;
 	}
+
+#if CACHE == 1 
+        if(g_xdag_extstats.cache_usage<=CACHE_MAX_SIZE && signOutCount){
+                struct cache_block *cacheBlock = malloc(sizeof(struct cache_block));
+                if(cacheBlock != NULL){
+                        memset(cacheBlock, 0, sizeof(struct cache_block));
+                        memcpy(&(cacheBlock->block), newBlock, sizeof(struct xdag_block));
+                        memcpy(&(cacheBlock->hash), tmpNodeBlock.hash, sizeof(xdag_hash_t));
+
+                        if(cache_first == NULL) 
+                                cache_first = cacheBlock;
+                        if(cache_last != NULL)
+                                cache_last->next = cacheBlock;
+                        cache_last = cacheBlock;
+                        ldus_rbtree_insert(&cache_root, &cacheBlock->node);
+                        g_xdag_extstats.cache_usage++;
+                }
+                else{
+                        xdag_warn("cache malloc failed");
+                }
+        }
+        else{
+                xdag_warn("maximum cache reached");
+        }
+#endif
 
 	if (!(transportHeader & (sizeof(struct xdag_block) - 1))) {
 		tmpNodeBlock.storage_pos = transportHeader;
