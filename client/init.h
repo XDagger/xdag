@@ -29,13 +29,16 @@ extern struct xdag_stats
 
 extern struct xdag_ext_stats
 {
-    xdag_diff_t hashrate_total[HASHRATE_LAST_MAX_TIME];
-    xdag_diff_t hashrate_ours[HASHRATE_LAST_MAX_TIME];
-    xdag_time_t hashrate_last_time;
-    uint64_t nnoref;
-    uint64_t nhashes;
-    double hashrate_s;
-    uint32_t nwaitsync;
+	xdag_diff_t hashrate_total[HASHRATE_LAST_MAX_TIME];
+	xdag_diff_t hashrate_ours[HASHRATE_LAST_MAX_TIME];
+	xdag_time_t hashrate_last_time;
+	uint64_t nnoref;
+	uint64_t nhashes;
+	double hashrate_s;
+	uint32_t nwaitsync;
+	uint32_t cache_size;
+	uint32_t cache_usage;
+	double cache_hitrate;
 } g_xdag_extstats;
 
 #ifdef __cplusplus

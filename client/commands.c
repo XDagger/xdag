@@ -446,7 +446,8 @@ void processStatsCommand(FILE *out)
 			" wait sync blocks: %u\n"
 			" chain difficulty: %llx%016llx of %llx%016llx\n"
 			" %9s supply: %.9Lf of %.9Lf\n"
-			"4 hr hashrate MHs: %.2Lf of %.2Lf\n",
+			"4 hr hashrate MHs: %.2Lf of %.2Lf\n"
+			"            cache: size %u, usage %u, hitrate %f%%\n",
 			g_xdag_stats.nhosts, g_xdag_stats.total_nhosts,
 			(long long)g_xdag_stats.nblocks, (long long)g_xdag_stats.total_nblocks,
 			(long long)g_xdag_stats.nmain, (long long)g_xdag_stats.total_nmain,
@@ -455,7 +456,8 @@ void processStatsCommand(FILE *out)
 			xdag_diff_args(g_xdag_stats.max_difficulty), g_coinname,
 			amount2xdags(xdag_get_supply(g_xdag_stats.nmain)),
 			amount2xdags(xdag_get_supply(g_xdag_stats.total_nmain)),
-			hashrate(g_xdag_extstats.hashrate_ours), hashrate(g_xdag_extstats.hashrate_total)
+			hashrate(g_xdag_extstats.hashrate_ours), hashrate(g_xdag_extstats.hashrate_total),
+			g_xdag_extstats.cache_size, g_xdag_extstats.cache_usage, g_xdag_extstats.cache_hitrate*100
 		);
 	}
 }
