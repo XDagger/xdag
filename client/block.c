@@ -645,7 +645,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 
 #if CACHE == 1
 	if(g_xdag_extstats.cache_usage >= g_xdag_extstats.cache_size){
-		if (g_xdag_extstats.cache_hitrate<0.96 && g_xdag_extstats.cache_size*2 <= CACHE_MAX_SIZE){
+		if (g_xdag_extstats.cache_hitrate<0.94 && g_xdag_extstats.cache_size*2 <= CACHE_MAX_SIZE){
 			if(!g_xdag_extstats.cache_size && CACHE_MAX_SIZE){
 				g_xdag_extstats.cache_size++;
 			}
