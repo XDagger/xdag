@@ -447,7 +447,7 @@ void processStatsCommand(FILE *out)
 			" chain difficulty: %llx%016llx of %llx%016llx\n"
 			" %9s supply: %.9Lf of %.9Lf\n"
 			"4 hr hashrate MHs: %.2Lf of %.2Lf\n"
-			"            cache: size %u, usage %u, hitrate %f%%\n",
+			"    cached blocks: target amount %u, actual amount %u, hitrate %f%%\n",
 			g_xdag_stats.nhosts, g_xdag_stats.total_nhosts,
 			(long long)g_xdag_stats.nblocks, (long long)g_xdag_stats.total_nblocks,
 			(long long)g_xdag_stats.nmain, (long long)g_xdag_stats.total_nmain,
