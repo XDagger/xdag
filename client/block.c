@@ -653,7 +653,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 				g_xdag_extstats.cache_size = g_xdag_extstats.cache_size*2;
 			}
 		}
-		else if(g_xdag_extstats.cache_hitrate>0.99 && !cache_miss && g_xdag_extstats.cache_size){
+		else if(g_xdag_extstats.cache_hitrate>0.98 && !cache_miss && g_xdag_extstats.cache_size){
 			g_xdag_extstats.cache_size--;
 		}
 		for(int l=g_xdag_extstats.cache_usage;l>g_xdag_extstats.cache_size;l--){
@@ -673,7 +673,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		}
 
 	}
-	else if(g_xdag_extstats.cache_hitrate>0.99 && !cache_miss && g_xdag_extstats.cache_size){
+	else if(g_xdag_extstats.cache_hitrate>0.98 && !cache_miss && g_xdag_extstats.cache_size){
                        g_xdag_extstats.cache_size--;
 	}
 	if(g_xdag_extstats.cache_size*2 > CACHE_MAX_SIZE){
