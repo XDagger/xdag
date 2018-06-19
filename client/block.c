@@ -1488,48 +1488,46 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	return 0;
 }
 
-void xdag_print_block_list(struct block_internal **block_list, int count, int print_only_addresses, FILE *out)
+static inline void print_block(struct block_internal *block, int print_only_addresses, FILE *out)
 {
 	char address[33];
 	char time_buf[64];
 
-	if(!print_only_addresses) {
-		fprintf(out, "-----------------------------------------------------------------------\n");
-		fprintf(out, "address                            time                      state\n");
-		fprintf(out, "-----------------------------------------------------------------------\n");
-	}
+	xdag_hash2address(block->hash, address);
 
-	for(int i = 0; i < count; ++i) {
-		struct block_internal *block = block_list[i];
-		xdag_hash2address(block->hash, address);
-
-		if(print_only_addresses) {
-			fprintf(out, "%s\n", address);
-		} else {
-			block_time_to_string(block, time_buf);
-			fprintf(out, "%s   %s   %s\n", address, time_buf, get_block_state_info(block));
-		}
+	if(print_only_addresses) {
+		fprintf(out, "%s\n", address);
+	} else {
+		block_time_to_string(block, time_buf);
+		fprintf(out, "%s   %s   %s\n", address, time_buf, get_block_state_info(block));
 	}
+}
+
+static inline void print_header_block_list(FILE *out)
+{
+	fprintf(out, "-----------------------------------------------------------------------\n");
+	fprintf(out, "address                            time                      state\n");
+	fprintf(out, "-----------------------------------------------------------------------\n");
 }
 
 // prints list of N last main blocks
 void xdag_list_main_blocks(int count, int print_only_addresses, FILE *out)
 {
 	int i = 0;
-	struct block_internal **block_list = malloc(count * sizeof(struct block_internal *));
-	if(!block_list) return;
+	if(!print_only_addresses) {
+		print_header_block_list(out);
+	}
 
 	pthread_mutex_lock(&block_mutex);
+
 	for (struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
 		if (b->flags & BI_MAIN) {
-			block_list[i++] = b;
+			print_block(b, print_only_addresses, out);
+			++i;
 		}
 	}
+
 	pthread_mutex_unlock(&block_mutex);
-
-	xdag_print_block_list(block_list, i, print_only_addresses, out);
-
-	free(block_list);
 }
 
 // prints list of N last blocks mined by current pool
@@ -1537,18 +1535,16 @@ void xdag_list_main_blocks(int count, int print_only_addresses, FILE *out)
 void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out)
 {
 	int i = 0;
-	struct block_internal **block_list = malloc(count * sizeof(struct block_internal *));
-	if(!block_list) return;
+	print_header_block_list(out);
 
 	pthread_mutex_lock(&block_mutex);
+
 	for(struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
 		if(b->flags & BI_MAIN && b->flags & BI_OURS) {
-			block_list[i++] = b;
+			print_block(b, 0, out);
+			++i;
 		}
 	}
+
 	pthread_mutex_unlock(&block_mutex);
-
-	xdag_print_block_list(block_list, i, 0, out);
-
-	free(block_list);
 }
