@@ -378,9 +378,8 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int keysLeng
 	if (signo_s >= 0) {
 		for (i = 0; i < keysLength; ++i) {
 			hash_for_signature(buf, keys + i, hash);
-#if OPENSSL == 1
-			if (!xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data)) {
-#elif OPENSSL == 0
+
+#if OPENSSL == 0
 			if (!xdag_verify_signature_noopenssl(keys[i].pub, hash, b->field[signo_r].data, b->field[signo_s].data)) {
 #elif OPENSSL == 2
 			int res1=0,res2=0;
