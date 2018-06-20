@@ -94,9 +94,6 @@ static pthread_mutex_t block_mutex;
 static int g_light_mode = 0;
 static uint32_t cache_bounded_counter = 0;
 
-// functions
-void xdag_print_block_list(struct block_internal**, int, int, FILE*);
-
 // returns a time period index, where a period is 64 seconds long
 xdag_time_t xdag_main_time(void)
 {
