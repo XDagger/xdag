@@ -22,6 +22,7 @@
 #include "commands.h"
 #include "utils/utils.h"
 #include "utils/moving_statistics/moving_average.h"
+#include "mining_common.h"
 
 #define MAIN_CHAIN_PERIOD       (64 << 10)
 #define MAX_WAITING_MAIN        1
@@ -91,6 +92,7 @@ static struct block_internal *volatile top_main_chain = 0, *volatile pretop_main
 static struct block_internal *ourfirst = 0, *ourlast = 0, *noref_first = 0, *noref_last = 0;
 static struct cache_block *cache_first = NULL, *cache_last = NULL;
 static pthread_mutex_t block_mutex;
+//TODO: this variable duplicates existing global variable g_is_pool. Probably should be removed
 static int g_light_mode = 0;
 static uint32_t cache_bounded_counter = 0;
 
@@ -934,7 +936,8 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	
 	if (g_light_mode) {
 		if (res < XDAG_BLOCK_FIELDS && ourfirst) {
-			setfld(XDAG_FIELD_OUT, ourfirst->hash, xdag_hashlow_t); res++;
+			setfld(XDAG_FIELD_OUT, ourfirst->hash, xdag_hashlow_t); 
+			res++;
 		}
 	} else {
 		if (res < XDAG_BLOCK_FIELDS && mining && pretop && pretop->time < send_time) {
@@ -1192,7 +1195,7 @@ static void *work_thread(void *arg)
 		if (g_xdag_state == XDAG_STATE_REST) {
 			g_xdag_sync_on = 0;
 			pthread_mutex_unlock(&block_mutex);
-			xdag_mining_start(g_light_mode ? ~0 : 0);
+			xdag_mining_start(0);
 
 			while (get_timestamp() - t < MAIN_CHAIN_PERIOD + (3 << 10)) {
 				sleep(1);
@@ -1263,10 +1266,10 @@ static void *work_thread(void *arg)
 
 /* start of regular block processing
  * n_mining_threads - the number of threads for mining on the CPU;
- *   for the light node n_mining_threads < 0 and the number of threads is equal to ~n_mining_threads;
+ *   for the light node is_pool == 0;
  * miner_address = 1 - the address of the miner is explicitly set
  */
-int xdag_blocks_start(int n_mining_threads, int miner_address)
+int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address)
 {
 	pthread_mutexattr_t attr;
 	pthread_t th;
@@ -1275,7 +1278,7 @@ int xdag_blocks_start(int n_mining_threads, int miner_address)
 		xdag_era = XDAG_TEST_ERA;
 	}
 
-	if (n_mining_threads < 0) {
+	if (!is_pool) {
 		g_light_mode = 1;
 	}
 
@@ -1286,7 +1289,7 @@ int xdag_blocks_start(int n_mining_threads, int miner_address)
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&block_mutex, &attr);
-	int err = pthread_create(&th, 0, work_thread, (void*)(uintptr_t)(unsigned)n_mining_threads);
+	int err = pthread_create(&th, 0, work_thread, (void*)(uintptr_t)(unsigned)mining_threads_count);
 	if(err != 0) {
 		printf("create work_thread failed, error : %s\n", strerror(err));
 		return -1;

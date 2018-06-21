@@ -390,7 +390,7 @@ void processMiningCommand(char *nextParam, FILE *out)
 	} else if(sscanf(cmd, "%d", &nthreads) != 1 || nthreads < 0) {
 		fprintf(out, "Illegal number.\n");
 	} else {
-		xdag_mining_start(g_is_miner ? ~nthreads : nthreads);
+		xdag_mining_start(nthreads);
 		fprintf(out, "%d mining threads running\n", g_xdag_mining_threads);
 	}
 }
@@ -845,7 +845,7 @@ void processHelpCommand(FILE *out)
 
 void xdagSetCountMiningTread(int miningThreadsCount)
 {
-	xdag_mining_start(~miningThreadsCount);
+	xdag_mining_start(miningThreadsCount);
 }
 
 double xdagGetHashRate(void)
