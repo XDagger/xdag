@@ -448,13 +448,13 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 			}
 			break;
 		case XDAG_FIELD_PUBLIC_KEY_0: // two public key field, one for even and one for odd
-		case XDAG_FIELD_PUBLIC_KEY_1:
+		case XDAG_FIELD_PUBLIC_KEY_1: // it just do case XDAG_FIELD_PUBLIC_KEY_0  and case XDAG_FIELD_PUBLIC_KEY_1 together! pay attention!
 			if ((public_keys[keysCount].key = xdag_public_to_key(newBlock->field[i].data, type - XDAG_FIELD_PUBLIC_KEY_0))) {
 				public_keys[keysCount++].pub = (uint64_t*)((uintptr_t)&newBlock->field[i].data | (type - XDAG_FIELD_PUBLIC_KEY_0));
-			}
-			break;
-		default:
-			err = 3;
+			}			// (uint64_t*)((uintptr_t)&newBlock->field[i].data | (type - XDAG_FIELD_PUBLIC_KEY_0)
+			break;			// last OF THE ADDRESS is odd if key was odd!!
+		default:			// so when we have to use it we need to check lowest bit of ADDRESS to know if even or odd
+			err = 3;		// he is supposing that in every architecture addresses are even (gerally true, but the assertion is false)	
 			goto end;
 		}
 	}
