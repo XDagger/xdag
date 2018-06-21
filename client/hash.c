@@ -67,10 +67,12 @@ uint64_t xdag_hash_final_multi(void *ctxv, uint64_t *nonce, int attempts, int st
 		sha256_init(&ctx);
 		sha256_update(&ctx, (uint8_t*)hash0, sizeof(xdag_hash_t));
 		sha256_final(&ctx, (uint8_t*)hash0);
-
-		if (!i || xdag_cmphash(hash0, hash) < 0) {
-			memcpy(hash, hash0, sizeof(xdag_hash_t));
-			min_nonce = *nonce;
+// is the new hash, smaller than the already found minimal hash? !i fix, probably an issue about the first iteration.
+// it will "restart" the target(base hashrate to compare the new calculated hash to) from 0 each time!
+// but you can see in xdag_set_min_share that it will not use the new hash if it is not better than the last one.
+		if (!i || xdag_cmphash(hash0, hash) < 0) { 
+			memcpy(hash, hash0, sizeof(xdag_hash_t)); // calculated hash
+			min_nonce = *nonce; // nonce that give the minimal hash, so far.
 		}
 
 		*nonce += step;

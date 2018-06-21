@@ -79,7 +79,7 @@ void xdag_set_min_share(struct xdag_pool_task *task, xdag_hash_t last, xdag_hash
 {
 	if(xdag_cmphash(hash, task->minhash.data) < 0) {
 		pthread_mutex_lock(&g_share_mutex);
-
+		// it will not change the hash if the new mined one is not lower (same task clearly)
 		if(xdag_cmphash(hash, task->minhash.data) < 0) {
 			memcpy(task->minhash.data, hash, sizeof(xdag_hash_t));
 			memcpy(task->lastfield.data, last, sizeof(xdag_hash_t));
