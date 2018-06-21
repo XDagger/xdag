@@ -59,5 +59,9 @@ do {\
 #endif
 
 long double log_difficulty2hashrate(long double log_diff);
+void xdag_str_toupper(char *str);
+void xdag_str_tolower(char *str);
+char *xdag_basename(char *path);
+char *xdag_filename(char *_filename);
 
 #endif /* utils_h */

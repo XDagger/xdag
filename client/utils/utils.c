@@ -8,6 +8,7 @@
 #include "utils.h"
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <time.h>
@@ -368,5 +369,46 @@ int xdag_mkdir(const char *path)
 long double log_difficulty2hashrate(long double log_diff)
 {
         return ldexpl(expl(log_diff), -58)*(0.65);
+}
+
+void xdag_str_toupper(char *str)
+{
+	while(*str) {
+		*str = toupper((unsigned char) *str);
+		str++;
+	}
+}
+
+void xdag_str_tolower(char *str)
+{
+	while(*str) {
+		*str = tolower((unsigned char) *str);
+		str++;
+	}
+}
+
+char *xdag_basename(char *path)
+{
+	#if defined(_WIN32)
+		char *ptr;
+		while ((ptr = strchr(path, '/')) || (ptr = strchr(path, '\\'))) {
+			path = ptr + 1;
+		}
+		return strdup(ptr);
+	#else
+		return strdup(basename(path));
+	#endif
+}
+
+char *xdag_filename(char *_filename)
+{
+	char * filename = xdag_basename(_filename);
+	char * ext = strchr(filename, '.');
+
+	if(ext) {
+		*ext = 0;
+	}
+
+	return filename;
 }
 
