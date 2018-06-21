@@ -104,7 +104,7 @@ XDAG_COMMAND commands[] = {
 	{ "run"        , xdag_com_run },
 	{ "state"      , xdag_com_state },
 	{ "stats"      , xdag_com_stats },
-        { "cache"      , xdag_com_cache },
+	{ "cache"      , xdag_com_cache },
 	{ "terminate"  , xdag_com_terminate },
 	{ "exit"       , xdag_com_exit },
 	{ "xfer"       ,(xdag_com_func_t)NULL},
@@ -200,7 +200,7 @@ int xdag_com_state(char * args, FILE* out)
 int xdag_com_cache(char * args, FILE* out)
 {
 	processCacheCommand(out);
-        return 0;
+	return 0;
 }
 
 
