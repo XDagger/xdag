@@ -664,9 +664,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 				ldus_rbtree_remove(&cache_root,&to_free->node);
 				free(to_free);
 				g_xdag_extstats.cache_usage--;
-				}
-				else{
-					break;
+			}else{
+				break;
 			}
 		}
 
@@ -674,8 +673,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	else if(g_xdag_extstats.cache_hitrate>0.98 && !cache_miss && g_xdag_extstats.cache_size){
                        g_xdag_extstats.cache_size--;
 	}
-	if(g_xdag_extstats.cache_size*2 > CACHE_MAX_SIZE){
-		g_xdag_extstats.cache_size=(uint32_t)(g_xdag_extstats.cache_size/2);
+	if((uint32_t)(g_xdag_extstats.cache_size/0.9) > CACHE_MAX_SIZE){
+		g_xdag_extstats.cache_size=(uint32_t)(g_xdag_extstats.cache_size*0.9);
 	}
 	if(cache_hit+cache_miss > 0){
 		if(cache_bounded_counter<CACHE_MAX_SAMPLES)
