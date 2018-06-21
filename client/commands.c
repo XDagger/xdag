@@ -54,6 +54,7 @@ void processMiningCommand(char *nextParam, FILE *out);
 void processNetCommand(char *nextParam, FILE *out);
 void processPoolCommand(char *nextParam, FILE *out);
 void processStatsCommand(FILE *out);
+void processCacheCommand(FILE *out);
 void processExitCommand(void);
 void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd);
 void processLastBlocksCommand(char *nextParam, FILE *out);
@@ -77,6 +78,7 @@ int xdag_com_pool(char *, FILE*);
 int xdag_com_miners(char *, FILE*);
 int xdag_com_stats(char *, FILE*);
 int xdag_com_state(char *, FILE*);
+int xdag_com_cache(char *, FILE*);
 int xdag_com_help(char *, FILE*);
 int xdag_com_run(char *, FILE*);
 int xdag_com_terminate(char *, FILE*);
@@ -102,6 +104,7 @@ XDAG_COMMAND commands[] = {
 	{ "run"        , xdag_com_run },
 	{ "state"      , xdag_com_state },
 	{ "stats"      , xdag_com_stats },
+        { "cache"      , xdag_com_cache },
 	{ "terminate"  , xdag_com_terminate },
 	{ "exit"       , xdag_com_exit },
 	{ "xfer"       ,(xdag_com_func_t)NULL},
@@ -193,6 +196,13 @@ int xdag_com_state(char * args, FILE* out)
 	fprintf(out, "%s\n", get_state());
 	return 0;
 }
+
+int xdag_com_cache(char * args, FILE* out)
+{
+	processCacheCommand(out);
+        return 0;
+}
+
 
 int xdag_com_run(char * args, FILE* out)
 {
@@ -446,8 +456,7 @@ void processStatsCommand(FILE *out)
 			" wait sync blocks: %u\n"
 			" chain difficulty: %llx%016llx of %llx%016llx\n"
 			" %9s supply: %.9Lf of %.9Lf\n"
-			"4 hr hashrate MHs: %.2Lf of %.2Lf\n"
-			"    cached blocks: target amount %u, actual amount %u, hitrate %f%%\n",
+			"4 hr hashrate MHs: %.2Lf of %.2Lf\n",
 			g_xdag_stats.nhosts, g_xdag_stats.total_nhosts,
 			(long long)g_xdag_stats.nblocks, (long long)g_xdag_stats.total_nblocks,
 			(long long)g_xdag_stats.nmain, (long long)g_xdag_stats.total_nmain,
@@ -456,11 +465,19 @@ void processStatsCommand(FILE *out)
 			xdag_diff_args(g_xdag_stats.max_difficulty), g_coinname,
 			amount2xdags(xdag_get_supply(g_xdag_stats.nmain)),
 			amount2xdags(xdag_get_supply(g_xdag_stats.total_nmain)),
-			hashrate(g_xdag_extstats.hashrate_ours), hashrate(g_xdag_extstats.hashrate_total),
-			g_xdag_extstats.cache_size, g_xdag_extstats.cache_usage, g_xdag_extstats.cache_hitrate*100
+			hashrate(g_xdag_extstats.hashrate_ours), hashrate(g_xdag_extstats.hashrate_total)
 		);
 	}
 }
+
+void processCacheCommand(FILE *out)
+{
+	fprintf(out, "Cache informations:\n"
+		"     cached blocks: target amount %u, actual amount %u, hitrate %f%%\n",
+		g_xdag_extstats.cache_size, g_xdag_extstats.cache_usage, g_xdag_extstats.cache_hitrate*100
+	);
+}
+
 
 void processExitCommand()
 {

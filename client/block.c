@@ -96,6 +96,13 @@ static pthread_mutex_t block_mutex;
 static int g_light_mode = 0;
 static uint32_t cache_bounded_counter = 0;
 
+//functions
+void cache_retarget(int32_t, int32_t);
+void cache_add(struct xdag_block*, xdag_hash_t);
+int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
+int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
+static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xdag_public_key *public_keys, const int keysCount);
+
 // returns a time period index, where a period is 64 seconds long
 xdag_time_t xdag_main_time(void)
 {
@@ -418,7 +425,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	uint64_t sum_in = 0, sum_out = 0, *psum;
 	const uint64_t transportHeader = newBlock->field[0].transport_header;
 	struct xdag_public_key public_keys[16], *our_keys = 0;
-	int i, j, k;
+	int i, j;
 	int keysCount = 0, ourKeysCount = 0;
 	int signInCount = 0, signOutCount = 0;
 	int signinmask = 0, signoutmask = 0;
@@ -520,9 +527,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		}
 	}
 
-#if CACHE == 1
 	int32_t cache_hit = 0, cache_miss = 0;
-#endif
 
 	keysCount = j;
 	tmpNodeBlock.difficulty = diff0 = xdag_hash_difficulty(tmpNodeBlock.hash);
@@ -545,65 +550,21 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 				goto end;
 			}
 			if (1 << i & inmask) {
-#if CACHE == 1
 				if (newBlock->field[i].amount) {
-					struct cache_block *bref = cache_block_by_hash(blockRef->hash);
-
-					if(bref != NULL){
-						cache_hit++;
-						for (j = k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
-							if (xdag_type(&(bref->block), j) == XDAG_FIELD_SIGN_OUT && (++k & 1)
-								&& valid_signature(&(bref->block), j, keysCount, public_keys)>= 0) {
-								break;
-							}
-						}
-						if (j == XDAG_BLOCK_FIELDS) {
-							err = 9;
+					if(CACHE){
+						int32_t res = check_signature_out_cached(blockRef, public_keys, keysCount, &cache_hit, &cache_miss);
+						if(res){
+							err = res;
 							goto end;
-						}
-					}else{
-						cache_miss++;
-						struct xdag_block buf;
-						struct xdag_block *bref = xdag_storage_load(blockRef->hash, blockRef->time, blockRef->storage_pos, &buf);
-						if (!bref) {
-        	                                       	err = 8;
+						}		
+					} else {
+						int32_t res = check_signature_out(blockRef, public_keys, keysCount);
+						if(res){
+							err = res;	
 							goto end;
-						}
-	
-						for (j = k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
-							if (xdag_type(bref, j) == XDAG_FIELD_SIGN_OUT && (++k & 1)
-                                       		                 && valid_signature(bref, j, keysCount, public_keys) >= 0) {
-								break;
-                                       			}
-						}
-						if (j == XDAG_BLOCK_FIELDS) {
-							err = 9;
-							goto end;
-						}
-					}
-
-				}
-#else
-				if (newBlock->field[i].amount) {
-					struct xdag_block buf;
-					struct xdag_block *bref = xdag_storage_load(blockRef->hash, blockRef->time, blockRef->storage_pos, &buf);
-					if (!bref) {
-						err = 8;
-						goto end;
-					}
-
-					for (j = k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
-						if (xdag_type(bref, j) == XDAG_FIELD_SIGN_OUT && (++k & 1)
-							&& valid_signature(bref, j, keysCount, public_keys) >= 0) {
-							break;
-						}
-					}
-					if (j == XDAG_BLOCK_FIELDS) {
-						err = 9;
-						goto end;
+                                        	}
 					}
 				}
-#endif
 				psum = &sum_in;
 				tmpNodeBlock.in_mask |= 1 << tmpNodeBlock.nlinks;
 			} else {
@@ -641,48 +602,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		}
 	}
 
-#if CACHE == 1
-	if(g_xdag_extstats.cache_usage >= g_xdag_extstats.cache_size){
-		if (g_xdag_extstats.cache_hitrate<0.94 && g_xdag_extstats.cache_size*2 <= CACHE_MAX_SIZE){
-			if(!g_xdag_extstats.cache_size && CACHE_MAX_SIZE){
-				g_xdag_extstats.cache_size++;
-			}
-			else{
-				g_xdag_extstats.cache_size = g_xdag_extstats.cache_size*2;
-			}
-		}
-		else if(g_xdag_extstats.cache_hitrate>0.98 && !cache_miss && g_xdag_extstats.cache_size){
-			g_xdag_extstats.cache_size--;
-		}
-		for(int l=g_xdag_extstats.cache_usage;l>g_xdag_extstats.cache_size;l--){
-			if(cache_first != NULL){
-				struct cache_block* to_free = cache_first;
-				cache_first = cache_first->next;
-				if(cache_first == NULL){
-					cache_last = NULL;
-				}
-				ldus_rbtree_remove(&cache_root,&to_free->node);
-				free(to_free);
-				g_xdag_extstats.cache_usage--;
-			}else{
-				break;
-			}
-		}
-
-	}
-	else if(g_xdag_extstats.cache_hitrate>0.98 && !cache_miss && g_xdag_extstats.cache_size){
-                       g_xdag_extstats.cache_size--;
-	}
-	if((uint32_t)(g_xdag_extstats.cache_size/0.9) > CACHE_MAX_SIZE){
-		g_xdag_extstats.cache_size=(uint32_t)(g_xdag_extstats.cache_size*0.9);
-	}
-	if(cache_hit+cache_miss > 0){
-		if(cache_bounded_counter<CACHE_MAX_SAMPLES)
-			cache_bounded_counter++;
-		g_xdag_extstats.cache_hitrate = moving_average_double(g_xdag_extstats.cache_hitrate, (double)((cache_hit)/(cache_hit+cache_miss)), cache_bounded_counter);
-
-	}
-#endif
+	if(CACHE)
+		cache_retarget(cache_hit, cache_miss);
 
 	if (tmpNodeBlock.in_mask ? sum_in < sum_out : sum_out != newBlock->field[0].amount) {
 		err = 0xB;
@@ -696,28 +617,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		goto end;
 	}
 
-#if CACHE == 1 
-        if(g_xdag_extstats.cache_usage<=CACHE_MAX_SIZE && signOutCount){
-                struct cache_block *cacheBlock = malloc(sizeof(struct cache_block));
-                if(cacheBlock != NULL){
-                        memset(cacheBlock, 0, sizeof(struct cache_block));
-                        memcpy(&(cacheBlock->block), newBlock, sizeof(struct xdag_block));
-                        memcpy(&(cacheBlock->hash), tmpNodeBlock.hash, sizeof(xdag_hash_t));
-
-                        if(cache_first == NULL) 
-                                cache_first = cacheBlock;
-                        if(cache_last != NULL)
-                                cache_last->next = cacheBlock;
-                        cache_last = cacheBlock;
-                        ldus_rbtree_insert(&cache_root, &cacheBlock->node);
-                        g_xdag_extstats.cache_usage++;
-                }else{
-                        xdag_warn("cache malloc failed");
-                }
-        }else{
-                xdag_warn("maximum cache reached");
-        }
-#endif
+	if(CACHE && signOutCount)
+		cache_add(newBlock, tmpNodeBlock.hash); 
 
 	if (!(transportHeader & (sizeof(struct xdag_block) - 1))) {
 		tmpNodeBlock.storage_pos = transportHeader;
@@ -1696,4 +1597,114 @@ void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out)
 	}
 
 	pthread_mutex_unlock(&block_mutex);
+}
+
+
+void cache_retarget(int32_t cache_hit, int32_t cache_miss){
+        if(g_xdag_extstats.cache_usage >= g_xdag_extstats.cache_size){
+                if (g_xdag_extstats.cache_hitrate<0.94 && g_xdag_extstats.cache_size*2 <= CACHE_MAX_SIZE){
+                        if(!g_xdag_extstats.cache_size && CACHE_MAX_SIZE){
+                                g_xdag_extstats.cache_size++;
+                        }
+                        else{
+                                g_xdag_extstats.cache_size = g_xdag_extstats.cache_size*2;
+                        }
+                }
+                else if(g_xdag_extstats.cache_hitrate>0.98 && !cache_miss && g_xdag_extstats.cache_size){
+                        g_xdag_extstats.cache_size--;
+                }
+                for(int l=g_xdag_extstats.cache_usage;l>g_xdag_extstats.cache_size;l--){
+                        if(cache_first != NULL){
+                                struct cache_block* to_free = cache_first;
+                                cache_first = cache_first->next;
+                                if(cache_first == NULL){
+                                        cache_last = NULL;
+                                }
+                                ldus_rbtree_remove(&cache_root,&to_free->node);
+                                free(to_free);
+                                g_xdag_extstats.cache_usage--;
+                        }else{
+                                break;
+				xdag_warn("Non critical error, break in for [function: cache_retarget]");
+                        }
+                }
+
+        }
+        else if(g_xdag_extstats.cache_hitrate>0.98 && !cache_miss && g_xdag_extstats.cache_size){
+                       g_xdag_extstats.cache_size--;
+        }
+        if((uint32_t)(g_xdag_extstats.cache_size/0.9) > CACHE_MAX_SIZE){
+                g_xdag_extstats.cache_size=(uint32_t)(g_xdag_extstats.cache_size*0.9);
+        }
+        if(cache_hit+cache_miss > 0){
+                if(cache_bounded_counter<CACHE_MAX_SAMPLES)
+                        cache_bounded_counter++;
+                g_xdag_extstats.cache_hitrate = moving_average_double(g_xdag_extstats.cache_hitrate, (double)((cache_hit)/(cache_hit+cache_miss)), cache_bounded_counter);
+
+        }
+}
+
+void cache_add(struct xdag_block* block, xdag_hash_t hash){
+        if(g_xdag_extstats.cache_usage<=CACHE_MAX_SIZE){
+                struct cache_block *cacheBlock = malloc(sizeof(struct cache_block));
+                if(cacheBlock != NULL){
+                        memset(cacheBlock, 0, sizeof(struct cache_block));
+                        memcpy(&(cacheBlock->block), block, sizeof(struct xdag_block));
+                        memcpy(&(cacheBlock->hash), hash, sizeof(xdag_hash_t));
+
+                        if(cache_first == NULL) 
+                                cache_first = cacheBlock;
+                        if(cache_last != NULL)
+                                cache_last->next = cacheBlock;
+                        cache_last = cacheBlock;
+                        ldus_rbtree_insert(&cache_root, &cacheBlock->node);
+                        g_xdag_extstats.cache_usage++;
+                }else{
+                        xdag_warn("cache malloc failed [function: cache_add]");
+                }
+        }else{
+                xdag_warn("maximum cache reached [function: cache_add]");
+        }
+
+}
+
+
+int32_t check_signature_out_cached(struct block_internal* blockRef, struct xdag_public_key *public_keys, const int keysCount, int32_t *cache_hit, int32_t *cache_miss){
+	struct cache_block *bref = cache_block_by_hash(blockRef->hash);
+	if(bref != NULL){
+		(*cache_hit)++;
+	        return  find_and_verify_signature_out(&(bref->block), public_keys, keysCount);
+	}else{
+		(*cache_miss)++;
+		return check_signature_out(blockRef, public_keys, keysCount);
+
+	}
+}
+
+int32_t check_signature_out(struct block_internal* blockRef, struct xdag_public_key *public_keys, const int keysCount){
+	struct xdag_block buf;
+	struct xdag_block *bref = xdag_storage_load(blockRef->hash, blockRef->time, blockRef->storage_pos, &buf);
+	if (!bref) {
+		printf("errore");
+		fflush(stdout);
+		return 8;
+	}
+	return	find_and_verify_signature_out(bref, public_keys, keysCount);
+}
+
+
+static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xdag_public_key *public_keys, const int keysCount){
+	int j = 0;
+        for (int k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
+                if (xdag_type(bref, j) == XDAG_FIELD_SIGN_OUT && (++k & 1)
+                                && valid_signature(bref, j, keysCount, public_keys) >= 0) {
+                        break;
+                }
+        }
+        if (j == XDAG_BLOCK_FIELDS) {
+		printf("errore");
+		fflush(stdout);
+                return 9;
+        }
+	return 0;
 }
