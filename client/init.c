@@ -61,12 +61,15 @@ int xdag_init(int argc, char **argv, int isGui)
 	signal(SIGINT, SIG_IGN);
 	signal(SIGTERM, SIG_IGN);
 #endif
-	g_progname = strdup(argv[0]);
-	while ((ptr = strchr(g_progname, '/')) || (ptr = strchr(g_progname, '\\'))) g_progname = ptr + 1;
-	if ((ptr = strchr(g_progname, '.'))) *ptr = 0;
-	for (ptr = g_progname; *ptr; ptr++) *ptr = tolower((unsigned char)*ptr);
-	coinname = strdup(g_progname);
-	for (ptr = coinname; *ptr; ptr++) *ptr = toupper((unsigned char)*ptr);
+
+	char *filename = xdag_filename(argv[0]);
+
+	g_progname = strdup(filename);
+	g_coinname = strdup(filename);
+	free(filename);
+
+	xdag_str_toupper(g_coinname);
+	xdag_str_tolower(g_progname);
 
 	if (!isGui) {
 		printf("%s client/server, version %s.\n", g_progname, XDAG_VERSION);
