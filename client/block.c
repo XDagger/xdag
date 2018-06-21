@@ -21,6 +21,7 @@
 #include "address.h"
 #include "commands.h"
 #include "utils/utils.h"
+#include "utils/moving_statistics/moving_average.h"
 #include "mining_common.h"
 
 #define MAIN_CHAIN_PERIOD       (64 << 10)
@@ -35,6 +36,11 @@
 #define MAX_LINKS               15
 #define MAKE_BLOCK_PERIOD       13
 #define QUERY_RETRIES           2
+
+#define CACHE			1
+#define CACHE_MAX_SIZE		5000000
+#define CACHE_MAX_SAMPLES	100
+#define OPENSSL			0 // 0 disactivate, 1 activated, 2 test openssl vs secp256k1
 
 enum bi_flags {
 	BI_MAIN         = 0x01,
@@ -51,16 +57,18 @@ struct block_internal {
 	struct ldus_rbtree node;
 	xdag_hash_t hash;
 	xdag_diff_t difficulty;
-	xdag_amount_t amount, linkamount[MAX_LINKS], fee;
+	xdag_amount_t amount, linkamount[MAX_LINKS], fee; //amount=amount of coins, fee=amount of paid fee(?), linkamount[i] amount of the i transaction
 	xdag_time_t time;
 	uint64_t storage_pos;
-	struct block_internal *ref, *link[MAX_LINKS];
-	struct block_backrefs *backrefs;
-	uint8_t flags, nlinks, max_diff_link, reserved;
-	uint16_t in_mask;
+	struct block_internal *ref, *link[MAX_LINKS]; // ref is the block that this block is referred from! ,link are the tx (aka blocks) that the block is referring
+	struct block_backrefs *backrefs; // backrefs struct 
+	uint8_t flags, nlinks, max_diff_link, reserved; // index of link with max_diff_link, usually the previous main block (if we are checking a main block)
+	uint16_t in_mask; // each bit tell you if i transaction is in or out (in fact MAX_LINKS is 16)
 	uint16_t n_our_key;
 };
 
+// we want to have 	struct block_internal *backrefs[N_BACKREFS]; to be more or less as big as block_internal
+// probably for balacing? 
 #define N_BACKREFS      (sizeof(struct block_internal) / sizeof(struct block_internal *) - 1)
 
 struct block_backrefs {
@@ -68,17 +76,35 @@ struct block_backrefs {
 	struct block_backrefs *next;
 };
 
+// lest two link of block_internal are reserver to internal blocks
 #define ourprev link[MAX_LINKS - 2]
 #define ournext link[MAX_LINKS - 1]
 
+struct cache_block {
+	struct ldus_rbtree node;
+	xdag_hash_t hash;
+	struct xdag_block block;
+	struct cache_block *next;
+};
+
+
 static xdag_amount_t g_balance = 0;
 static xdag_time_t time_limit = DEF_TIME_LIMIT, xdag_era = XDAG_MAIN_ERA;
-static struct ldus_rbtree *root = 0;
+static struct ldus_rbtree *root = 0, *cache_root = 0;
 static struct block_internal *volatile top_main_chain = 0, *volatile pretop_main_chain = 0;
 static struct block_internal *ourfirst = 0, *ourlast = 0, *noref_first = 0, *noref_last = 0;
+static struct cache_block *cache_first = NULL, *cache_last = NULL;
 static pthread_mutex_t block_mutex;
 //TODO: this variable duplicates existing global variable g_is_pool. Probably should be removed
 static int g_light_mode = 0;
+static uint32_t cache_bounded_counter = 0;
+
+//functions
+void cache_retarget(int32_t, int32_t);
+void cache_add(struct xdag_block*, xdag_hash_t);
+int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
+int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
+static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
 
 // returns a time period index, where a period is 64 seconds long
 xdag_time_t xdag_main_time(void)
@@ -99,10 +125,17 @@ static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
 
 ldus_rbtree_define_prefix(lessthan, static inline, )
 
+// xdag_hashlow_t are the 256-64 least significant bit of the hash.
 static inline struct block_internal *block_by_hash(const xdag_hashlow_t hash)
 {
 	return (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
 }
+
+static inline struct cache_block *cache_block_by_hash(const xdag_hashlow_t hash)
+{
+        return (struct cache_block *)ldus_rbtree_find(cache_root, (struct ldus_rbtree *)hash - 1);
+}
+
 
 static void log_block(const char *mess, xdag_hash_t h, xdag_time_t t, uint64_t pos)
 {
@@ -149,56 +182,57 @@ static uint64_t apply_block(struct block_internal *bi)
 {
 	xdag_amount_t sum_in, sum_out;
 
-	if (bi->flags & BI_MAIN_REF) {
+	if (bi->flags & BI_MAIN_REF) { // if already checked exit
 		return -1l;
 	}
 	
-	bi->flags |= BI_MAIN_REF;
-
-	for (int i = 0; i < bi->nlinks; ++i) {
-		xdag_amount_t ref_amount = apply_block(bi->link[i]);
-		if (ref_amount == -1l) {
+	bi->flags |= BI_MAIN_REF; // so we do not apply iy two times
+	// applying each node and leaf of the tree represented that are under the main block.
+	for (int i = 0; i < bi->nlinks; ++i) { 
+		xdag_amount_t ref_amount = apply_block(bi->link[i]);// recursive, all the tree to get all the fee s
+		if (ref_amount == -1l) { // if alrady referred, go ahed (for example the latest main block is referred but already checked!)
 			continue;
 		}
-		bi->link[i]->ref = bi;
-		if (bi->amount + ref_amount >= bi->amount) {
-			accept_amount(bi, ref_amount);
+		bi->link[i]->ref = bi; // each node need to refer to the father (so at the end every node and leaf will refer to the main block)
+		if (bi->amount + ref_amount >= bi->amount) { // if we have fee amount (incoming)
+			accept_amount(bi, ref_amount); // we add this fee to the father
 		}
 	}
 
-	sum_in = 0, sum_out = bi->fee;
+	sum_in = 0, sum_out = bi->fee; //(outgoing fee)
 
-	for (int i = 0; i < bi->nlinks; ++i) {
-		if (1 << i & bi->in_mask) {
-			if (bi->link[i]->amount < bi->linkamount[i]) {
-				return 0;
+	for (int i = 0; i < bi->nlinks; ++i) { // checking all the links, aka TX
+		if (1 << i & bi->in_mask) { // input or output?
+			if (bi->link[i]->amount < bi->linkamount[i]) { // check if there are the amount to send (to us)
+				return 0; // error?
 			}
-			if (sum_in + bi->linkamount[i] < sum_in) {
-				return 0;
+			if (sum_in + bi->linkamount[i] < sum_in) { // sum_in+linkamount, should be greater than sum_in, error
+				return 0; 
 			}
-			sum_in += bi->linkamount[i];
+			sum_in += bi->linkamount[i]; // apply the link
 		} else {
-			if (sum_out + bi->linkamount[i] < sum_out) {
+			if (sum_out + bi->linkamount[i] < sum_out) { // same as sum_in first error check
 				return 0;
 			}
-			sum_out += bi->linkamount[i];
+			sum_out += bi->linkamount[i]; // apply
 		}
 	}
 
-	if (sum_in + bi->amount < sum_in || sum_in + bi->amount < sum_out) {
+	if (sum_in + bi->amount < sum_in || sum_in + bi->amount < sum_out) {  // final check after all tx are applied
 		return 0;
 	}
-
-	for (int i = 0; i < bi->nlinks; ++i) {
-		if (1 << i & bi->in_mask) {
+	
+	// after we checked all possible error, we can apply officially.
+	for (int i = 0; i < bi->nlinks; ++i) { 
+		if (1 << i & bi->in_mask) { 
 			accept_amount(bi->link[i], (xdag_amount_t)0 - bi->linkamount[i]);
 		} else {
 			accept_amount(bi->link[i], bi->linkamount[i]);
 		}
 	}
-
+	// set amount of this block, after all the recursion are finished, this recursive function is fantastic !
 	accept_amount(bi, sum_in - sum_out);
-	bi->flags |= BI_APPLIED;
+	bi->flags |= BI_APPLIED; // apply applied flag
 	
 	return bi->fee;
 }
@@ -251,19 +285,19 @@ xdag_amount_t xdag_get_supply(uint64_t nmain)
 }
 
 static void set_main(struct block_internal *m)
-{
+{	//already exaplined in the block command. this file below.
 	xdag_amount_t amount = MAIN_START_AMOUNT >> (g_xdag_stats.nmain >> MAIN_BIG_PERIOD_LOG);
-
+	//set as main
 	m->flags |= BI_MAIN;
-	accept_amount(m, amount);
-	g_xdag_stats.nmain++;
+	accept_amount(m, amount); // just setting the xdag amount of the block
+	g_xdag_stats.nmain++; //update main amount
 
 	if (g_xdag_stats.nmain > g_xdag_stats.total_nmain) {
-		g_xdag_stats.total_nmain = g_xdag_stats.nmain;
+		g_xdag_stats.total_nmain = g_xdag_stats.nmain;// update nmain of network
 	}
 
 	accept_amount(m, apply_block(m));
-	m->ref = m;
+	m->ref = m; // main refer to itself  
 	log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time, m->storage_pos);
 }
 
@@ -280,16 +314,18 @@ static void unset_main(struct block_internal *m)
 
 static void check_new_main(void)
 {
-	struct block_internal *b, *p = 0;
+	struct block_internal *b, *p = 0; // two bi initialization
 	int i;
-
+		//going in depth searching MAIN block, when it get it, checking if it is BI MAIN CHAIN, if not it doesn't do nothing else
 	for (b = top_main_chain, i = 0; b && !(b->flags & BI_MAIN); b = b->link[b->max_diff_link]) {
 		if (b->flags & BI_MAIN_CHAIN) {
 			p = b;
 			++i;
 		}
 	}
-
+		// if 0 (thus it isn't main chain, and i++ set depth level to get the first main(and in main chain)
+		// MAX_WAITING_MAIN is just 1 block
+		//TODO CHECK HOW MUCH IS 2* 1024
 	if (p && i > MAX_WAITING_MAIN && get_timestamp() >= p->time + 2 * 1024) {
 		set_main(p);
 	}
@@ -317,24 +353,31 @@ static inline void hash_for_signature(struct xdag_block b[2], const struct xdag_
 					xdag_log_array(b, sizeof(struct xdag_block) + sizeof(xdag_hash_t) + 1));
 }
 
-xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash)
+
+
+static inline xdag_diff_t hash_difficulty(xdag_hash_t hash)
 {
-	xdag_diff_t res = ((xdag_diff_t*)hash)[1];
-	xdag_diff_t max = xdag_diff_max;
-
+	// Let's explain next function with a draw.
+	// consider [----] = unint64 [ -------- ] = uint128, leftmost [ -------- ]/[----] is the start location of the array
+	// [----][----] [----][----]  HASH - uint64, 4elements array
+	//              [ -------- ]  DIFF - uint128, 1element (4 uint32 in windows implementation)
+	// we took the highest significant part of the hash!
+	xdag_diff_t res = ((xdag_diff_t*)hash)[1], max = xdag_diff_max; // max is 999...9 (32b*4elements)
+	
+	// Let's explain next function with a draw.
+	//         [ ------00 ]    ate least significant uint32 and pushed zeros
 	xdag_diff_shr32(&res);
-
-#if !defined(_WIN32) && !defined(_WIN64)
-	if(!res) {
-		xdag_warn("hash_difficulty higher part of hash is equal zero");
-		return max;
-	}
-#endif
+	
+	// simple division, it's the ratio between max and res, (not the contrary)
+	// thus we will have higher diff with lower hash!
 	return xdag_diff_div(max, res);
 }
 
 // returns a number of public key from 'keys' array with lengh 'keysLength', which conforms to the signature starting from field signo_r of the block b
 // returns -1 if nothing is found
+// not sure about above comment
+
+//signo_r is index of first field with signout(or signin)
 static int valid_signature(const struct xdag_block *b, int signo_r, int keysLength, struct xdag_public_key *keys)
 {
 	struct xdag_block buf[2];
@@ -342,21 +385,39 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int keysLeng
 	int i, signo_s = -1;
 
 	memcpy(buf, b, sizeof(struct xdag_block));
-
+	//just seaching for the index of the next signin or signout after signo_r SAME TYPE! signout1 and get signout2 or signin1 and get signin2
 	for (i = signo_r; i < XDAG_BLOCK_FIELDS; ++i) {
 		if (xdag_type(b, i) == XDAG_FIELD_SIGN_IN || xdag_type(b, i) == XDAG_FIELD_SIGN_OUT) {
 			memset(&buf[0].field[i], 0, sizeof(struct xdag_field));
-			if (i > signo_r && signo_s < 0 && xdag_type(b, i) == xdag_type(b, signo_r)) {
-				signo_s = i;
+			if (i > signo_r && signo_s < 0 && xdag_type(b, i) == xdag_type(b, signo_r)) { // check that signo_s isn't already set and che that THE TYPE IS HE SAME!
+				signo_s = i; // set index of second singin/signout
 			}
 		}
 	}
 
-	if (signo_s >= 0) {
-		for (i = 0; i < keysLength; ++i) {
-			hash_for_signature(buf, keys + i, hash);
+	if (signo_s >= 0) { // if second sign is found
+		for (i = 0; i < keysLength; ++i) { (really, this is amount of keys)
+			hash_for_signature(buf, keys + i, hash); // calulate the hash to check signature
 			if (!xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data)) {
+				return i; // when first good key is found, it exit.. with index of the key
+
+#if OPENSSL == 0
+			if (!xdag_verify_signature_noopenssl(keys[i].pub, hash, b->field[signo_r].data, b->field[signo_s].data)) {
+#elif OPENSSL == 2
+			int res1=0,res2=0;
+			res1=!xdag_verify_signature_noopenssl(keys[i].pub, hash, b->field[signo_r].data, b->field[signo_s].data);
+			res2=!xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data);
+			if (res1!=res2){
+				xdag_debug("Different result between openssl and secp256k1: res openssl=%2d res secp256k1=%2d key parity bit = %ld key=[%s] hash=[%s] r=[%s], s=[%s]", res2, res1, ((uintptr_t)keys[i].pub & 1), 
+                                                                        xdag_log_hash((uint64_t*)((uintptr_t)keys[i].pub & ~1l)) , xdag_log_hash(hash), xdag_log_hash(b->field[signo_r].data), xdag_log_hash(b->field[signo_s].data));
+			}
+			if(res2){
+#else
+			if (!xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data)) {
+#endif
 				return i;
+
+
 			}
 		}
 	}
@@ -381,7 +442,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	const uint64_t timestamp = get_timestamp();
 	uint64_t sum_in = 0, sum_out = 0, *psum;
 	const uint64_t transportHeader = newBlock->field[0].transport_header;
-	struct xdag_public_key public_keys[16], *our_keys = 0;
+
+	struct xdag_public_key public_keys[16], *our_keys = 0; // max 16 p.key (16 link!)
 	int i, j, k;
 	int keysCount = 0, ourKeysCount = 0;
 	int signInCount = 0, signOutCount = 0;
@@ -392,19 +454,19 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	xdag_diff_t diff0, diff;
 
 	memset(&tmpNodeBlock, 0, sizeof(struct block_internal));
-	newBlock->field[0].transport_header = 0;
-	xdag_hash(newBlock, sizeof(struct xdag_block), tmpNodeBlock.hash);
+	newBlock->field[0].transport_header = 0; //header to zero, but already saved (field 0 is about header, but contain more than ( .transport_heade)
+	xdag_hash(newBlock, sizeof(struct xdag_block), tmpNodeBlock.hash);  // block2hash (need transport header to 0!)
 
-	if (block_by_hash(tmpNodeBlock.hash)) return 0;
+	if (block_by_hash(tmpNodeBlock.hash)) return 0; //if block already in dag, return sucessful
 	
-	if (xdag_type(newBlock, 0) != g_block_header_type) {
-		i = xdag_type(newBlock, 0);
+	if (xdag_type(newBlock, 0) != g_block_header_type) {// g_block_header_type is just 1
+		i = xdag_type(newBlock, 0); //write i for errorr handler
 		err = 1;
-		goto end;
+		goto end; //exit with error
 	}
 
-	tmpNodeBlock.time = newBlock->field[0].time;
-
+	tmpNodeBlock.time = newBlock->field[0].time; //copying the time in the block internal tmpNodeBlock
+	// setting the maximum time errors (and arbitrary time limit)
 	if (tmpNodeBlock.time > timestamp + MAIN_CHAIN_PERIOD / 4 || tmpNodeBlock.time < XDAG_ERA
 		|| (limit && timestamp - tmpNodeBlock.time > limit)) {
 		i = 0;
@@ -413,53 +475,53 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	if (!g_light_mode) {
-		check_new_main();
+		check_new_main(); // each added block, we check the new main block
 	}
-
+	// 16 fields
 	for (i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
 		switch ((type = xdag_type(newBlock, i))) {
 		case XDAG_FIELD_NONCE:
 			break;
 		case XDAG_FIELD_IN:
-			inmask |= 1 << i;
-			break;
+			inmask |= 1 << i; // just counting how many input are there (one field, one input)
+			break;			// it is adding 0000000000000001..000000000000011...etc (really each is 32bit) BUT the position of the ONE correspond to the number(position)  of the block
 		case XDAG_FIELD_OUT:
-			outmask |= 1 << i;
+			outmask |= 1 << i; // same as inpiut
 			break;
 		case XDAG_FIELD_SIGN_IN:
-			if (++signInCount & 1) {
+			if (++signInCount & 1) { // same as signout, but one field shoould be enought, in fact error in not checked for only one signin
 				signinmask |= 1 << i;
 			}
 			break;
-		case XDAG_FIELD_SIGN_OUT:
-			if (++signOutCount & 1) {
+			case XDAG_FIELD_SIGN_OUT:// thre should be max only one signou_out field each block
+			if (++signOutCount & 1) { // it count every TWO signin field because each signin is composed by two field
 				signoutmask |= 1 << i;
 			}
 			break;
-		case XDAG_FIELD_PUBLIC_KEY_0:
-		case XDAG_FIELD_PUBLIC_KEY_1:
+		case XDAG_FIELD_PUBLIC_KEY_0: // two public key field, one for even and one for odd
+		case XDAG_FIELD_PUBLIC_KEY_1: // it just do case XDAG_FIELD_PUBLIC_KEY_0  and case XDAG_FIELD_PUBLIC_KEY_1 together! pay attention!
 			if ((public_keys[keysCount].key = xdag_public_to_key(newBlock->field[i].data, type - XDAG_FIELD_PUBLIC_KEY_0))) {
 				public_keys[keysCount++].pub = (uint64_t*)((uintptr_t)&newBlock->field[i].data | (type - XDAG_FIELD_PUBLIC_KEY_0));
-			}
-			break;
-		default:
-			err = 3;
+			}			// (uint64_t*)((uintptr_t)&newBlock->field[i].data | (type - XDAG_FIELD_PUBLIC_KEY_0)
+			break;			// last OF THE ADDRESS is odd if key was odd!!
+		default:			// so when we have to use it we need to check lowest bit of ADDRESS to know if even or odd
+			err = 3;		// he is supposing that in every architecture addresses are even (gerally true, but the assertion is false)	
 			goto end;
 		}
 	}
 
 	if (g_light_mode) {
-		outmask = 0;
+		outmask = 0; // avoid to search for the block to which we send coin (?) we havent all the blocks.. understandable
 	}
 
-	if (signOutCount & 1) {
+	if (signOutCount & 1) { // only one signout -> error
 		i = signOutCount;
 		err = 4;
 		goto end;
 	}
 
-	if (signOutCount) {
-		our_keys = xdag_wallet_our_keys(&ourKeysCount);
+	if (signOutCount) { // retrieve all of our (private) keys... and number of keys
+		our_keys = xdag_wallet_our_keys(&ourKeysCount); // it is created only one time (if it command from commaline to gen a new key is not called)
 	}
 
 	for (i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
@@ -484,8 +546,11 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		}
 	}
 
+	int32_t cache_hit = 0, cache_miss = 0;
+
 	keysCount = j;
-	tmpNodeBlock.difficulty = diff0 = xdag_hash_difficulty(tmpNodeBlock.hash);
+
+	tmpNodeBlock.difficulty = diff0 = hash_difficulty(tmpNodeBlock.hash); // hash to difficulty
 	sum_out += newBlock->field[0].amount;
 	tmpNodeBlock.fee = newBlock->field[0].amount;
 
@@ -506,6 +571,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 			}
 			if (1 << i & inmask) {
 				if (newBlock->field[i].amount) {
+
 					struct xdag_block buf;
 					struct xdag_block *bref = xdag_storage_load(blockRef->hash, blockRef->time, blockRef->storage_pos, &buf);
 					if (!bref) {
@@ -514,7 +580,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 					}
 
 					for (j = k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
-						if (xdag_type(bref, j) == XDAG_FIELD_SIGN_OUT && (++k & 1)
+						if (xdag_type(bref, j) == XDAG_FIELD_SIGN_OUT && (++k & 1) // it need to sign the first field only (why?)
 							&& valid_signature(bref, j, keysCount, public_keys) >= 0) {
 							break;
 						}
@@ -561,6 +627,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		}
 	}
 
+	if(CACHE)
+		cache_retarget(cache_hit, cache_miss);
+
 	if (tmpNodeBlock.in_mask ? sum_in < sum_out : sum_out != newBlock->field[0].amount) {
 		err = 0xB;
 		goto end;
@@ -574,13 +643,14 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	if (!(transportHeader & (sizeof(struct xdag_block) - 1))) {
-		tmpNodeBlock.storage_pos = transportHeader;
+		// only in these two commands here we set storage_pos
+		tmpNodeBlock.storage_pos = transportHeader; // particular case? transport of something?
 	} else {
-		tmpNodeBlock.storage_pos = xdag_storage_save(newBlock);
+		tmpNodeBlock.storage_pos = xdag_storage_save(newBlock); // pointer to the FILE stream.
 	}
 	
 	memcpy(nodeBlock, &tmpNodeBlock, sizeof(struct block_internal));
-	ldus_rbtree_insert(&root, &nodeBlock->node);
+	ldus_rbtree_insert(&root, &nodeBlock->node); // this is the only call that populate the tree.
 	g_xdag_stats.nblocks++;
 	
 	if (g_xdag_stats.nblocks > g_xdag_stats.total_nblocks) {
@@ -661,17 +731,26 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	
 	log_block((tmpNodeBlock.flags & BI_OURS ? "Good +" : "Good  "), tmpNodeBlock.hash, tmpNodeBlock.time, tmpNodeBlock.storage_pos);
 	
+	// MAIN_TIME grow by 1 each 64s, it should represent the number of main blocks since start,
+	// so {& (HASHRATE_LAST_MAX_TIME - 1)} will bound it to HASHRATE_LAST_MAX_TIME values,
+	// that is our index to store the hash.
 	i = MAIN_TIME(nodeBlock->time) & (HASHRATE_LAST_MAX_TIME - 1);
+	// each new main block it will re-init memory.
 	if (MAIN_TIME(nodeBlock->time) > MAIN_TIME(g_xdag_extstats.hashrate_last_time)) {
 		memset(g_xdag_extstats.hashrate_total + i, 0, sizeof(xdag_diff_t));
 		memset(g_xdag_extstats.hashrate_ours + i, 0, sizeof(xdag_diff_t));
 		g_xdag_extstats.hashrate_last_time = nodeBlock->time;
 	}
 	
-	if (xdag_diff_gt(diff0, g_xdag_extstats.hashrate_total[i])) {
+	// it will take the highest difficulty main block for this MAIN_TIME 
+	// (thus even in the case we receive the same main block but with highest difficulty)
+	if (xdag_diff_gt(diff0, g_xdag_extstats.hashrate_total[i])) { // data type is full hash here, 4*32bit
 		g_xdag_extstats.hashrate_total[i] = diff0;
 	}
 	
+	// {& BI_OURS} if the main block is our, will count for our pool hashrate
+	//TODO check if this block of code is entered at least one time for each MAIN_TIME
+	// to improve hashrate calculation (?).
 	if (tmpNodeBlock.flags & BI_OURS && xdag_diff_gt(diff0, g_xdag_extstats.hashrate_ours[i])) {
 		g_xdag_extstats.hashrate_ours[i] = diff0;
 	}
@@ -727,8 +806,8 @@ int xdag_add_block(struct xdag_block *b)
 }
 
 #define setfld(fldtype, src, hashtype) ( \
-		block[0].field[0].type |= (uint64_t)(fldtype) << (i << 2), \
-			memcpy(&block[0].field[i++], (void*)(src), sizeof(hashtype)) \
+		block[0].field[0].type |= (uint64_t)(fldtype) << (i << 2), \ //just setting the type
+			memcpy(&block[0].field[i++], (void*)(src), sizeof(hashtype)) \ // copying source AS POINTER in block0 field i++ (why i++ now?)
 		)
 
 #define pretop_block() (top_main_chain && MAIN_TIME(top_main_chain->time) == MAIN_TIME(send_time) ? pretop_main_chain : top_main_chain)
@@ -817,8 +896,8 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 		key = keys + keysnum[j];
         block[0].field[0].type |= (uint64_t)((j == outsigkeyind ? XDAG_FIELD_SIGN_OUT : XDAG_FIELD_SIGN_IN) * 0x11) << ((i + j + nkeysnum) * 4);
 		setfld(XDAG_FIELD_PUBLIC_KEY_0 + ((uintptr_t)key->pub & 1), (uintptr_t)key->pub & ~1l, xdag_hash_t);
-	}
-	
+	}//   				^^^	^^^^ just setting XDAG_FIELD_PUBLIC_KEY_0 if address even or XDAG_FIELD_PUBLIC_KEY_1 if address odd
+							//				^^^^^^^^^^ just taking an xdag_hash_t moved behind of 1byte if address is even.
     if(outsigkeyind < 0) {
         block[0].field[0].type |= (uint64_t)(XDAG_FIELD_SIGN_OUT * 0x11) << ((i + j + nkeysnum) * 4);
     }
@@ -1045,7 +1124,7 @@ static void *work_thread(void *arg)
 		
 		pthread_mutex_lock(&block_mutex);
 		
-		if (g_xdag_state == XDAG_STATE_REST) {
+		if (g_xdag_state == XDAG_STATE_REST) { // rest mode, not sure when it goes in this state.
 			g_xdag_sync_on = 0;
 			pthread_mutex_unlock(&block_mutex);
 			xdag_mining_start(0);
@@ -1060,7 +1139,7 @@ static void *work_thread(void *arg)
 				ldus_rbtree_walk_up(root, reset_callback);
 			}
 
-			root = 0;
+			root = 0; //tree of nodes by hash is resetted
 			g_balance = 0;
 			top_main_chain = pretop_main_chain = 0;
 			ourfirst = ourlast = noref_first = noref_last = 0;
@@ -1385,7 +1464,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	int i;
 
 	pthread_mutex_lock(&block_mutex);
-	struct block_internal *bi = block_by_hash(hash);
+	struct block_internal *bi = block_by_hash(hash); //just search the hash in the tree, that is ordered by hash.
 	pthread_mutex_unlock(&block_mutex);
 	
 	if (!bi) {
@@ -1402,22 +1481,25 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 			(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
 	fprintf(out, "difficulty: %llx%016llx\n", xdag_diff_args(bi->difficulty));
-	xdag_hash2address(h, address);
+	xdag_hash2address(h, address); // to show balance in next command
 	fprintf(out, "   balance: %s  %10u.%09u\n", address, pramount(bi->amount));
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
 	fprintf(out, "                               block as transaction: details\n");
 	fprintf(out, " direction  address                                    amount\n");
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
-	if(bi->ref) {
+	if(bi->ref) { // light wallet case? fee address
 		xdag_hash2address(bi->ref->hash, address);
 	}
 	else {
 		strcpy(address, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 	}
-	fprintf(out, "       fee: %s  %10u.%09u\n", address, pramount(bi->fee));
+
+	// show fee address and amount (amount of what? total paid fee?)
+	fprintf(out, "       fee: %s  %10u.%09u\n", address,
+			pramount(bi->fee));
 
 	for (i = 0; i < bi->nlinks; ++i) {
-		xdag_hash2address(bi->link[i]->hash, address);
+		xdag_hash2address(bi->link[i]->hash, address); // show transactions (block as transaction)
 		fprintf(out, "    %6s: %s  %10u.%09u\n", (1 << i & bi->in_mask ? " input" : "output"),
 			address, pramount(bi->linkamount[i]));
 	}
@@ -1427,57 +1509,70 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, " direction  transaction                                amount       time                   \n");
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
 	
-	if (bi->flags & BI_MAIN) {
-		xdag_hash2address(h, address);
-		fprintf(out, "   earning: %s  %10u.%09u  %s\n", address,
-			pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)), 
-			time_buf);
+
+	// just a fake transaction that represent the earnings.
+	if (bi->flags & BI_MAIN) { // if it is a main block.
+		// address of this block (already printed before)
+		xdag_hash2address(h, address); 
+		fprintf(out, "   earning: %s  %10u.%09u  %s.%03d\n", address,
+			// just calculating the amount earned (it need to check if halvings happened)
+			// (MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA) number of main block mined form start
+			// >> MAIN_BIG_PERIOD_LOG (it is 21) when number of main block can be divided by 2^21 (thus each 2097152 main blocks)
+			// MAIN_START_AMOUNT (that's 1024 ) will be divided by how many time main block mined form start can be divided by 2^21
+				pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)),
+			// tbuf is the date, and next there is the time
+				tbuf, (int)((bi->time & 0x3ff) * 1000) >> 10);
 	}
 	
-	int N = 0x10000; 
+	int N = 0x10000; // 2^16
 	int n = 0;
 	struct block_internal **ba = malloc(N * sizeof(struct block_internal *));
 	
-	if (!ba) return -1;
-
+	if (!ba) return -1; // check malloc error
+	
+	// getting out of block_internal the block_backrefs
 	for (struct block_backrefs *br = bi->backrefs; br; br = br->next) {
+		// until i==0 or there aren't backrefs finished.
 		for (i = N_BACKREFS; i && !br->backrefs[i - 1]; i--);
 			
-		if (!i) {
+		if (!i) { // there aren't backrefs, go to next br->next
 			continue;
 		}
 
-		if (n + i > N) {
+		if (n + i > N) { // stupid algorithm to make the struct block_internal **b bigger if we finish the space.
 			N *= 2;
 			struct block_internal **ba1 = realloc(ba, N * sizeof(struct block_internal *));
-			if (!ba1) {
+			if (!ba1) {// check error of realloc
 				free(ba);
 				return -1;
 			}
 
-			ba = ba1;
+			ba = ba1; // realloc free ba itself
 		}
-
-		memcpy(ba + n, br->backrefs, i * sizeof(struct block_internal *));
-		n += i;
+		// start the algorithm here
+		memcpy(ba + n, br->backrefs, i * sizeof(struct block_internal *)); //saving the backrefs in the heap space
+		n += i;		//adding adding i to n,
 	}
 
-	if (!n) {
+	if (!n) { // no backrefs has been found. exit.
 		free(ba);
 		return 0;
 	}
-
+	//quick sort, bi_compar is the compare function (it compare the time)
 	qsort(ba, n, sizeof(struct block_internal *), bi_compar);
 
-	for (i = 0; i < n; ++i) {
-		if (!i || ba[i] != ba[i - 1]) {
-			struct block_internal *ri = ba[i];
-			if (ri->flags & BI_APPLIED) {
-				for (int j = 0; j < ri->nlinks; j++) {
-					if(ri->link[j] == bi && ri->linkamount[j]) {
-						block_time_to_string(ri, time_buf);
-						xdag_hash2address(ri->hash, address);
-						fprintf(out, "    %6s: %s  %10u.%09u  %s\n",
+
+	for (i = 0; i < n; ++i) { // until we don't checked every backref
+		if (!i || ba[i] != ba[i - 1]) { //clearly can't compare when i=0
+			struct block_internal *ri = ba[i]; // refer internal (real block that contain tx)
+			if (ri->flags & BI_APPLIED) { // is it applied? (hide flag 18 blocks)
+				for (int j = 0; j < ri->nlinks; j++) { // check every link
+					if(ri->link[j] == bi && ri->linkamount[j]) { //check in the link our block(the one that we have to show all txs), and check if the amount is above 0xdag, or hide it.						t = ri->time >> 10;
+						localtime_r(&t, &tm); // convert time to local time, why?
+						strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm); // setting time
+						xdag_hash2address(ri->hash, address); // retrieving address
+						// print, as before, no difference.
+						fprintf(out, "    %6s: %s  %10u.%09u  %s.%03d\n",
 							(1 << j & ri->in_mask ? "output" : " input"), address,
 							pramount(ri->linkamount[j]), time_buf);
 					}
@@ -1545,9 +1640,123 @@ void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out)
 	for(struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
 		if(b->flags & BI_MAIN && b->flags & BI_OURS) {
 			print_block(b, 0, out);
+
+	// top_main_chain is actual latest main block,
+	// b->link[b->max_diff_link] will return another struct block_internal
+	// that's the one with index b->max_diff_link
+	// max_diff_link is (usually) the previous mined main block.
+	for (struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
+		if (b->flags & BI_MAIN) { // check that is is main (it could be not, for example if it was mined one, but it wasn't the one with lowest hash)
+			xdag_hash2address(b->hash, addressArray[i]);
 			++i;
 		}
 	}
 
 	pthread_mutex_unlock(&block_mutex);
+}
+
+
+void cache_retarget(int32_t cache_hit, int32_t cache_miss){
+        if(g_xdag_extstats.cache_usage >= g_xdag_extstats.cache_size){
+                if (g_xdag_extstats.cache_hitrate<0.94 && g_xdag_extstats.cache_size*2 <= CACHE_MAX_SIZE){
+                        if(!g_xdag_extstats.cache_size && CACHE_MAX_SIZE){
+                                g_xdag_extstats.cache_size++;
+                        }
+                        else{
+                                g_xdag_extstats.cache_size = g_xdag_extstats.cache_size*2;
+                        }
+                }
+                else if(g_xdag_extstats.cache_hitrate>0.98 && !cache_miss && g_xdag_extstats.cache_size){
+                        g_xdag_extstats.cache_size--;
+                }
+                for(int l=g_xdag_extstats.cache_usage;l>g_xdag_extstats.cache_size;l--){
+                        if(cache_first != NULL){
+                                struct cache_block* to_free = cache_first;
+                                cache_first = cache_first->next;
+                                if(cache_first == NULL){
+                                        cache_last = NULL;
+                                }
+                                ldus_rbtree_remove(&cache_root,&to_free->node);
+                                free(to_free);
+                                g_xdag_extstats.cache_usage--;
+                        }else{
+                                break;
+				xdag_warn("Non critical error, break in for [function: cache_retarget]");
+                        }
+                }
+
+        }
+        else if(g_xdag_extstats.cache_hitrate>0.98 && !cache_miss && g_xdag_extstats.cache_size){
+                       g_xdag_extstats.cache_size--;
+        }
+        if((uint32_t)(g_xdag_extstats.cache_size/0.9) > CACHE_MAX_SIZE){
+                g_xdag_extstats.cache_size=(uint32_t)(g_xdag_extstats.cache_size*0.9);
+        }
+        if(cache_hit+cache_miss > 0){
+                if(cache_bounded_counter<CACHE_MAX_SAMPLES)
+                        cache_bounded_counter++;
+                g_xdag_extstats.cache_hitrate = moving_average_double(g_xdag_extstats.cache_hitrate, (double)((cache_hit)/(cache_hit+cache_miss)), cache_bounded_counter);
+
+        }
+}
+
+void cache_add(struct xdag_block* block, xdag_hash_t hash){
+        if(g_xdag_extstats.cache_usage<=CACHE_MAX_SIZE){
+                struct cache_block *cacheBlock = malloc(sizeof(struct cache_block));
+                if(cacheBlock != NULL){
+                        memset(cacheBlock, 0, sizeof(struct cache_block));
+                        memcpy(&(cacheBlock->block), block, sizeof(struct xdag_block));
+                        memcpy(&(cacheBlock->hash), hash, sizeof(xdag_hash_t));
+
+                        if(cache_first == NULL) 
+                                cache_first = cacheBlock;
+                        if(cache_last != NULL)
+                                cache_last->next = cacheBlock;
+                        cache_last = cacheBlock;
+                        ldus_rbtree_insert(&cache_root, &cacheBlock->node);
+                        g_xdag_extstats.cache_usage++;
+                }else{
+                        xdag_warn("cache malloc failed [function: cache_add]");
+                }
+        }else{
+                xdag_warn("maximum cache reached [function: cache_add]");
+        }
+
+}
+
+
+int32_t check_signature_out_cached(struct block_internal* blockRef, struct xdag_public_key *public_keys, const int keysCount, int32_t *cache_hit, int32_t *cache_miss){
+	struct cache_block *bref = cache_block_by_hash(blockRef->hash);
+	if(bref != NULL){
+		(*cache_hit)++;
+	        return  find_and_verify_signature_out(&(bref->block), public_keys, keysCount);
+	}else{
+		(*cache_miss)++;
+		return check_signature_out(blockRef, public_keys, keysCount);
+
+	}
+}
+
+int32_t check_signature_out(struct block_internal* blockRef, struct xdag_public_key *public_keys, const int keysCount){
+	struct xdag_block buf;
+	struct xdag_block *bref = xdag_storage_load(blockRef->hash, blockRef->time, blockRef->storage_pos, &buf);
+	if (!bref) {
+		return 8;
+	}
+	return	find_and_verify_signature_out(bref, public_keys, keysCount);
+}
+
+
+static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xdag_public_key *public_keys, const int keysCount){
+	int j = 0;
+        for (int k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
+                if (xdag_type(bref, j) == XDAG_FIELD_SIGN_OUT && (++k & 1)
+                                && valid_signature(bref, j, keysCount, public_keys) >= 0) {
+                        break;
+                }
+        }
+        if (j == XDAG_BLOCK_FIELDS) {
+                return 9;
+        }
+	return 0;
 }

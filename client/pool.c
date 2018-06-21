@@ -603,17 +603,26 @@ static void calculate_nopaid_shares(struct connection_pool_data *conn_data, stru
 		// At this point, diff, seems to be a condensate approximated representation 
 		// of the 256 bit number hash[3] || hash[2] || hash[1] || hash[0].
 
-		diff = ldexp(diff, -64);
-		diff += ((uint64_t*)hash)[3];
-
-		if(diff < 1) diff = 1;
-		diff = 46 - log(diff);
-
+									
+		diff = ldexp(diff, -64);	// Since diff is unsigned, diff < 1 implies diff=0 and ln(diff) function is not defined for diff=0, it is needed to eliminate
+						// the diff=0 case (if(diff < 1) diff = 1). The "most difficult" hash sent by miner implies diff=1 (since this is the case of hash[3] and hash[2] is 0) 
+		diff += ((uint64_t*)hash)[3];   // and ln(1)=0, thus maximum diff value, at this point, is 46. The "easiest" hash, instead, would lay on
+					        // the same result that is diff 46 (that's the case hash[3]=hash[2]=0xFFFFFFFFFFFFFFFF, hash[3]+1=0 
+		if(diff < 1) diff = 1;          // thus it's the same as the most difficult hash), it is probably a bug. Let's consider an "almost easiest" hash
+		//log is ln		        // like hash[3]=FFFFFFFFFFFFFFFF and hash[2]<=FFFFFFFFFFFFFBFF, in this case we have 46-ln(FFFFFFFFFFFFFFFF)=46-44=2.
+		diff = 46 - log(diff);		// At this point diff seems to have a range [46;2], where higher value is higher difficulty.
+		
 		// Adding share for connection
-		if(conn_data->task_time < task_time) { // conn_data->task_time will keep old value until pool doesn't accept the share of the task.
+		if(conn_data->task_time < task_time) { 	   // conn_data->task_time will keep old value until pool doesn't accept the share of the task.
 			conn_data->task_time = task_time;  // this will prevent to count more share for the same task, cannot join this block a new time for same task.
 
-			if(conn_data->maxdiff[i] > 0) {
+			// Avoid to rewrite maxdiff[i] with a new value if there are still the old one uncounted
+			// index i are just about 20, and it is chosen in a pseudo-random way, so it may happen that
+			// you take a i for which maxdiff isn't clean.
+			// accounting and thus cleaning of maxdiff[i] is done after CONFIRMATIONS_COUNT tasks!
+			// thus it may happen to take the same i more times. Thus maxdiff is cleaned, adding the amount in prev_diff.
+			// Basically, it start to accumulate shares in prev_diff after about CONFIRMATIONS_COUNT
+			if(conn_data->maxdiff[i] > 0) { 
 				conn_data->prev_diff += conn_data->maxdiff[i];
 				conn_data->prev_diff_count++;
 			}
@@ -887,6 +896,17 @@ static int receive_data_from_connection(connection_list_element *connection)
 		//share is received
 		if(!process_received_share(connection)) {
 			return 0;
+      
+      
+      
+			if(share_can_be_accepted(conn_data->miner, (uint64_t*)conn_data->data, task_index)) {
+				xdag_hash_t hash;
+				xdag_hash_final(task->ctx0, conn_data->data, sizeof(struct xdag_field), hash);
+				// just set the new hash as the minimum one for the actual task (it checks that 
+				// it is lower than the old hash, anyway)
+				xdag_set_min_share(task, conn_data->miner->id.data, hash);
+				calculate_nopaid_shares(conn_data, task, hash);
+			}
 		}
 	}
 
@@ -1031,14 +1051,17 @@ void *pool_block_thread(void *arg)
 		const uint64_t task_index = g_xdag_pool_task_index;
 		struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
 		const xdag_time_t current_task_time = task->task_time;
-
+		
+		// new task, let's pay miners 
+		// Will pay the hash old CONFIRMATIONS_COUNT (if the block was got by this pool!)
+		// (it clean paid shares counting variables about that task's hash)
 		if(current_task_time > prev_task_time) {
 			uint64_t *hash = g_xdag_mined_hashes[(current_task_time - CONFIRMATIONS_COUNT + 1) & (CONFIRMATIONS_COUNT - 1)];
 
 			processed = 1;
-			prev_task_time = current_task_time;
+			prev_task_time = current_task_time; // new task time
 
-			res = pay_miners(current_task_time - CONFIRMATIONS_COUNT + 1);
+			res = pay_miners(current_task_time - CONFIRMATIONS_COUNT + 1); // res tells if paid or not (and more things)
 			remove_inactive_miners();
 
 			xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),

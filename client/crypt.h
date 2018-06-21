@@ -27,4 +27,6 @@ extern int xdag_sign(const void *key, const xdag_hash_t hash, xdag_hash_t sign_r
 // verify that the signature (sign_r, sign_s) corresponds to a hash 'hash', a version for its own key
 extern int xdag_verify_signature(const void *key, const xdag_hash_t hash, const xdag_hash_t sign_r, const xdag_hash_t sign_s);
 
+extern int xdag_verify_signature_noopenssl(const void *key, const xdag_hash_t hash, const xdag_hash_t sign_r, const xdag_hash_t sign_s);
+
 #endif

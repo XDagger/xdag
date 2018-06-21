@@ -29,13 +29,16 @@ extern struct xdag_stats
 
 extern struct xdag_ext_stats
 {
-    xdag_diff_t hashrate_total[HASHRATE_LAST_MAX_TIME];
-    xdag_diff_t hashrate_ours[HASHRATE_LAST_MAX_TIME];
-    xdag_time_t hashrate_last_time;
-    uint64_t nnoref;
-    uint64_t nhashes;
-    double hashrate_s;
-    uint32_t nwaitsync;
+	xdag_diff_t hashrate_total[HASHRATE_LAST_MAX_TIME];
+	xdag_diff_t hashrate_ours[HASHRATE_LAST_MAX_TIME];
+	xdag_time_t hashrate_last_time;
+	uint64_t nnoref;
+	uint64_t nhashes;
+	double hashrate_s;
+	uint32_t nwaitsync;
+	uint32_t cache_size;
+	uint32_t cache_usage;
+	double cache_hitrate;
 } g_xdag_extstats;
 
 #ifdef __cplusplus
@@ -71,7 +74,11 @@ extern int(*g_xdag_show_state)(const char *state, const char *balance, const cha
 };
 #endif
 
+// amount is uint64_t so xdag_amount2xdag just will show most significant 32 bit
 #define xdag_amount2xdag(amount) ((unsigned)((amount) >> 32))
+// For xdag_amount2cheato, see xdags2amount comments first
+// now you can see we have first to multiply to 1000000000 AND after divide for 2^32 (that's since if we divide first for 2^32 we will lost information because in the integer we will lose any after the dot part!)
+// To get it simple, the original number got divided for 1000000000 and multiplied for 2^32, so we are doing the contrary here to get the original number.
 #define xdag_amount2cheato(amount) ((unsigned)(((uint64_t)(unsigned)(amount) * 1000000000) >> 32))
 
 #endif

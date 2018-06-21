@@ -54,6 +54,7 @@ void processMiningCommand(char *nextParam, FILE *out);
 void processNetCommand(char *nextParam, FILE *out);
 void processPoolCommand(char *nextParam, FILE *out);
 void processStatsCommand(FILE *out);
+void processCacheCommand(FILE *out);
 void processExitCommand(void);
 void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd);
 void processLastBlocksCommand(char *nextParam, FILE *out);
@@ -77,6 +78,7 @@ int xdag_com_pool(char *, FILE*);
 int xdag_com_miners(char *, FILE*);
 int xdag_com_stats(char *, FILE*);
 int xdag_com_state(char *, FILE*);
+int xdag_com_cache(char *, FILE*);
 int xdag_com_help(char *, FILE*);
 int xdag_com_run(char *, FILE*);
 int xdag_com_terminate(char *, FILE*);
@@ -102,6 +104,7 @@ XDAG_COMMAND commands[] = {
 	{ "run"        , xdag_com_run },
 	{ "state"      , xdag_com_state },
 	{ "stats"      , xdag_com_stats },
+	{ "cache"      , xdag_com_cache },
 	{ "terminate"  , xdag_com_terminate },
 	{ "exit"       , xdag_com_exit },
 	{ "xfer"       ,(xdag_com_func_t)NULL},
@@ -193,6 +196,13 @@ int xdag_com_state(char * args, FILE* out)
 	fprintf(out, "%s\n", get_state());
 	return 0;
 }
+
+int xdag_com_cache(char * args, FILE* out)
+{
+	processCacheCommand(out);
+	return 0;
+}
+
 
 int xdag_com_run(char * args, FILE* out)
 {
@@ -460,6 +470,15 @@ void processStatsCommand(FILE *out)
 	}
 }
 
+void processCacheCommand(FILE *out)
+{
+	fprintf(out, "Cache informations:\n"
+		"     cached blocks: target amount %u, actual amount %u, hitrate %f%%\n",
+		g_xdag_extstats.cache_size, g_xdag_extstats.cache_usage, g_xdag_extstats.cache_hitrate*100
+	);
+}
+
+
 void processExitCommand()
 {
 	xdag_wallet_finish();
@@ -490,9 +509,9 @@ void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd)
 
 void processLastBlocksCommand(char *nextParam, FILE *out)
 {
-	int blocksCount = 20;
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
-	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
+	int blocksCount = 20; // standard block amount
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam); // retrieve string
+	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) { //parse string, is it a number?
 		fprintf(out, "Illegal number.\n");
 	} else {
 		xdag_list_main_blocks(blocksCount, 1, out);
@@ -555,14 +574,43 @@ void processDisconnectCommand(char *nextParam, FILE *out)
 	disconnect_connections(type, value);
 }
 
+
+static long double diff2log(xdag_diff_t diff)
+{
+	// it takes the 64 least significant bit
+	long double res = (long double)xdag_diff_to64(diff);
+	// eating two times the least significant 32 bit, so in diff will remain the 64 most significant bit
+	// (it is pushing zeros from the left)
+	xdag_diff_shr32(&diff);
+	xdag_diff_shr32(&diff);
+	if(xdag_diff_to64(diff)) {
+		// [actual] diff * 2^64 ,just to keep it "64bit higher" respect to the least significant 64bit that are in res now, and
+		// diff * 2^64 >> diff's lower 64b (since its max value is 2^64!)
+		res += ldexpl((long double)xdag_diff_to64(diff), 64);
+	}
+	// (clearly log(x) is not defined for 0)
+	// it will switch in logarithmic form to avoid overflow in function [long double hashrate(xdag_diff_t *)] AND it will transform every addition to multiplication!
+	return (res > 0 ? logl(res) : 0);
+}
+
 long double hashrate(xdag_diff_t *diff)
 {
+	// just doing mean of last HASHRATE_LAST_MAX_TIME
+	// difficulty in log form
 	long double sum = 0;
 	for(int i = 0; i < HASHRATE_LAST_MAX_TIME; ++i) {
-		sum += diff2log(diff[i]);
+		sum += diff2log(diff[i]); // return log(diff1*2^64*diff2*2^64*diff2*2^64*.......)
 	}
+  /*
 	sum /= HASHRATE_LAST_MAX_TIME;
 	return ldexpl(expl(sum), -58); //shown pool and network hashrate seems to be around 35% higher than real, to consider *(0.65) about correction. Deeper study is needed.
+  
+  */
+	sum /= HASHRATE_LAST_MAX_TIME; // log(diff1*2^64*diff2*2^64*diff2*2^64*.......)/HASHRATE_LAST_MAX_TIME
+	// First expl: (diff1*2^64*diff2*2^64*diff2*2^64*.......)/e^HASHRATE_LAST_MAX_TIME
+	// (diff1*2^64*diff2*2^64*diff2*2^64*.......)/(e^HASHRATE_LAST_MAX_TIME*2^58)
+	// This function seems to be an approximation created by studying the process? I don't know, i can't recognize this function.
+	return ldexpl(expl(sum), -58);
 }
 
 const char *get_state()
@@ -578,15 +626,15 @@ const char *get_state()
 xdag_amount_t xdags2amount(const char *str)
 {
 	long double sum;
-	if(sscanf(str, "%Lf", &sum) != 1 || sum <= 0) {
+	if(sscanf(str, "%Lf", &sum) != 1 || sum <= 0) { //amount is represented by a Lf (long double) 
 		return 0;
 	}
-	long double flr = floorl(sum);
-	xdag_amount_t res = (xdag_amount_t)flr << 32;
-	sum -= flr;
-	sum = ldexpl(sum, 32);
-	flr = ceill(sum);
-	return res + (xdag_amount_t)flr;
+	long double flr = floorl(sum); // take only the integer low part. (like 45.7 become  45)
+	xdag_amount_t res = (xdag_amount_t)flr << 32; // move it in the higher 32 bit (xdag_amount_t is a 64bit uint)
+	sum -= flr; //keep only the after the dot part (like 45.7 become 0.7)
+	sum = ldexpl(sum, 32); // multiply it for 2^32 (it's like a shift BUT... ONE = 0.0000000001 * 2^32 so you will remain in 32bit even with 2^32 multiplication!)
+	flr = ceill(sum); // take the integer upper part, this time (45.7 become 46)
+	return res + (xdag_amount_t)flr; // join the two pieces, integer part is in upper 32bit and after the dot part is in lower 32 bit(but it's multiplied for 2^32 and divided by 1000000000)
 }
 
 long double amount2xdags(xdag_amount_t amount)
