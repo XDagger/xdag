@@ -101,7 +101,7 @@ void cache_retarget(int32_t, int32_t);
 void cache_add(struct xdag_block*, xdag_hash_t);
 int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
 int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
-static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xdag_public_key *public_keys, const int keysCount);
+static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
 
 // returns a time period index, where a period is 64 seconds long
 xdag_time_t xdag_main_time(void)
@@ -1685,8 +1685,6 @@ int32_t check_signature_out(struct block_internal* blockRef, struct xdag_public_
 	struct xdag_block buf;
 	struct xdag_block *bref = xdag_storage_load(blockRef->hash, blockRef->time, blockRef->storage_pos, &buf);
 	if (!bref) {
-		printf("errore");
-		fflush(stdout);
 		return 8;
 	}
 	return	find_and_verify_signature_out(bref, public_keys, keysCount);
@@ -1702,8 +1700,6 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
                 }
         }
         if (j == XDAG_BLOCK_FIELDS) {
-		printf("errore");
-		fflush(stdout);
                 return 9;
         }
 	return 0;
