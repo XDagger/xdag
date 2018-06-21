@@ -551,19 +551,17 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 			}
 			if (1 << i & inmask) {
 				if (newBlock->field[i].amount) {
+					int32_t res = 1;
 					if(CACHE){
-						int32_t res = check_signature_out_cached(blockRef, public_keys, keysCount, &cache_hit, &cache_miss);
-						if(res){
-							err = res;
-							goto end;
-						}		
+						res = check_signature_out_cached(blockRef, public_keys, keysCount, &cache_hit, &cache_miss);		
 					} else {
-						int32_t res = check_signature_out(blockRef, public_keys, keysCount);
-						if(res){
-							err = res;	
-							goto end;
-                                        	}
+						res = check_signature_out(blockRef, public_keys, keysCount);
 					}
+					if(res){
+						err = res;
+						goto end;
+					}
+
 				}
 				psum = &sum_in;
 				tmpNodeBlock.in_mask |= 1 << tmpNodeBlock.nlinks;

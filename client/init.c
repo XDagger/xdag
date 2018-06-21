@@ -49,7 +49,6 @@ int xdag_init(int argc, char **argv, int isGui)
     xdag_init_path(argv[0]);
 
 	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
-	char *ptr;
 	int transport_flags = 0, n_addrports = 0, mining_threads_count = 0, is_pool = 0, is_miner = 0, level, is_rpc = 0, rpc_port = 0;
 	
 	memset(addrports, 0, 256);
