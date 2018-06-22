@@ -15,6 +15,14 @@
 #include "utils/log.h"
 #include "system.h"
 
+#if OPENSSL == 0 || OPENSSL == 2
+
+#include "../secp256k1/include/secp256k1.h"
+
+secp256k1_context *ctx_noopenssl;
+
+#endif
+
 static EC_GROUP *group;
 
 extern unsigned int xOPENSSL_ia32cap_P[4];
@@ -30,6 +38,10 @@ int xdag_crypt_init(int withrandom)
 		xdag_debug("Seed  : [%s]", xdag_log_array(buf, sizeof(buf)));
 		RAND_seed(buf, sizeof(buf));
 	}
+
+#if OPENSSL == 0 || OPENSSL == 2
+	ctx_noopenssl = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
+#endif
 
 	group = EC_GROUP_new_by_curve_name(NID_secp256k1);
 	if (!group) return -1;
@@ -292,6 +304,30 @@ int xdag_sign(const void *key, const xdag_hash_t hash, xdag_hash_t sign_r, xdag_
 
 static uint8_t *add_number_to_sign(uint8_t *sign, const xdag_hash_t num)
 {
+        uint8_t *n = (uint8_t*)num;
+        int i, len, leadzero;
+
+        for (i = 0; i < sizeof(xdag_hash_t) && !n[i]; ++i);
+
+        leadzero = (i < sizeof(xdag_hash_t) && n[i] & 0x80);
+        len = (sizeof(xdag_hash_t) - i) + leadzero;
+        *sign++ = 0x02;
+        *sign++ = len;
+
+        if (leadzero) { 
+                *sign++ = 0;
+        }
+
+        while (i < sizeof(xdag_hash_t)) {
+                *sign++ = n[i++];
+        }
+
+        return sign;
+}
+
+
+static uint8_t *add_number_to_sign_noopenssl(uint8_t *sign, const xdag_hash_t num)
+{
 	uint8_t *n = (uint8_t*)num;
 	int i, len, leadzero;
 
@@ -300,7 +336,13 @@ static uint8_t *add_number_to_sign(uint8_t *sign, const xdag_hash_t num)
 	leadzero = (i < sizeof(xdag_hash_t) && n[i] & 0x80);
 	len = (sizeof(xdag_hash_t) - i) + leadzero;
 	*sign++ = 0x02;
-	*sign++ = len;
+	if(len)
+		*sign++ = len;
+	else{
+		*sign++ = 1;
+		*sign++ = 0;
+		return sign;
+	}
 	
 	if (leadzero) {
 		*sign++ = 0;
@@ -331,3 +373,60 @@ int xdag_verify_signature(const void *key, const xdag_hash_t hash, const xdag_ha
 	
 	return res != 1;
 }
+
+#if OPENSSL == 0 || OPENSSL == 2
+
+// returns 0 on success
+int xdag_verify_signature_noopenssl(const void *key, const xdag_hash_t hash, const xdag_hash_t sign_r, const xdag_hash_t sign_s)
+{
+
+	uint8_t buf_pubkey[sizeof(xdag_hash_t) + 1];
+	secp256k1_pubkey pubkey_noopenssl;
+	size_t pubkeylen =sizeof(xdag_hash_t)+1;
+	secp256k1_ecdsa_signature sig_noopenssl;
+        secp256k1_ecdsa_signature sig_noopenssl_normalized;
+	int res=0;
+
+	buf_pubkey[0]=2+((uintptr_t)key & 1);
+	memcpy(&(buf_pubkey[1]),(xdag_hash_t*)((uintptr_t)key & ~1l), sizeof(xdag_hash_t));
+
+
+	if((res=secp256k1_ec_pubkey_parse(ctx_noopenssl, &pubkey_noopenssl,buf_pubkey, pubkeylen))!=1){
+		xdag_debug("Public key parsing failed: res=%2d key parity bit = %ld key=[%s] hash=[%s] r=[%s], s=[%s]", res, ((uintptr_t)key & 1),
+			xdag_log_hash((uint64_t*)((uintptr_t)key & ~1l)), xdag_log_hash(hash), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
+
+	}
+
+        uint8_t sign_buf[72], *ptr;
+
+        ptr = add_number_to_sign_noopenssl(sign_buf + 2, sign_r);
+        ptr = add_number_to_sign_noopenssl(ptr, sign_s);
+        sign_buf[0] = 0x30;
+        sign_buf[1] = ptr - sign_buf - 2;
+	
+
+        if((res=secp256k1_ecdsa_signature_parse_der(ctx_noopenssl, &sig_noopenssl, sign_buf, ptr - sign_buf))!=1){
+                xdag_debug("Signature parsing failed: res=%2d key parity bit = %ld key=[%s] hash=[%s] sign=[%s] r=[%s], s=[%s]", res,((uintptr_t)key & 1),
+               				xdag_log_hash((uint64_t*)((uintptr_t)key & ~1l)) , xdag_log_hash(hash),
+                       			xdag_log_array(sign_buf, ptr - sign_buf), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
+		return 1;
+        }
+
+	// never fail
+	secp256k1_ecdsa_signature_normalize(ctx_noopenssl, &sig_noopenssl_normalized,&sig_noopenssl);
+
+
+        if((res=secp256k1_ecdsa_verify(ctx_noopenssl, &sig_noopenssl_normalized,(unsigned char*) hash, &pubkey_noopenssl))!=1){
+	        xdag_debug("Verify failed: res =%2d key parity bit = %ld key=[%s] hash=[%s] sign=[%s] r=[%s], s=[%s]", res, ((uintptr_t)key & 1),
+                                        xdag_log_hash((uint64_t*)((uintptr_t)key & ~1l)), xdag_log_hash(hash),
+        	        		xdag_log_array(sign_buf, ptr - sign_buf), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
+		return 1;
+        }
+
+        xdag_debug("Verify completed: parity bit = %ld key=[%s] hash=[%s] sign=[%s] r=[%s], s=[%s]", ((uintptr_t)key & 1),
+                                        xdag_log_hash((uint64_t*)((uintptr_t)key & ~1l)), xdag_log_hash(hash),
+                xdag_log_array(sign_buf, ptr - sign_buf), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
+	return 0;
+}
+
+#endif

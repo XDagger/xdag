@@ -8,6 +8,7 @@ dar		        = ../dus/programs/dar/source
 ldusinc	 		= ../ldus/source/include/ldus
 utils    		= ./utils
 moving_statistics 	= ./moving_statistics
+secp256k1               = ../secp256k1
 OS	:= $(shell uname)
 
 ifeq ($(OS), Darwin)
@@ -126,18 +127,22 @@ ifeq ($(OS), Darwin)
 
 	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result
 else
-	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
+	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lgmp -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
 
 endif
 
 
-all: xdag
+all: secp256k1 xdag
 
 xdag: $(sources) $(headers) Makefile
-	gcc -o xdag $(sources) $(asm_src) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) $(flags)
+	cc -o xdag secp256k1.o $(sources) $(asm_src) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) -isystem$(secp256k1)/include/  $(flags)
+
+secp256k1:
+	cc -O3 -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp
 
 clean:
 	rm xdag
+	rm secp256k1.o
 
 install: xdag
 	sudo cp xdag /usr/local/bin/xdag

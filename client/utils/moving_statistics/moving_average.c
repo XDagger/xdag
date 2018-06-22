@@ -23,6 +23,14 @@ static long double welford_one_pass(long double mean, long double sample, uint16
 	return mean;
 }
 
+static double welford_one_pass_double(double mean, double sample, uint16_t nsamples)
+{
+        if(nsamples) {
+                mean = mean + (sample - mean) / (double)(nsamples);
+        }
+        return mean;
+}
+
 
 // Moving average explanation: SX represent the sample, --------------- represent out window (4h in our case), TX represent the time (task time in our case)
 // 			S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 ...
@@ -53,3 +61,17 @@ long double moving_average(long double mean, long double sample, uint16_t nsampl
 	}
 	return mean;
 }
+
+double moving_average_double(double mean, double sample, uint16_t nsamples)
+{
+        if(nsamples < 2) {
+                mean = sample;
+        }
+        if(nsamples >= NSAMPLES_MAX) {
+                mean = welford_one_pass_double(mean, sample, NSAMPLES_MAX);
+        } else {
+                mean = welford_one_pass_double(mean, sample, nsamples);
+        }
+        return mean;
+}
+
