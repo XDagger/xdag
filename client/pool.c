@@ -1583,10 +1583,13 @@ static void miner_print_time_intervals(struct miner_pool_data *miner, int curren
 	fprintf(out, "----------------------------------------------------------------------\n");
 
 	for(int i = 0; i < CONFIRMATIONS_COUNT; ++i) {
+		// check if current miner mined block for current interval
 		int is_reward = memcmp(g_xdag_mined_nonce[i], miner->id.data, sizeof(xdag_hashlow_t)) == 0;
+
+		// here we calculate time offset for interval of time
 		xdag_time_t task_time = current_task_time << 16 | 0xffff;
 		if(i < current_interval_index) {
-			task_time = task_time - (2 << 15) * (current_interval_index - i);
+			task_time = task_time - (2 << 15) * (current_interval_index - i);	// 2 << 15 - 64 seconds
 		} else if(i > current_interval_index) {
 			task_time = task_time - (2 << 15) * (current_interval_index + CONFIRMATIONS_COUNT - i);
 		}
@@ -1683,6 +1686,7 @@ static void print_miner_stats(struct miner_pool_data *miner, FILE *out)
 	}
 }
 
+// prints detailed information about specified miner
 int xdag_print_miner_stats(const char* address, FILE *out)
 {
 	miner_list_element *elt;

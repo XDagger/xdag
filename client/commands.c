@@ -857,7 +857,7 @@ void processHelpCommand(FILE *out)
 		"  account [N]         - print first N (20 by default) our addresses with their amounts\n"
 		"  balance [A]         - print balance of the address A or total balance for all our addresses\n"
 		"  block [A]           - print extended info for the block corresponding to the address or hash A\n"
-		"  lastblocks [N]      - print latest N (20 by default, max limit 100) main blocks\n"
+		"  lastblocks [N]      - print latest N (20 by default, max limit 100) addresses of main blocks\n"
 		"  exit                - exit this program (not the daemon)\n"
 		"  help                - print this help\n"
 		"  keygen              - generate new private/public key pair and set it by default\n"
@@ -882,6 +882,8 @@ void processHelpCommand(FILE *out)
 		"                         O is option, can be all, address or ip\n"
 		"                         A is the miners' address\n"
 		"                         IP is the miners' IP\n"
+		"  mainblocks [N]       - print list of N (20 by default) main blocks"
+		"  minedblocks [N]      - print list of N (20 by default) main blocks mined by current pool"
 		, g_coinname);
 }
 
