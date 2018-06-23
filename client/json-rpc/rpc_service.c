@@ -267,6 +267,7 @@ static int rpc_handle_connection(struct xdag_rpc_connection* conn)
 						}
 						xdag_debug("Method Invoked: %s\n", method->valuestring);
 						ret = invoke_procedure(conn, method->valuestring, params, id_copy, version);
+						cJSON_Delete(root);
 						close_connection(conn);
 						return ret;
 					}
