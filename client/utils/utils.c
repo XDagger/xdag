@@ -100,7 +100,7 @@ static void check_ring(struct mutex_thread_vertex * graph, struct mutex_thread_v
 	if(!vertex || vertex->in_degrees == 0) {
 		return;
 	}
-	
+
 	struct mutex_thread_element *list_elem = NULL;
 	struct mutex_thread_vertex *graph_elem = NULL;
 	LL_FOREACH(vertex->depends, list_elem)
@@ -114,7 +114,7 @@ static void check_ring(struct mutex_thread_vertex * graph, struct mutex_thread_v
 				break;
 			}
 		}
-		
+
 		if(found_ring) {
 			xdag_err("Dead lock found!");
 			LL_FOREACH(path, path_elem)
@@ -124,18 +124,18 @@ static void check_ring(struct mutex_thread_vertex * graph, struct mutex_thread_v
 			xdag_err("thread %12llx mutex %s", list_elem->tid, list_elem->mutex_name);
 			continue;
 		}
-		
+
 		path_elem = (struct mutex_thread_element*)malloc(sizeof(struct mutex_thread_element));
 		memcpy(path_elem, list_elem, sizeof(struct mutex_thread_element));
 		LL_APPEND(path, path_elem);
-		
+
 		LL_FOREACH(graph, graph_elem)
 		{
 			if(graph_elem->tid == list_elem->tid) {
 				check_ring(graph, graph_elem, path);
 			}
 		}
-		
+
 		int delete = 0;
 		struct mutex_thread_element *tmp = NULL;
 		LL_FOREACH_SAFE(path, path_elem, tmp)
@@ -153,14 +153,14 @@ static void check_ring(struct mutex_thread_vertex * graph, struct mutex_thread_v
 
 /*
  Record mutex lock/unlock action and threads in list, and generate oriented graph.
- If there are rings in oriented graph, it means there are dead locks somethere, 
+ If there are rings in oriented graph, it means there are dead locks somethere,
  and prints the dependeneces for mutex between related threads.
  */
 static void check_deadlock(void)
 {
 	pthread_mutex_lock(&g_detect_mutex);
 	struct mutex_thread_vertex * graph = NULL;
-	
+
 	do {
 		struct mutex_thread_element *elem1 = NULL;
 		struct mutex_thread_element *elem2 = NULL;
@@ -176,18 +176,18 @@ static void check_deadlock(void)
 							break;
 						}
 					}
-					
+
 					if (!vertex) {
 						vertex = (struct mutex_thread_vertex*)malloc(sizeof(struct mutex_thread_vertex));
 						memset(vertex, 0, sizeof(struct mutex_thread_vertex));
 						vertex->tid = elem1->tid;
 						LL_APPEND(graph, vertex);
 					}
-					
+
 					xdag_debug("add dependence (%12llx:%s)->(%12llx:%s)\n", elem1->tid, elem1->mutex_name, elem2->tid, elem2->mutex_name);
 
 					++vertex->in_degrees;
-					
+
 					struct mutex_thread_element * tmpelem = (struct mutex_thread_element*)malloc(sizeof(struct mutex_thread_element));
 					memcpy(tmpelem, elem2, sizeof(struct mutex_thread_element));
 					LL_APPEND(vertex->depends, tmpelem);
@@ -195,7 +195,7 @@ static void check_deadlock(void)
 			}
 		}
 	} while (0);
-	
+
 	do {
 		struct mutex_thread_vertex *elem = NULL;
 		struct mutex_thread_element *path = NULL;
@@ -203,7 +203,7 @@ static void check_deadlock(void)
 		{
 			check_ring(graph, elem, path);
 		}
-		
+
 		struct mutex_thread_element *tmp1 = NULL;
 		struct mutex_thread_element *tmp2 = NULL;
 		LL_FOREACH_SAFE(path, tmp1, tmp2)
@@ -212,7 +212,7 @@ static void check_deadlock(void)
 			free(tmp1);
 		}
 	} while(0);
-	
+
 	do {
 		struct mutex_thread_vertex *vertex, *tmpvertex;
 		struct mutex_thread_element *elem, *tmpelem;
@@ -226,7 +226,7 @@ static void check_deadlock(void)
 			free(vertex);
 		}
 	} while(0);
-	
+
 	pthread_mutex_unlock(&g_detect_mutex);
 }
 
@@ -237,20 +237,20 @@ static void* check_deadlock_thread(void* argv)
 		check_deadlock();
 		sleep(10);
 	}
-	
+
 	return 0;
 }
 
 void start_check_deadlock_thread(void)
 {
 	pthread_t th;
-	
+
 	int err = pthread_create(&th, 0, check_deadlock_thread, NULL);
 	if(err != 0) {
 		xdag_err("create check_deadlock_thread failed! error : %s", strerror(err));
 		return;
 	}
-	
+
 	err = pthread_detach(th);
 	if(err != 0) {
 		xdag_err("detach check_deadlock_thread failed! error : %s", strerror(err));
@@ -263,37 +263,36 @@ void test_deadlock(void)
 	apply_lock_before(10000, (pthread_mutex_t*)1, "1");
 	apply_lock_after(10000, (pthread_mutex_t*)1);
 	apply_unlock(10000, (pthread_mutex_t*)1);
-	
+
 	apply_lock_before(10002, (pthread_mutex_t*)2, "2");
 	apply_lock_after(10002, (pthread_mutex_t*)2);
 //	apply_unlock(10002, 2);
-	
+
 	apply_lock_before(10003, (pthread_mutex_t*)3, "3");
 	apply_lock_after(10003, (pthread_mutex_t*)3);
 //	apply_unlock(10003, 3);
-	
+
 	apply_lock_before(20001, (pthread_mutex_t*)2, "2");
 	apply_lock_before(30001, (pthread_mutex_t*)3, "3");
-	
+
 	apply_lock_before(40001, (pthread_mutex_t*)1, "1");
 	apply_lock_after(40001, (pthread_mutex_t*)1);
 	apply_lock_before(40001, (pthread_mutex_t*)2, "2");
-	
+
 	apply_lock_before(40002, (pthread_mutex_t*)2, "2");
 	apply_lock_after(40002, (pthread_mutex_t*)2);
 	apply_lock_before(40002, (pthread_mutex_t*)1, "1");
-	
-	
+
 	check_deadlock();
 }
 
 uint64_t get_timestamp(void)
 {
-    struct timeval tp;
-    
-    gettimeofday(&tp, 0);
-    
-    return (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
+	struct timeval tp;
+
+	gettimeofday(&tp, 0);
+
+	return (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
 }
 
 static char g_xdag_current_path[4096] = {0};
@@ -374,7 +373,7 @@ long double log_difficulty2hashrate(long double log_diff)
 void xdag_str_toupper(char *str)
 {
 	while(*str) {
-		*str = toupper((unsigned char) *str);
+		*str = toupper((unsigned char)*str);
 		str++;
 	}
 }
@@ -382,28 +381,28 @@ void xdag_str_toupper(char *str)
 void xdag_str_tolower(char *str)
 {
 	while(*str) {
-		*str = tolower((unsigned char) *str);
+		*str = tolower((unsigned char)*str);
 		str++;
 	}
 }
 
 char *xdag_basename(char *path)
 {
-	#if defined(_WIN32)
-		char *ptr;
-		while ((ptr = strchr(path, '/')) || (ptr = strchr(path, '\\'))) {
-			path = ptr + 1;
-		}
-		return strdup(ptr);
-	#else
-		return strdup(basename(path));
-	#endif
+#if defined(_WIN32)
+	char *ptr;
+	while((ptr = strchr(path, '/')) || (ptr = strchr(path, '\\'))) {
+		path = ptr + 1;
+	}
+	return strdup(path);
+#else
+	return strdup(basename(path));
+#endif
 }
 
 char *xdag_filename(char *_filename)
 {
-	char * filename = xdag_basename(_filename);
-	char * ext = strchr(filename, '.');
+	char *filename = xdag_basename(_filename);
+	char *ext = strchr(filename, '.');
 
 	if(ext) {
 		*ext = 0;
