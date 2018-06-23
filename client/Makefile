@@ -58,6 +58,8 @@ sources = \
 	$(utils)/utils.c				\
 	$(utils)/log.c					\
 	$(utils)/linenoise.c			\
+	$(utils)/base64.c                       \
+	$(utils)/lst.c                          \
 	./json-rpc/cJSON.c				\
 	./json-rpc/cJSON_Utils.c		\
 	./json-rpc/rpc_procedures.c		\
@@ -110,6 +112,8 @@ headers = \
 	$(utils)/utils.h				\
 	$(utils)/log.h					\
 	$(utils)/linenoise.h			\
+	$(utils)/base64.h                       \
+	$(utils)/lst.h                          \
 	./json-rpc/cJSON.h				\
 	./json-rpc/cJSON_Utils.h		\
 	./json-rpc/rpc_procedures.h		\
@@ -122,7 +126,7 @@ headers = \
 
 ifeq ($(OS), Darwin)
 
-	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -levent
+	flags = -std=gnu11  -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g3 -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -levent
 else
 	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl -levent,--export-dynamic
 

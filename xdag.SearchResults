@@ -1,6 +1,0 @@
----- xdag_get_account Matches (5 in 1 files) ----
-Rpc_procedures.c (client\json-rpc): "method":"xdag_get_account", "params":["N"], "id":1
-Rpc_procedures.c (client\json-rpc): "jsonrpc":"2.0", "method":"xdag_get_account", "params":["N"], "id":1
-Rpc_procedures.c (client\json-rpc): "version":"1.1", "method":"xdag_get_account", "params":["N"], "id":1
-Rpc_procedures.c (client\json-rpc):	/* register xdag_get_account, xdag_get_balance, xdag_do_xfer */
-Rpc_procedures.c (client\json-rpc):	rpc_register_func(xdag_get_account);

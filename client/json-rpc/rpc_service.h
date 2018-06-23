@@ -46,4 +46,7 @@ extern int xdag_rpc_service_register_procedure(xdag_rpc_function function_pointe
 /* unregister procedure */
 extern int xdag_rpc_service_unregister_procedure(char *name);
 
+/* invoke */
+extern int xdag_rpc_command_procedure(const char *data, char **result);
+
 #endif //XDAG_TERMINAL_H
