@@ -21,5 +21,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #endif
 
 long double moving_average(long double mean, long double sample, uint16_t nsamples);
+double moving_average_double(double mean, double sample, uint16_t nsamples);
+
 
 #endif

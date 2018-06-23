@@ -49,8 +49,7 @@ int xdag_init(int argc, char **argv, int isGui)
     xdag_init_path(argv[0]);
 
 	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
-	char *ptr;
-	int transport_flags = 0, n_addrports = 0, n_mining_threads = 0, is_pool = 0, is_miner = 0, level, is_rpc = 0, rpc_port = 0;
+	int transport_flags = 0, n_addrports = 0, mining_threads_count = 0, is_pool = 0, is_miner = 0, level, is_rpc = 0, rpc_port = 0;
 	
 	memset(addrports, 0, 256);
 	
@@ -61,12 +60,15 @@ int xdag_init(int argc, char **argv, int isGui)
 	signal(SIGINT, SIG_IGN);
 	signal(SIGTERM, SIG_IGN);
 #endif
-	g_progname = strdup(argv[0]);
-	while ((ptr = strchr(g_progname, '/')) || (ptr = strchr(g_progname, '\\'))) g_progname = ptr + 1;
-	if ((ptr = strchr(g_progname, '.'))) *ptr = 0;
-	for (ptr = g_progname; *ptr; ptr++) *ptr = tolower((unsigned char)*ptr);
-	coinname = strdup(g_progname);
-	for (ptr = coinname; *ptr; ptr++) *ptr = toupper((unsigned char)*ptr);
+
+	char *filename = xdag_filename(argv[0]);
+
+	g_progname = strdup(filename);
+	g_coinname = strdup(filename);
+	free(filename);
+
+	xdag_str_toupper(g_coinname);
+	xdag_str_tolower(g_progname);
 
 	if (!isGui) {
 		printf("%s client/server, version %s.\n", g_progname, XDAG_VERSION);
@@ -110,8 +112,8 @@ int xdag_init(int argc, char **argv, int isGui)
 			return out_balances();
 		} else if(ARG_EQUAL(argv[i], "-m", "")) { /* mining thread number */
 			if (++i < argc) {
-				sscanf(argv[i], "%d", &n_mining_threads);
-				if (n_mining_threads < 0) n_mining_threads = 0;
+				sscanf(argv[i], "%d", &mining_threads_count);
+				if (mining_threads_count < 0) mining_threads_count = 0;
 			}
 		} else if(ARG_EQUAL(argv[i], "-p", "")) { /* public address & port */
 			if (++i < argc)
@@ -201,7 +203,7 @@ int xdag_init(int argc, char **argv, int isGui)
 		if(!!xdag_rpc_service_init(rpc_port)) return -1;
 	}
 	xdag_mess("Starting blocks engine...");
-	if (xdag_blocks_start((is_miner ? ~n_mining_threads : n_mining_threads), !!miner_address)) return -1;
+	if (xdag_blocks_start(g_is_pool, mining_threads_count, !!miner_address)) return -1;
 	xdag_mess("Starting pool engine...");
 	if (xdag_initialize_mining(pool_arg, miner_address)) return -1;
 

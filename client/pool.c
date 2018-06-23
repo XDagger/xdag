@@ -132,6 +132,8 @@ static uint32_t g_connections_count = 0;
 static double g_pool_fee = 0, g_pool_reward = 0, g_pool_direct = 0, g_pool_fund = 0;
 static struct xdag_block *g_firstb = 0, *g_lastb = 0;
 
+static int g_stop_general_mining = 1;
+
 static struct miner_pool_data g_pool_miner;
 static struct miner_pool_data g_fund_miner;
 static struct pollfd *g_fds;
@@ -146,6 +148,7 @@ static pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 int pay_miners(xdag_time_t time);
 void remove_inactive_miners(void);
 
+void *general_mining_thread(void *arg);
 void *pool_net_thread(void *arg);
 void *pool_main_thread(void *arg);
 void *pool_block_thread(void *arg);
@@ -214,6 +217,37 @@ int xdag_initialize_pool(const char *pool_arg)
 		printf("detach pool_remove_inactive_connections failed: %s\n", strerror(err));
 		return -1;
 	}
+
+	xdag_mess("Starting general mining thread...");
+
+	g_stop_general_mining = 0;
+
+	err = pthread_create(&th, 0, general_mining_thread, 0);
+	if(err != 0) {
+		printf("create general_mining_thread failed, error : %s\n", strerror(err));
+		return -1;
+	}
+
+	err = pthread_detach(th);
+	if(err != 0) {
+		printf("detach general_mining_thread failed, error : %s\n", strerror(err));
+		return -1;
+	}
+
+	return 0;
+}
+
+void *general_mining_thread(void *arg)
+{
+	while(!g_xdag_sync_on && !g_stop_general_mining) {
+		sleep(1);
+	}
+
+	while(!g_stop_general_mining) {
+		xdag_create_block(0, 0, 0, 0, xdag_main_time() << 16 | 0xffff, NULL);
+	}
+
+	xdag_mess("Stopping general mining thread...");
 
 	return 0;
 }

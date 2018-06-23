@@ -21,6 +21,8 @@
 #include "address.h"
 #include "commands.h"
 #include "utils/utils.h"
+#include "utils/moving_statistics/moving_average.h"
+#include "mining_common.h"
 
 #define MAIN_CHAIN_PERIOD       (64 << 10)
 #define MAX_WAITING_MAIN        1
@@ -34,6 +36,11 @@
 #define MAX_LINKS               15
 #define MAKE_BLOCK_PERIOD       13
 #define QUERY_RETRIES           2
+
+#define CACHE			1
+#define CACHE_MAX_SIZE		5000000
+#define CACHE_MAX_SAMPLES	100
+#define OPENSSL			0 // 0 disactivate, 1 activated, 2 test openssl vs secp256k1
 
 enum bi_flags {
 	BI_MAIN         = 0x01,
@@ -70,13 +77,31 @@ struct block_backrefs {
 #define ourprev link[MAX_LINKS - 2]
 #define ournext link[MAX_LINKS - 1]
 
+struct cache_block {
+	struct ldus_rbtree node;
+	xdag_hash_t hash;
+	struct xdag_block block;
+	struct cache_block *next;
+};
+
+
 static xdag_amount_t g_balance = 0;
 static xdag_time_t time_limit = DEF_TIME_LIMIT, xdag_era = XDAG_MAIN_ERA;
-static struct ldus_rbtree *root = 0;
+static struct ldus_rbtree *root = 0, *cache_root = 0;
 static struct block_internal *volatile top_main_chain = 0, *volatile pretop_main_chain = 0;
 static struct block_internal *ourfirst = 0, *ourlast = 0, *noref_first = 0, *noref_last = 0;
+static struct cache_block *cache_first = NULL, *cache_last = NULL;
 static pthread_mutex_t block_mutex;
+//TODO: this variable duplicates existing global variable g_is_pool. Probably should be removed
 static int g_light_mode = 0;
+static uint32_t cache_bounded_counter = 0;
+
+//functions
+void cache_retarget(int32_t, int32_t);
+void cache_add(struct xdag_block*, xdag_hash_t);
+int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
+int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
+static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
 
 // returns a time period index, where a period is 64 seconds long
 xdag_time_t xdag_main_time(void)
@@ -101,6 +126,12 @@ static inline struct block_internal *block_by_hash(const xdag_hashlow_t hash)
 {
 	return (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
 }
+
+static inline struct cache_block *cache_block_by_hash(const xdag_hashlow_t hash)
+{
+        return (struct cache_block *)ldus_rbtree_find(cache_root, (struct ldus_rbtree *)hash - 1);
+}
+
 
 static void log_block(const char *mess, xdag_hash_t h, xdag_time_t t, uint64_t pos)
 {
@@ -353,7 +384,21 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int keysLeng
 	if (signo_s >= 0) {
 		for (i = 0; i < keysLength; ++i) {
 			hash_for_signature(buf, keys + i, hash);
+
+#if OPENSSL == 0
+			if (!xdag_verify_signature_noopenssl(keys[i].pub, hash, b->field[signo_r].data, b->field[signo_s].data)) {
+#elif OPENSSL == 2
+			int res1=0,res2=0;
+			res1=!xdag_verify_signature_noopenssl(keys[i].pub, hash, b->field[signo_r].data, b->field[signo_s].data);
+			res2=!xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data);
+			if (res1!=res2){
+				xdag_debug("Different result between openssl and secp256k1: res openssl=%2d res secp256k1=%2d key parity bit = %ld key=[%s] hash=[%s] r=[%s], s=[%s]", res2, res1, ((uintptr_t)keys[i].pub & 1), 
+                                                                        xdag_log_hash((uint64_t*)((uintptr_t)keys[i].pub & ~1l)) , xdag_log_hash(hash), xdag_log_hash(b->field[signo_r].data), xdag_log_hash(b->field[signo_s].data));
+			}
+			if(res2){
+#else
 			if (!xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data)) {
+#endif
 				return i;
 			}
 		}
@@ -380,7 +425,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	uint64_t sum_in = 0, sum_out = 0, *psum;
 	const uint64_t transportHeader = newBlock->field[0].transport_header;
 	struct xdag_public_key public_keys[16], *our_keys = 0;
-	int i, j, k;
+	int i, j;
 	int keysCount = 0, ourKeysCount = 0;
 	int signInCount = 0, signOutCount = 0;
 	int signinmask = 0, signoutmask = 0;
@@ -482,6 +527,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		}
 	}
 
+	int32_t cache_hit = 0, cache_miss = 0;
+
 	keysCount = j;
 	tmpNodeBlock.difficulty = diff0 = xdag_hash_difficulty(tmpNodeBlock.hash);
 	sum_out += newBlock->field[0].amount;
@@ -504,23 +551,17 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 			}
 			if (1 << i & inmask) {
 				if (newBlock->field[i].amount) {
-					struct xdag_block buf;
-					struct xdag_block *bref = xdag_storage_load(blockRef->hash, blockRef->time, blockRef->storage_pos, &buf);
-					if (!bref) {
-						err = 8;
+					int32_t res = 1;
+					if(CACHE){
+						res = check_signature_out_cached(blockRef, public_keys, keysCount, &cache_hit, &cache_miss);		
+					} else {
+						res = check_signature_out(blockRef, public_keys, keysCount);
+					}
+					if(res){
+						err = res;
 						goto end;
 					}
 
-					for (j = k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
-						if (xdag_type(bref, j) == XDAG_FIELD_SIGN_OUT && (++k & 1)
-							&& valid_signature(bref, j, keysCount, public_keys) >= 0) {
-							break;
-						}
-					}
-					if (j == XDAG_BLOCK_FIELDS) {
-						err = 9;
-						goto end;
-					}
 				}
 				psum = &sum_in;
 				tmpNodeBlock.in_mask |= 1 << tmpNodeBlock.nlinks;
@@ -559,6 +600,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		}
 	}
 
+	if(CACHE)
+		cache_retarget(cache_hit, cache_miss);
+
 	if (tmpNodeBlock.in_mask ? sum_in < sum_out : sum_out != newBlock->field[0].amount) {
 		err = 0xB;
 		goto end;
@@ -570,6 +614,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		err = 0xC; 
 		goto end;
 	}
+
+	if(CACHE && signOutCount)
+		cache_add(newBlock, tmpNodeBlock.hash); 
 
 	if (!(transportHeader & (sizeof(struct xdag_block) - 1))) {
 		tmpNodeBlock.storage_pos = transportHeader;
@@ -787,7 +834,8 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	
 	if (g_light_mode) {
 		if (res < XDAG_BLOCK_FIELDS && ourfirst) {
-			setfld(XDAG_FIELD_OUT, ourfirst->hash, xdag_hashlow_t); res++;
+			setfld(XDAG_FIELD_OUT, ourfirst->hash, xdag_hashlow_t); 
+			res++;
 		}
 	} else {
 		if (res < XDAG_BLOCK_FIELDS && mining && pretop && pretop->time < send_time) {
@@ -1045,7 +1093,7 @@ static void *work_thread(void *arg)
 		if (g_xdag_state == XDAG_STATE_REST) {
 			g_xdag_sync_on = 0;
 			pthread_mutex_unlock(&block_mutex);
-			xdag_mining_start(g_light_mode ? ~0 : 0);
+			xdag_mining_start(0);
 
 			while (get_timestamp() - t < MAIN_CHAIN_PERIOD + (3 << 10)) {
 				sleep(1);
@@ -1116,10 +1164,10 @@ static void *work_thread(void *arg)
 
 /* start of regular block processing
  * n_mining_threads - the number of threads for mining on the CPU;
- *   for the light node n_mining_threads < 0 and the number of threads is equal to ~n_mining_threads;
+ *   for the light node is_pool == 0;
  * miner_address = 1 - the address of the miner is explicitly set
  */
-int xdag_blocks_start(int n_mining_threads, int miner_address)
+int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address)
 {
 	pthread_mutexattr_t attr;
 	pthread_t th;
@@ -1128,7 +1176,7 @@ int xdag_blocks_start(int n_mining_threads, int miner_address)
 		xdag_era = XDAG_TEST_ERA;
 	}
 
-	if (n_mining_threads < 0) {
+	if (!is_pool) {
 		g_light_mode = 1;
 	}
 
@@ -1139,7 +1187,7 @@ int xdag_blocks_start(int n_mining_threads, int miner_address)
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&block_mutex, &attr);
-	int err = pthread_create(&th, 0, work_thread, (void*)(uintptr_t)(unsigned)n_mining_threads);
+	int err = pthread_create(&th, 0, work_thread, (void*)(uintptr_t)(unsigned)mining_threads_count);
 	if(err != 0) {
 		printf("create work_thread failed, error : %s\n", strerror(err));
 		return -1;
@@ -1478,48 +1526,46 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	return 0;
 }
 
-void xdag_print_block_list(struct block_internal **block_list, int count, int print_only_addresses, FILE *out)
+static inline void print_block(struct block_internal *block, int print_only_addresses, FILE *out)
 {
 	char address[33];
 	char time_buf[64];
 
-	if(!print_only_addresses) {
-		fprintf(out, "-----------------------------------------------------------------------\n");
-		fprintf(out, "address                            time                      state\n");
-		fprintf(out, "-----------------------------------------------------------------------\n");
-	}
+	xdag_hash2address(block->hash, address);
 
-	for(int i = 0; i < count; ++i) {
-		struct block_internal *block = block_list[i];
-		xdag_hash2address(block->hash, address);
-
-		if(print_only_addresses) {
-			fprintf(out, "%s\n", address);
-		} else {
-			xdag_time_to_string(block->time, time_buf);
-			fprintf(out, "%s   %s   %s\n", address, time_buf, get_block_state_info(block));
-		}
+	if(print_only_addresses) {
+		fprintf(out, "%s\n", address);
+	} else {
+		xdag_time_to_string(block->time, time_buf);
+		fprintf(out, "%s   %s   %s\n", address, time_buf, get_block_state_info(block));
 	}
+}
+
+static inline void print_header_block_list(FILE *out)
+{
+	fprintf(out, "-----------------------------------------------------------------------\n");
+	fprintf(out, "address                            time                      state\n");
+	fprintf(out, "-----------------------------------------------------------------------\n");
 }
 
 // prints list of N last main blocks
 void xdag_list_main_blocks(int count, int print_only_addresses, FILE *out)
 {
 	int i = 0;
-	struct block_internal **block_list = malloc(count * sizeof(struct block_internal *));
-	if(!block_list) return;
+	if(!print_only_addresses) {
+		print_header_block_list(out);
+	}
 
 	pthread_mutex_lock(&block_mutex);
+
 	for (struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
 		if (b->flags & BI_MAIN) {
-			block_list[i++] = b;
+			print_block(b, print_only_addresses, out);
+			++i;
 		}
 	}
+
 	pthread_mutex_unlock(&block_mutex);
-
-	xdag_print_block_list(block_list, i, print_only_addresses, out);
-
-	free(block_list);
 }
 
 // prints list of N last blocks mined by current pool
@@ -1527,18 +1573,122 @@ void xdag_list_main_blocks(int count, int print_only_addresses, FILE *out)
 void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out)
 {
 	int i = 0;
-	struct block_internal **block_list = malloc(count * sizeof(struct block_internal *));
-	if(!block_list) return;
+	print_header_block_list(out);
 
 	pthread_mutex_lock(&block_mutex);
+
 	for(struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
 		if(b->flags & BI_MAIN && b->flags & BI_OURS) {
-			block_list[i++] = b;
+			print_block(b, 0, out);
+			++i;
 		}
 	}
+
 	pthread_mutex_unlock(&block_mutex);
+}
 
-	xdag_print_block_list(block_list, i, 0, out);
 
-	free(block_list);
+void cache_retarget(int32_t cache_hit, int32_t cache_miss){
+        if(g_xdag_extstats.cache_usage >= g_xdag_extstats.cache_size){
+                if (g_xdag_extstats.cache_hitrate<0.94 && g_xdag_extstats.cache_size*2 <= CACHE_MAX_SIZE){
+                        if(!g_xdag_extstats.cache_size && CACHE_MAX_SIZE){
+                                g_xdag_extstats.cache_size++;
+                        }
+                        else{
+                                g_xdag_extstats.cache_size = g_xdag_extstats.cache_size*2;
+                        }
+                }
+                else if(g_xdag_extstats.cache_hitrate>0.98 && !cache_miss && g_xdag_extstats.cache_size){
+                        g_xdag_extstats.cache_size--;
+                }
+                for(int l=g_xdag_extstats.cache_usage;l>g_xdag_extstats.cache_size;l--){
+                        if(cache_first != NULL){
+                                struct cache_block* to_free = cache_first;
+                                cache_first = cache_first->next;
+                                if(cache_first == NULL){
+                                        cache_last = NULL;
+                                }
+                                ldus_rbtree_remove(&cache_root,&to_free->node);
+                                free(to_free);
+                                g_xdag_extstats.cache_usage--;
+                        }else{
+                                break;
+				xdag_warn("Non critical error, break in for [function: cache_retarget]");
+                        }
+                }
+
+        }
+        else if(g_xdag_extstats.cache_hitrate>0.98 && !cache_miss && g_xdag_extstats.cache_size){
+                       g_xdag_extstats.cache_size--;
+        }
+        if((uint32_t)(g_xdag_extstats.cache_size/0.9) > CACHE_MAX_SIZE){
+                g_xdag_extstats.cache_size=(uint32_t)(g_xdag_extstats.cache_size*0.9);
+        }
+        if(cache_hit+cache_miss > 0){
+                if(cache_bounded_counter<CACHE_MAX_SAMPLES)
+                        cache_bounded_counter++;
+                g_xdag_extstats.cache_hitrate = moving_average_double(g_xdag_extstats.cache_hitrate, (double)((cache_hit)/(cache_hit+cache_miss)), cache_bounded_counter);
+
+        }
+}
+
+void cache_add(struct xdag_block* block, xdag_hash_t hash){
+        if(g_xdag_extstats.cache_usage<=CACHE_MAX_SIZE){
+                struct cache_block *cacheBlock = malloc(sizeof(struct cache_block));
+                if(cacheBlock != NULL){
+                        memset(cacheBlock, 0, sizeof(struct cache_block));
+                        memcpy(&(cacheBlock->block), block, sizeof(struct xdag_block));
+                        memcpy(&(cacheBlock->hash), hash, sizeof(xdag_hash_t));
+
+                        if(cache_first == NULL) 
+                                cache_first = cacheBlock;
+                        if(cache_last != NULL)
+                                cache_last->next = cacheBlock;
+                        cache_last = cacheBlock;
+                        ldus_rbtree_insert(&cache_root, &cacheBlock->node);
+                        g_xdag_extstats.cache_usage++;
+                }else{
+                        xdag_warn("cache malloc failed [function: cache_add]");
+                }
+        }else{
+                xdag_warn("maximum cache reached [function: cache_add]");
+        }
+
+}
+
+
+int32_t check_signature_out_cached(struct block_internal* blockRef, struct xdag_public_key *public_keys, const int keysCount, int32_t *cache_hit, int32_t *cache_miss){
+	struct cache_block *bref = cache_block_by_hash(blockRef->hash);
+	if(bref != NULL){
+		(*cache_hit)++;
+	        return  find_and_verify_signature_out(&(bref->block), public_keys, keysCount);
+	}else{
+		(*cache_miss)++;
+		return check_signature_out(blockRef, public_keys, keysCount);
+
+	}
+}
+
+int32_t check_signature_out(struct block_internal* blockRef, struct xdag_public_key *public_keys, const int keysCount){
+	struct xdag_block buf;
+	struct xdag_block *bref = xdag_storage_load(blockRef->hash, blockRef->time, blockRef->storage_pos, &buf);
+	if (!bref) {
+		return 8;
+	}
+	return	find_and_verify_signature_out(bref, public_keys, keysCount);
+}
+
+
+static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xdag_public_key *public_keys, const int keysCount){
+	int j = 0;
+        for (int k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
+                if (xdag_type(bref, j) == XDAG_FIELD_SIGN_OUT && (++k & 1)
+                                && valid_signature(bref, j, keysCount, public_keys) >= 0) {
+                        break;
+                }
+        }
+        if (j == XDAG_BLOCK_FIELDS) {
+                return 9;
+        }
+	return 0;
 }
