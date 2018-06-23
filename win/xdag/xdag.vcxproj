@@ -5,6 +5,14 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_profiling|Win32">
+      <Configuration>Release_profiling</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_profiling|x64">
+      <Configuration>Release_profiling</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -50,6 +58,13 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_profiling|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -57,6 +72,13 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_profiling|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
@@ -74,10 +96,16 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_profiling|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_profiling|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -96,7 +124,17 @@
     <LibraryPath>$(OPENSSL_ROOT_32)\lib\VC\static;$(PTHREAD_ROOT)\lib\x86;$(OutDir);$(LibraryPath)</LibraryPath>
     <IncludePath>$(OPENSSL_ROOT_32)\include;$(PTHREAD_ROOT)\Include;$(SolutionDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_profiling|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <LibraryPath>$(OPENSSL_ROOT_32)\lib\VC\static;$(PTHREAD_ROOT)\lib\x86;$(OutDir);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(OPENSSL_ROOT_32)\include;$(PTHREAD_ROOT)\Include;$(SolutionDir);$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(OPENSSL_ROOT)\include;$(PTHREAD_ROOT)\Include;$(SolutionDir);$(IncludePath)</IncludePath>
+    <LibraryPath>$(OPENSSL_ROOT)\lib\VC\static;$(PTHREAD_ROOT)\lib\x64;$(OutDir);$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_profiling|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(OPENSSL_ROOT)\include;$(PTHREAD_ROOT)\Include;$(SolutionDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(OPENSSL_ROOT)\lib\VC\static;$(PTHREAD_ROOT)\lib\x64;$(OutDir);$(LibraryPath)</LibraryPath>
@@ -174,6 +212,32 @@ copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testn
 copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_profiling|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;DFSTOOLS;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <DebugInformationFormat>None</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;xdaglib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>40000000</StackReserveSize>
+      <StackCommitSize>1000000</StackCommitSize>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy $(PTHREAD_ROOT)dll\x86\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
+copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -197,6 +261,36 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
     </Link>
     <PostBuildEvent>
       <Command>copy $(PTHREAD_ROOT)dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
+copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y
+copy $(SolutionDir)..\client\netdb.txt "$(OutDir)netdb.txt" /Y
+copy $(SolutionDir)..\client\netdb-testnet.txt "$(OutDir)netdb-testnet.txt" /Y
+copy $(SolutionDir)..\client\netdb-white.txt "$(OutDir)netdb-white.txt" /Y
+copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testnet.txt" /Y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_profiling|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;DFSTOOLS;HAVE_STRUCT_TIMESPEC;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;xdaglib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>40000000</StackReserveSize>
+      <StackCommitSize>1000000</StackCommitSize>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy $(PTHREAD_ROOT)\dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
 copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y
 copy $(SolutionDir)..\client\netdb.txt "$(OutDir)netdb.txt" /Y
 copy $(SolutionDir)..\client\netdb-testnet.txt "$(OutDir)netdb-testnet.txt" /Y

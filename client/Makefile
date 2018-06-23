@@ -121,14 +121,15 @@ headers = \
 	./json-rpc/rpc_wrapper.h		\
 	./http/url.h					\
 	./http/http.h					\
+	$(rpc)/httprpc.h
 
 
 
 ifeq ($(OS), Darwin)
 
-	flags = -std=gnu11  -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g3 -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -levent
+	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -levent -Wall -Wmissing-prototypes -Wno-unused-result
 else
-	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl -levent,--export-dynamic
+	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -levent -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
 
 endif
 

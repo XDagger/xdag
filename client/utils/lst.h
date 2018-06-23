@@ -29,7 +29,7 @@ typedef struct{          /* Header for a linked list. */
 
 
 /* function declarations */
-extern void     lstLibInit (LIST *pList);
+extern void     lstInit (LIST *pList);
 extern NODE *   lstFirst (LIST *pList);
 extern NODE *   lstGet (LIST *pList);
 extern NODE *   lstLast (LIST *pList);

@@ -4,8 +4,6 @@
 #define XDAG_HTTP_RPC_H
 
 extern int http_rpc_start(const char *username ,const char *passwd, int port);
-extern int rpc_white_host_add(const char *host);
-extern int rpc_wihte_host_del(const char *host);
-
+extern int http_rpc_command(void *out, char *type, const char *address);
 
 #endif

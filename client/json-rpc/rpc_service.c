@@ -84,24 +84,6 @@ static char *encode_rpc_error(int code, char* message, cJSON * id, char *version
 	return str_result;
 }
 
-static char *encode_rpc_result(cJSON * result, cJSON * id, char *version) {
-
-	cJSON *result_root = cJSON_CreateObject();
-	if(result) {
-		cJSON_AddItemToObject(result_root, "result", result);
-	}
-	cJSON_AddItemToObject(result_root, "error", NULL);
-	cJSON_AddItemToObject(result_root, "id", id);
-
-	if(strcmp(version, "2.0")==0) {
-		cJSON_AddItemToObject(result_root, "jsonrpc", cJSON_CreateString(version));
-	} else if(strcmp(version, "1.1")==0) {
-		cJSON_AddItemToObject(result_root, "version", cJSON_CreateString(version));
-	}
-
-	return cJSON_Print(result_root);
-}
-
 static int send_error(struct xdag_rpc_connection * conn, int code, char* message, cJSON * id, char *version) {
 	int return_value = 0;
 	cJSON *result_root = cJSON_CreateObject();
@@ -123,6 +105,24 @@ static int send_error(struct xdag_rpc_connection * conn, int code, char* message
 	cJSON_Delete(result_root);
 	free(message);
 	return return_value;
+}
+
+static char *encode_rpc_result(cJSON * result, cJSON * id, char *version) {
+
+	cJSON *result_root = cJSON_CreateObject();
+	if(result) {
+		cJSON_AddItemToObject(result_root, "result", result);
+	}
+	cJSON_AddItemToObject(result_root, "error", NULL);
+	cJSON_AddItemToObject(result_root, "id", id);
+
+	if(strcmp(version, "2.0")==0) {
+		cJSON_AddItemToObject(result_root, "jsonrpc", cJSON_CreateString(version));
+	} else if(strcmp(version, "1.1")==0) {
+		cJSON_AddItemToObject(result_root, "version", cJSON_CreateString(version));
+	}
+
+	return cJSON_Print(result_root);
 }
 
 static int send_result(struct xdag_rpc_connection * conn, cJSON * result, cJSON * id, char *version) {
@@ -161,6 +161,7 @@ static void xdag_rpc_service_procedure_destroy(struct xdag_rpc_procedure *proced
 
 int xdag_rpc_service_register_procedure(xdag_rpc_function function_pointer, char *name, void * data) {
 	int i = g_procedure_count++;
+	printf("[%s]get g_procedure_count :%d:name :%s\n",__FUNCTION__,g_procedure_count,name);
 	if(!g_procedures) {
 		g_procedures = malloc(sizeof(struct xdag_rpc_procedure));
 	} else {
@@ -278,10 +279,9 @@ static char * invoke_procedure_ex(char *name, cJSON *params, cJSON *id, char *ve
 	ctx.error_code = 0;
 	ctx.error_message = NULL;
 	int i = g_procedure_count;
-	xdag_crit("get g_procedure_count :%d\n",g_procedure_count);
+
 	while (i--) {
 
-		xdag_crit("get name :%s,cmd:%s\n",name,g_procedures[i].name);
 		if(!strcmp(g_procedures[i].name, name)) {
 			procedure_found = 1;
 			ctx.data = g_procedures[i].data;
@@ -296,6 +296,7 @@ static char * invoke_procedure_ex(char *name, cJSON *params, cJSON *id, char *ve
 		if(ctx.error_code) {
 			presult =  encode_rpc_error(ctx.error_code, ctx.error_message, id, version);
 		} else {
+
 			presult = encode_rpc_result(returned, id, version);
 		}
 	}
@@ -313,7 +314,7 @@ int xdag_rpc_command_procedure(const char *data, char **result)
 	if((root = cJSON_ParseWithOpts(data, &end_ptr, 0)) != NULL) {
 
 		char * str_result = cJSON_Print(root);
-		xdag_crit("JSON Received:\n%s\n", str_result);
+		printf("JSON Received:\n%s\n", str_result);
 		free(str_result);
 
 		if(root->type == cJSON_Object) {
@@ -340,7 +341,7 @@ int xdag_rpc_command_procedure(const char *data, char **result)
 						if(id != NULL) {
 							id_copy = (id->type == cJSON_String) ? cJSON_CreateString(id->valuestring):cJSON_CreateNumber(id->valueint);
 						}
-						xdag_crit("Method Invoked: %s\n", method->valuestring);
+						printf("Method Invoked: %s\n", method->valuestring);
 						*result = invoke_procedure_ex(method->valuestring, params, id_copy, version);
 					}
 				}

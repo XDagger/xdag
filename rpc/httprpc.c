@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
+#include <string.h>
 #endif
 #include <sys/stat.h>
 
@@ -83,7 +84,7 @@ LIST g_httproc_white_host;
 typedef struct {
   NODE node;
   char addr[HTTP_RPC_ADDR_LEN];
-}rpc_wihte_host;
+}rpc_white_host;
 
 /***********************************************
 *
@@ -91,18 +92,49 @@ typedef struct {
 *
 ************************************************/
 
-int rpc_white_host_add(const char *host){
-  rpc_wihte_host *new_white_host = NULL;
+static int rpc_host_addr_check_ipv4(const char *host){
 
-  if (lstCount(&g_httproc_white_host) >= HTTP_RPC_WHITE_MAX){
-    xdag_err("white list number is up to maximum");
+  int n[4];
+  char c[4];
+
+  if (!host){
+    return 0;
+  }
+
+  if (sscanf(host, "%d%c%d%c%d%c%d%c",
+             &n[0], &c[0], &n[1], &c[1],
+             &n[2], &c[2], &n[3], &c[3]) == 7)
+
+  {
+    int i;
+    for(i = 0; i < 3; ++i)
+      if (c[i] != '.')
+        return 0;
+    for(i = 0; i < 4; ++i)
+      if (n[i] > 255 || n[i] < 0)
+        return 0;
+    return 1;
+  } else
+    return 0;
+}
+
+static int rpc_white_host_add(const char *host){
+  rpc_white_host *new_white_host = NULL;
+
+  if (!rpc_host_addr_check_ipv4(host)){
+    xdag_err("ip address is invalid");
     return -1;
   }
 
-  new_white_host = malloc(sizeof(rpc_wihte_host));
+  if (lstCount(&g_httproc_white_host) >= HTTP_RPC_WHITE_MAX){
+    xdag_err("white list number is up to maximum");
+    return -2;
+  }
+
+  new_white_host = malloc(sizeof(rpc_white_host));
   if (NULL == new_white_host){
     xdag_err("memories is not enough.");
-    return -2;
+    return -3;
   }
 
   strcpy(new_white_host->addr, host);
@@ -112,27 +144,55 @@ int rpc_white_host_add(const char *host){
   return 0;
 }
 
-int rpc_wihte_host_del(const char *host){
+static int rpc_white_host_del(const char *host){
 
   NODE *node = NULL;
-  rpc_wihte_host *delNode = NULL;
+  rpc_white_host *del_node = NULL;
 
   node = lstFirst(&g_httproc_white_host);
   while (NULL != node){
-    if (0 == strcmp(host ,((rpc_wihte_host *)node)->addr)){
-        delNode = (rpc_wihte_host *)node;
+    if (0 == strcmp(host ,((rpc_white_host *)node)->addr)){
+        del_node = (rpc_white_host *)node;
         break;
     }
+
+    node = lstNext(node);
   }
 
-  if (NULL == delNode){
-    lstDelete(&g_httproc_white_host, (NODE *)delNode);
+  if (NULL != del_node){
+    lstDelete(&g_httproc_white_host, (NODE *)del_node);
     return 0;
   }else{
     return -1;
   }
 }
 
+static char  *rpc_white_host_query(){
+
+    static int white_host_num = 0;
+    static char result[HTTP_RPC_WHITE_MAX * HTTP_RPC_ADDR_LEN] = {0};
+    int new_numer = 0;
+    NODE *node = NULL;
+    rpc_white_host *host = NULL;
+
+    new_numer = lstCount(&g_httproc_white_host);
+    if (!white_host_num || new_numer != white_host_num){
+      node = lstFirst(&g_httproc_white_host);
+      while (NULL != node){
+
+        char new_host[HTTP_RPC_ADDR_LEN] = {0};
+
+        host = (rpc_white_host *)node;
+        sprintf(new_host,"[%s]",host->addr);
+        strcat(result, new_host);
+        node = lstNext(node);
+      }
+    }
+
+    return result;
+}
+
+/* password as key, username do hmac-sha256,then convert base64 */
 static int http_rpc_authorized(const char *auth_string){
 
     unsigned char result[HTTP_RPC_AUTH_LEN] = {0};
@@ -222,10 +282,9 @@ static const char *request_get_head(struct evhttp_request *req, const char *key)
 	return val;
 }
 
-
-static void   http_rpc_request_handle(struct evhttp_request *req, void *arg)
+static void  http_rpc_request_handle(struct evhttp_request *req, void *arg)
 {
-	int auth = 0, iswhitehost = 1,ret = 0;
+	int auth = 0, iswhitehost = 0,ret = 0;
 	char *pbody = NULL,*result = NULL;
   const char *pauth = NULL;
   NODE *ptr = NULL;
@@ -234,15 +293,18 @@ static void   http_rpc_request_handle(struct evhttp_request *req, void *arg)
   /* ip white list */
   if (lstCount(&g_httproc_white_host) > 0){
 
-    for (ptr = lstFirst(&g_httproc_white_host); NULL != ptr; ptr = lstNext(ptr)){
-      if (0 == strcmp(req->remote_host ,((rpc_wihte_host *)ptr)->addr)){
+    ptr = lstFirst(&g_httproc_white_host);
+    while ( NULL != ptr){
+      if (0 == strcmp(req->remote_host ,((rpc_white_host *)ptr)->addr)){
+        iswhitehost = 1;
         break;
       }
+      ptr = lstNext(ptr);
     }
-    iswhitehost = 0;
   }
 
   if (0 == iswhitehost){
+    xdag_crit("[%s]receive request from:%s, not allowed\n",__FUNCTION__, req->remote_host);
     evhttp_send_reply(req, HTTPRPC_UNAUTHORIZED, "not allow to request", NULL);
     return;
   }
@@ -266,7 +328,6 @@ static void   http_rpc_request_handle(struct evhttp_request *req, void *arg)
 		return;
 	}
 
-  printf("[%s][%d]receive json messge:%s\n",__FUNCTION__,__LINE__, pbody);
   ret = xdag_rpc_command_procedure(pbody, &result);
   if (0 != ret){
     evhttp_send_reply(req,HTTPRPC_BAD_REQUEST,"request need json string",NULL);
@@ -375,3 +436,38 @@ int http_rpc_start(const char *username ,const char *passwd, int port){
   return 0;
 }
 
+int http_rpc_command(void *out, char *type, const char *address){
+
+  int result = 0;
+  char *list = NULL;
+
+  if (!strcmp("-a", type)){
+    result = rpc_white_host_add (address);
+    switch (result){
+      case 0:
+        fprintf(out, "add address[%s] success \n", address);
+        break;
+      case -1:
+        fprintf(out, "add address[%s] failed:address is invalid \n", address);
+        break;
+      case -2:
+        fprintf(out, "add address[%s] failed:only allow 8 address \n", address);
+        break;
+      default:
+        fprintf(out, "add address[%s] failed:system error ,tray again later\n", address);
+    }
+  }else if (!strcmp("-d", type)){
+    result = rpc_white_host_del (address);
+    if (0 == result){
+      fprintf(out, "delete address[%s] success \n", address);
+    }else{
+      fprintf(out, "delete address[%s] failed \n", address);
+    }
+  }else if (!strcmp("-l", type)){
+    list = rpc_white_host_query();
+    fprintf(out, "white address are:%s\n", list );
+  }else{
+    return -1;
+  }
+  return 0;
+}

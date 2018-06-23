@@ -338,3 +338,4 @@ int xdag_rpc_init_procedures(void)
 	rpc_register_func(xdag_do_xfer);
 	return 0;
 }
+
