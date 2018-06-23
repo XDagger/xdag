@@ -368,7 +368,7 @@ int xdag_mkdir(const char *path)
 
 long double log_difficulty2hashrate(long double log_diff)
 {
-        return ldexpl(expl(log_diff), -58)*(0.65);
+	return ldexpl(expl(log_diff), -58)*(0.65);
 }
 
 void xdag_str_toupper(char *str)
@@ -412,3 +412,23 @@ char *xdag_filename(char *_filename)
 	return filename;
 }
 
+// convert time to string representation
+// minimal length of string buffer `buf` should be 60
+void xdag_time_to_string(xdag_time_t time, char *buf)
+{
+	struct tm tm;
+	char tmp[64];
+	time_t t = time >> 10;
+	localtime_r(&t, &tm);
+	strftime(tmp, 60, "%Y-%m-%d %H:%M:%S", &tm);
+	sprintf(buf, "%s.%03d", tmp, (int)((time & 0x3ff) * 1000) >> 10);
+}
+
+// convert time to string representation
+// minimal length of string buffer `buf` should be 50
+void time_to_string(time_t time, char* buf)
+{
+	struct tm tm;
+	localtime_r(&time, &tm);
+	strftime(buf, 50, "%Y-%m-%d %H:%M:%S", &tm);
+}

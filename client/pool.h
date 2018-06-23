@@ -30,6 +30,9 @@ extern int xdag_pool_set_config(const char *pool_config);
 /* output to the file a list of miners */
 extern int xdag_print_miners(FILE *out, int printOnlyConnections);
 
+// prints miner's stats
+extern int xdag_print_miner_stats(const char* address, FILE *out);
+
 // disconnect connections by condition
 // condition type: all, ip or address
 // value: address of ip depending on type

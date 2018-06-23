@@ -380,6 +380,9 @@
     <ClInclude Include="..\..\client\utils\moving_statistics\moving_average.h">
       <Filter>client\utils\moving_statitics</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\client\types.h">
+      <Filter>client</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\client\netdb-testnet.txt">

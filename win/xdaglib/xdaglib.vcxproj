@@ -98,6 +98,7 @@
     <ClInclude Include="..\..\client\system.h" />
     <ClInclude Include="..\..\client\terminal.h" />
     <ClInclude Include="..\..\client\transport.h" />
+    <ClInclude Include="..\..\client\types.h" />
     <ClInclude Include="..\..\client\uthash\uthash.h" />
     <ClInclude Include="..\..\client\uthash\utlist.h" />
     <ClInclude Include="..\..\client\utils\log.h" />
