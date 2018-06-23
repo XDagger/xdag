@@ -405,13 +405,12 @@ void processMiningCommand(char *nextParam, FILE *out)
 
 void processMinerCommand(char *nextParam, FILE *out)
 {
-	xdag_hash_t hash;
 	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
 	if(cmd) {
 		size_t len = strlen(cmd);
 		if(len == 32) {
-			if(xdag_print_miner_stats(hash, out)) {
-				fprintf(out, "Block is not found.\n");
+			if(!xdag_print_miner_stats(cmd, out)) {
+				fprintf(out, "Miner is not found.\n");
 			}
 		} else {
 			fprintf(out, "Argument is incorrect.\n");

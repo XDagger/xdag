@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "hash.h"
 #include "system.h"
+#include "types.h"
 
 enum xdag_field_type {
 	XDAG_FIELD_NONCE,        //0
@@ -31,9 +32,6 @@ enum xdag_message_type {
 };
 
 #define XDAG_BLOCK_FIELDS 16
-
-typedef uint64_t xdag_time_t;
-typedef uint64_t xdag_amount_t;
 
 struct xdag_field {
 	union {

@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
+#include "../types.h"
 
 #ifdef _WIN32
 #define DELIMITER "\\"
@@ -59,5 +60,13 @@ do {\
 #endif
 
 long double log_difficulty2hashrate(long double log_diff);
+
+// convert xdag_time_t to string representation
+// minimal length of string buffer `buf` should be 60
+void xdag_time_to_string(xdag_time_t time, char *buf);
+
+// convert time_t to string representation
+// minimal length of string buffer `buf` should be 50
+void time_to_string(time_t time, char* buf);
 
 #endif /* utils_h */

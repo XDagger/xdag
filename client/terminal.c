@@ -35,7 +35,6 @@
 #define APPLICATION_DOMAIN_PORT 7676
 #endif
 
-
 int terminal(void)
 {
 	char *lasts;

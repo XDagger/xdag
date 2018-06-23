@@ -1364,16 +1364,6 @@ static const char* get_block_state_info(struct block_internal *block)
 	return "Pending";
 }
 
-static void block_time_to_string(struct block_internal *block, char *buf)
-{
-	struct tm tm;
-	char tmp[64];
-	time_t t = block->time >> 10;
-	localtime_r(&t, &tm);
-	strftime(tmp, 64, "%Y-%m-%d %H:%M:%S", &tm);
-	sprintf(buf, "%s.%03d", tmp, (int)((block->time & 0x3ff) * 1000) >> 10);
-}
-
 /* prints detailed information about block */
 int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 {	
@@ -1390,7 +1380,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	}
 	
 	uint64_t *h = bi->hash;
-	block_time_to_string(bi, time_buf);
+	xdag_time_to_string(bi->time, time_buf);
 	fprintf(out, "      time: %s\n", time_buf);
 	fprintf(out, " timestamp: %llx\n", (unsigned long long)bi->time);
 	fprintf(out, "     flags: %x\n", bi->flags & ~BI_OURS);
@@ -1472,7 +1462,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 			if (ri->flags & BI_APPLIED) {
 				for (int j = 0; j < ri->nlinks; j++) {
 					if(ri->link[j] == bi && ri->linkamount[j]) {
-						block_time_to_string(ri, time_buf);
+						xdag_time_to_string(ri->time, time_buf);
 						xdag_hash2address(ri->hash, address);
 						fprintf(out, "    %6s: %s  %10u.%09u  %s\n",
 							(1 << j & ri->in_mask ? "output" : " input"), address,
@@ -1506,7 +1496,7 @@ void xdag_print_block_list(struct block_internal **block_list, int count, int pr
 		if(print_only_addresses) {
 			fprintf(out, "%s\n", address);
 		} else {
-			block_time_to_string(block, time_buf);
+			xdag_time_to_string(block->time, time_buf);
 			fprintf(out, "%s   %s   %s\n", address, time_buf, get_block_state_info(block));
 		}
 	}
