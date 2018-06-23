@@ -229,8 +229,9 @@ static void close_connection(struct xdag_rpc_connection* conn)
 }
 
 /* handle connection */
-static int rpc_handle_connection(struct xdag_rpc_connection* conn)
+static void *rpc_handle_connection(void *arg)
 {
+	struct xdag_rpc_connection* conn = (struct xdag_rpc_connection *)arg;
 	int ret = 0;
 	cJSON *root;
 	const char *end_ptr = NULL;
@@ -266,22 +267,28 @@ static int rpc_handle_connection(struct xdag_rpc_connection* conn)
 							id_copy = (id->type == cJSON_String) ? cJSON_CreateString(id->valuestring):cJSON_CreateNumber(id->valueint);
 						}
 						xdag_debug("Method Invoked: %s\n", method->valuestring);
-						ret = invoke_procedure(conn, method->valuestring, params, id_copy, version);
+						if(invoke_procedure(conn, method->valuestring, params, id_copy, version)) {
+							xdag_err("rpc service: invoke method %s failed", method->valuestring);
+						}
 						cJSON_Delete(root);
 						close_connection(conn);
-						return ret;
+						return 0;
 					}
 				}
 			}
 		}
 		cJSON_Delete(root);
-		ret = send_error(conn, RPC_PARSE_ERROR, strdup("Request parse error."), 0, "2.0"); //use rpc 2.0 as default version
+		if(send_error(conn, RPC_PARSE_ERROR, strdup("Request parse error."), 0, "2.0")) { //use rpc 2.0 as default version
+			xdag_err("rpc service: send error failed.");
+		}
 		close_connection(conn);
-		return ret;
+		return 0;
 	} else {
-		ret = send_error(conn, RPC_PARSE_ERROR, strdup("Request parse error."), 0, "2.0"); //use rpc 2.0 as default version
+		if(send_error(conn, RPC_PARSE_ERROR, strdup("Request parse error."), 0, "2.0")) { //use rpc 2.0 as default version
+			xdag_err("rpc service: send error failed.");
+		}
 		close_connection(conn);
-		return ret;
+		return 0;
 	}
 }
 
@@ -313,26 +320,39 @@ static void *rpc_service_thread(void *arg)
 	peeraddr.sin_port = htons(rpc_port);
 	
 	if(bind(sock, (struct sockaddr*)&peeraddr, sizeof(peeraddr))) {
-		xdag_err("rpc service : socket bind failed. %s", strerror(errno));
+		xdag_err("rpc service : socket bind failed. error : %s", strerror(errno));
 		return 0;
 	}
 	
 	if(listen(sock, 100) == -1) {
-		xdag_err("rpc service : socket listen failed. %s", strerror(errno));
+		xdag_err("rpc service : socket listen failed. error : %s", strerror(errno));
 		return 0;
 	}
 	
 	while (1) {
 		int client_fd = accept(sock, (struct sockaddr*)&peeraddr, &peeraddr_len);
 		if(client_fd < 0) {
-			xdag_err("rpc service : accept failed on socket %d, %s\n", sock, strerror(errno));
+			xdag_err("rpc service : accept failed on socket %d, error : %s\n", sock, strerror(errno));
 			continue;
 		}
 		
 		memset(req_buffer, 0, sizeof(req_buffer));
 		size_t len = read(client_fd, req_buffer, BUFFER_SIZE);
-
-		rpc_handle_connection(create_connection(client_fd, req_buffer, len));
+		
+		struct xdag_rpc_connection * conn = create_connection(client_fd, req_buffer, len);
+		
+		pthread_t th;
+		int err = pthread_create(&th, 0, rpc_handle_connection, conn);
+		if(err) {
+			xdag_err("rpc service : create thread failed. error : %s", strerror(err));
+			close_connection(conn);
+			continue;
+		}
+		
+		err = pthread_detach(th);
+		if(err) {
+			xdag_err("rpc service : detach thread failed. error : %s", strerror(err));
+		}
 	}
 
 	return 0;
