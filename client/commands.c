@@ -290,7 +290,7 @@ int xdag_command(char *cmd, FILE *out)
 
 	XDAG_COMMAND *command = find_xdag_command(cmd);
 
-	if(!command || command->avaibility == 1 && !g_is_miner || command->avaibility == 2 && g_is_miner) {
+	if(!command || (command->avaibility == 1 && !g_is_miner) || (command->avaibility == 2 && g_is_miner)) {
 		fprintf(out, "Illegal command.\n");
 	} else {
 		if(!strcmp(command->name, "xfer")) {
