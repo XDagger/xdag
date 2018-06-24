@@ -161,7 +161,6 @@ static void xdag_rpc_service_procedure_destroy(struct xdag_rpc_procedure *proced
 
 int xdag_rpc_service_register_procedure(xdag_rpc_function function_pointer, char *name, void * data) {
 	int i = g_procedure_count++;
-	printf("[%s]get g_procedure_count :%d:name :%s\n",__FUNCTION__,g_procedure_count,name);
 	if(!g_procedures) {
 		g_procedures = malloc(sizeof(struct xdag_rpc_procedure));
 	} else {

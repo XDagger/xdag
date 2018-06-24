@@ -12,8 +12,8 @@ case "${host_os}" in
         HOST_OS="linux"
         ;;
     cygwin*|mingw*)
-		HOST_SUFFIX="-win"
-		HOST_OS="win"
+        HOST_SUFFIX="-win"
+        HOST_OS="win"
         ;;
     darwin*)
         HOST_SUFFIX="-mac"
@@ -39,7 +39,7 @@ AC_PROG_CC
 AM_PROG_AS
 
 # Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h memory.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h memory.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h readline/readline.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
@@ -55,7 +55,7 @@ AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_MMAP
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([ftruncate gethostbyname gettimeofday localtime_r memmove memset munmap socket strchr strdup strerror])
+AC_CHECK_FUNCS([ftruncate gethostbyname gettimeofday localtime_r memmove memset munmap socket strchr strdup strerror readline])
 
 # for macos
 LIBCRYPTO_CFLAGS="-I/usr/local/opt/openssl/include"
@@ -66,9 +66,10 @@ AC_CHECK_LIB([crypto], [main])
 AC_CHECK_LIB([m], [main])
 AC_CHECK_LIB([pthread], [main])
 AC_CHECK_LIB([ssl], [main])
+AC_CHECK_LIB([readline], [main])
 
 AC_CONFIG_FILES([
-	Makefile
+    Makefile
 ])
 
 AC_OUTPUT

@@ -21,6 +21,7 @@
 		385827BA20737CC6009C83CB /* rpc_wrapper.c in Sources */ = {isa = PBXBuildFile; fileRef = 385827B220737CC6009C83CB /* rpc_wrapper.c */; };
 		386E313520B736ED000F165C /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 386E313320B736ED000F165C /* libssl.a */; };
 		386E313620B736ED000F165C /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 386E313420B736ED000F165C /* libcrypto.a */; };
+		388E850120D402D0009E01C1 /* moving_average.c in Sources */ = {isa = PBXBuildFile; fileRef = 388E84FF20D402D0009E01C1 /* moving_average.c */; };
 		38931ED720B8599D00FDD32F /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = 38931ED320B8599D00FDD32F /* http.c */; };
 		38931ED820B8599D00FDD32F /* url.c in Sources */ = {isa = PBXBuildFile; fileRef = 38931ED520B8599D00FDD32F /* url.c */; };
 		38983A9920BEF8B1000EE509 /* linenoise.c in Sources */ = {isa = PBXBuildFile; fileRef = 38983A9720BEF8B1000EE509 /* linenoise.c */; };
@@ -102,6 +103,8 @@
 		386E313420B736ED000F165C /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = lib/openssl/lib/libcrypto.a; sourceTree = "<group>"; };
 		388CB2CC208E328B00F2AA96 /* uthash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uthash.h; sourceTree = "<group>"; };
 		388CB2CD208E328B00F2AA96 /* utlist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utlist.h; sourceTree = "<group>"; };
+		388E84FF20D402D0009E01C1 /* moving_average.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = moving_average.c; sourceTree = "<group>"; };
+		388E850020D402D0009E01C1 /* moving_average.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = moving_average.h; sourceTree = "<group>"; };
 		38931ED320B8599D00FDD32F /* http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = http.c; sourceTree = "<group>"; };
 		38931ED420B8599D00FDD32F /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = http.h; sourceTree = "<group>"; };
 		38931ED520B8599D00FDD32F /* url.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = url.c; sourceTree = "<group>"; };
@@ -210,6 +213,7 @@
 		385827A420737CC6009C83CB /* utils */ = {
 			isa = PBXGroup;
 			children = (
+				388E84FE20D402D0009E01C1 /* moving_statistics */,
 				38983A9720BEF8B1000EE509 /* linenoise.c */,
 				38983A9820BEF8B1000EE509 /* linenoise.h */,
 				385827A520737CC6009C83CB /* log.c */,
@@ -244,6 +248,15 @@
 				388CB2CD208E328B00F2AA96 /* utlist.h */,
 			);
 			path = uthash;
+			sourceTree = "<group>";
+		};
+		388E84FE20D402D0009E01C1 /* moving_statistics */ = {
+			isa = PBXGroup;
+			children = (
+				388E84FF20D402D0009E01C1 /* moving_average.c */,
+				388E850020D402D0009E01C1 /* moving_average.h */,
+			);
+			path = moving_statistics;
 			sourceTree = "<group>";
 		};
 		38931ED220B8599D00FDD32F /* http */ = {
@@ -622,6 +635,7 @@
 				38A15E9A20544F3F00598EC2 /* transport.c in Sources */,
 				383256BC206BF099006CAE67 /* pool.c in Sources */,
 				38A15E8A20544F3F00598EC2 /* commands.c in Sources */,
+				388E850120D402D0009E01C1 /* moving_average.c in Sources */,
 				38A15E8F20544F3F00598EC2 /* main.c in Sources */,
 				385827B420737CC6009C83CB /* log.c in Sources */,
 				38A15E9820544F3F00598EC2 /* sync.c in Sources */,
