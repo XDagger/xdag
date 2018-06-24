@@ -25,6 +25,7 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "json-rpc/rpc_service.h"
+#include "../rpc/httprpc.h"
 
 char *g_coinname, *g_progname;
 #define coinname   g_coinname
@@ -48,11 +49,12 @@ int xdag_init(int argc, char **argv, int isGui)
 {
     xdag_init_path(argv[0]);
 
-	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
+	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0,*rpc_user = 0,*rpc_passwd = 0 ;
 	int transport_flags = 0, n_addrports = 0, mining_threads_count = 0, is_pool = 0, is_miner = 0, level, is_rpc = 0, rpc_port = 0;
-	
+	int http_rpc_flag = 0, http_port = 0;
+
 	memset(addrports, 0, 256);
-	
+
 #if !defined(_WIN32) && !defined(_WIN64)
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
@@ -149,6 +151,24 @@ int xdag_init(int argc, char **argv, int isGui)
 					rpc_port = 0;
 				}
 			}
+		} else if(ARG_EQUAL(argv[i], "-rpc-auth", "")) {
+			if (++i < argc) {
+				rpc_user = argv[i];
+				http_rpc_flag |= 0x1;
+			}
+		} else if(ARG_EQUAL(argv[i], "-rpc-passwd", "")) {
+			if (++i < argc) {
+				rpc_passwd = argv[i];
+				http_rpc_flag |= 0x10;
+			}
+
+		}else if(ARG_EQUAL(argv[i], "", "-http-port")) { /* set HTTP JSON-RPC service port */
+			if(++i < argc && sscanf(argv[i], "%d", &http_port) == 1) {
+				if(http_port < 0 || http_port > 65535) {
+					printf("http port is invalid, set to default.\n");
+					http_port = 0;
+				}
+			}
 		} else {
 			printUsage(argv[0]);
 			return 0;
@@ -198,10 +218,26 @@ int xdag_init(int argc, char **argv, int isGui)
 	if (xdag_wallet_init()) return -1;
 	xdag_mess("Initializing addresses...");
 	if (xdag_address_init()) return -1;
+
+	/* http rpc start */
+	if (0x10 == http_rpc_flag){
+		xdag_mess("http rpc start failed,set password ,need to set username");
+		return -1;
+	}else if (0x1 == http_rpc_flag){
+		xdag_mess("http rpc start failed,set username ,need to set password");
+		return -1;
+	}else if (0x11 == http_rpc_flag){
+		is_rpc = 1;
+		if (http_rpc_start(rpc_user, rpc_passwd, http_port)){
+			xdag_mess("http rpc start failed\n");
+			return -1;
+		}
+	}
 	if(is_rpc) {
 		xdag_mess("Initializing RPC service...");
 		if(!!xdag_rpc_service_init(rpc_port)) return -1;
 	}
+
 	xdag_mess("Starting blocks engine...");
 	if (xdag_blocks_start(g_is_pool, mining_threads_count, !!miner_address)) return -1;
 	xdag_mess("Starting pool engine...");
@@ -257,6 +293,9 @@ void printUsage(char* appName)
 		"  -z <path>      - path to temp-file folder\n"
 		"  -z RAM         - use RAM instead of temp-files\n"
 		"  -rpc-enable    - enable JSON-RPC service\n"
-		"  -rpc-port      - set HTTP JSON-RPC port (default is 7677)\n"
+		"  -rpc-port      - set JSON-RPC port (default is 7677)\n"
+		"  -rpc-auth      - set HTTP JSON-RPC username\n"
+		"  -rpc-passwd    - set HTTP JSON-RPC password,when username is set, password cannot be empty\n"
+		"  -http-port     - set HTTP JSON-RPC port (default is 7678)\n"
 		, appName);
 }

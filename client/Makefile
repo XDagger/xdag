@@ -1,6 +1,7 @@
 # cheatcoin: Makefile; T13.656-T13.844; $DVS:time$
 
 SRCROOT  		= ..
+rpc                     = ../rpc
 dnet	 		= ../dnet
 dfstools 		= ../dus/programs/dfstools/source
 dfslib			= $(dfstools)/dfslib
@@ -60,6 +61,8 @@ sources = 							\
 	$(utils)/log.c						\
 	$(utils)/linenoise.c					\
 	$(utils)/$(moving_statistics)/moving_average.c		\
+	$(utils)/base64.c                                       \
+	$(utils)/lst.c                                          \
 	./json-rpc/cJSON.c					\
 	./json-rpc/cJSON_Utils.c				\
 	./json-rpc/rpc_procedures.c				\
@@ -67,9 +70,9 @@ sources = 							\
 	./json-rpc/rpc_wrapper.c				\
 	./http/url.c						\
 	./http/http.c						\
+        $(rpc)/httprpc.c	                                \
 
-
-headers = 							\
+headers = \
 	address.h						\
 	block.h							\
 	crypt.h							\
@@ -79,7 +82,7 @@ headers = 							\
 	netdb.h							\
 	pool.h							\
 	miner.h							\
-	mining_common.h						\
+	mining_common.h					\
 	sha256.h						\
 	state.h							\
 	storage.h						\
@@ -113,6 +116,8 @@ headers = 							\
 	$(utils)/log.h						\
 	$(utils)/linenoise.h					\
 	$(utils)/$(moving_statistics)/moving_average.h		\
+	$(utils)/base64.h                                       \
+	$(utils)/lst.h                                          \
 	./json-rpc/cJSON.h					\
 	./json-rpc/cJSON_Utils.h				\
 	./json-rpc/rpc_procedures.h				\
@@ -120,14 +125,15 @@ headers = 							\
 	./json-rpc/rpc_wrapper.h				\
 	./http/url.h						\
 	./http/http.h						\
+	$(rpc)/httprpc.h
 
 
 
 ifeq ($(OS), Darwin)
 
-	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result
+	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -levent -Wall -Wmissing-prototypes -Wno-unused-result
 else
-	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lgmp -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
+	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lgmp -lssl -lm -levent -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
 
 endif
 
