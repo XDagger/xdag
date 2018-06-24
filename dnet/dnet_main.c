@@ -74,7 +74,7 @@ static void daemonize(void) {
 
 static void angelize(void) {
 #if !defined(__LDuS__) && !defined(QDNET) && !defined(_WIN32) && !defined(_WIN64) && !defined(NO_DNET_FORK)
-    int stat;
+    int stat = 0;
     pid_t childpid;
 	while ((childpid = fork())) {
 		signal(SIGINT, SIG_IGN);

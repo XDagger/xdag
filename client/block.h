@@ -6,16 +6,19 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "hash.h"
+#include "system.h"
+#include "types.h"
 
 enum xdag_field_type {
-	XDAG_FIELD_NONCE,
-	XDAG_FIELD_HEAD,
-	XDAG_FIELD_IN,
-	XDAG_FIELD_OUT,
-	XDAG_FIELD_SIGN_IN,
-	XDAG_FIELD_SIGN_OUT,
-	XDAG_FIELD_PUBLIC_KEY_0,
-	XDAG_FIELD_PUBLIC_KEY_1,
+	XDAG_FIELD_NONCE,        //0
+	XDAG_FIELD_HEAD,         //1
+	XDAG_FIELD_IN,           //2
+	XDAG_FIELD_OUT,          //3
+	XDAG_FIELD_SIGN_IN,      //4
+	XDAG_FIELD_SIGN_OUT,     //5
+	XDAG_FIELD_PUBLIC_KEY_0, //6
+	XDAG_FIELD_PUBLIC_KEY_1, //7
+	XDAG_FIELD_HEAD_TEST     //8
 };
 
 enum xdag_message_type {
@@ -29,9 +32,6 @@ enum xdag_message_type {
 };
 
 #define XDAG_BLOCK_FIELDS 16
-
-typedef uint64_t xdag_time_t;
-typedef uint64_t xdag_amount_t;
 
 struct xdag_field {
 	union {
@@ -60,7 +60,7 @@ struct xdag_block {
 #define xdag_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)
 
 // start of regular block processing
-extern int xdag_blocks_start(int n_mining_threads, int miner_address);
+extern int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address);
 
 // checks and adds block to the storage. Returns non-zero value in case of error.
 extern int xdag_add_block(struct xdag_block *b);
@@ -107,8 +107,13 @@ extern int xdag_blocks_reset(void);
 // prints detailed information about block
 extern int xdag_print_block_info(xdag_hash_t hash, FILE *out);
 
-// retrieves addresses of N last main blocks
-// return count of retrieved blocks
-extern int xdagGetLastMainBlocks(int count, char** addressArray);
+// prints list of N last main blocks
+extern void xdag_list_main_blocks(int count, int print_only_addresses, FILE *out);
+
+// prints list of N last blocks mined by current pool
+extern void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out);
+
+// calculate difficulty from hash
+xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash);
 
 #endif

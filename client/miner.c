@@ -20,16 +20,14 @@
 #include "init.h"
 #include "miner.h"
 #include "storage.h"
-#include "wallet.h"
 #include "sync.h"
 #include "transport.h"
 #include "utils/log.h"
-#include "commands.h"
+#include "mining_common.h"
 
 #define MINERS_PWD             "minersgonnamine"
 #define SECTOR0_BASE           0x1947f3acu
 #define SECTOR0_OFFSET         0x82e9d1b5u
-#define HEADER_WORD            0x3fca9e2bu
 #define SEND_PERIOD            10                                  /* share period of sending shares */
 
 struct miner {
@@ -44,7 +42,16 @@ static pthread_mutex_t g_miner_mutex = PTHREAD_MUTEX_INITIALIZER;
 /* a number of mining threads */
 int g_xdag_mining_threads = 0;
 
-static int g_socket = -1, g_stop_mining = 1, g_stop_general_mining = 1;
+static int g_socket = -1, g_stop_mining = 1;
+
+static int can_send_share(time_t current_time, time_t task_time, time_t share_time)
+{
+	int can_send = current_time - share_time >= SEND_PERIOD && current_time - task_time <= 64;
+	if(g_xdag_mining_threads == 0 && share_time >= task_time) {
+		can_send = 0;  //we send only one share per task if mining is turned off
+	}
+	return can_send;
+}
 
 /* initialization of connection the miner to pool */
 extern int xdag_initialize_miner(const char *pool_address)
@@ -63,7 +70,7 @@ extern int xdag_initialize_miner(const char *pool_address)
 	err = pthread_detach(th);
 	if(err != 0) {
 		printf("detach miner_net_thread failed, error : %s\n", strerror(err));
-//		return -1; //fixme: not sure why pthread_detach return 3
+		//return -1; //fixme: not sure why pthread_detach return 3
 	}
 
 	return 0;
@@ -74,7 +81,7 @@ static int send_to_pool(struct xdag_field *fld, int nfld)
 	struct xdag_field f[XDAG_BLOCK_FIELDS];
 	xdag_hash_t h;
 	struct miner *m = &g_local_miner;
-	int i, res, todo = nfld * sizeof(struct xdag_field), done = 0;
+	int todo = nfld * sizeof(struct xdag_field), done = 0;
 
 	if(g_socket < 0) {
 		return -1;
@@ -87,14 +94,14 @@ static int send_to_pool(struct xdag_field *fld, int nfld)
 
 		xdag_hash(f, sizeof(struct xdag_block), h);
 
-		f[0].transport_header = HEADER_WORD;
+		f[0].transport_header = BLOCK_HEADER_WORD;
 
 		uint32_t crc = crc_of_array((uint8_t*)f, sizeof(struct xdag_block));
 
 		f[0].transport_header |= (uint64_t)crc << 32;
 	}
 
-	for(i = 0; i < nfld; ++i) {
+	for(int i = 0; i < nfld; ++i) {
 		dfslib_encrypt_array(g_crypt, (uint32_t*)(f + i), DATA_SIZE, m->nfield_out++);
 	}
 
@@ -112,12 +119,13 @@ static int send_to_pool(struct xdag_field *fld, int nfld)
 
 		if(!(p.revents & POLLOUT)) continue;
 
-		res = write(g_socket, (uint8_t*)f + done, todo);
+		int res = write(g_socket, (uint8_t*)f + done, todo);
 		if(res <= 0) {
 			return -1;
 		}
 
-		done += res, todo -= res;
+		done += res;
+		todo -= res;
 	}
 
 	if(nfld == XDAG_BLOCK_FIELDS) {
@@ -142,18 +150,18 @@ void *miner_net_thread(void *arg)
 	struct linger linger_opt = { 1, 0 }; // Linger active, timeout 0
 	xdag_time_t t;
 	struct miner *m = &g_local_miner;
-	time_t t00, t0, tt;
-	int ndata, maxndata;
 
 	while(!g_xdag_sync_on) {
 		sleep(1);
 	}
 
 begin:
-	ndata = 0;
-	maxndata = sizeof(struct xdag_field);
-	t0 = t00 = 0;
 	m->nfield_in = m->nfield_out = 0;
+
+	int ndata = 0;
+	int maxndata = sizeof(struct xdag_field);
+	time_t share_time = 0;
+	time_t task_time = 0;
 
 	if(g_miner_address) {
 		if(xdag_address2hash(g_miner_address, hash)) {
@@ -259,8 +267,8 @@ begin:
 		}
 
 		p.fd = g_socket;
-		tt = time(0);
-		p.events = POLLIN | (tt - t0 >= SEND_PERIOD && tt - t00 <= 64 ? POLLOUT : 0);
+		time_t current_time = time(0);
+		p.events = POLLIN | (can_send_share(current_time, task_time, share_time) ? POLLOUT : 0);
 
 		if(!poll(&p, 1, 0)) {
 			pthread_mutex_unlock(&g_miner_mutex);
@@ -293,11 +301,11 @@ begin:
 
 				if(!memcmp(last->data, hash, sizeof(xdag_hashlow_t))) {
 					xdag_set_balance(hash, last->amount);
-					
+
 					pthread_mutex_lock(&g_transport_mutex);
-					g_xdag_last_received = tt;
+					g_xdag_last_received = current_time;
 					pthread_mutex_unlock(&g_transport_mutex);
-					
+
 					ndata = 0;
 
 					maxndata = sizeof(struct xdag_field);
@@ -319,7 +327,7 @@ begin:
 					xdag_hash_final(task->ctx, &task->nonce.amount, sizeof(uint64_t), task->minhash.data);
 
 					g_xdag_pool_task_index = task_index;
-					t00 = time(0);
+					task_time = time(0);
 
 					xdag_info("Task  : t=%llx N=%llu", task->task_time << 16 | 0xffff, task_index);
 
@@ -336,7 +344,7 @@ begin:
 			struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
 			uint64_t *h = task->minhash.data;
 
-			t0 = time(0);
+			share_time = time(0);
 			res = send_to_pool(&task->lastfield, 1);
 			pthread_mutex_unlock(&g_miner_mutex);
 
@@ -359,7 +367,8 @@ err:
 	pthread_mutex_lock(&g_miner_mutex);
 
 	if(g_socket != INVALID_SOCKET) {
-		close(g_socket); g_socket = INVALID_SOCKET;
+		close(g_socket);
+		g_socket = INVALID_SOCKET;
 	}
 
 	pthread_mutex_unlock(&g_miner_mutex);
@@ -405,54 +414,15 @@ static void *mining_thread(void *arg)
 	return 0;
 }
 
-static void *general_mining_thread(void *arg)
-{
-	while(!g_xdag_sync_on && !g_stop_general_mining) {
-		sleep(1);
-	}
-
-	while(!g_stop_general_mining) {
-		xdag_create_block(0, 0, 0, 0, xdag_main_time() << 16 | 0xffff, NULL);
-	}
-
-	xdag_mess("Stopping general mining thread...");
-
-	return 0;
-}
-
 /* changes the number of mining threads */
 int xdag_mining_start(int n_mining_threads)
 {
 	pthread_t th;
 
-	if((n_mining_threads > 0 || g_xdag_pool) && g_stop_general_mining) {
-		xdag_mess("Starting general mining thread...");
-
-		g_stop_general_mining = 0;
-		
-		int err;
-		err = pthread_create(&th, 0, general_mining_thread, 0);
-		if(err != 0) {
-			printf("create generatl_mining_thread failed, error : %s\n", strerror(err));
-			return -1;
-		}
-		
-		err = pthread_detach(th);
-		if(err != 0) {
-			printf("detach general_mining_thread failed, error : %s\n", strerror(err));
-			return -1;
-		}
-	}
-
-	if(n_mining_threads < 0) {
-		n_mining_threads = ~n_mining_threads;
-	}
-
 	if(n_mining_threads == g_xdag_mining_threads) {
 
 	} else if(!n_mining_threads) {
 		g_stop_mining = 1;
-		if(!g_xdag_pool) g_stop_general_mining = 1;
 		g_xdag_mining_threads = 0;
 	} else if(!g_xdag_mining_threads) {
 		g_stop_mining = 0;
@@ -464,15 +434,13 @@ int xdag_mining_start(int n_mining_threads)
 	}
 
 	while(g_xdag_mining_threads < n_mining_threads) {
-		
 		g_xdag_mining_threads++;
-		int err;
-		err = pthread_create(&th, 0, mining_thread, (void*)(uintptr_t)g_xdag_mining_threads);
+		int err = pthread_create(&th, 0, mining_thread, (void*)(uintptr_t)g_xdag_mining_threads);
 		if(err != 0) {
 			printf("create mining_thread failed, error : %s\n", strerror(err));
 			continue;
 		}
-		
+
 		err = pthread_detach(th);
 		if(err != 0) {
 			printf("detach mining_thread failed, error : %s\n", strerror(err));
