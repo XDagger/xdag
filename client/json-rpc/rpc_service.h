@@ -25,4 +25,4 @@ extern int xdag_rpc_service_init(int port);
 /* stop xdag rpc */
 extern int xdag_rpc_service_stop(void);
 
-#endif //XDAG_TERMINAL_H
+#endif //XDAG_RPC_SERVICE_H

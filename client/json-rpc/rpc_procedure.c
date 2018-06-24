@@ -10,23 +10,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-#if !defined(_WIN32) && !defined(_WIN64)
-#include <sys/types.h>
-#include <sys/un.h>
-#include <unistd.h>
-#include <signal.h>
-#include <errno.h>
-#endif
-
-#include <fcntl.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <pthread.h>
 
 #include "../utils/log.h"
-#include "../system.h"
 #include "rpc_procedures.h"
 
 /*

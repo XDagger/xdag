@@ -25,8 +25,6 @@
 #include <pthread.h>
 #include <ctype.h>
 
-#include "cJSON.h"
-#include "cJSON_Utils.h"
 #include "rpc_wrapper.h"
 #include "rpc_procedure.h"
 #include "../version.h"
