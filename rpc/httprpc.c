@@ -193,11 +193,12 @@ static char  *rpc_white_host_query(){
     return result;
 }
 
-/* password as key, username do hmac-sha256,then convert base64 */
+/* password as key, username do hmac-sha256,then convert base64
+ * return 1 means passed, 0 means not authorized
+*/
 static int http_rpc_authorized(const char *auth_string){
 
     unsigned char result[HTTP_RPC_AUTH_LEN] = {0};
-    int auth_len = 0;
     unsigned int result_len = HTTP_RPC_AUTH_LEN,key_len = strlen(g_httprpc_password);
     HMAC_CTX ctx;
 
@@ -211,8 +212,6 @@ static int http_rpc_authorized(const char *auth_string){
       xdag_err("auth_string is NULL\n");
       return 0;
     }
-
-    auth_len = strlen(auth_string);
 
     HMAC_CTX_init(&ctx);
 
