@@ -6,7 +6,11 @@
 #include <stdint.h>
 #include "hash.h"
 
+#if defined (__MACOS__) || defined (__APPLE__) 
+//no need optimized secp256k1 for mac
+#else
 #define USE_OPTIMIZED_EC 1 // 0 disactivate, 1 activated, 2 test openssl vs secp256k1
+#endif
 
 // initialization of the encryption system
 extern int xdag_crypt_init(int withrandom);

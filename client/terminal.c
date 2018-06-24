@@ -16,7 +16,7 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 
-#if defined (__APPLE__) || defined (__MACOS__)
+#if defined (__MACOS__) || defined (__APPLE__)
 #include <string.h>
 #endif
 

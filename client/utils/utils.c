@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
-#if defined (__APPLE__)|| defined (__MACOS__)
+#if defined (__MACOS__) || defined (__APPLE__)
 #include <libgen.h>
 #define PATH_MAX 4096
 #elif defined (_WIN32)
@@ -320,7 +320,7 @@ void xdag_init_path(char *path)
 	} else {
 		sprintf(g_xdag_current_path, "%s", prefix);
 	}
-#if defined (__APPLE__)|| defined (__MACOS__)
+#if defined (__MACOS__) || defined (__APPLE__)
 	free(prefix);
 #endif
 #endif
