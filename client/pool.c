@@ -1395,7 +1395,7 @@ static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int 
 
 				//TODO: fix that logic
 				fprintf(out, " C%d. -                                 -        %-21s  %-16s  %-13lf  %-12s  %Lf\n", ++conn_index,
-					ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data), 
+					ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data),
 					conn_data->worker_name ? conn_data->worker_name : "-", log_difficulty2hashrate(conn_data->mean_log_difficulty));
 			}
 		}
@@ -1583,16 +1583,19 @@ static void miner_print_time_intervals(struct miner_pool_data *miner, int curren
 	fprintf(out, "----------------------------------------------------------------------\n");
 
 	for(int i = 0; i < CONFIRMATIONS_COUNT; ++i) {
+		// check if current miner mined block for current interval
 		int is_reward = memcmp(g_xdag_mined_nonce[i], miner->id.data, sizeof(xdag_hashlow_t)) == 0;
+
+		// here we calculate time offset for interval of time
 		xdag_time_t task_time = current_task_time << 16 | 0xffff;
 		if(i < current_interval_index) {
-			task_time = task_time - (2 << 15) * (current_interval_index - i);
+			task_time = task_time - (2 << 15) * (current_interval_index - i);	// 2 << 15 - 64 seconds
 		} else if(i > current_interval_index) {
 			task_time = task_time - (2 << 15) * (current_interval_index + CONFIRMATIONS_COUNT - i);
 		}
 		xdag_time_to_string(task_time, time_buf);
 
-		fprintf(out, "      %s  %2d     %s  %10lf         %s\n", 
+		fprintf(out, "      %s  %2d     %s  %10lf         %s\n",
 			i == current_interval_index ? ">" : " ", i + 1, time_buf, miner->maxdiff[i], is_reward ? "+" : " ");
 	}
 }
@@ -1604,7 +1607,7 @@ static void connection_print_time_intervals(struct connection_pool_data *conn_da
 	fprintf(out, "--------------------------\n");
 
 	for(int i = 0; i < CONFIRMATIONS_COUNT; ++i) {
-		fprintf(out, "      %s  %2d    %10lf\n", 
+		fprintf(out, "      %s  %2d    %10lf\n",
 			i == current_interval_index ? ">" : " ", i + 1, conn_data->maxdiff[i]);
 	}
 }
@@ -1652,7 +1655,8 @@ static void print_miner_stats(struct miner_pool_data *miner, FILE *out)
 	const int current_interval_index = current_task_time & (CONFIRMATIONS_COUNT - 1);
 
 	uint64_t *h = miner->id.data;
-	fprintf(out, "Hash: %016llx%016llx%016llx%016llx\n", h[3], h[2], h[1], h[0]);	
+	fprintf(out, "Hash: %016llx%016llx%016llx%016llx\n", 
+		(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
 	fprintf(out, "Registered at: %s\n", time_buf);
 	fprintf(out, "State: %s\n", miner_state_to_string(miner->state));
 	fprintf(out, "Unpaid shares rate: %lf\n", miner_calculate_unpaid_shares(miner));
@@ -1665,7 +1669,7 @@ static void print_miner_stats(struct miner_pool_data *miner, FILE *out)
 
 	fprintf(out, "Time intervals:\n");
 	miner_print_time_intervals(miner, current_interval_index, current_task_time, out);
-	
+
 	double total_difficulty_summ;
 	int total_difficulty_count;
 	calculate_diff_summ(miner, total_difficulty_summ, total_difficulty_count);
@@ -1683,6 +1687,7 @@ static void print_miner_stats(struct miner_pool_data *miner, FILE *out)
 	}
 }
 
+// prints detailed information about specified miner
 int xdag_print_miner_stats(const char* address, FILE *out)
 {
 	miner_list_element *elt;

@@ -60,6 +60,9 @@ extern char *g_coinname, *g_progname;
 //defines if client runs as miner or pool
 extern int g_is_miner;
 
+//defines if mining is disabled (pool)
+extern int g_disable_mining;
+
 //Default type of the block header
 //Test network and main network have different types of the block headers, so blocks from different networks are incompatible
 extern enum xdag_field_type g_block_header_type;
