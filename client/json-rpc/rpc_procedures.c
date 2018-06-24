@@ -28,7 +28,7 @@
 #include "cJSON.h"
 #include "cJSON_Utils.h"
 #include "rpc_wrapper.h"
-#include "rpc_service.h"
+#include "rpc_procedure.h"
 #include "../version.h"
 #include "../init.h"
 #include "../block.h"
@@ -40,6 +40,8 @@
 #include "../../dus/programs/dfstools/source/dfslib/dfslib_string.h"
 #include "../../dnet/dnet_main.h"
 #include "../utils/log.h"
+
+#define rpc_register_func(command) xdag_rpc_service_register_procedure(&method_##command, #command, NULL);
 
 #define rpc_query_func(command) \
 cJSON * method_xdag_##command (struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version); \
@@ -57,11 +59,20 @@ cJSON * method_xdag_##command (struct xdag_rpc_context * ctx, cJSON * params, cJ
 rpc_query_func(state)
 rpc_query_func(stats)
 
+/* method: xdag_version */
 cJSON * method_xdag_version(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version);
+
+/* method: xdag_get_account */
 int rpc_account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
 cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version);
+
+/* method: xdag_get_balance */
 cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version);
+
+/* method: xdag_do_xfer */
 cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version);
+
+/* method: xdag_get_transactions */
 int rpc_transactions_callback(void *data, int type, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time);
 cJSON * method_xdag_get_transactions(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version);
 
@@ -480,8 +491,6 @@ cJSON * method_xdag_get_transactions(struct xdag_rpc_context * ctx, cJSON * para
 	
 	return ret;
 }
-
-#define rpc_register_func(command) xdag_rpc_service_register_procedure(&method_##command, #command, NULL);
 
 /* init rpc procedures */
 int xdag_rpc_init_procedures(void)
