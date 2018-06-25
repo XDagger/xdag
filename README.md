@@ -1,9 +1,7 @@
 The Dagger (XDAG) cryptocurrency
 ================================
-
 - Community site: https://xdag.io  
 - The Main net was launched January 5, 2018 at 22:45 GMT  
-
 
 Principles:
 ----------
@@ -13,6 +11,12 @@ Principles:
 - Original idea and implementation  
 - Mineable, no premine, no ICO  
 - Mining new money every 64 seconds  
+
+Status:
+----------
+
+[![Throughput Graph](https://graphs.waffle.io/XDagger/xdag/throughput.svg)](https://waffle.io/XDagger/xdag/metrics/throughput)
+
 
 HOW-TO:  
 ----------
