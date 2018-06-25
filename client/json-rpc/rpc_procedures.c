@@ -342,9 +342,9 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON * params, cJSON
  "version":"1.1", "method":"xdag_get_account", "params":[{"address":"ADDRESS", "page":0, "pagesize":50}], "id":1
  
  reponse:
- "result":[{"direction":"input", "address":"ADDRESS", "amount":"10.111111", "timestamp":"2018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
- "jsonrpc":"2.0", "result":[{"direction":"input", "address":"ADDRESS", "amount":"10.111111", "timestamp":"2018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
- "version":"1.1", "result":[{"direction":"input", "address":"ADDRESS", "amount":"10.111111", "timestamp":"2018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
+ "result":{"total": 1, "transactions":[{"direction":"input", "address":"ADDRESS", "amount":"10.111111", "timestamp":"2018-06-03 03:36:33.866 UTC"}]}, "error":null, "id":1
+ "jsonrpc":"2.0", "result":{"total": 1, "transactions":[{"direction":"input", "address":"ADDRESS", "amount":"10.111111", "timestamp":"2018-06-03 03:36:33.866 UTC"}]}, "error":null, "id":1
+ "version":"1.1", "result":{"total": 1, "transactions":[{"direction":"input", "address":"ADDRESS", "amount":"10.111111", "timestamp":"2018-06-03 03:36:33.866 UTC"}]}, "error":null, "id":1
  */
 
 struct rpc_transactions_callback_data {
@@ -473,21 +473,27 @@ cJSON * method_xdag_get_transactions(struct xdag_rpc_context * ctx, cJSON * para
 		return NULL;
 	}
 	
-	cJSON * ret = cJSON_CreateArray();
+	cJSON * array = cJSON_CreateArray();
 	struct rpc_transactions_callback_data callback_data;
 	callback_data.page = page;
 	callback_data.page_size = pagesize;
-	callback_data.json_root = ret;
+	callback_data.json_root = array;
 	callback_data.count = 0;
 	
-	if(xdag_get_transactions(hash, &callback_data, &rpc_transactions_callback)) {
+	int total = xdag_get_transactions(hash, &callback_data, &rpc_transactions_callback);
+	if( total < 0) {
 		ctx->error_code = 1;
 		ctx->error_message = strdup("Block is not found.");
-		cJSON_Delete(ret);
+		cJSON_Delete(array);
 		return NULL;
 	}
 	
-	return ret;
+	cJSON * result = cJSON_CreateObject();
+	cJSON * json_total = cJSON_CreateNumber(total);
+	cJSON_AddItemToObject(result, "total", json_total);
+	cJSON_AddItemToObject(result, "transactions", array);
+	
+	return result;
 }
 
 /* init rpc procedures */

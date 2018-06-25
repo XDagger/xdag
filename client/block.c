@@ -1773,5 +1773,5 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 	
 	free(block_array);
 	
-	return 0;
+	return n;
 }
