@@ -37,8 +37,6 @@ int out_balances(void);
 int xdag_show_state(xdag_hash_t hash);
 
 int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
-long double amount2xdags(xdag_amount_t amount);
-xdag_amount_t xdags2amount(const char *str);
 
 int read_command(char* cmd);
 

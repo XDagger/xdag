@@ -5,6 +5,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <math.h>
 #include "system.h"
 #include "../ldus/source/include/ldus/rbtree.h"
 #include "block.h"
@@ -101,6 +102,26 @@ void cache_add(struct xdag_block*, xdag_hash_t);
 int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
 int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
 static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
+
+// convert xdag_amount_t to long double
+long double amount2xdags(xdag_amount_t amount)
+{
+	return xdag_amount2xdag(amount) + (long double)xdag_amount2cheato(amount) / 1000000000;
+}
+
+xdag_amount_t xdags2amount(const char *str)
+{
+	long double sum;
+	if(sscanf(str, "%Lf", &sum) != 1 || sum <= 0) {
+		return 0;
+	}
+	long double flr = floorl(sum);
+	xdag_amount_t res = (xdag_amount_t)flr << 32;
+	sum -= flr;
+	sum = ldexpl(sum, 32);
+	flr = ceill(sum);
+	return res + (xdag_amount_t)flr;
+}
 
 // returns a time period index, where a period is 64 seconds long
 xdag_time_t xdag_main_time(void)
@@ -1686,4 +1707,71 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
 		return 9;
 	}
 	return 0;
+}
+
+int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t))
+{
+	pthread_mutex_lock(&block_mutex);
+	struct block_internal *bi = block_by_hash(hash);
+	pthread_mutex_unlock(&block_mutex);
+	
+	if (!bi) {
+		return -1;
+	}
+	
+	int size = 0x10000; 
+	int n = 0;
+	struct block_internal **block_array = malloc(size * sizeof(struct block_internal *));
+	
+	if (!block_array) return -1;
+	
+	int i;
+	for (struct block_backrefs *br = bi->backrefs; br; br = br->next) {
+		for (i = N_BACKREFS; i && !br->backrefs[i - 1]; i--);
+		
+		if (!i) {
+			continue;
+		}
+		
+		if (n + i > size) {
+			size *= 2;
+			struct block_internal **tmp_array = realloc(block_array, size * sizeof(struct block_internal *));
+			if (!tmp_array) {
+				free(block_array);
+				return -1;
+			}
+			
+			block_array = tmp_array;
+		}
+		
+		memcpy(block_array + n, br->backrefs, i * sizeof(struct block_internal *));
+		n += i;
+	}
+	
+	if (!n) {
+		free(block_array);
+		return 0;
+	}
+	
+	qsort(block_array, n, sizeof(struct block_internal *), bi_compar);
+	
+	for (i = 0; i < n; ++i) {
+		if (!i || block_array[i] != block_array[i - 1]) {
+			struct block_internal *ri = block_array[i];
+			if (ri->flags & BI_APPLIED) {
+				for (int j = 0; j < ri->nlinks; j++) {
+					if(ri->link[j] == bi && ri->linkamount[j]) {
+						if(callback(data, 1 << j & ri->in_mask, ri->hash, ri->linkamount[j], ri->time)) {
+							free(block_array);
+							return 0;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	free(block_array);
+	
+	return n;
 }
