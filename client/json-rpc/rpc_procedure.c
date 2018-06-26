@@ -12,6 +12,7 @@
 #include <string.h>
 #include <pthread.h>
 
+#include "../system.h"
 #include "../utils/log.h"
 #include "rpc_procedures.h"
 
