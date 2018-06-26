@@ -24,3 +24,4 @@ autoscan.log
 /win/xdag/x64/
 /win/xdaglib/x64/
 /win/xdagwallet/x64/
+automake/xdag
