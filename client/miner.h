@@ -5,8 +5,6 @@
 
 #include <stdio.h>
 #include "block.h"
-#include "hash.h"
-#include "mining_common.h"
 
 /* a number of mining threads */
 extern int g_xdag_mining_threads;

@@ -2,8 +2,7 @@
 //  utils.h
 //  xdag
 //
-//  Created by Rui Xie on 3/16/18.
-//  Copyright © 2018 xrdavies. All rights reserved.
+//  Copyright © 2018 xdag contributors.
 //
 
 #ifndef XDAG_UTILS_HEADER_H
@@ -12,6 +11,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
+#include "../types.h"
 
 #ifdef _WIN32
 #define DELIMITER "\\"
@@ -59,6 +59,18 @@ do {\
 #define XDAG_MUTEX_UNLOCK(x) pthread_mutex_unlock(&x)
 #endif
 
+long double log_difficulty2hashrate(long double log_diff);
+void xdag_str_toupper(char *str);
+void xdag_str_tolower(char *str);
+char *xdag_basename(char *path);
+char *xdag_filename(char *_filename);
 
+// convert xdag_time_t to string representation
+// minimal length of string buffer `buf` should be 60
+void xdag_time_to_string(xdag_time_t time, char *buf);
+
+// convert time_t to string representation
+// minimal length of string buffer `buf` should be 50
+void time_to_string(time_t time, char* buf);
 
 #endif /* utils_h */

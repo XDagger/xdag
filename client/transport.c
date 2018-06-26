@@ -41,7 +41,8 @@ static int conn_add_rm(void *conn, int addrm)
 
 	pthread_mutex_lock(&conn_mutex);
 	
-	b = 0, e = N_connections;
+	b = 0;
+	e = N_connections;
 
 	while (b < e) {
 		m = (b + e) / 2;
@@ -165,14 +166,17 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 		}
 
 		case XDAG_MESSAGE_BLOCKS_REPLY:
+		{
 			if(!memcmp(received_block->field[1].hash, reply_id, sizeof(xdag_hash_t))) {
 				reply_callback = 0;
 				reply_data = 0;
 				reply_result = received_block->field[0].time;
 			}
 			break;
+		}
 
 		case XDAG_MESSAGE_SUMS_REQUEST:
+		{
 			received_block->field[0].type = XDAG_FIELD_NONCE | XDAG_MESSAGE_SUMS_REPLY << 4;
 			received_block->field[0].time = xdag_load_sums(received_block->field[0].time, received_block->field[0].end_time,
 				(struct xdag_storage_sum *)&received_block->field[8]);
@@ -185,8 +189,10 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 			dnet_send_xdag_packet(received_block, connection);
 
 			break;
+		}
 
 		case XDAG_MESSAGE_SUMS_REPLY:
+		{
 			if(!memcmp(received_block->field[1].hash, reply_id, sizeof(xdag_hash_t))) {
 				if(reply_data) {
 					memcpy(reply_data, &received_block->field[8], sizeof(struct xdag_storage_sum) * 16);
@@ -195,6 +201,7 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 				reply_result = received_block->field[0].time;
 			}
 			break;
+		}
 
 		case XDAG_MESSAGE_BLOCK_REQUEST:
 		{
@@ -202,8 +209,9 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 			xdag_time_t t;
 			int64_t pos = xdag_get_block_pos(received_block->field[1].hash, &t);
 
-			if(pos >= 0 && (blk = xdag_storage_load(received_block->field[1].hash, t, pos, &buf)))
+			if(pos >= 0 && (blk = xdag_storage_load(received_block->field[1].hash, t, pos, &buf))) {
 				dnet_send_xdag_packet(blk, connection);
+			}
 
 			break;
 		}

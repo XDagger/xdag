@@ -37,6 +37,7 @@ struct out_balances_data {
 typedef int (*xdag_com_func_t)(char*, FILE *);
 typedef struct {
 	char *name;				/* command name */
+	int avaibility;         /* 0 - both miner and pool, 1 - only miner, 2 - only pool */
 	xdag_com_func_t func;	/* command function */
 } XDAG_COMMAND;
 
@@ -50,14 +51,18 @@ void processBalanceCommand(char *nextParam, FILE *out);
 void processBlockCommand(char *nextParam, FILE *out);
 void processKeyGenCommand(FILE *out);
 void processLevelCommand(char *nextParam, FILE *out);
+void processMinerCommand(char *nextParam, FILE *out);
+void processMinersCommand(char *nextParam, FILE *out);
 void processMiningCommand(char *nextParam, FILE *out);
 void processNetCommand(char *nextParam, FILE *out);
 void processPoolCommand(char *nextParam, FILE *out);
 void processStatsCommand(FILE *out);
+void processCacheCommand(FILE *out);
 void processExitCommand(void);
 void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd);
 void processLastBlocksCommand(char *nextParam, FILE *out);
-void processMinersCommand(char *nextParam, FILE *out);
+void processMainBlocksCommand(char *nextParam, FILE *out);
+void processMinedBlocksCommand(char *nextParam, FILE *out);
 void processHelpCommand(FILE *out);
 void processDisconnectCommand(char *nextParam, FILE *out);
 
@@ -65,43 +70,50 @@ int xdag_com_account(char *, FILE*);
 int xdag_com_balance(char *, FILE*);
 int xdag_com_block(char *, FILE*);
 int xdag_com_lastblocks(char *, FILE*);
+int xdag_com_mainblocks(char *, FILE*);
+int xdag_com_minedblocks(char *, FILE*);
 int xdag_com_keyGen(char *, FILE*);
 int xdag_com_level(char *, FILE*);
+int xdag_com_miner(char *, FILE*);
+int xdag_com_miners(char *, FILE*);
 int xdag_com_mining(char *, FILE*);
 int xdag_com_net(char *, FILE*);
 int xdag_com_pool(char *, FILE*);
-int xdag_com_miners(char *, FILE*);
 int xdag_com_stats(char *, FILE*);
 int xdag_com_state(char *, FILE*);
+int xdag_com_cache(char *, FILE*);
 int xdag_com_help(char *, FILE*);
 int xdag_com_run(char *, FILE*);
 int xdag_com_terminate(char *, FILE*);
 int xdag_com_exit(char *, FILE*);
 int xdag_com_disconnect(char *, FILE*);
 
-char* xdag_com_generator(const char*, int);
 XDAG_COMMAND* find_xdag_command(char*);
 
 XDAG_COMMAND commands[] = {
-	{ "account"    , xdag_com_account },
-	{ "balance"    , xdag_com_balance },
-	{ "block"      , xdag_com_block },
-	{ "lastblocks" , xdag_com_lastblocks },
-	{ "keyGen"     , xdag_com_keyGen },
-	{ "level"      , xdag_com_level },
-	{ "miners"     , xdag_com_miners },
-	{ "mining"     , xdag_com_mining },
-	{ "net"        , xdag_com_net },
-	{ "pool"       , xdag_com_pool },
-	{ "run"        , xdag_com_run },
-	{ "state"      , xdag_com_state },
-	{ "stats"      , xdag_com_stats },
-	{ "terminate"  , xdag_com_terminate },
-	{ "exit"       , xdag_com_exit },
-	{ "xfer"       ,(xdag_com_func_t)NULL},
-	{ "help"       , xdag_com_help},
-	{ "disconnect" , xdag_com_disconnect },
-	{ (char *)NULL ,(xdag_com_func_t)NULL}
+	{ "account"    , 0, xdag_com_account },
+	{ "balance"    , 0, xdag_com_balance },
+	{ "block"      , 2, xdag_com_block },
+	{ "lastblocks" , 2, xdag_com_lastblocks },
+	{ "mainblocks" , 2, xdag_com_mainblocks },
+	{ "minedblocks", 2, xdag_com_minedblocks },
+	{ "keyGen"     , 0, xdag_com_keyGen },
+	{ "level"      , 0, xdag_com_level },
+	{ "miner"      , 2, xdag_com_miner },
+	{ "miners"     , 2, xdag_com_miners },
+	{ "mining"     , 1, xdag_com_mining },
+	{ "net"        , 0, xdag_com_net },
+	{ "pool"       , 2, xdag_com_pool },
+	{ "run"        , 0, xdag_com_run },
+	{ "state"      , 0, xdag_com_state },
+	{ "stats"      , 0, xdag_com_stats },
+	{ "cache"      , 2, xdag_com_cache },
+	{ "terminate"  , 0, xdag_com_terminate },
+	{ "exit"       , 0, xdag_com_exit },
+	{ "xfer"       , 0, (xdag_com_func_t)NULL},
+	{ "help"       , 0, xdag_com_help},
+	{ "disconnect" , 2, xdag_com_disconnect },
+	{ (char *)NULL , 0, (xdag_com_func_t)NULL}
 };
 
 int xdag_com_account(char* args, FILE* out)
@@ -125,6 +137,18 @@ int xdag_com_block(char * args, FILE* out)
 int xdag_com_lastblocks(char * args, FILE* out)
 {
 	processLastBlocksCommand(args, out);
+	return 0;
+}
+
+int xdag_com_mainblocks(char * args, FILE* out)
+{
+	processMainBlocksCommand(args, out);
+	return 0;
+}
+
+int xdag_com_minedblocks(char * args, FILE* out)
+{
+	processMinedBlocksCommand(args, out);
 	return 0;
 }
 
@@ -158,6 +182,12 @@ int xdag_com_pool(char * args, FILE* out)
 	return 0;
 }
 
+int xdag_com_miner(char * args, FILE* out)
+{
+	processMinerCommand(args, out);
+	return 0;
+}
+
 int xdag_com_miners(char * args, FILE* out)
 {
 	processMinersCommand(args, out);
@@ -175,6 +205,13 @@ int xdag_com_state(char * args, FILE* out)
 	fprintf(out, "%s\n", get_state());
 	return 0;
 }
+
+int xdag_com_cache(char * args, FILE* out)
+{
+	processCacheCommand(out);
+	return 0;
+}
+
 
 int xdag_com_run(char * args, FILE* out)
 {
@@ -253,7 +290,7 @@ int xdag_command(char *cmd, FILE *out)
 
 	XDAG_COMMAND *command = find_xdag_command(cmd);
 
-	if(!command) {
+	if(!command || (command->avaibility == 1 && !g_is_miner) || (command->avaibility == 2 && g_is_miner)) {
 		fprintf(out, "Illegal command.\n");
 	} else {
 		if(!strcmp(command->name, "xfer")) {
@@ -372,8 +409,25 @@ void processMiningCommand(char *nextParam, FILE *out)
 	} else if(sscanf(cmd, "%d", &nthreads) != 1 || nthreads < 0) {
 		fprintf(out, "Illegal number.\n");
 	} else {
-		xdag_mining_start(g_is_miner ? ~nthreads : nthreads);
+		xdag_mining_start(nthreads);
 		fprintf(out, "%d mining threads running\n", g_xdag_mining_threads);
+	}
+}
+
+void processMinerCommand(char *nextParam, FILE *out)
+{
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	if(cmd) {
+		size_t len = strlen(cmd);
+		if(len == 32) {
+			if(!xdag_print_miner_stats(cmd, out)) {
+				fprintf(out, "Miner is not found.\n");
+			}
+		} else {
+			fprintf(out, "Argument is incorrect.\n");
+		}
+	} else {
+		fprintf(out, "Miner is not specified.\n");
 	}
 }
 
@@ -442,6 +496,15 @@ void processStatsCommand(FILE *out)
 	}
 }
 
+void processCacheCommand(FILE *out)
+{
+	fprintf(out, "Cache informations:\n"
+		"     cached blocks: target amount %u, actual amount %u, hitrate %f%%\n",
+		g_xdag_extstats.cache_size, g_xdag_extstats.cache_usage, g_xdag_extstats.cache_hitrate*100
+	);
+}
+
+
 void processExitCommand()
 {
 	xdag_wallet_finish();
@@ -477,16 +540,29 @@ void processLastBlocksCommand(char *nextParam, FILE *out)
 	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
 		fprintf(out, "Illegal number.\n");
 	} else {
-		//100 is limit
-		if(blocksCount > 100) {
-			blocksCount = 100;
-		}
-		char** addressList = xdagCreateStringArray(blocksCount, 40);	//lets assume max address length as 39 symbols + null terminator
-		const int retrievedBlocks = xdagGetLastMainBlocks(blocksCount, addressList);
-		for(int i = 0; i < retrievedBlocks; ++i) {
-			fprintf(out, "%s\n", addressList[i]);
-		}
-		xdagFreeStringArray(addressList, blocksCount);
+		xdag_list_main_blocks(blocksCount, 1, out);
+	}
+}
+
+void processMainBlocksCommand(char *nextParam, FILE *out)
+{
+	int blocksCount = 20;
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
+		fprintf(out, "Illegal number.\n");
+	} else {
+		xdag_list_main_blocks(blocksCount, 0, out);
+	}
+}
+
+void processMinedBlocksCommand(char *nextParam, FILE *out)
+{
+	int blocksCount = 20;
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
+		fprintf(out, "Illegal number.\n");
+	} else {
+		xdag_list_mined_blocks(blocksCount, 0, out);
 	}
 }
 
@@ -524,17 +600,6 @@ void processDisconnectCommand(char *nextParam, FILE *out)
 	disconnect_connections(type, value);
 }
 
-static long double diff2log(xdag_diff_t diff)
-{
-	long double res = (long double)xdag_diff_to64(diff);
-	xdag_diff_shr32(&diff);
-	xdag_diff_shr32(&diff);
-	if(xdag_diff_to64(diff)) {
-		res += ldexpl((long double)xdag_diff_to64(diff), 64);
-	}
-	return (res > 0 ? logl(res) : 0);
-}
-
 long double hashrate(xdag_diff_t *diff)
 {
 	long double sum = 0;
@@ -542,7 +607,7 @@ long double hashrate(xdag_diff_t *diff)
 		sum += diff2log(diff[i]);
 	}
 	sum /= HASHRATE_LAST_MAX_TIME;
-	return ldexpl(expl(sum), -58);
+	return ldexpl(expl(sum), -58); //shown pool and network hashrate seems to be around 35% higher than real, to consider *(0.65) about correction. Deeper study is needed.
 }
 
 const char *get_state()
@@ -553,25 +618,6 @@ const char *get_state()
 #undef xdag_state
 	};
 	return states[g_xdag_state];
-}
-
-xdag_amount_t xdags2amount(const char *str)
-{
-	long double sum;
-	if(sscanf(str, "%Lf", &sum) != 1 || sum <= 0) {
-		return 0;
-	}
-	long double flr = floorl(sum);
-	xdag_amount_t res = (xdag_amount_t)flr << 32;
-	sum -= flr;
-	sum = ldexpl(sum, 32);
-	flr = ceill(sum);
-	return res + (xdag_amount_t)flr;
-}
-
-long double amount2xdags(xdag_amount_t amount)
-{
-	return xdag_amount2xdag(amount) + (long double)xdag_amount2cheato(amount) / 1000000000;
 }
 
 int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key)
@@ -664,7 +710,7 @@ int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_
 	if(!amount) {
 		return -1;
 	}
-	if(!g_is_miner && xdag_main_time() < (time >> 16) + 2 * XDAG_POOL_CONFIRMATIONS_COUNT) {
+	if(!g_is_miner && xdag_main_time() < (time >> 16) + 2 * CONFIRMATIONS_COUNT) {
 		return 0;
 	}
 	for(i = 0; i < xferData->keysCount; ++i) {
@@ -793,7 +839,7 @@ void processHelpCommand(FILE *out)
 		"  account [N]         - print first N (20 by default) our addresses with their amounts\n"
 		"  balance [A]         - print balance of the address A or total balance for all our addresses\n"
 		"  block [A]           - print extended info for the block corresponding to the address or hash A\n"
-		"  lastblocks [N]      - print latest N (20 by default, max limit 100) main blocks\n"
+		"  lastblocks [N]      - print latest N (20 by default, max limit 100) addresses of main blocks\n"
 		"  exit                - exit this program (not the daemon)\n"
 		"  help                - print this help\n"
 		"  keygen              - generate new private/public key pair and set it by default\n"
@@ -818,12 +864,14 @@ void processHelpCommand(FILE *out)
 		"                         O is option, can be all, address or ip\n"
 		"                         A is the miners' address\n"
 		"                         IP is the miners' IP\n"
+		"  mainblocks [N]       - print list of N (20 by default) main blocks"
+		"  minedblocks [N]      - print list of N (20 by default) main blocks mined by current pool"
 		, g_coinname);
 }
 
 void xdagSetCountMiningTread(int miningThreadsCount)
 {
-	xdag_mining_start(~miningThreadsCount);
+	xdag_mining_start(miningThreadsCount);
 }
 
 double xdagGetHashRate(void)
