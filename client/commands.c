@@ -864,8 +864,8 @@ void processHelpCommand(FILE *out)
 		"                         O is option, can be all, address or ip\n"
 		"                         A is the miners' address\n"
 		"                         IP is the miners' IP\n"
-		"  mainblocks [N]       - print list of N (20 by default) main blocks"
-		"  minedblocks [N]      - print list of N (20 by default) main blocks mined by current pool"
+		"  mainblocks [N]       - print list of N (20 by default) main blocks\n"
+		"  minedblocks [N]      - print list of N (20 by default) main blocks mined by current pool\n"
 		, g_coinname);
 }
 
