@@ -11,6 +11,7 @@ dar		 = $(SRCROOT)/dus/programs/dar/source
 ldusinc	 = $(SRCROOT)/ldus/source/include/ldus
 utils    = $(SRCROOT)/client/utils
 jsonrpc  = $(SRCROOT)/client/json-rpc
+http     = $(SRCROOT)/client/http
 
 sources = \
 	$(client)/sha256-mb-x86_64$(HOST_SUFFIX).s      \
@@ -56,7 +57,9 @@ sources = \
 	$(jsonrpc)/cJSON_Utils.c                        \
 	$(jsonrpc)/rpc_procedures.c                     \
 	$(jsonrpc)/rpc_service.c                        \
-	$(jsonrpc)/rpc_wrapper.c
+	$(jsonrpc)/rpc_wrapper.c                        \
+	$(http)/url.c                                   \
+	$(http)/http.c
 
 
 headers = \
@@ -106,7 +109,9 @@ headers = \
 	$(jsonrpc)/cJSON_Utils.h                        \
 	$(jsonrpc)/rpc_procedures.h                     \
 	$(jsonrpc)/rpc_service.h                        \
-	$(jsonrpc)/rpc_wrapper.h
+	$(jsonrpc)/rpc_wrapper.h                        \
+	$(http)/url.h                                   \
+	$(http)/http.h
 
 #program
 bin_PROGRAMS = xdag
