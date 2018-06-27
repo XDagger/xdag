@@ -5,6 +5,10 @@
 
 #include "block.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 /* checks a block and includes it in the database with synchronization, ruturs non-zero value in case of error */
 extern int xdag_sync_add_block(struct xdag_block *b, void *conn);
 
@@ -15,5 +19,9 @@ extern int xdag_sync_pop_block(struct xdag_block *b);
 extern int xdag_sync_init(void);
 
 extern int g_xdag_sync_on;
+	
+#ifdef __cplusplus
+};
+#endif
 
 #endif

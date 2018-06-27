@@ -19,10 +19,18 @@ struct xdag_rpc_connection {
 	char * buffer;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 /* init xdag rpc */
 extern int xdag_rpc_service_init(int port);
 
 /* stop xdag rpc */
 extern int xdag_rpc_service_stop(void);
+	
+#ifdef __cplusplus
+};
+#endif
 
 #endif //XDAG_RPC_SERVICE_H

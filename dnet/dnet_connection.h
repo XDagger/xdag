@@ -36,8 +36,16 @@ struct dnet_connection {
     uint8_t is_new;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 extern int dnet_connection_main(struct dnet_connection *conn);
 extern int dnet_traverse_connections(int (*callback)(struct dnet_connection *conn, void *data), void *data);
 extern int dnet_print_connection(struct dnet_connection *conn, struct dnet_output *out);
 
+#ifdef __cplusplus
+};
+#endif
+		
 #endif
