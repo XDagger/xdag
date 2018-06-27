@@ -59,6 +59,10 @@ struct xdag_block {
 
 #define xdag_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 // convert cheato to xdag
 extern long double amount2xdags(xdag_amount_t amount);
 
@@ -124,4 +128,9 @@ xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash);
 
 // get all transactions of specified address, and return total number of transactions
 extern int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t));
+	
+#ifdef __cplusplus
+};
+#endif
+
 #endif

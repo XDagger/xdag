@@ -22,6 +22,10 @@ struct xdag_pool_task {
 	void *ctx0, *ctx;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 extern struct xdag_pool_task g_xdag_pool_task[2];
 extern uint64_t g_xdag_pool_task_index; /* global variables are instantiated with 0 */
 
@@ -44,4 +48,8 @@ extern int xdag_initialize_mining(const char *pool_arg, const char *miner_addres
 //function sets minimal share for the task
 extern void xdag_set_min_share(struct xdag_pool_task *task, xdag_hash_t last, xdag_hash_t hash);
 
+#ifdef __cplusplus
+};
+#endif
+		
 #endif

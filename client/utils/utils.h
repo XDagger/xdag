@@ -19,6 +19,10 @@
 #define DELIMITER "/"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 extern uint64_t get_timestamp(void);
 
 extern void xdag_init_path(char *base);
@@ -72,5 +76,9 @@ void xdag_time_to_string(xdag_time_t time, char *buf);
 // convert time_t to string representation
 // minimal length of string buffer `buf` should be 50
 void time_to_string(time_t time, char* buf);
+	
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* utils_h */

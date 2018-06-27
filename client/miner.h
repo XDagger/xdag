@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include "block.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 /* a number of mining threads */
 extern int g_xdag_mining_threads;
 
@@ -20,4 +24,8 @@ extern void *miner_net_thread(void *arg);
 /* send block to network via pool */
 extern int xdag_send_block_via_pool(struct xdag_block *block);
 
+#ifdef __cplusplus
+};
+#endif
+		
 #endif

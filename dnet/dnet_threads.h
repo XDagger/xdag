@@ -37,11 +37,19 @@ struct dnet_thread {
 
 #define DNET_UPDATE_PERIOD	    30
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int dnet_thread_create(struct dnet_thread *t);
 extern int dnet_traverse_threads(int (*callback)(struct dnet_thread *t, void *data), void *data);
 extern int dnet_threads_init(void);
 
 /* maximum allowed number of connections */
 extern int g_conn_limit;
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif
