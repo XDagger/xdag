@@ -14,6 +14,9 @@
 /* 1 - program works as a pool */
 int g_xdag_pool = 0;
 
+/* defines if multi address enable (miner & pool) */
+int g_multi_address = 0;
+
 struct xdag_pool_task g_xdag_pool_task[2];
 uint64_t g_xdag_pool_task_index;
 

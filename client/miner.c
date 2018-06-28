@@ -24,6 +24,7 @@
 #include "transport.h"
 #include "utils/log.h"
 #include "mining_common.h"
+#include "uthash/utlist.h"
 
 #define MINERS_PWD             "minersgonnamine"
 #define SECTOR0_BASE           0x1947f3acu
@@ -35,6 +36,16 @@ struct miner {
 	uint64_t nfield_in;
 	uint64_t nfield_out;
 };
+
+typedef struct block_list_element {
+	struct xdag_block ourblock;
+	xdag_hash_t hash;
+	struct block_list_element *next;
+} block_list_element;
+
+pthread_mutex_t g_mutex_our_block_list = PTHREAD_MUTEX_INITIALIZER;
+struct block_list_element *g_our_blocks_list = NULL;
+static int g_our_block_changed = 0;
 
 static struct miner g_local_miner;
 static pthread_mutex_t g_miner_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -74,6 +85,15 @@ extern int xdag_initialize_miner(const char *pool_address)
 	}
 
 	return 0;
+}
+
+int xdag_miner_new_address(xdag_hash_t hash)
+{
+	int ret = xdag_create_block(0, 0, 0, 0, 0, hash);
+	if(!ret) {
+		g_our_block_changed = 1;
+	}
+	return ret;
 }
 
 static int send_to_pool(struct xdag_field *fld, int nfld)
@@ -131,6 +151,89 @@ static int send_to_pool(struct xdag_field *fld, int nfld)
 	if(nfld == XDAG_BLOCK_FIELDS) {
 		xdag_info("Sent  : %016llx%016llx%016llx%016llx t=%llx res=%d",
 			h[3], h[2], h[1], h[0], fld[0].time, 0);
+	}
+
+	return 0;
+}
+
+static int miner_fresh_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key)
+{
+
+	struct xdag_block b;
+	xdag_time_t t;
+	const int64_t pos = xdag_get_block_pos(hash, &t);
+	if(pos < 0) {
+		return 0;
+	}
+
+	struct xdag_block *blk = xdag_storage_load(hash, t, pos, &b);
+	if(!blk) {
+		return -1;
+	}
+
+	struct block_list_element *elem = (struct block_list_element *)malloc(sizeof(struct block_list_element));
+	if(!elem) {
+		return -1;
+	}
+
+	memcpy(&elem->ourblock, blk, sizeof(struct xdag_block));
+	memcpy(elem->hash, hash, sizeof(xdag_hash_t));
+	LL_APPEND(g_our_blocks_list, elem);
+	return 0;
+}
+
+void *miner_refresh_thread(void *arg)
+{
+	g_our_block_changed = 1;
+
+	while(1) {
+		if(g_our_block_changed) {
+			xdag_mess("our block changed!");
+			block_list_element *elem, *elemtmp;
+
+			pthread_mutex_lock(&g_mutex_our_block_list);
+			LL_FOREACH_SAFE(g_our_blocks_list, elem, elemtmp)
+			{
+				LL_DELETE(g_our_blocks_list, elem);
+				free(elem);
+			}
+
+			xdag_traverse_our_blocks(NULL, &miner_fresh_callback);
+			pthread_mutex_unlock(&g_mutex_our_block_list);
+			g_our_block_changed = 0;
+		}
+
+		xdag_mess("miner refresh thread ....");
+
+		block_list_element *elt;
+		LL_FOREACH(g_our_blocks_list, elt)
+		{
+			pthread_mutex_lock(&g_miner_mutex);
+			if(g_socket == INVALID_SOCKET) {
+				pthread_mutex_unlock(&g_miner_mutex);
+				xdag_err("cannot create a socket");
+				break;
+			}
+
+#if _DEBUG
+			char buf[33];
+			xdag_hash_t hash;
+			xdag_hash(&elt->ourblock, sizeof(struct xdag_block), hash);
+			xdag_hash2address(hash, buf);
+			xdag_mess("our block address %s", buf);
+#endif
+
+			if(send_to_pool(elt->ourblock.field, XDAG_BLOCK_FIELDS) < 0) {
+				xdag_err("socket is closed");
+				pthread_mutex_unlock(&g_miner_mutex);
+				break;
+			}
+			pthread_mutex_unlock(&g_miner_mutex);
+
+			sleep(0.5); // sleep half second
+		}
+
+		sleep(120); // 5 mintues
 	}
 
 	return 0;
@@ -253,6 +356,22 @@ begin:
 		pthread_mutex_unlock(&g_miner_mutex);
 		goto err;
 	}
+
+	if(g_multi_address){
+		pthread_t th;
+		res = pthread_create(&th, 0, miner_refresh_thread, NULL);
+		if(res) {
+			mess = "create miner refresh thread failed.";
+			goto err;
+		}
+
+		res = pthread_detach(th);
+		if(res) {
+			mess = "detach miner refresh thread failed.";
+			goto err;
+		}
+	}
+
 	pthread_mutex_unlock(&g_miner_mutex);
 
 	for(;;) {
@@ -334,7 +453,33 @@ begin:
 					ndata = 0;
 					maxndata = sizeof(struct xdag_field);
 				} else {
-					maxndata = 2 * sizeof(struct xdag_field);
+
+					int has = 0;
+
+					if(g_multi_address) {
+						pthread_mutex_lock(&g_mutex_our_block_list);
+						struct block_list_element * elem = NULL;
+						LL_FOREACH(g_our_blocks_list, elem)
+						{
+							if(memcmp(last->data, elem->hash, sizeof(xdag_hashlow_t)) == 0) {
+								xdag_set_balance(last->data, last->amount);
+
+								pthread_mutex_lock(&g_transport_mutex);
+								g_xdag_last_received = current_time;
+								pthread_mutex_unlock(&g_transport_mutex);
+
+								ndata = 0;
+								maxndata = sizeof(struct xdag_field);
+
+								has = 1;
+							}
+						}
+						pthread_mutex_unlock(&g_mutex_our_block_list);
+					}
+
+					if(!has) {
+						maxndata = 2 * sizeof(struct xdag_field);
+					}
 				}
 			}
 		}

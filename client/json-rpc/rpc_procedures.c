@@ -32,6 +32,7 @@
 #include "../block.h"
 #include "../address.h"
 #include "../commands.h"
+#include "../miner.h"
 #include "../wallet.h"
 #include "../../dus/programs/dfstools/source/dfslib/dfslib_random.h"
 #include "../../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
@@ -543,11 +544,11 @@ cJSON * method_xdag_new_address(struct xdag_rpc_context * ctx, cJSON * params, c
 
 	cJSON *result = cJSON_CreateArray();
 	for(int i = 0; i < number; ++i) {
-		xdag_create_block(0, 0, 0, 0, 0, hash);
-
-		xdag_hash2address(hash, address);
-		cJSON *json_address = cJSON_CreateString(address);
-		cJSON_AddItemToArray(result, json_address);
+		if(!xdag_miner_new_address(hash)) {
+			xdag_hash2address(hash, address);
+			cJSON *json_address = cJSON_CreateString(address);
+			cJSON_AddItemToArray(result, json_address);
+		}
 	}
 
 	return result;

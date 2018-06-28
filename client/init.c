@@ -154,6 +154,8 @@ int xdag_init(int argc, char **argv, int isGui)
 			}
 		} else if(ARG_EQUAL(argv[i], "-dm", "")) {
 			g_disable_mining = 1;
+		} else if(ARG_EQUAL(argv[i], "", "-multi")) {
+			g_multi_address = 1;
 		} else {
 			printUsage(argv[0]);
 			return 0;

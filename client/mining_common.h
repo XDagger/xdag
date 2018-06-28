@@ -35,6 +35,9 @@ extern void *g_ptr_share_mutex;
 /* 1 - program works as a pool */
 extern int g_xdag_pool;
 
+/* defines if multi address enable (miner & pool) */
+extern int g_multi_address;
+
 extern const char *g_miner_address;
 
 extern pthread_mutex_t g_share_mutex;
