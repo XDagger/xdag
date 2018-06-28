@@ -45,6 +45,7 @@
     <ClCompile Include="..\..\client\miner.c" />
     <ClCompile Include="..\..\client\mining_common.c" />
     <ClCompile Include="..\..\client\netdb.c" />
+    <ClCompile Include="..\..\client\network.c" />
     <ClCompile Include="..\..\client\pool.c" />
     <ClCompile Include="..\..\client\sha256.c" />
     <ClCompile Include="..\..\client\storage.c" />
@@ -92,6 +93,7 @@
     <ClInclude Include="..\..\client\miner.h" />
     <ClInclude Include="..\..\client\mining_common.h" />
     <ClInclude Include="..\..\client\netdb.h" />
+    <ClInclude Include="..\..\client\network.h" />
     <ClInclude Include="..\..\client\pool.h" />
     <ClInclude Include="..\..\client\sha256.h" />
     <ClInclude Include="..\..\client\state.h" />
@@ -140,12 +142,14 @@
     <ClInclude Include="..\sys\time.h" />
     <ClInclude Include="..\termios.h" />
     <ClInclude Include="..\unistd.h" />
+    <ClInclude Include="network.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\client\netdb-testnet.txt" />
     <Text Include="..\..\client\netdb-white-testnet.txt" />
     <Text Include="..\..\client\netdb-white.txt" />
     <Text Include="..\..\client\netdb.txt" />
+    <Text Include="..\..\client\pools.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

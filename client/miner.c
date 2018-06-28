@@ -24,6 +24,7 @@
 #include "transport.h"
 #include "utils/log.h"
 #include "mining_common.h"
+#include "network.h"
 
 #define MINERS_PWD             "minersgonnamine"
 #define SECTOR0_BASE           0x1947f3acu
@@ -141,9 +142,9 @@ void *miner_net_thread(void *arg)
 	struct xdag_block b;
 	struct xdag_field data[2];
 	xdag_hash_t hash;
-	const char *str = (const char*)arg;
+	const char *pool_address = (const char*)arg;
 	char buf[0x100];
-	const char *mess, *mess1 = "";
+	const char *mess = NULL;
 	struct sockaddr_in peeraddr;
 	char *lasts;
 	int res = 0, reuseaddr = 1;
@@ -174,7 +175,6 @@ begin:
 	}
 
 	const int64_t pos = xdag_get_block_pos(hash, &t);
-
 	if(pos < 0) {
 		mess = "can't find the block";
 		goto err;
@@ -188,63 +188,9 @@ begin:
 	if(blk != &b) memcpy(&b, blk, sizeof(struct xdag_block));
 
 	pthread_mutex_lock(&g_miner_mutex);
-	// Create a socket
-	g_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	g_socket = xdag_connect_pool(pool_address, &mess);
 	if(g_socket == INVALID_SOCKET) {
 		pthread_mutex_unlock(&g_miner_mutex);
-		mess = "cannot create a socket";
-		goto err;
-	}
-	if(fcntl(g_socket, F_SETFD, FD_CLOEXEC) == -1) {
-		xdag_err("pool  : can't set FD_CLOEXEC flag on socket %d, %s\n", g_socket, strerror(errno));
-	}
-
-	// Fill in the address of server
-	memset(&peeraddr, 0, sizeof(peeraddr));
-	peeraddr.sin_family = AF_INET;
-
-	// Resolve the server address (convert from symbolic name to IP number)
-	strcpy(buf, str);
-	const char *s = strtok_r(buf, " \t\r\n:", &lasts);
-	if(!s) {
-		pthread_mutex_unlock(&g_miner_mutex);
-		mess = "host is not given";
-		goto err;
-	}
-	if(!strcmp(s, "any")) {
-		peeraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	} else if(!inet_aton(s, &peeraddr.sin_addr)) {
-		struct hostent *host = gethostbyname(s);
-		if(host == NULL || host->h_addr_list[0] == NULL) {
-			pthread_mutex_unlock(&g_miner_mutex);
-			mess = "cannot resolve host ";
-			mess1 = s;
-			res = h_errno;
-			goto err;
-		}
-		// Write resolved IP address of a server to the address structure
-		memmove(&peeraddr.sin_addr.s_addr, host->h_addr_list[0], 4);
-	}
-
-	// Resolve port
-	s = strtok_r(0, " \t\r\n:", &lasts);
-	if(!s) {
-		pthread_mutex_unlock(&g_miner_mutex);
-		mess = "port is not given";
-		goto err;
-	}
-	peeraddr.sin_port = htons(atoi(s));
-
-	// Set the "LINGER" timeout to zero, to close the listen socket
-	// immediately at program termination.
-	setsockopt(g_socket, SOL_SOCKET, SO_LINGER, (char*)&linger_opt, sizeof(linger_opt));
-	setsockopt(g_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&reuseaddr, sizeof(int));
-
-	// Now, connect to a pool
-	res = connect(g_socket, (struct sockaddr*)&peeraddr, sizeof(peeraddr));
-	if(res) {
-		pthread_mutex_unlock(&g_miner_mutex);
-		mess = "cannot connect to the pool";
 		goto err;
 	}
 
@@ -362,7 +308,7 @@ begin:
 	return 0;
 
 err:
-	xdag_err("Miner : %s %s (error %d)", mess, mess1, res);
+	xdag_err("Miner : %s %s (error %d)", mess, res);
 
 	pthread_mutex_lock(&g_miner_mutex);
 
