@@ -74,6 +74,9 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON * params, cJSON
 int rpc_transactions_callback(void *data, int type, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time);
 cJSON * method_xdag_get_transactions(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version);
 
+/* method: xdag_new_address */
+cJSON * method_xdag_new_address(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version);
+
 /* version */
 /*
  request:
@@ -496,6 +499,60 @@ cJSON * method_xdag_get_transactions(struct xdag_rpc_context * ctx, cJSON * para
 	return result;
 }
 
+/* create new addresss */
+/*
+ request:
+ "method":"xdag_new_address", "params":[{"number":1}], "id":1
+ "jsonrpc":"2.0", "method":"xdag_get_account", "params":[{"number":1}], "id":1
+ "version":"1.1", "method":"xdag_get_account", "params":[{"number":1}], "id":1
+
+ reponse:
+ "result":["AAAAA", "BBBBB"], "error":null, "id":1
+ "jsonrpc":"2.0", "result":["AAAAA", "BBBBB"], "error":null, "id":1
+ "version":"1.1", "result":["AAAAA", "BBBBB"], "error":null, "id":1
+ */
+cJSON * method_xdag_new_address(struct xdag_rpc_context * ctx, cJSON * params, cJSON *id, char *version)
+{
+	xdag_hash_t hash;
+	int number = 1;
+	char address[33];
+
+	if (params) {
+		if (cJSON_IsArray(params) && cJSON_GetArraySize(params) == 1) {
+			cJSON* param = cJSON_GetArrayItem(params, 0);
+			if (!param || !cJSON_IsObject(param)) {
+				ctx->error_code = 1;
+				ctx->error_message = strdup("Invalid parameters.");
+				return NULL;
+			}
+
+			cJSON * json_number = cJSON_GetObjectItem(param, "number");
+			if (cJSON_IsNumber(json_number)) {
+				number = json_number->valueint;
+			}
+		} else {
+			ctx->error_code = 1;
+			ctx->error_message = strdup("Invalid parameters.");
+			return NULL;
+		}
+	} else {
+		ctx->error_code = 1;
+		ctx->error_message = strdup("Invalid parameters.");
+		return NULL;
+	}
+
+	cJSON *result = cJSON_CreateArray();
+	for(int i = 0; i < number; ++i) {
+		xdag_create_block(0, 0, 0, 0, 0, hash);
+
+		xdag_hash2address(hash, address);
+		cJSON *json_address = cJSON_CreateString(address);
+		cJSON_AddItemToArray(result, json_address);
+	}
+
+	return result;
+}
+
 /* init rpc procedures */
 int xdag_rpc_init_procedures(void)
 {
@@ -504,10 +561,11 @@ int xdag_rpc_init_procedures(void)
 	rpc_register_func(xdag_state);
 	rpc_register_func(xdag_stats);
 	
-	/* register xdag_get_account, xdag_get_balance, xdag_do_xfer, xdag_get_transactions */
+	/* register */
 	rpc_register_func(xdag_get_account);
 	rpc_register_func(xdag_get_balance);
 	rpc_register_func(xdag_do_xfer);
 	rpc_register_func(xdag_get_transactions);
+	rpc_register_func(xdag_new_address);
 	return 0;
 }
