@@ -34,6 +34,10 @@ struct dnet_host {
     enum dnet_host_route_types route_type;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern void dnet_update_host(struct dnet_host *host, time_t active_ago, uint32_t route_ip, uint16_t route_port, enum dnet_host_route_types route_type);
 extern struct dnet_host *dnet_add_host(const struct dnet_key *key, time_t active_ago, uint32_t route_ip, uint16_t route_port, enum dnet_host_route_types route_type);
 extern struct dnet_host *dnet_get_self_host(void);
@@ -57,5 +61,9 @@ extern int dnet_hosts_init(void);
 static inline uint32_t dnet_host_time_ago(struct dnet_host *h, time_t now) {
 	return h->is_local || now <= h->last_active ? 0 : (uint32_t)(now - h->last_active);
 }
+	
+#ifdef __cplusplus
+};
+#endif
 
 #endif

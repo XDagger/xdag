@@ -83,9 +83,17 @@ struct dnet_packet {
 
 struct dnet_connection;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 extern int dnet_process_packet(struct dnet_packet *p, struct dnet_connection *conn);
 extern int dnet_send_packet(struct dnet_packet *p, struct dnet_connection *conn);
 extern int dnet_send_command_packet(struct dnet_packet_stream *st, struct dnet_output *output);
 extern int dnet_cancel_command(struct dnet_output *output);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif

@@ -186,6 +186,9 @@
     <ClCompile Include="..\..\client\utils\moving_statistics\moving_average.c">
       <Filter>client\utils\moving_statitics</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\client\json-rpc\rpc_procedure.c">
+      <Filter>client\json-rpc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client\address.h">
@@ -379,6 +382,12 @@
     </ClInclude>
     <ClInclude Include="..\..\client\utils\moving_statistics\moving_average.h">
       <Filter>client\utils\moving_statitics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\types.h">
+      <Filter>client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\json-rpc\rpc_procedure.h">
+      <Filter>client\json-rpc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

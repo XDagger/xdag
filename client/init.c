@@ -40,6 +40,8 @@ time_t g_xdag_xfer_last = 0;
 enum xdag_field_type g_block_header_type = XDAG_FIELD_HEAD;
 struct xdag_stats g_xdag_stats;
 struct xdag_ext_stats g_xdag_extstats;
+int g_disable_mining = 0;
+
 int(*g_xdag_show_state)(const char *state, const char *balance, const char *address) = 0;
 
 void printUsage(char* appName);
@@ -49,7 +51,6 @@ int xdag_init(int argc, char **argv, int isGui)
     xdag_init_path(argv[0]);
 
 	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
-	char *ptr;
 	int transport_flags = 0, n_addrports = 0, mining_threads_count = 0, is_pool = 0, is_miner = 0, level, is_rpc = 0, rpc_port = 0;
 	
 	memset(addrports, 0, 256);
@@ -117,11 +118,12 @@ int xdag_init(int argc, char **argv, int isGui)
 				if (mining_threads_count < 0) mining_threads_count = 0;
 			}
 		} else if(ARG_EQUAL(argv[i], "-p", "")) { /* public address & port */
-			if (++i < argc)
-				pubaddr = argv[i];
-		} else if(ARG_EQUAL(argv[i], "-P", "")) { /* pool config */
 			if (++i < argc) {
 				is_pool = 1;
+				pubaddr = argv[i];
+			}
+		} else if(ARG_EQUAL(argv[i], "-P", "")) { /* pool config */
+			if (++i < argc) {
 				pool_arg = argv[i];
 			}
 		} else if(ARG_EQUAL(argv[i], "-r", "")) { /* load blocks and wait for run command */
@@ -150,13 +152,15 @@ int xdag_init(int argc, char **argv, int isGui)
 					rpc_port = 0;
 				}
 			}
+		} else if(ARG_EQUAL(argv[i], "-dm", "")) {
+			g_disable_mining = 1;
 		} else {
 			printUsage(argv[0]);
 			return 0;
 		}
 	}
 
-	if (is_miner && (is_pool || pubaddr || bindto || n_addrports)) {
+	if (is_miner && (is_pool || bindto || n_addrports)) {
 		printf("Miner can't be a pool or have directly connected to the xdag network.\n");
 		return -1;
 	}
@@ -175,6 +179,9 @@ int xdag_init(int argc, char **argv, int isGui)
 
 	if(g_xdag_testnet) {
 		g_block_header_type = XDAG_FIELD_HEAD_TEST; //block header has the different type in the test network
+	}
+	if(g_disable_mining && g_is_miner) {
+		g_disable_mining = 0;   // this option is only for pools
 	}
 
 	memset(&g_xdag_stats, 0, sizeof(g_xdag_stats));
@@ -205,8 +212,11 @@ int xdag_init(int argc, char **argv, int isGui)
 	}
 	xdag_mess("Starting blocks engine...");
 	if (xdag_blocks_start(g_is_pool, mining_threads_count, !!miner_address)) return -1;
-	xdag_mess("Starting pool engine...");
-	if (xdag_initialize_mining(pool_arg, miner_address)) return -1;
+
+	if(!g_disable_mining) {
+		xdag_mess("Starting pool engine...");
+		if(xdag_initialize_mining(pool_arg, miner_address)) return -1;
+	}
 
 	if (!isGui) {
 		if (is_pool || (transport_flags & XDAG_DAEMON) > 0) {
@@ -259,5 +269,6 @@ void printUsage(char* appName)
 		"  -z RAM         - use RAM instead of temp-files\n"
 		"  -rpc-enable    - enable JSON-RPC service\n"
 		"  -rpc-port      - set HTTP JSON-RPC port (default is 7677)\n"
+		"  -dm            - disable mining on pool (-P option is ignored)\n"
 		, appName);
 }

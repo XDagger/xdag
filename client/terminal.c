@@ -16,7 +16,7 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 
-#if defined (__APPLE__) || defined (__MACOS__)
+#if defined (__MACOS__) || defined (__APPLE__)
 #include <string.h>
 #endif
 
@@ -34,7 +34,6 @@
 #define LOCAL_HOST_IP           0x7f000001 // 127.0.0.1
 #define APPLICATION_DOMAIN_PORT 7676
 #endif
-
 
 int terminal(void)
 {

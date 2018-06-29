@@ -2,15 +2,19 @@
 # created by cz.worker@gmail.com on 2018-03-29
 # modify by reymondtu@gmx.com on 2018-05-23
 
-SRCROOT  = ..
-client   = $(SRCROOT)/client
-dnet	 = $(SRCROOT)/dnet
-dfstools = $(SRCROOT)/dus/programs/dfstools/source
-dfslib	 = $(dfstools)/dfslib
-dar		 = $(SRCROOT)/dus/programs/dar/source
-ldusinc	 = $(SRCROOT)/ldus/source/include/ldus
-utils    = $(SRCROOT)/client/utils
-jsonrpc  = $(SRCROOT)/client/json-rpc
+SRCROOT             = ..
+client              = $(SRCROOT)/client
+dnet	            = $(SRCROOT)/dnet
+dfstools            = $(SRCROOT)/dus/programs/dfstools/source
+dfslib	            = $(dfstools)/dfslib
+dar		            = $(SRCROOT)/dus/programs/dar/source
+ldusinc	            = $(SRCROOT)/ldus/source/include/ldus
+utils               = $(SRCROOT)/client/utils
+jsonrpc             = $(SRCROOT)/client/json-rpc
+http                = $(SRCROOT)/client/http
+moving_statistics   = $(SRCROOT)/client/utils/moving_statistics
+secp256k1           = $(SRCROOT)/secp256k1
+
 
 sources = \
 	$(client)/sha256-mb-x86_64$(HOST_SUFFIX).s      \
@@ -52,11 +56,16 @@ sources = \
 	$(utils)/log.c                                  \
 	$(utils)/utils.c                                \
 	$(utils)/linenoise.c                            \
+	$(moving_statistics)/moving_average.c           \
 	$(jsonrpc)/cJSON.c                              \
 	$(jsonrpc)/cJSON_Utils.c                        \
 	$(jsonrpc)/rpc_procedures.c                     \
+	$(jsonrpc)/rpc_procedure.c                      \
 	$(jsonrpc)/rpc_service.c                        \
-	$(jsonrpc)/rpc_wrapper.c
+	$(jsonrpc)/rpc_wrapper.c                        \
+	$(http)/url.c                                   \
+	$(http)/http.c                                  \
+	$(secp256k1)/src/secp256k1.c
 
 
 headers = \
@@ -102,11 +111,15 @@ headers = \
 	$(utils)/log.h                                  \
 	$(utils)/utils.h                                \
 	$(utils)/linenoise.h                            \
+	$(moving_statistics)/moving_average.h           \
 	$(jsonrpc)/cJSON.h                              \
 	$(jsonrpc)/cJSON_Utils.h                        \
 	$(jsonrpc)/rpc_procedures.h                     \
+	$(jsonrpc)/rpc_procedure.h                      \
 	$(jsonrpc)/rpc_service.h                        \
-	$(jsonrpc)/rpc_wrapper.h
+	$(jsonrpc)/rpc_wrapper.h                        \
+	$(http)/url.h                                   \
+	$(http)/http.h                                  
 
 #program
 bin_PROGRAMS = xdag
@@ -127,7 +140,12 @@ _INCLUDES =                                         \
 	-I$(dar)                                        \
 	-I$(ldusinc)                                    \
 	-I$(utils)                                      \
-	-I$(jsonrpc)
+	-I$(moving_statistics)                          \
+	-I$(jsonrpc)                                    \
+	-I$(http)                                       \
+	-I$(secp256k1)/src                              \
+	-I$(secp256k1)/                                 
+	
 
 xdag_SOURCES = $(sources)
 #xdag_LDADD = -lpthread -lcrypto -lssl -lm

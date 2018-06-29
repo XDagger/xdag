@@ -6,6 +6,10 @@
 #include "dnet_log.h"
 #include "dnet_threads.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 /* копирование из источника from в назначение to; источник и назначение заданы в формате [host:]port */
 extern int dnet_file_command(const char *from, const char *to, const char *param, struct dnet_output *out);
 
@@ -14,5 +18,9 @@ extern int dnet_file_thread(struct dnet_thread *t, struct dnet_packet_stream *st
 
 /* обработка принятого файлового пакета */
 extern int dnet_process_file_packet(struct dnet_packet_stream *st);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif
