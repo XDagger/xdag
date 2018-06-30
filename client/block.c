@@ -1608,12 +1608,8 @@ void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out)
 void cache_retarget(int32_t cache_hit, int32_t cache_miss)
 {
 	if(g_xdag_extstats.cache_usage >= g_xdag_extstats.cache_size) {
-		if(g_xdag_extstats.cache_hitrate < 0.94 && g_xdag_extstats.cache_size * 2 <= CACHE_MAX_SIZE) {
-			if(!g_xdag_extstats.cache_size && CACHE_MAX_SIZE) {
-				g_xdag_extstats.cache_size++;
-			} else {
-				g_xdag_extstats.cache_size = g_xdag_extstats.cache_size * 2;
-			}
+		if(g_xdag_extstats.cache_hitrate < 0.94 && g_xdag_extstats.cache_size < CACHE_MAX_SIZE) {
+			g_xdag_extstats.cache_size++;
 		} else if(g_xdag_extstats.cache_hitrate > 0.98 && !cache_miss && g_xdag_extstats.cache_size) {
 			g_xdag_extstats.cache_size--;
 		}
