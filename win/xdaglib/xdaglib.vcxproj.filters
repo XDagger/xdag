@@ -413,5 +413,8 @@
     <Text Include="..\..\client\pools.txt">
       <Filter>client\pool_lists</Filter>
     </Text>
+    <Text Include="..\..\client\pools-testnet.txt">
+      <Filter>client\pool_lists</Filter>
+    </Text>
   </ItemGroup>
 </Project>

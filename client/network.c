@@ -7,6 +7,15 @@
 #include "utils/log.h"
 #include "system.h"
 
+int xdag_network_init()
+{
+#ifdef _WIN32
+	WSADATA wsaData;
+	return WSAStartup(MAKEWORD(2, 2), &wsaData) == 0;
+#endif
+	return 1;
+}
+
 static int validate_address(const char* pool_address, struct sockaddr_in *peerAddr, char** error_message)
 {
 	char *lasts;
@@ -77,4 +86,11 @@ int xdag_connect_pool(const char* pool_address, char** error_message)
 		return INVALID_SOCKET;
 	}
 	return sock;
+}
+
+void xdag_connection_close(int socket)
+{
+	if(socket != INVALID_SOCKET) {
+		close(socket);
+	}
 }

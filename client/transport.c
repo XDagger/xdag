@@ -289,7 +289,8 @@ int xdag_transport_start(int flags, const char *bindto, int npairs, const char *
 #endif
 	
 	if (bindto) {
-		argv[argc++] = "-s"; argv[argc++] = bindto;
+		argv[argc++] = "-s"; 
+		argv[argc++] = bindto;
 	}
 
 	for (i = 0; i < npairs; ++i) {

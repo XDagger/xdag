@@ -22,14 +22,16 @@
 #include "storage.h"
 #include "sync.h"
 #include "transport.h"
-#include "utils/log.h"
 #include "mining_common.h"
 #include "network.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 #define MINERS_PWD             "minersgonnamine"
 #define SECTOR0_BASE           0x1947f3acu
 #define SECTOR0_OFFSET         0x82e9d1b5u
 #define SEND_PERIOD            10                                  /* share period of sending shares */
+#define POOL_LIST_FILE         (g_xdag_testnet ? "pools-testnet.txt" : "pools.txt")
 
 struct miner {
 	struct xdag_field id;
@@ -406,4 +408,44 @@ int xdag_send_block_via_pool(struct xdag_block *b)
 	int ret = send_to_pool(b->field, XDAG_BLOCK_FIELDS);
 	pthread_mutex_unlock(&g_miner_mutex);
 	return ret;
+}
+
+/* picks random pool from the list of pools */
+int xdag_pick_pool(char *pool_address)
+{
+	char addresses[30][50];
+	char *error_message;
+	srand(time(NULL));
+	
+	int count = 0;
+	FILE *fp = xdag_open_file(POOL_LIST_FILE, "r");
+	if(!fp) {
+		printf("List of pools is not found\n");
+		return 0;
+	}
+	while(fgets(addresses[count], 50, fp)) {
+		// remove trailing newline character
+		addresses[count][strcspn(addresses[count], "\n")] = 0;
+		++count;
+	}
+	fclose(fp);
+
+	int start_index = rand() % count;
+	int index = start_index;
+	do {
+		int socket = xdag_connect_pool(addresses[index], &error_message);
+		if(socket != INVALID_SOCKET) {
+			xdag_connection_close(socket);
+			strcpy(pool_address, addresses[index]);
+			return 1;
+		} else {
+			++index;
+			if(index >= count) {
+				index = 0;
+			}
+		}
+	} while(index != start_index);
+
+	printf("Wallet is unable to connect to network. Check your network connection\n");
+	return 0;
 }

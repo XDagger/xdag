@@ -149,6 +149,7 @@
     <Text Include="..\..\client\netdb-white-testnet.txt" />
     <Text Include="..\..\client\netdb-white.txt" />
     <Text Include="..\..\client\netdb.txt" />
+    <Text Include="..\..\client\pools-testnet.txt" />
     <Text Include="..\..\client\pools.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
