@@ -23,6 +23,7 @@
 #include "terminal.h"
 #include "memory.h"
 #include "miner.h"
+#include "network.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "json-rpc/rpc_service.h"

@@ -145,12 +145,8 @@ void *miner_net_thread(void *arg)
 	struct xdag_field data[2];
 	xdag_hash_t hash;
 	const char *pool_address = (const char*)arg;
-	char buf[0x100];
 	const char *mess = NULL;
-	struct sockaddr_in peeraddr;
-	char *lasts;
-	int res = 0, reuseaddr = 1;
-	struct linger linger_opt = { 1, 0 }; // Linger active, timeout 0
+	int res = 0;
 	xdag_time_t t;
 	struct miner *m = &g_local_miner;
 
@@ -414,7 +410,7 @@ int xdag_send_block_via_pool(struct xdag_block *b)
 int xdag_pick_pool(char *pool_address)
 {
 	char addresses[30][50];
-	char *error_message;
+	const char *error_message;
 	srand(time(NULL));
 	
 	int count = 0;
