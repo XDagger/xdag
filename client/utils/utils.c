@@ -431,3 +431,20 @@ void time_to_string(time_t time, char* buf)
 	localtime_r(&time, &tm);
 	strftime(buf, 50, "%Y-%m-%d %H:%M:%S", &tm);
 }
+
+void replace_all_control_characters(char *string, int length, char symbol)
+{
+	static char *control_chars = "\n\t\v\b\r\f\a ";
+
+	int control_chars_len = strlen(control_chars);
+	int index = 0;
+	while(string[index] != 0 && (length < 0 || index < length)) {
+		for(int j = 0; j < control_chars_len; ++j) {
+			if(string[index] == control_chars[j]) {
+				string[index] = symbol;
+				break;
+			}
+		}
+		++index;
+	}
+}
