@@ -20,6 +20,9 @@
 		386E313520B736ED000F165C /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 386E313320B736ED000F165C /* libssl.a */; };
 		386E313620B736ED000F165C /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 386E313420B736ED000F165C /* libcrypto.a */; };
 		3878725920E0084B00107FAE /* rpc_procedure.c in Sources */ = {isa = PBXBuildFile; fileRef = 3878725820E0084B00107FAE /* rpc_procedure.c */; };
+		3883C71220EA651400041D3A /* network.c in Sources */ = {isa = PBXBuildFile; fileRef = 3883C70D20EA651300041D3A /* network.c */; };
+		3883C71320EA651400041D3A /* pools.txt in Resources */ = {isa = PBXBuildFile; fileRef = 3883C71020EA651400041D3A /* pools.txt */; };
+		3883C71420EA651400041D3A /* pools-testnet.txt in Resources */ = {isa = PBXBuildFile; fileRef = 3883C71120EA651400041D3A /* pools-testnet.txt */; };
 		388E850120D402D0009E01C1 /* moving_average.c in Sources */ = {isa = PBXBuildFile; fileRef = 388E84FF20D402D0009E01C1 /* moving_average.c */; };
 		38931ED720B8599D00FDD32F /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = 38931ED320B8599D00FDD32F /* http.c */; };
 		38931ED820B8599D00FDD32F /* url.c in Sources */ = {isa = PBXBuildFile; fileRef = 38931ED520B8599D00FDD32F /* url.c */; };
@@ -100,6 +103,11 @@
 		386E313420B736ED000F165C /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = lib/openssl/lib/libcrypto.a; sourceTree = "<group>"; };
 		3878725720E0084B00107FAE /* rpc_procedure.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_procedure.h; sourceTree = "<group>"; };
 		3878725820E0084B00107FAE /* rpc_procedure.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rpc_procedure.c; sourceTree = "<group>"; };
+		3883C70D20EA651300041D3A /* network.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = network.c; sourceTree = "<group>"; };
+		3883C70E20EA651300041D3A /* network.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = network.h; sourceTree = "<group>"; };
+		3883C70F20EA651400041D3A /* types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
+		3883C71020EA651400041D3A /* pools.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = pools.txt; sourceTree = "<group>"; };
+		3883C71120EA651400041D3A /* pools-testnet.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "pools-testnet.txt"; sourceTree = "<group>"; };
 		388CB2CC208E328B00F2AA96 /* uthash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uthash.h; sourceTree = "<group>"; };
 		388CB2CD208E328B00F2AA96 /* utlist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utlist.h; sourceTree = "<group>"; };
 		388E84FF20D402D0009E01C1 /* moving_average.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = moving_average.c; sourceTree = "<group>"; };
@@ -460,6 +468,11 @@
 		38A15E4220544F3F00598EC2 /* client */ = {
 			isa = PBXGroup;
 			children = (
+				3883C70D20EA651300041D3A /* network.c */,
+				3883C70E20EA651300041D3A /* network.h */,
+				3883C71120EA651400041D3A /* pools-testnet.txt */,
+				3883C71020EA651400041D3A /* pools.txt */,
+				3883C70F20EA651400041D3A /* types.h */,
 				38931ED220B8599D00FDD32F /* http */,
 				388CB2CB208E328B00F2AA96 /* uthash */,
 				385827A920737CC6009C83CB /* json-rpc */,
@@ -583,6 +596,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3883C71420EA651400041D3A /* pools-testnet.txt in Resources */,
+				3883C71320EA651400041D3A /* pools.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -638,6 +653,7 @@
 				383256BB206BF099006CAE67 /* miner.c in Sources */,
 				38A15E9520544F3F00598EC2 /* sha256.c in Sources */,
 				38A15E9B20544F3F00598EC2 /* wallet.c in Sources */,
+				3883C71220EA651400041D3A /* network.c in Sources */,
 				38A15E8120544F3F00598EC2 /* dnet_packet.c in Sources */,
 				38A15E7620544F3F00598EC2 /* dfslib_crypt.c in Sources */,
 				38A15E7520544F3F00598EC2 /* crc_c.c in Sources */,
