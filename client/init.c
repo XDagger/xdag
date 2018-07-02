@@ -43,6 +43,7 @@ enum xdag_field_type g_block_header_type = XDAG_FIELD_HEAD;
 struct xdag_stats g_xdag_stats;
 struct xdag_ext_stats g_xdag_extstats;
 int g_disable_mining = 0;
+char g_pool_address[50];
 
 int(*g_xdag_show_state)(const char *state, const char *balance, const char *address) = 0;
 
@@ -54,7 +55,6 @@ int xdag_init(int argc, char **argv, int isGui)
 
 	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
 	int transport_flags = 0, n_addrports = 0, mining_threads_count = 0, is_pool = 0, is_miner = 0, level, is_rpc = 0, rpc_port = 0;
-	char pool_address[50];
 	
 	memset(addrports, 0, 256);
 	
@@ -81,11 +81,6 @@ int xdag_init(int argc, char **argv, int isGui)
 
 	g_xdag_run = 1;
 	xdag_show_state(0);
-
-	if (argc <= 1) {
-		printUsage(argv[0]);
-		return 0;
-	}
 
 	for (int i = 1; i < argc; ++i) {
 		if (argv[i][0] != '-') {
@@ -169,11 +164,11 @@ int xdag_init(int argc, char **argv, int isGui)
 	}
 
 	if(!is_pool && pool_arg == NULL) {
-		if(!xdag_pick_pool(pool_address)) {
+		if(!xdag_pick_pool(g_pool_address)) {
 			return -1;
 		}
 		is_miner = 1;
-		pool_arg = pool_address;
+		pool_arg = g_pool_address;
 	}
 
 	if (is_miner && (is_pool || bindto || n_addrports)) {
