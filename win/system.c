@@ -29,12 +29,6 @@ FILE *__iob_func(void)
 	return stdin;
 }
 
-int system_init(void)
-{
-	WSADATA wsaData;
-	return WSAStartup(MAKEWORD(2, 2), &wsaData);
-}
-
 int tcgetattr(int fd, struct termios *tio)
 {
 	if(fd) return -1;
