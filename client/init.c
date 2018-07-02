@@ -22,6 +22,8 @@
 #include "commands.h"
 #include "terminal.h"
 #include "memory.h"
+#include "miner.h"
+#include "network.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "json-rpc/rpc_service.h"
@@ -52,6 +54,7 @@ int xdag_init(int argc, char **argv, int isGui)
 
 	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
 	int transport_flags = 0, n_addrports = 0, mining_threads_count = 0, is_pool = 0, is_miner = 0, level, is_rpc = 0, rpc_port = 0;
+	char pool_address[50];
 	
 	memset(addrports, 0, 256);
 	
@@ -160,6 +163,19 @@ int xdag_init(int argc, char **argv, int isGui)
 			printUsage(argv[0]);
 			return 0;
 		}
+	}
+
+	if(!xdag_network_init()) {
+		printf("Cannot initialize network\n");
+		return -1;
+	}
+
+	if(!is_pool && pool_arg == NULL) {
+		if(!xdag_pick_pool(pool_address)) {
+			return -1;
+		}
+		is_miner = 1;
+		pool_arg = pool_address;
 	}
 
 	if (is_miner && (is_pool || bindto || n_addrports)) {
