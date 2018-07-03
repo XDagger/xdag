@@ -431,3 +431,16 @@ void time_to_string(time_t time, char* buf)
 	localtime_r(&time, &tm);
 	strftime(buf, 50, "%Y-%m-%d %H:%M:%S", &tm);
 }
+
+// replaces all occurences of non-printable characters (code < 33 || code > 126) in `string` with specified `symbol`
+// length - max length of string to be processed, if -1 - whole string will be processed
+void replace_all_nonprintable_characters(char *string, int length, char symbol)
+{
+	int index = 0;
+	while(string[index] != 0 && (length < 0 || index < length)) {
+		if(string[index] < 33 || string[index] > 126) {
+			string[index] = symbol;
+		}
+		++index;
+	}
+}
