@@ -889,7 +889,7 @@ void processHelpCommand(FILE *out)
 		"                          O is option, can be all, address or ip\n"
 		"                          A is the miners' address\n"
 		"                          IP is the miners' IP\n"
-		"  rpc-white [-a|-l|-d][IP] - http rpc white list manager\n"
+		"  rpc-white [-a|-l|-d][IP] - rpc white list manager\n"
 		"                          -a add a IP address to white list\n"
 		"                          -l list all IP addresses in  white list\n"
 		"                          -d delete a exist IP address\n"

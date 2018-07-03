@@ -19,6 +19,7 @@
 #include <errno.h>
 #endif
 
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -56,7 +57,7 @@ const uint32_t RPC_SERVER_PORT = 7677; //default http json-rpc port 7677
 
 struct item {
     struct item *prev, *next;
-    char addr[RPC_WHITE_ADDR_LEN];
+    struct in_addr addr;
 };
 
 struct item *g_rpc_white_host = NULL;
@@ -87,6 +88,25 @@ static int rpc_host_addr_check_ipv4(const char *host){
     return 0;
 }
 
+static int rpc_white_host_check(struct sockaddr_in peeraddr){
+
+  struct item *node = NULL ;
+    
+  if (!g_rpc_white_host){
+        return 1;
+  }
+
+  LL_FOREACH(g_rpc_white_host,node)
+  {
+    if (node->addr.s_addr == peeraddr.sin_addr.s_addr){
+        return 1;
+    }
+  }
+
+  return 0;
+}
+
+
 static int rpc_white_host_add(const char *host){
   struct item *new_white_host = NULL;
   int white_num = 0;
@@ -108,8 +128,7 @@ static int rpc_white_host_add(const char *host){
     return -3;
   }
 
-  strcpy(new_white_host->addr, host);
-
+  new_white_host->addr.s_addr = inet_addr(host);
   DL_APPEND(g_rpc_white_host, new_white_host);
 
   return 0;
@@ -117,11 +136,13 @@ static int rpc_white_host_add(const char *host){
 
 static int rpc_white_host_del(const char *host){
 
-  struct item *node = NULL,*del_node = NULL;
+  struct item *node = NULL ,*del_node = NULL;
+  struct in_addr addr = {0};
 
-  node = (g_rpc_white_host);
-  while (NULL != node){
-    if (0 == strcmp(host ,node->addr)){
+  LL_FOREACH(g_rpc_white_host,node)
+  {
+    addr.s_addr = inet_addr(host);
+    if (addr.s_addr == node->addr.s_addr){
         del_node = node;
         LL_DELETE(g_rpc_white_host, del_node);
         free(del_node);
@@ -141,7 +162,8 @@ static char  *rpc_white_host_query(){
     LL_FOREACH(g_rpc_white_host,node)
     {
         memset(new_host, 0, sizeof(new_host));
-        sprintf(new_host, "[%s]",node->addr);
+        
+        sprintf(new_host, "[%s]",inet_ntoa(node->addr));
         strcat(result, new_host);
     }
     
@@ -164,7 +186,7 @@ int rpc_white_command(void *out, char *type, const char *address){
         fprintf(out, "add address[%s] failed:address is invalid \n", address);
         break;
       case -2:
-        fprintf(out, "add address[%s] failed:only allow 8 address \n", address);
+        fprintf(out, "add address[%s] failed:only allowed 8 white address \n", address);
         break;
       default:
         fprintf(out, "add address[%s] failed:system error ,tray again later\n", address);
@@ -186,7 +208,7 @@ int rpc_white_command(void *out, char *type, const char *address){
 }
 
 
-static int send_response(struct xdag_rpc_connection * conn, char *response) {
+static int send_response(struct xdag_rpc_connection * conn,const char *response) {
 	int fd = conn->fd;
 	xdag_debug("JSON Response:\n%s\n", response);
 	write(fd, response, strlen(response));
@@ -282,12 +304,20 @@ static void *rpc_service_thread(void *arg)
 			xdag_err("rpc service : accept failed on socket %d, error : %s\n", sock, strerror(errno));
 			continue;
 		}
-		
+        
 		memset(req_buffer, 0, sizeof(req_buffer));
 		size_t len = read(client_fd, req_buffer, BUFFER_SIZE);
 		
 		struct xdag_rpc_connection * conn = create_connection(client_fd, req_buffer, len);
-		
+
+        if (!rpc_white_host_check(peeraddr)){
+            xdag_warn("rpc client is not in white list : %s,close",inet_ntoa(peeraddr.sin_addr));
+            send_response(conn, "connection refused by white host");
+            sleep(10);
+            close_connection(conn);
+            continue;
+        }
+        
 		pthread_t th;
 		int err = pthread_create(&th, 0, rpc_handle_thread, conn);
 		if(err) {
