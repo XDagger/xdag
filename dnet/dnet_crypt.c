@@ -234,7 +234,9 @@ int dnet_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned 
 int dnet_crypt_init(const char *version) {
     FILE *f;
     struct dnet_keys *keys;
+#ifndef USE_DNET_XDAG
     struct dnet_host *host;
+#endif
 	int i;
     g_dnet_keys = malloc(sizeof(struct dnet_keys));
     if (!g_dnet_keys) return 1;
@@ -318,19 +320,24 @@ int dnet_crypt_init(const char *version) {
 			dfslib_uncrypt_sector(g_dnet_user_crypt, (uint32_t *)keys + 128 * i, ~(uint64_t)i);
 	}
     xdag_close_file(f);
+#ifndef USE_DNET_XDAG
 	if (!(host = dnet_add_host(&g_dnet_keys->pub, 0, 127 << 24 | 1, 0, DNET_ROUTE_LOCAL))) return 6;
 	version = strchr(version, '-');
 	if (version) dnet_set_host_version(host, version + 1);
+#endif
     return -dnet_test_keys();
 }
 
-static void dnet_session_init_crypt(struct dfslib_crypt *crypt, uint32_t sector[SECTOR_SIZE / 4]) {
+extern void dnet_session_init_crypt(struct dfslib_crypt *crypt, uint32_t sector[SECTOR_SIZE / 4]);
+void dnet_session_init_crypt(struct dfslib_crypt *crypt, uint32_t sector[SECTOR_SIZE / 4]) {
     char password[PWDLEN + 1];
     struct dfslib_string str;
     dnet_sector_to_password(sector, password);
     dfslib_crypt_set_password(crypt, dfslib_utf8_string(&str, password, PWDLEN));
     dfslib_crypt_set_sector0(crypt, sector);
 }
+
+#ifndef USE_DNET_XDAG
 
 struct dnet_session *dnet_session_create(void *private_data, const struct dnet_session_ops *ops, uint32_t route_ip, uint16_t route_port) {
     struct dnet_session *sess = calloc(sizeof(struct dnet_session), 1);
@@ -411,3 +418,5 @@ ssize_t dnet_session_read(struct dnet_session *sess, void *buf, size_t size) {
 struct dnet_host *dnet_session_get_host(struct dnet_session *sess) {
 	return sess ? sess->host : 0;
 }
+
+#endif

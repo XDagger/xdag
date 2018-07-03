@@ -42,16 +42,7 @@ sources = 							\
 	terminal.c						\
 	network.c						\
 	$(dnet)/dnet_crypt.c					\
-	$(dnet)/dnet_database.c					\
-	$(dnet)/dnet_main.c						\
-	$(dnet)/dnet_threads.c					\
-	$(dnet)/dnet_connection.c				\
-	$(dnet)/dnet_stream.c					\
-	$(dnet)/dnet_packet.c					\
-	$(dnet)/dnet_command.c					\
-	$(dnet)/dnet_log.c						\
-	$(dnet)/dnet_files.c					\
-	$(dnet)/dnet_tap.c						\
+	$(dnet)/dnet_xdag.c						\
 	$(dfslib)/dfslib_crypt.c				\
 	$(dfslib)/dfslib_random.c				\
 	$(dfslib)/dfslib_string.c				\
@@ -131,7 +122,7 @@ headers = 							\
 ifeq ($(OS), Darwin)
 	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result
 else
-	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lgmp -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
+	flags = -std=gnu11 -O3 -DDFSTOOLS -DUSE_DNET_XDAG -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lgmp -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
 endif
 
 
