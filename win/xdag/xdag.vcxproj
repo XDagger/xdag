@@ -191,7 +191,9 @@ copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y
 copy $(SolutionDir)..\client\netdb.txt "$(OutDir)netdb.txt" /Y
 copy $(SolutionDir)..\client\netdb-testnet.txt "$(OutDir)netdb-testnet.txt" /Y
 copy $(SolutionDir)..\client\netdb-white.txt "$(OutDir)netdb-white.txt" /Y
-copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testnet.txt" /Y</Command>
+copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testnet.txt" /Y
+copy $(SolutionDir)..\client\pools.txt "$(OutDir)pools.txt" /Y
+copy $(SolutionDir)..\client\pools-testnet.txt "$(OutDir)pools-testnet.txt" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
