@@ -77,9 +77,9 @@ void xdag_time_to_string(xdag_time_t time, char *buf);
 // minimal length of string buffer `buf` should be 50
 void time_to_string(time_t time, char* buf);
 
-// replaces all occurences of control and whitespace characters in `string` with specified `symbol`
+// replaces all occurences of non-printable characters (code < 33 || code > 126) in `string` with specified `symbol`
 // length - max length of string to be processed, if -1 - whole string will be processed
-void replace_all_control_characters(char *string, int length, char symbol);
+void replace_all_nonprintable_characters(char *string, int length, char symbol);
 
 #ifdef __cplusplus
 };
