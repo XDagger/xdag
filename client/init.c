@@ -22,6 +22,8 @@
 #include "commands.h"
 #include "terminal.h"
 #include "memory.h"
+#include "miner.h"
+#include "network.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "json-rpc/rpc_service.h"
@@ -41,6 +43,7 @@ enum xdag_field_type g_block_header_type = XDAG_FIELD_HEAD;
 struct xdag_stats g_xdag_stats;
 struct xdag_ext_stats g_xdag_extstats;
 int g_disable_mining = 0;
+char g_pool_address[50];
 
 int(*g_xdag_show_state)(const char *state, const char *balance, const char *address) = 0;
 
@@ -78,11 +81,6 @@ int xdag_init(int argc, char **argv, int isGui)
 
 	g_xdag_run = 1;
 	xdag_show_state(0);
-
-	if (argc <= 1) {
-		printUsage(argv[0]);
-		return 0;
-	}
 
 	for (int i = 1; i < argc; ++i) {
 		if (argv[i][0] != '-') {
@@ -158,6 +156,19 @@ int xdag_init(int argc, char **argv, int isGui)
 			printUsage(argv[0]);
 			return 0;
 		}
+	}
+
+	if(!xdag_network_init()) {
+		printf("Cannot initialize network\n");
+		return -1;
+	}
+
+	if(!is_pool && pool_arg == NULL) {
+		if(!xdag_pick_pool(g_pool_address)) {
+			return -1;
+		}
+		is_miner = 1;
+		pool_arg = g_pool_address;
 	}
 
 	if (is_miner && (is_pool || bindto || n_addrports)) {

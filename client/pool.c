@@ -800,6 +800,7 @@ static int is_worker_name_received(connection_list_element *connection)
 			conn_data->worker_name = (char*)malloc(worker_name_len + 1);
 			memcpy(conn_data->worker_name, (const char*)&conn_data->data[1], worker_name_len);
 			conn_data->worker_name[worker_name_len] = 0;
+			replace_all_nonprintable_characters(conn_data->worker_name, -1, '_');
 			return 1;
 		}
 	}
