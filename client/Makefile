@@ -84,17 +84,9 @@ headers = 							\
 	types.h							\
 	network.h						\
 	$(dnet)/dnet_crypt.h					\
-	$(dnet)/dnet_database.h					\
 	$(dnet)/dnet_history.h					\
-	$(dnet)/dnet_threads.h					\
-	$(dnet)/dnet_connection.h				\
-	$(dnet)/dnet_stream.h					\
+	$(dnet)/dnet_main.h					\
 	$(dnet)/dnet_packet.h					\
-	$(dnet)/dnet_command.h					\
-	$(dnet)/dnet_log.h						\
-	$(dnet)/dnet_files.h					\
-	$(dnet)/dnet_tap.h						\
-	$(dnet)/dthread.h						\
 	$(dfslib)/dfslib_crypt.h				\
 	$(dfslib)/dfslib_random.h				\
 	$(dfslib)/dfslib_string.h				\
@@ -122,7 +114,7 @@ headers = 							\
 ifeq ($(OS), Darwin)
 	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result
 else
-	flags = -std=gnu11 -O3 -DDFSTOOLS -DUSE_DNET_XDAG -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lgmp -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
+	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lgmp -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
 endif
 
 

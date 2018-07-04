@@ -1,3 +1,5 @@
+/* dnet: code for xdag; T14.290-T14.290; $DVS:time$ */
+
 /*
  * This file implements simple version of dnet especially for xdag.
  * It provides realization of all external functions from dnet_main.h except of
