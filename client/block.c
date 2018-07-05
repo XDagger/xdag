@@ -41,6 +41,8 @@
 #define CACHE			    1
 #define CACHE_MAX_SIZE		5000000
 #define CACHE_MAX_SAMPLES	100
+#define USE_ORPHAN_HASHTABLE	1
+#define ORPHAN_HASH_SIZE      0x10000
 
 enum bi_flags {
 	BI_MAIN       = 0x01,
@@ -84,6 +86,14 @@ struct cache_block {
 	struct cache_block *next;
 };
 
+struct orphan_block {
+	struct block_internal *orphan_bi;
+	struct orphan_block *next_hashtable;
+        struct orphan_block *next;
+	struct orphan_block *prev;
+};
+
+#define get_orpahn_list(hash)      (orphan_hashtable   + ((hash)[0] & (ORPHAN_HASH_SIZE - 1)))
 
 static xdag_amount_t g_balance = 0;
 static xdag_time_t time_limit = DEF_TIME_LIMIT, xdag_era = XDAG_MAIN_ERA;
@@ -93,8 +103,10 @@ static struct block_internal *ourfirst = 0, *ourlast = 0, *noref_first = 0, *nor
 static struct cache_block *cache_first = NULL, *cache_last = NULL;
 static pthread_mutex_t block_mutex;
 //TODO: this variable duplicates existing global variable g_is_pool. Probably should be removed
-static int g_light_mode = 0;
+static int g_light_mode = 0, g_use_orphan_hashtable = 0;
 static uint32_t cache_bounded_counter = 0;
+static struct orphan_block **orphan_hashtable = NULL;
+static struct orphan_block *orphan_first = NULL, *orphan_last = NULL;
 
 //functions
 void cache_retarget(int32_t, int32_t);
@@ -861,10 +873,18 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 			log_block("Mintop", pretop->hash, pretop->time, pretop->storage_pos);
 			setfld(XDAG_FIELD_OUT, pretop->hash, xdag_hashlow_t); res++;
 		}
-
-		for (ref = noref_first; ref && res < XDAG_BLOCK_FIELDS; ref = ref->ref) {
-			if (ref->time < send_time) {
-				setfld(XDAG_FIELD_OUT, ref->hash, xdag_hashlow_t); res++;
+		if(!g_use_orphan_hashtable){
+			for (ref = noref_first; ref && res < XDAG_BLOCK_FIELDS; ref = ref->ref) {
+				if (ref->time < send_time) {
+					setfld(XDAG_FIELD_OUT, ref->hash, xdag_hashlow_t); res++;
+				}
+			}
+		}
+		else{
+			for (struct orphan_block* obt = orphan_first; obt != NULL && res < XDAG_BLOCK_FIELDS; obt=obt->next, ref = obt->orphan_bi) {
+				if (ref->time < send_time) {
+					setfld(XDAG_FIELD_OUT, ref->hash, xdag_hashlow_t); res++;
+				}
 			}
 		}
 	}
@@ -1038,6 +1058,14 @@ static void *work_thread(void *arg)
 	int n_mining_threads = (int)(unsigned)(uintptr_t)arg, sync_thread_running = 0;
 	uint64_t nhashes0 = 0, nhashes = 0;
 	pthread_t th;
+	if(USE_ORPHAN_HASHTABLE){
+		orphan_hashtable = (struct orphan_block **)calloc(sizeof(struct orphan_block *), ORPHAN_HASH_SIZE);
+		g_use_orphan_hashtable++;
+	}
+	if(orphan_hashtable == NULL){
+		g_use_orphan_hashtable = 0;	
+	}
+
 
 begin:
 	// loading block from the local storage
@@ -1123,6 +1151,9 @@ begin:
 			if (xdag_free_all()) {
 				ldus_rbtree_walk_up(root, reset_callback);
 			}
+			
+			if(g_use_orphan_hashtable && orphan_first != NULL)
+				for(struct orphan_block *obt=orphan_first, *obt_back = NULL; obt->next != NULL; obt_back = obt, obt=obt->next, free(obt_back));
 
 			root = 0;
 			g_balance = 0;
