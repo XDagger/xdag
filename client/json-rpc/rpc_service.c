@@ -53,6 +53,7 @@ const uint32_t RPC_SERVER_PORT = 7677; //default http json-rpc port 7677
 static int send_response(struct xdag_rpc_connection * conn, char *response) {
 	int fd = conn->fd;
 	xdag_debug("JSON Response:\n%s\n", response);
+	write(fd, "\r\n", 2);// fix http issue
 	write(fd, response, strlen(response));
 	write(fd, "\n", 1);
 	return 0;
