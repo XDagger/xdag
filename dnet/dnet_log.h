@@ -19,6 +19,10 @@ struct dnet_output {
 
 #define DNET_ACTIVE_PERIOD	    300
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 extern int dnet_printf(struct dnet_output *out, const char *format, ...);
 extern ssize_t dnet_write(struct dnet_output *out, const void *data, size_t size);
 extern void dnet_print_hosts(struct dnet_output *out, long active_time);
@@ -27,5 +31,9 @@ extern void dnet_print_streams(struct dnet_output *out);
 extern void dnet_log_periodic(void);
 extern int dnet_log_printf(const char *format, ...);
 extern void dnet_log_watchdog(int count);
+
+#ifdef __cplusplus
+};
+#endif	
 
 #endif

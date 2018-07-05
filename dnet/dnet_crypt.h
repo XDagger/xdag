@@ -27,6 +27,10 @@ struct dnet_session_ops {
     ssize_t (*write)(void *private_data, void *buf, size_t size);
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 extern int dnet_limited_version;
 
 extern int dnet_crypt_init(const char *version);
@@ -37,6 +41,10 @@ extern ssize_t dnet_session_write(struct dnet_session *sess, void *buf, size_t s
 extern ssize_t dnet_session_read(struct dnet_session *sess, void *buf, size_t size);
 extern struct dnet_host *dnet_session_get_host(struct dnet_session *sess);
 extern void dnet_generate_stream_id(struct dnet_stream_id *id);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif
 

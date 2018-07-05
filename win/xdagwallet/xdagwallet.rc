@@ -1,7 +1,6 @@
 // Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
-#include "version.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -92,32 +91,22 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,113,41,50,14,WS_GROUP
 END
 
-IDD_XDAGWALLET_DIALOG DIALOGEX 0, 0, 330, 100
+IDD_XDAGWALLET_DIALOG DIALOGEX 0, 0, 331, 61
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_APPWINDOW
 CAPTION "Dagger Wallet (XDAG)"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    EDITTEXT        IDC_EDIT_POOL_ADDRESS,37,7,247,14,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_MINING_THREADS,37,25,25,14,ES_AUTOHSCROLL
-    PUSHBUTTON      "Connect",IDC_BUTTON_CONNECT,287,7,35,14
-    EDITTEXT        IDC_EDIT_TRANSFER_AMOUNT,37,63,68,14,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_TRANSFER_TO,141,63,144,14,ES_AUTOHSCROLL
-    PUSHBUTTON      "Send",IDC_BUTTON_XFER,288,63,34,14
-    LTEXT           "Pool:",IDC_STATIC,6,6,27,12,SS_CENTERIMAGE
-    LTEXT           "Use",IDC_STATIC,7,26,16,12,SS_CENTERIMAGE
-    LTEXT           "CPU mining threads",IDC_STATIC,66,26,62,12,SS_CENTERIMAGE
-    LTEXT           "Balance:",IDC_STATIC,7,47,27,10
-    EDITTEXT        IDC_EDIT_BALANCE,37,44,68,14,ES_AUTOHSCROLL | ES_READONLY
-    LTEXT           "Account:",IDC_STATIC,112,47,29,8
-    EDITTEXT        IDC_EDIT_ACCOUNT_ADDRESS,141,44,143,14,ES_AUTOHSCROLL | ES_READONLY
-    LTEXT           "Transfer",IDC_STATIC,7,65,27,8
-    LTEXT           "To",IDC_STATIC,131,65,8,8
-    LTEXT           "Set up connection",IDC_STATIC_STATE,7,85,315,9
-    PUSHBUTTON      "Apply",IDC_BUTTON_APPLY,287,25,35,14
-    LTEXT           "Your hashrate",IDC_STATIC,142,26,47,12,SS_CENTERIMAGE
-    EDITTEXT        IDC_EDIT_HASHRATE,190,25,74,14,ES_AUTOHSCROLL | ES_READONLY
-    LTEXT           "MH/s",IDC_STATIC,267,26,16,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_TRANSFER_AMOUNT,37,25,68,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_TRANSFER_TO,141,25,144,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "Send",IDC_BUTTON_XFER,289,25,34,14
+    LTEXT           "Balance:",IDC_STATIC,7,9,27,10
+    EDITTEXT        IDC_EDIT_BALANCE,37,7,68,14,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Account:",IDC_STATIC,112,9,29,8
+    EDITTEXT        IDC_EDIT_ACCOUNT_ADDRESS,141,7,143,14,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Transfer",IDC_STATIC,7,28,27,8
+    LTEXT           "To",IDC_STATIC,131,28,8,8
+    LTEXT           "Searching for connection...",IDC_STATIC_STATE,7,46,316,9
 END
 
 IDD_DIALOG_PASSWORD DIALOGEX 0, 0, 199, 29
@@ -150,9 +139,9 @@ BEGIN
     IDD_XDAGWALLET_DIALOG, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 322
+        RIGHTMARGIN, 323
         TOPMARGIN, 7
-        BOTTOMMARGIN, 94
+        BOTTOMMARGIN, 55
     END
 
     IDD_DIALOG_PASSWORD, DIALOG
@@ -193,23 +182,27 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION        VER_FILE_VERSION
- PRODUCTVERSION     VER_PRODUCT_VERSION
- FILEFLAGSMASK      0x3fL
- FILEFLAGS          0
+ FILEVERSION 0,2,5,0
+ PRODUCTVERSION 0,2,5,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
  FILEOS 0x40004L
  FILETYPE 0x1L
- FILESUBTYPE        0x0L
+ FILESUBTYPE 0x0L
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
         BLOCK "040904b0"
         BEGIN
-			VALUE "CompanyName",      VER_ORGANIZATION_NAME "\0"
-            VALUE "FileDescription",  VER_FILE_DESCRIPTION_STR "\0"
-            VALUE "FileVersion",      VER_FILE_VERSION_STR "\0"
-            VALUE "ProductName",      VER_PRODUCTNAME_STR
-            VALUE "ProductVersion",   VER_PRODUCT_VERSION_STR "\0"
+            VALUE "CompanyName", "XDAG Community"
+            VALUE "FileDescription", "GUI wallet for Dagger coin"
+            VALUE "FileVersion", "0.2.5"
+            VALUE "ProductName", "Dagger coin"
+            VALUE "ProductVersion", "0.2.5"
         END
     END
     BLOCK "VarFileInfo"
@@ -232,6 +225,8 @@ END
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
+
+
 
 #ifndef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////

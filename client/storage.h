@@ -12,6 +12,10 @@ struct xdag_storage_sum {
 	uint64_t size;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 /* Saves the block to local storage, returns its number or -1 in case of error */
 extern int64_t xdag_storage_save(const struct xdag_block *b);
 
@@ -35,4 +39,8 @@ extern int xdag_load_sums(xdag_time_t start_time, xdag_time_t end_time, struct x
 /* completes work with the storage */
 extern void xdag_storage_finish(void);
 
+#ifdef __cplusplus
+};
+#endif
+		
 #endif
