@@ -1,4 +1,4 @@
-/* dnet: code for xdag; T14.290-T14.290; $DVS:time$ */
+/* dnet: code for xdag; T14.290-T14.292; $DVS:time$ */
 
 /*
  * This file implements simple version of dnet especially for xdag.
@@ -44,7 +44,7 @@
 #define SECTOR_SIZE			0x200
 #define MAX_CONNECTIONS_PER_THREAD	0x1000
 #define DEF_NTHREADS			6
-#define FIRST_NSECTORS			5
+#define FIRST_NSECTORS			(sizeof(struct dnet_key) / SECTOR_SIZE + 1)
 #define MAX_OUT_QUEUE_SIZE		0x10000
 #define COMMON_QUEUE_SIZE		0x10000
 
@@ -74,7 +74,7 @@ asm(
 
 static struct dfslib_crypt *g_crypt;
 static struct xsector *g_common_queue;
-static uint64_t g_common_queue_pos;
+static uint64_t g_common_queue_pos, g_common_queue_reserve;
 static int (*g_arrive_callback)(void *block, void *connection_from) = 0;
 int (*dnet_connection_open_check)(void *conn, uint32_t ip, uint16_t port) = 0;
 void (*dnet_connection_close_notify)(void *conn) = 0;
@@ -91,11 +91,12 @@ struct xconnection {
 	struct xsector *first_outbox, *last_outbox;
 	uint64_t packets_in;
 	uint64_t packets_out;
+	uint64_t dropped_in;
 	uint64_t common_queue_pos;
 	time_t created;
 	uint32_t out_queue_size;
-	uint32_t ip;
-	uint16_t port;
+	uint32_t ip;	// network order
+	uint16_t port;	// host order
 	uint16_t nfd;
 };
 
@@ -158,7 +159,7 @@ static struct xconnection *add_connection(int fd, uint32_t ip, uint16_t port) {
 			conn->ip = ip;
 			conn->port = port;
 			conn->created = time(0);
-			conn->packets_in = conn->packets_out = 0;
+			conn->packets_in = conn->packets_out = conn->dropped_in = 0;
 			conn->common_queue_pos = g_common_queue_pos;
 			if (dnet_connection_open_check && (*dnet_connection_open_check)(conn, ip, port)) {
 				pthread_mutex_unlock(&t->mutex);
@@ -230,8 +231,8 @@ void *dnet_send_xdag_packet(void *block, void *connection_to) {
 		}
 		if (steps < 0) return 0;
 	} else if ((uintptr_t)conn < 256 || (uintptr_t)conn & 1) {
-		if ((uintptr_t)conn & 1 && ((struct xsector *)block)->head.ttl <= 2) return 0;
-		buf = g_common_queue + ((ldus_atomic64_inc_return(&g_common_queue_pos) - 1) & (COMMON_QUEUE_SIZE - 1));
+		if ((uintptr_t)conn >= 256 && ((struct xsector *)block)->head.ttl <= 2) return 0;
+		buf = g_common_queue + ((ldus_atomic64_inc_return(&g_common_queue_reserve) - 1) & (COMMON_QUEUE_SIZE - 1));
 		memcpy(buf->word, block, SECTOR_SIZE);
 		buf->head.type = DNET_PKT_XDAG;
 		if ((uintptr_t)conn < 256) buf->head.ttl = (uintptr_t)conn;
@@ -239,11 +240,12 @@ void *dnet_send_xdag_packet(void *block, void *connection_to) {
 		buf->head.length = SECTOR_SIZE;
 		buf->head.crc32 = 0;
 		buf->head.crc32 = crc_of_array(buf->byte, SECTOR_SIZE);
-		if ((uintptr_t)conn & 1) {
+		if ((uintptr_t)conn >= 256) {
 			long nconn = (struct xconnection *)((uintptr_t)conn & ~(uintptr_t)1) - g_connections;
 			buf->head.length = (uint16_t)nconn;
 			buf->head.type = nconn >> 16;
 		}
+		ldus_atomic64_inc_return(&g_common_queue_pos);
 		return 0;
 	}
 	buf = malloc(SECTOR_SIZE);
@@ -256,7 +258,7 @@ void *dnet_send_xdag_packet(void *block, void *connection_to) {
 	conn->last_outbox = buf;
 	conn->out_queue_size++;
 	pthread_mutex_unlock(&conn->mutex);
-	return conn;
+	return connection_to ? 0 : conn;
 }
 
 int dnet_set_xdag_callback(int (*callback)(void *block, void *connection_from)) {
@@ -271,7 +273,7 @@ static void *xthread_main(void *arg) {
 	struct xsector buf, *xs;
 	int n, nmax, res, ttl;
 	uint32_t crc;
-	while (poll(t->poll, nmax = t->nconnections, -1) > 0) {
+	while (poll(t->poll, nmax = t->nconnections, 1) >= 0) {
 		for (n = 0; n < nmax; ++n) {
 			conn = t->conn[n];
 			if (t->poll[n].revents & ~(POLLIN | POLLOUT)) {
@@ -287,10 +289,10 @@ static void *xthread_main(void *arg) {
 							buf.word, conn->packets_in - FIRST_NSECTORS + 1);
 					ttl = buf.head.ttl;
 					if (buf.head.type != DNET_PKT_XDAG || buf.head.length != SECTOR_SIZE || !ttl)
-						goto decline;
+						{ conn->dropped_in++; goto decline; }
 					crc = buf.head.crc32;
 					buf.head.crc32 = 0;
-					if (crc_of_array(buf.byte, SECTOR_SIZE) != crc) goto decline;
+					if (crc_of_array(buf.byte, SECTOR_SIZE) != crc) { conn->dropped_in++; goto decline; }
 					if (!g_arrive_callback) goto decline;
 					res = (*g_arrive_callback)(buf.word, conn);
 					if (res < 0) goto decline;
@@ -389,7 +391,7 @@ static void *accept_thread_main(void *arg) {
 		setsockopt(fd1, SOL_SOCKET, SO_LINGER, (char *)&linger_opt, sizeof(linger_opt));
 		setsockopt(fd1, SOL_SOCKET, SO_REUSEADDR, (char *)&reuseaddr, sizeof(int));
 		fcntl(fd1, F_SETFD, FD_CLOEXEC);
-		if (!add_connection(fd1, htonl(peeraddr.sin_addr.s_addr), htons(peeraddr.sin_port))) close(fd1);
+		if (!add_connection(fd1, peeraddr.sin_addr.s_addr, htons(peeraddr.sin_port))) close(fd1);
 	}
 
 	return 0;
@@ -462,7 +464,6 @@ int dnet_init(int argc, char **argv) {
 	g_common_queue = malloc(COMMON_QUEUE_SIZE * SECTOR_SIZE);
 	g_crypt = malloc(sizeof(struct dfslib_crypt));
 	if (!g_threads || !g_connections || !g_common_queue || !g_crypt) { err = 3; goto end; }
-	dnet_session_init_crypt(g_crypt, g_xkeys.sect0.word);
 	for (n = 0; n < nthreads; ++n) {
 		pthread_mutex_init(&g_threads[n].mutex, 0);
 		for (i = 0; i < MAX_CONNECTIONS_PER_THREAD; ++i) {
@@ -477,6 +478,7 @@ int dnet_init(int argc, char **argv) {
 		sleep(3); printf("Password incorrect.\n");
 		return err;
 	}
+	dnet_session_init_crypt(g_crypt, g_xkeys.sect0.word);
 	if (is_daemon) daemonize();
 	angelize();
 	for (i = 0; i < nthreads; ++i)
@@ -506,24 +508,26 @@ int dnet_execute_command(const char *cmd, void *fileout) {
 		int i, j, count = 0, len;
 		for (i = 0; i < g_nthreads; ++i) for (j = 0; j < g_threads[i].nconnections; ++j) {
 			conn = g_threads[i].conn[j];
-			sprintf(buf, "%d.%d.%d.%d:%d", conn->ip >> 24 & 0xFF, conn->ip >> 16 & 0xFF, conn->ip >> 8 & 0xFF, conn->ip & 0xFF, conn->port);
+			sprintf(buf, "%d.%d.%d.%d:%d", conn->ip & 0xFF, conn->ip >> 8 & 0xFF, conn->ip >> 16 & 0xFF, conn->ip >> 24 & 0xFF, conn->port);
 			len = strlen(buf);
 			fprintf(f, " %2d. %s%*d sec, %lld/%lld in/out bytes, %lld/%lld packets, %lld/%lld dropped\n",
 				count++, buf, 28 - len, (int)(time(0) - conn->created),
 				(long long)conn->packets_in << 9, (long long)conn->packets_out << 9,
-				(long long)conn->packets_in, (long long)conn->packets_out, 0ll, 0ll);
+				(long long)conn->packets_in, (long long)conn->packets_out, (long long)conn->dropped_in, 0ll);
 		}
 	} else if (!strcmp(str, "connect")) {
 		struct sockaddr_in peeraddr;
 		int fd;
 		str = strtok_r(0, " \t\r\n", &lasts);
-		if (!str) { fprintf(f, "parameter is absent\n"); return -1; }
+		if (!str) { fprintf(f, "connect: parameter is absent\n"); return -1; }
 		fd = open_socket(&peeraddr, str);
-		if (fd < 0) { fprintf(f, "error opening the socket\n"); return -1; }
+		if (fd < 0) { fprintf(f, "connect: error opening the socket\n"); return -1; }
 		if (connect(fd, (struct sockaddr *)&peeraddr, sizeof(peeraddr)))
-			{ close(fd); fprintf(f, "error connecting the socket\n"); return -1; }
-		if (!add_connection(fd, htonl(peeraddr.sin_addr.s_addr), htons(peeraddr.sin_port)))
-			{ close(fd); fprintf(f, "error adding the connection\n"); return -1; }
+			{ close(fd); fprintf(f, "connect: error connecting the socket (ip=%08x, port=%d)\n",
+					     htonl(peeraddr.sin_addr.s_addr), htons(peeraddr.sin_port)); return -1; }
+		if (!add_connection(fd, peeraddr.sin_addr.s_addr, htons(peeraddr.sin_port)))
+			{ close(fd); fprintf(f, "connect: error adding the connection (ip=%08x, port=%d)\n",
+					     htonl(peeraddr.sin_addr.s_addr), htons(peeraddr.sin_port)); return -1; }
 	}
 	return 0;
 }
