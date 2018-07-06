@@ -42,16 +42,7 @@ sources = 							\
 	terminal.c						\
 	network.c						\
 	$(dnet)/dnet_crypt.c					\
-	$(dnet)/dnet_database.c					\
-	$(dnet)/dnet_main.c						\
-	$(dnet)/dnet_threads.c					\
-	$(dnet)/dnet_connection.c				\
-	$(dnet)/dnet_stream.c					\
-	$(dnet)/dnet_packet.c					\
-	$(dnet)/dnet_command.c					\
-	$(dnet)/dnet_log.c						\
-	$(dnet)/dnet_files.c					\
-	$(dnet)/dnet_tap.c						\
+	$(dnet)/dnet_xdag.c						\
 	$(dfslib)/dfslib_crypt.c				\
 	$(dfslib)/dfslib_random.c				\
 	$(dfslib)/dfslib_string.c				\
@@ -93,17 +84,9 @@ headers = 							\
 	types.h							\
 	network.h						\
 	$(dnet)/dnet_crypt.h					\
-	$(dnet)/dnet_database.h					\
 	$(dnet)/dnet_history.h					\
-	$(dnet)/dnet_threads.h					\
-	$(dnet)/dnet_connection.h				\
-	$(dnet)/dnet_stream.h					\
+	$(dnet)/dnet_main.h					\
 	$(dnet)/dnet_packet.h					\
-	$(dnet)/dnet_command.h					\
-	$(dnet)/dnet_log.h						\
-	$(dnet)/dnet_files.h					\
-	$(dnet)/dnet_tap.h						\
-	$(dnet)/dthread.h						\
 	$(dfslib)/dfslib_crypt.h				\
 	$(dfslib)/dfslib_random.h				\
 	$(dfslib)/dfslib_string.h				\
