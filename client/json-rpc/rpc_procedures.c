@@ -406,9 +406,9 @@ cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJ
  "version":"1.1", "method":"xdag_get_block_info", "params":["BLOCK ADDRESS"], "id":1
 
  reponse:
- "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
- "jsonrpc":"2.0", "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
- "version":"1.1", "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
+ "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"2018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
+ "jsonrpc":"2.0", "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"2018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
+ "version":"1.1", "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"2018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
  */
 
 int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time)
