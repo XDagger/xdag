@@ -22,10 +22,6 @@ extern int xdag_initialize_miner(const char *pool_address);
 /* create new wallet address */
 extern int xdag_miner_new_address(xdag_hash_t hash);
 
-extern void *miner_refresh_thread(void *arg);
-
-extern void *miner_net_thread(void *arg);
-
 /* send block to network via pool */
 extern int xdag_send_block_via_pool(struct xdag_block *block);
 

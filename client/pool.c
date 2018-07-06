@@ -939,6 +939,20 @@ static int receive_data_from_connection(connection_list_element *connection)
 	return 1;
 }
 
+static int write_data_to_connection(connection_list_element *connection, void *data, size_t size)
+{
+	size_t length = write(connection->connection_data.connection_descriptor.fd, data, size);
+
+	if(length != size) {
+		char message[100];
+		sprintf(message, "write error  %s : write %zu bytes of %lu bytes", strerror(errno), length, size);
+		close_connection(connection, message);
+		return 0;
+	}
+
+	return 1;
+}
+
 static int send_data_to_connection(connection_list_element *connection, int *processed)
 {
 	struct xdag_field data[2];
@@ -968,12 +982,7 @@ static int send_data_to_connection(connection_list_element *connection, int *pro
 			dfslib_encrypt_array(g_crypt, (uint32_t*)(data + j), DATA_SIZE, conn_data->nfield_out++);
 		}
 
-		size_t length = write(conn_data->connection_descriptor.fd, (void*)data, fields_count * sizeof(struct xdag_field));
-
-		if(length != fields_count * sizeof(struct xdag_field)) {
-			char message[100];
-			sprintf(message, "write error  %s : write %zu bytes of %lu bytes", strerror(errno), length, fields_count * sizeof(struct xdag_field));
-			close_connection(connection, message);
+		if(!write_data_to_connection(connection, data, fields_count * sizeof(struct xdag_field))) {
 			return 0;
 		}
 	}
@@ -995,12 +1004,7 @@ static int send_data_to_connection(connection_list_element *connection, int *pro
 
 				dfslib_encrypt_array(g_crypt, (uint32_t*)&balance, DATA_SIZE, conn_data->nfield_out++);
 
-				size_t length = write(conn_data->connection_descriptor.fd, (void*)&balance, sizeof(struct xdag_field));
-
-				if(length != sizeof(struct xdag_field)) {
-					char message[100];
-					sprintf(message, "write error  %s : write %zu bytes of %lu bytes", strerror(errno), length, sizeof(struct xdag_field));
-					close_connection(connection, message);
+				if(!write_data_to_connection(connection, (void*)&balance, sizeof(struct xdag_field))) {
 					return 0;
 				}
 			}

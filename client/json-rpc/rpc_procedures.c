@@ -651,7 +651,7 @@ cJSON * method_xdag_get_transactions(struct xdag_rpc_context * ctx, cJSON *param
 /* create new addresss */
 /*
  request:
- "method":"xdag_new_address", "params":[{"number":1}], "id":1
+ "method":"xdag_new_address", "params":[{"count":1}], "id":1
  "jsonrpc":"2.0", "method":"xdag_get_account", "params":[{"number":1}], "id":1
  "version":"1.1", "method":"xdag_get_account", "params":[{"number":1}], "id":1
 
@@ -675,7 +675,7 @@ cJSON * method_xdag_new_address(struct xdag_rpc_context * ctx, cJSON *params, cJ
 				return NULL;
 			}
 
-			cJSON *json_number = cJSON_GetObjectItem(param, "number");
+			cJSON *json_number = cJSON_GetObjectItem(param, "count");
 			if (cJSON_IsNumber(json_number)) {
 				number = json_number->valueint;
 			}

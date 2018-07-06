@@ -67,6 +67,9 @@ static int can_send_share(time_t current_time, time_t task_time, time_t share_ti
 	return can_send;
 }
 
+void *miner_refresh_thread(void *arg);
+void *miner_net_thread(void *arg);
+
 /* initialization of connection the miner to pool */
 extern int xdag_initialize_miner(const char *pool_address)
 {
@@ -85,6 +88,21 @@ extern int xdag_initialize_miner(const char *pool_address)
 	if(err != 0) {
 		printf("detach miner_net_thread failed, error : %s\n", strerror(err));
 		//return -1; //fixme: not sure why pthread_detach return 3
+	}
+
+
+	if(g_multi_address){
+		err = pthread_create(&th, 0, miner_refresh_thread, NULL);
+		if(err != 0) {
+			printf("create miner_refresh_thread failed, error : %s\n", strerror(err));
+			return -1;
+		}
+
+		err = pthread_detach(th);
+		if(err != 0) {
+			printf("detach miner_refresh_thread failed, error : %s\n", strerror(err));
+//			return -1; //fixme: not sure why pthread_detach return 3
+		}
 	}
 
 	return 0;
@@ -187,8 +205,6 @@ static int miner_fresh_callback(void *data, xdag_hash_t hash, xdag_amount_t amou
 
 void *miner_refresh_thread(void *arg)
 {
-	g_our_block_changed = 1;
-
 	while(1) {
 		if(g_our_block_changed) {
 			xdag_mess("our block changed!");
@@ -233,10 +249,10 @@ void *miner_refresh_thread(void *arg)
 			}
 			pthread_mutex_unlock(&g_miner_mutex);
 
-			sleep(0.5); // sleep half second
+			usleep(10000); // sleep for 10 ms
 		}
 
-		sleep(120); // 5 mintues
+		sleep(120); // 2 minutes
 	}
 
 	return 0;
@@ -301,22 +317,9 @@ begin:
 		goto err;
 	}
 
-	if(g_multi_address){
-		pthread_t th;
-		res = pthread_create(&th, 0, miner_refresh_thread, NULL);
-		if(res) {
-			mess = "create miner refresh thread failed.";
-			goto err;
-		}
-
-		res = pthread_detach(th);
-		if(res) {
-			mess = "detach miner refresh thread failed.";
-			goto err;
-		}
-	}
-
 	pthread_mutex_unlock(&g_miner_mutex);
+
+	g_our_block_changed = 1;
 
 	for(;;) {
 		struct pollfd p;
