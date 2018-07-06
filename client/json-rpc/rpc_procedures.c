@@ -66,7 +66,7 @@ cJSON * method_xdag_get_block_info(struct xdag_rpc_context * ctx, cJSON *params,
 cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_get_transactions */
-int rpc_transactions_callback(void *data, int type, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time);
+int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time);
 cJSON * method_xdag_get_transactions(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_new_address */
@@ -625,7 +625,7 @@ struct rpc_transactions_callback_data {
 	int count;
 };
 
-int rpc_transactions_callback(void *data, int type, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time)
+int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time)
 {
 	struct rpc_transactions_callback_data *callback_data = (struct rpc_transactions_callback_data*)data;
 	
@@ -638,6 +638,8 @@ int rpc_transactions_callback(void *data, int type, xdag_hash_t hash, xdag_amoun
 	if(callback_data->count > (callback_data->page + 1) * callback_data->page_size) {
 		return -1;
 	}
+
+	cJSON *json_status = cJSON_CreateString(xdag_get_block_state_info(flags));
 	
 	cJSON *json_direction = cJSON_CreateString(type ? "output" : "input");
 	
@@ -658,6 +660,7 @@ int rpc_transactions_callback(void *data, int type, xdag_hash_t hash, xdag_amoun
 	cJSON *json_time = cJSON_CreateString(tbuf);
 	
 	cJSON *json_item = cJSON_CreateObject();
+	cJSON_AddItemToObject(json_item, "status", json_status);
 	cJSON_AddItemToObject(json_item, "direction", json_direction);
 	cJSON_AddItemToObject(json_item, "address", json_address);
 	cJSON_AddItemToObject(json_item, "amount", json_amount);
