@@ -1733,7 +1733,7 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
 	return 0;
 }
 
-int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t))
+int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t))
 {
 	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
@@ -1782,13 +1782,11 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 	for (i = 0; i < n; ++i) {
 		if (!i || block_array[i] != block_array[i - 1]) {
 			struct block_internal *ri = block_array[i];
-			if (ri->flags & BI_APPLIED) {
-				for (int j = 0; j < ri->nlinks; j++) {
-					if(ri->link[j] == bi && ri->linkamount[j]) {
-						if(callback(data, 1 << j & ri->in_mask, ri->hash, ri->linkamount[j], ri->time)) {
-							free(block_array);
-							return 0;
-						}
+			for (int j = 0; j < ri->nlinks; j++) {
+				if(ri->link[j] == bi && ri->linkamount[j]) {
+					if(callback(data, 1 << j & ri->in_mask, ri->flags & ~BI_OURS, ri->hash, ri->linkamount[j], ri->time)) {
+						free(block_array);
+						return 0;
 					}
 				}
 			}
