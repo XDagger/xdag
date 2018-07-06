@@ -1416,9 +1416,8 @@ static int bi_compar(const void *l, const void *r)
 }
 
 // returns string representation for the block state. Ignores BI_OURS flag
-static const char* get_block_state_info(struct block_internal *block)
+const char* xdag_get_block_state_info(uint8_t flag)
 {
-	const uint8_t flag = block->flags & ~BI_OURS;
 	if(flag == (BI_REF | BI_MAIN_REF | BI_APPLIED | BI_MAIN | BI_MAIN_CHAIN)) { //1F
 		return "Main";
 	}
@@ -1451,7 +1450,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "      time: %s\n", time_buf);
 	fprintf(out, " timestamp: %llx\n", (unsigned long long)bi->time);
 	fprintf(out, "     flags: %x\n", bi->flags & ~BI_OURS);
-	fprintf(out, "     state: %s\n", get_block_state_info(bi));
+	fprintf(out, "     state: %s\n", xdag_get_block_state_info(bi->flags & ~BI_OURS));
 	fprintf(out, "  file pos: %llx\n", (unsigned long long)bi->storage_pos);
 	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 		(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
@@ -1555,7 +1554,7 @@ static inline void print_block(struct block_internal *block, int print_only_addr
 		fprintf(out, "%s\n", address);
 	} else {
 		xdag_time_to_string(block->time, time_buf);
-		fprintf(out, "%s   %s   %s\n", address, time_buf, get_block_state_info(block));
+		fprintf(out, "%s   %s   %s\n", address, time_buf, xdag_get_block_state_info(block->flags & ~BI_OURS));
 	}
 }
 
@@ -1770,4 +1769,17 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 	free(block_array);
 	
 	return n;
+}
+
+int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t))
+{
+	pthread_mutex_lock(&block_mutex);
+	struct block_internal *bi = block_by_hash(hash);
+	pthread_mutex_unlock(&block_mutex);
+
+	if(callback) {
+		return callback(data, bi->flags & ~BI_OURS,  bi->hash, bi->amount, bi->time);
+	}
+
+	return 0;
 }
