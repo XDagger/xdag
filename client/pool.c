@@ -79,6 +79,11 @@ enum connection_state {
 	ACTIVE_CONNECTION = 1
 };
 
+struct wallet_list_element {
+	xdag_hash_t hash;
+	struct wallet_list_element * next;
+};
+
 struct connection_pool_data {
 	xdag_time_t task_time;
 	double prev_diff;
@@ -89,6 +94,7 @@ struct connection_pool_data {
 	uint64_t nfield_out;
 	uint64_t task_index;
 	struct xdag_block *block;
+	struct wallet_list_element * wallet_address_list;
 	uint32_t ip;
 	uint16_t port;
 	enum connection_state state;
@@ -550,6 +556,16 @@ static void close_connection(connection_list_element *connection, const char *me
 			conn_data->miner->state = MINER_ARCHIVE;
 		}
 	}
+
+	if(conn_data->wallet_address_list) {
+		struct wallet_list_element *elem, *elemtmp;
+		LL_FOREACH_SAFE(conn_data->wallet_address_list, elem, elemtmp)
+		{
+			LL_DELETE(conn_data->wallet_address_list, elem);
+			free(elem);
+		}
+	}
+
 	pthread_mutex_unlock(&g_connections_mutex);
 
 	uint32_t ip = conn_data->ip;
@@ -772,6 +788,30 @@ static int is_block_data_received(connection_list_element *connection)
 				}
 
 				pthread_mutex_unlock(&g_pool_mutex);
+
+				if(g_multi_address) {
+					xdag_hash_t hash;
+					xdag_hash(conn_data->block, sizeof(struct xdag_block), hash);
+
+					int has = 0;
+					struct wallet_list_element *elem = NULL;
+					LL_FOREACH(conn_data->wallet_address_list, elem)
+					{
+						if(!memcmp(elem->hash, hash, sizeof(xdag_hashlow_t)) || !memcmp(conn_data->miner->id.data, hash, sizeof(xdag_hashlow_t))) {
+							has = 1;
+							break;
+						}
+					}
+					if(!has) {
+						struct wallet_list_element * new_elem = (struct wallet_list_element *) malloc(sizeof(struct wallet_list_element));
+						memcpy(new_elem->hash, hash, sizeof(xdag_hash_t));
+						LL_APPEND(conn_data->wallet_address_list, new_elem);
+
+						char buf[33];
+						xdag_hash2address(hash, buf);
+						xdag_mess("block received from %s, save to wallet address list.", buf);
+					}
+				}
 			} else {
 				free(conn_data->block);
 			}
@@ -900,6 +940,20 @@ static int receive_data_from_connection(connection_list_element *connection)
 	return 1;
 }
 
+static int write_data_to_connection(connection_list_element *connection, void *data, size_t size)
+{
+	size_t length = write(connection->connection_data.connection_descriptor.fd, data, size);
+
+	if(length != size) {
+		char message[100];
+		sprintf(message, "write error  %s : write %zu bytes of %lu bytes", strerror(errno), length, size);
+		close_connection(connection, message);
+		return 0;
+	}
+
+	return 1;
+}
+
 static int send_data_to_connection(connection_list_element *connection, int *processed)
 {
 	struct xdag_field data[2];
@@ -929,13 +983,32 @@ static int send_data_to_connection(connection_list_element *connection, int *pro
 			dfslib_encrypt_array(g_crypt, (uint32_t*)(data + j), DATA_SIZE, conn_data->nfield_out++);
 		}
 
-		size_t length = write(conn_data->connection_descriptor.fd, (void*)data, fields_count * sizeof(struct xdag_field));
-
-		if(length != fields_count * sizeof(struct xdag_field)) {
-			char message[100];
-			sprintf(message, "write error  %s : write %zu bytes of %lu bytes", strerror(errno), length, fields_count * sizeof(struct xdag_field));
-			close_connection(connection, message);
+		if(!write_data_to_connection(connection, data, fields_count * sizeof(struct xdag_field))) {
 			return 0;
+		}
+	}
+
+	if(g_multi_address) {
+		if(conn_data->miner && conn_data->wallet_address_list) {
+			struct wallet_list_element * elem, *elemtmp;
+			struct xdag_field balance;
+			LL_FOREACH_SAFE(conn_data->wallet_address_list, elem, elemtmp)
+			{
+				memcpy(balance.data, elem->hash, sizeof(xdag_hash_t));
+				balance.amount = xdag_get_balance(balance.data);
+
+				char buf[33];
+				xdag_hash2address(balance.data, buf);
+				xdag_mess("send balance for %s", buf);
+
+				LL_DELETE(conn_data->wallet_address_list, elem);
+
+				dfslib_encrypt_array(g_crypt, (uint32_t*)&balance, DATA_SIZE, conn_data->nfield_out++);
+
+				if(!write_data_to_connection(connection, (void*)&balance, sizeof(struct xdag_field))) {
+					return 0;
+				}
+			}
 		}
 	}
 

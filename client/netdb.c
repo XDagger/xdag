@@ -26,7 +26,7 @@
 #define whitelist_url_testnet    "https://raw.githubusercontent.com/XDagger/xdag/master/client/netdb-white-testnet.txt"
 #define WHITE_URL                (g_xdag_testnet ? whitelist_url_testnet : whitelist_url)
 
-#define PREVENT_AUTO_REFRESH 0 //for test purposes
+int g_prevent_auto_refresh = 0; //for test purposes
 
 pthread_mutex_t g_white_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -351,13 +351,13 @@ int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port
 		return -1;
 	}
 
-#if !PREVENT_AUTO_REFRESH
-	if(pthread_create(&t, 0, refresh_thread, 0)) {
-		xdag_fatal("Can't start refresh white-list netdb thread\n");
-		return -1;
+	if(!g_prevent_auto_refresh) {
+		if(pthread_create(&t, 0, refresh_thread, 0)) {
+			xdag_fatal("Can't start refresh white-list netdb thread\n");
+			return -1;
+		}
 	}
-#endif
-	
+
 	return 0;
 }
 
