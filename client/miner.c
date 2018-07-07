@@ -426,7 +426,7 @@ int xdag_pick_pool(char *pool_address)
 	}
 	fclose(fp);
 
-	int start_index = rand() % count;
+	int start_index = count ? rand() % count : 0;
 	int index = start_index;
 	do {
 		int socket = xdag_connect_pool(addresses[index], &error_message);
