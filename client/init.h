@@ -39,6 +39,7 @@ extern struct xdag_ext_stats
 	uint32_t cache_size;
 	uint32_t cache_usage;
 	double cache_hitrate;
+	int use_orphan_hashtable;
 } g_xdag_extstats;
 
 #ifdef __cplusplus

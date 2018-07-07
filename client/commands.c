@@ -57,7 +57,7 @@ void processMiningCommand(char *nextParam, FILE *out);
 void processNetCommand(char *nextParam, FILE *out);
 void processPoolCommand(char *nextParam, FILE *out);
 void processStatsCommand(FILE *out);
-void processCacheCommand(FILE *out);
+void processInternalStatsCommand(FILE *out);
 void processExitCommand(void);
 void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd);
 void processLastBlocksCommand(char *nextParam, FILE *out);
@@ -81,7 +81,7 @@ int xdag_com_net(char *, FILE*);
 int xdag_com_pool(char *, FILE*);
 int xdag_com_stats(char *, FILE*);
 int xdag_com_state(char *, FILE*);
-int xdag_com_cache(char *, FILE*);
+int xdag_com_internal_stats(char *, FILE*);
 int xdag_com_help(char *, FILE*);
 int xdag_com_run(char *, FILE*);
 int xdag_com_terminate(char *, FILE*);
@@ -107,7 +107,7 @@ XDAG_COMMAND commands[] = {
 	{ "run"        , 0, xdag_com_run },
 	{ "state"      , 0, xdag_com_state },
 	{ "stats"      , 0, xdag_com_stats },
-	{ "cache"      , 2, xdag_com_cache },
+	{ "internals"  , 2, xdag_com_internal_stats },
 	{ "terminate"  , 0, xdag_com_terminate },
 	{ "exit"       , 0, xdag_com_exit },
 	{ "xfer"       , 0, (xdag_com_func_t)NULL},
@@ -206,9 +206,9 @@ int xdag_com_state(char * args, FILE* out)
 	return 0;
 }
 
-int xdag_com_cache(char * args, FILE* out)
+int xdag_com_internal_stats(char * args, FILE* out)
 {
-	processCacheCommand(out);
+	processInternalStatsCommand(out);
 	return 0;
 }
 
@@ -496,10 +496,20 @@ void processStatsCommand(FILE *out)
 	}
 }
 
-void processCacheCommand(FILE *out)
+void processInternalStatsCommand(FILE *out)
 {
-	fprintf(out, "Cache informations:\n"
-		"     cached blocks: target amount %u, actual amount %u, hitrate %f%%\n",
+	fprintf(out,
+		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+		"Orphan hashtable  :\n"
+		"             state: %s\n"
+                "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+		"Optimized ec      :\n"
+		"             state: %s\n"
+                "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+		"Cache informations:\n"
+		"     cached blocks: target amount %u, actual amount %u, hitrate %f%%\n"
+                "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n",
+		(g_xdag_extstats.cache_hitrate ? "Active" : "Inactive" ), (USE_OPTIMIZED_EC ? "Active" : "Inactive" ), 
 		g_xdag_extstats.cache_size, g_xdag_extstats.cache_usage, g_xdag_extstats.cache_hitrate*100
 	);
 }
