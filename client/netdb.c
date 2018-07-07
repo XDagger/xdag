@@ -347,7 +347,7 @@ static void *refresh_thread(void *arg)
 			free(resp);
 		}
 		
-		while (time(0) - prev_time < 10) { // refresh every 15 minutes
+		while (time(0) - prev_time < 900) { // refresh every 15 minutes
 			sleep(1);
 		}
 	}
