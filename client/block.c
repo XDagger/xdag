@@ -863,11 +863,12 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 			log_block("Mintop", pretop->hash, pretop->time, pretop->storage_pos);
 			setfld(XDAG_FIELD_OUT, pretop->hash, xdag_hashlow_t); res++;
 		}
+
 		for (ref = noref_first; ref && res < XDAG_BLOCK_FIELDS; ref = ref->ref) {
 			if (ref->time < send_time) {
 				setfld(XDAG_FIELD_OUT, ref->hash, xdag_hashlow_t); res++;
 			}
-		}		
+		}
 	}
 
 	for (j = 0; j < inputsCount; ++j) {
@@ -1044,7 +1045,6 @@ static void *work_thread(void *arg)
 		if(orphan_hashtable != NULL)
 			g_xdag_extstats.use_orphan_hashtable++;
         }
-
 
 begin:
 	// loading block from the local storage
@@ -1799,7 +1799,6 @@ void remove_orphan(struct block_internal* bi, struct block_internal* blockRef, s
 		if(blockRef == noref_last) {
 			noref_last = blockRef0;
 		}
-
 
 		blockRef->ref = 0;
 		bi->flags |= BI_REF;

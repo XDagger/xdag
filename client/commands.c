@@ -99,7 +99,7 @@ XDAG_COMMAND commands[] = {
 	{ "lastblocks"  , 2, xdag_com_lastblocks },
 	{ "mainblocks"  , 2, xdag_com_mainblocks },
 	{ "minedblocks" , 2, xdag_com_minedblocks },
-        { "orphanblocks", 2, xdag_com_orphanblocks },
+	{ "orphanblocks", 2, xdag_com_orphanblocks },
 	{ "keyGen"      , 0, xdag_com_keyGen },
 	{ "level"       , 0, xdag_com_level },
 	{ "miner"       , 2, xdag_com_miner },
@@ -160,7 +160,6 @@ int xdag_com_orphanblocks(char * args, FILE* out)
 	processOrphanBlocksCommand(args, out);
 	return 0;
 }
-
 
 int xdag_com_keyGen(char * args, FILE* out)
 {
@@ -596,7 +595,6 @@ void processOrphanBlocksCommand(char *nextParam, FILE *out)
 		xdag_list_orphan_blocks(blocksCount, out);
 	}
 }
-
 
 void processDisconnectCommand(char *nextParam, FILE *out)
 {
