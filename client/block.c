@@ -120,6 +120,7 @@ void remove_orphan_hashtable(struct block_internal*, struct block_internal**, st
 void add_orphan_hashtable(struct block_internal*);
 void clean_orphan_hashtable(void);
 
+
 // convert xdag_amount_t to long double
 long double amount2xdags(xdag_amount_t amount)
 {
@@ -1788,13 +1789,13 @@ void remove_orphan(struct block_internal* bi, struct block_internal* blockRef, s
 			remove_orphan_hashtable(bi, &blockRef, &blockRef0);
 		}
 
-		if(!g_xdag_extstats.use_orphan_hashtable)
+		// original remove orphan
+		if(!g_xdag_extstats.use_orphan_hashtable){
 			for(blockRef0 = 0, blockRef = noref_first; blockRef != bi; blockRef0 = blockRef, blockRef = blockRef->ref) {
 				;
 			}
-
+		}
 		*(blockRef0 ? &blockRef0->ref : &noref_first) = blockRef->ref;
-
 		if(blockRef == noref_last) {
 			noref_last = blockRef0;
 		}
@@ -1807,59 +1808,51 @@ void remove_orphan(struct block_internal* bi, struct block_internal* blockRef, s
 }
 
 void remove_orphan_hashtable(struct block_internal* bi, struct block_internal** blockRef, struct block_internal** blockRef0){
-	struct orphan_block **obt_list_first = NULL;
-	if((obt_list_first = get_orphan_list(bi->hash)) == NULL){
-	//	xdag_warn("critical error, exit");
-	//	exit(EXIT_FAILURE);
-		printf("critical error 1");
-		fflush(stdout);
-	}
+	struct orphan_block **obt_list_first;
+	obt_list_first = get_orphan_list(bi->hash);
 	struct orphan_block *obt = NULL;
 	if((obt = *obt_list_first) == NULL){
-	//      xdag_warn("critical error, exit");
-	//      exit(EXIT_FAILURE);
-		printf("critical error 2");
-		fflush(stdout);
+		xdag_warn("Critical error. List in the hashtable not found. The orphan is not found in hashtable. [function: remove_orphan_hashtable]");
+		g_xdag_extstats.use_orphan_hashtable = 0;
+	} else {
+		struct orphan_block *obt_back = NULL;
+
+		for(;(obt != NULL ? obt->orphan_bi != bi : 0); obt_back=obt, obt=obt->next_hashtable);	
+		if(obt == NULL){
+			xdag_warn("Critical error. The orphan is not found in the hashtable list. [function: remove_orphan_hashtable]");
+			g_xdag_extstats.use_orphan_hashtable = 0;
+		} else {
+			*(obt_back ? &obt_back->next_hashtable : obt_list_first) = obt->next_hashtable;
+
+			*blockRef0 = (obt->prev ? obt->prev->orphan_bi : NULL); // original list prev
+
+			*(obt->prev ? &((obt->prev)->next) : &orphan_first) = obt->next;
+			*(obt->next ? &((obt->next)->prev) : &orphan_last) = obt->prev;
+
+			*blockRef = obt->orphan_bi; // original list actual
+
+			free(obt);
+		}
 	}
-	struct orphan_block *obt_back = NULL;
-
-	for(;(obt != NULL ? obt->orphan_bi != bi : 0); obt_back=obt, obt=obt->next_hashtable);	
-	if(obt == NULL){
-	//      xdag_warn("critical error, exit");
-	//	exit(EXIT_FAILURE);
-		printf("critical error 3");
-		fflush(stdout);
-	}
-
-	*(obt_back ? &obt_back->next_hashtable : obt_list_first) = obt->next_hashtable;
-
-	*blockRef0 = (obt->prev ? obt->prev->orphan_bi : NULL); // original list prev
-
-	*(obt->prev ? &((obt->prev)->next) : &orphan_first) = obt->next;
-	*(obt->next ? &((obt->next)->prev) : &orphan_last) = obt->prev;
-
-	*blockRef = obt->orphan_bi; // original list actual
-
-	free(obt);
 }
 
 void add_orphan(struct block_internal* nodeBlock){
-	*(noref_last ? &noref_last->ref : &noref_first) = nodeBlock;
-	noref_last = nodeBlock;
-	
+
 	if(g_xdag_extstats.use_orphan_hashtable){
 		add_orphan_hashtable(nodeBlock);
 	}
+
+	// original add orphan
+	*(noref_last ? &noref_last->ref : &noref_first) = nodeBlock;
+	noref_last = nodeBlock;
+	
 	g_xdag_extstats.nnoref++;
 }
 
 void add_orphan_hashtable(struct block_internal* nodeBlock){
 	struct orphan_block *obt = calloc(1,sizeof(struct orphan_block));
 	if(obt == NULL){
-	//      xdag_warn("critical error, exit");
-	//      exit(EXIT_FAILURE);
-		printf("critical error 4");
-		fflush(stdout);
+		xdag_warn("Error. Calloc failed. [function: add_orphan_hashtable]");
 		g_xdag_extstats.use_orphan_hashtable = 0;
 	} else {
 		obt->orphan_bi = nodeBlock;
@@ -1867,13 +1860,8 @@ void add_orphan_hashtable(struct block_internal* nodeBlock){
 		*(orphan_last ? &orphan_last->next : &orphan_first) = obt;
 		orphan_last = obt;
 
-		struct orphan_block **obt_list_first = NULL;
-		if((obt_list_first = get_orphan_list(nodeBlock->hash)) == NULL){
-		//      xdag_warn("critical error, exit");
-		//      exit(EXIT_FAILURE);
-			printf("critical error 5");
-			fflush(stdout);
-		}
+		struct orphan_block **obt_list_first;
+		obt_list_first = get_orphan_list(nodeBlock->hash);
 		struct orphan_block *obt_last;
 		for(obt_last = *obt_list_first; (obt_last != NULL ? obt_last->next_hashtable != NULL : 0); obt_last=obt_last->next_hashtable);
 		*(obt_last ? &obt_last->next_hashtable : obt_list_first) = obt;
@@ -1884,4 +1872,18 @@ void clean_orphan_hashtable(){
 	for(struct orphan_block *obt=orphan_first, *obt_back = NULL; obt != NULL; obt_back = obt, obt=obt->next, free(obt_back));
 	memset(orphan_hashtable, 0, sizeof(struct orphan_block *)*ORPHAN_HASH_SIZE);
 	orphan_first = orphan_last = NULL;
+}
+
+void xdag_list_orphan_blocks(int count, FILE *out)
+{
+	int i = 0;
+	print_header_block_list(out);
+
+	pthread_mutex_lock(&block_mutex);
+
+	for(struct block_internal *b = noref_first; b && i < count; b = b->ref, i++) {
+		print_block(b, 0, out);
+	}
+
+	pthread_mutex_unlock(&block_mutex);
 }
