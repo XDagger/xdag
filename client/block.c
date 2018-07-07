@@ -1813,6 +1813,7 @@ void remove_orphan_hashtable(struct block_internal* bi, struct block_internal** 
 	if((obt = *obt_list_first) == NULL){
 		xdag_warn("Critical error. List in the hashtable not found. The orphan is not found in hashtable. [function: remove_orphan_hashtable]");
 		g_xdag_extstats.use_orphan_hashtable = 0;
+		clean_orphan_hashtable();
 	} else {
 		struct orphan_block *obt_back = NULL;
 
@@ -1820,6 +1821,7 @@ void remove_orphan_hashtable(struct block_internal* bi, struct block_internal** 
 		if(obt == NULL){
 			xdag_warn("Critical error. The orphan is not found in the hashtable list. [function: remove_orphan_hashtable]");
 			g_xdag_extstats.use_orphan_hashtable = 0;
+			clean_orphan_hashtable();
 		} else {
 			*(obt_back ? &obt_back->next_hashtable : obt_list_first) = obt->next_hashtable;
 
@@ -1853,6 +1855,7 @@ void add_orphan_hashtable(struct block_internal* nodeBlock){
 	if(obt == NULL){
 		xdag_warn("Error. Calloc failed. [function: add_orphan_hashtable]");
 		g_xdag_extstats.use_orphan_hashtable = 0;
+		clean_orphan_hashtable();
 	} else {
 		obt->orphan_bi = nodeBlock;
 		obt->prev = orphan_last;
