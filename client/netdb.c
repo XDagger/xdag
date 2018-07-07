@@ -288,6 +288,40 @@ static void *monitor_thread(void *arg)
 	return 0;
 }
 
+/* check whitelist format, return 0 if invalid */
+static int is_valid_whitelist(char *content)
+{
+	if(!content || strlen(content) == 0) {
+		return 0;
+	}
+
+	char buf[0x1000];
+	int a, b, c, d, e, is_valid = 1;
+	char tmp, *next;
+	strcpy(buf, content);
+
+	char * line = strtok_r(buf,"\r\n\t", &next);
+	while (line) {
+		if(5 != sscanf(line, "%d.%d.%d.%d:%d%c", &a, &b, &c, &d, &e, &tmp)) {
+			is_valid = 0;
+			break;
+		}
+
+		if(a < 0 || a > 255
+		   || b < 0 || b > 255
+		   || c < 0 || c > 255
+		   || d < 0 || d > 255
+		   || e < 0 || e > 65535) {
+			is_valid = 0;
+			break;
+		}
+
+		line = strtok_r(0, "\r\n\t", &next);
+	}
+
+	return is_valid;
+}
+
 static void *refresh_thread(void *arg)
 {
 	while (!g_xdag_sync_on) {
@@ -303,35 +337,7 @@ static void *refresh_thread(void *arg)
 		
 		char *resp = http_get(WHITE_URL);
 		if(resp) {
-			char buf[0x1000];
-			int a, b, c, d, e, isCorrect = 1;
-			char tmp, *next;
-			strcpy(buf, resp);
-
-			char * line = strtok_r(buf,"\r\n\t", &next);
-			while (line) {
-				if(5 != sscanf(line, "%d.%d.%d.%d:%d%c", &a, &b, &c, &d, &e, &tmp)) {
-					isCorrect = 0;
-					break;
-				}
-
-				if(a < 0 || a > 255
-				   || b < 0 || b > 255
-				   || c < 0 || c > 255
-				   || d < 0 || d > 255
-				   || e < 0 || e > 65535) {
-					isCorrect = 0;
-					break;
-				}
-
-				line = strtok_r(0, "\r\n\t", &next);
-			}
-
-			if(strlen(resp) == 0) {
-				isCorrect = 0;
-			}
-
-			if(isCorrect) {
+			if(is_valid_whitelist(resp)) {
 				pthread_mutex_lock(&g_white_list_mutex);
 				FILE *f = xdag_open_file(DATABASEWHITE, "w");
 				if(f) {
