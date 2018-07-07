@@ -293,7 +293,9 @@ static void *refresh_thread(void *arg)
 	while (!g_xdag_sync_on) {
 		sleep(1);
 	}
-	
+
+	xdag_mess("start refresh_thread");
+
 	for (;;) {
 		time_t prev_time = time(0);
 		
@@ -301,19 +303,51 @@ static void *refresh_thread(void *arg)
 		
 		char *resp = http_get(WHITE_URL);
 		if(resp) {
-			pthread_mutex_lock(&g_white_list_mutex);
-			FILE *f = xdag_open_file(DATABASEWHITE, "w");
-			if(f) {
-				fwrite(resp, 1, strlen(resp), f);
-				fclose(f);
+			char buf[0x1000];
+			int a, b, c, d, e, isCorrect = 1;
+			char tmp, *next;
+			strcpy(buf, resp);
+
+			char * line = strtok_r(buf,"\r\n\t", &next);
+			while (line) {
+				if(5 != sscanf(line, "%d.%d.%d.%d:%d%c", &a, &b, &c, &d, &e, &tmp)) {
+					isCorrect = 0;
+					break;
+				}
+
+				if(a < 0 || a > 255
+				   || b < 0 || b > 255
+				   || c < 0 || c > 255
+				   || d < 0 || d > 255
+				   || e < 0 || e > 65535) {
+					isCorrect = 0;
+					break;
+				}
+
+				line = strtok_r(0, "\r\n\t", &next);
 			}
-			pthread_mutex_unlock(&g_white_list_mutex);
-			
+
+			if(strlen(resp) == 0) {
+				isCorrect = 0;
+			}
+
+			if(isCorrect) {
+				pthread_mutex_lock(&g_white_list_mutex);
+				FILE *f = xdag_open_file(DATABASEWHITE, "w");
+				if(f) {
+					fwrite(resp, 1, strlen(resp), f);
+					fclose(f);
+				}
+				pthread_mutex_unlock(&g_white_list_mutex);
+			} else {
+				xdag_err("white-list format is incorrect. \n%s", resp);
+			}
+
 			xdag_info("\n%s", resp);
 			free(resp);
 		}
 		
-		while (time(0) - prev_time < 900) { // refresh every 15 minutes
+		while (time(0) - prev_time < 10) { // refresh every 15 minutes
 			sleep(1);
 		}
 	}
@@ -327,7 +361,6 @@ static void *refresh_thread(void *arg)
 int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port_pairs)
 {
 	struct host h;
-	pthread_t t;
 
 	g_xdag_blocked_ips = malloc(MAX_BLOCKED_IPS * sizeof(uint32_t));
 	g_xdag_white_ips = malloc(MAX_WHITE_IPS * sizeof(uint32_t));
@@ -345,16 +378,23 @@ int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port
 	for (int i = 0; i < npairs; ++i) {
 		find_add_ipport(&h, addr_port_pairs[i], 0);
 	}
-	
+
+	pthread_t t;
 	if (pthread_create(&t, 0, monitor_thread, 0)) {
 		xdag_fatal("Can't start netdb thread\n");
 		return -1;
+	}
+	if(pthread_detach(t)) {
+		xdag_err("detach moniter_thread failed.");
 	}
 
 #if !PREVENT_AUTO_REFRESH
 	if(pthread_create(&t, 0, refresh_thread, 0)) {
 		xdag_fatal("Can't start refresh white-list netdb thread\n");
 		return -1;
+	}
+	if(pthread_detach(t)) {
+		xdag_err("detach refresh_thread failed.");
 	}
 #endif
 	
