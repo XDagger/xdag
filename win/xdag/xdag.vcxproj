@@ -164,8 +164,10 @@
       <StackCommitSize>1000000</StackCommitSize>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(PTHREAD_ROOT)dll\x86\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
-copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Command>
+      <Command>copy $(PTHREAD_ROOT)dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
+copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y
+copy $(SolutionDir)..\client\pools.txt "$(OutDir)pools.txt" /Y
+copy $(SolutionDir)..\client\pools-testnet.txt "$(OutDir)pools-testnet.txt" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -218,8 +220,10 @@ copy $(SolutionDir)..\client\pools-testnet.txt "$(OutDir)pools-testnet.txt" /Y</
       <StackCommitSize>1000000</StackCommitSize>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(PTHREAD_ROOT)dll\x86\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
-copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Command>
+      <Command>copy $(PTHREAD_ROOT)dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
+copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y
+copy $(SolutionDir)..\client\pools.txt "$(OutDir)pools.txt" /Y
+copy $(SolutionDir)..\client\pools-testnet.txt "$(OutDir)pools-testnet.txt" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_profiling|Win32'">
@@ -244,8 +248,10 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
       <StackCommitSize>1000000</StackCommitSize>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(PTHREAD_ROOT)dll\x86\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
-copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Command>
+      <Command>copy $(PTHREAD_ROOT)dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
+copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y
+copy $(SolutionDir)..\client\pools.txt "$(OutDir)pools.txt" /Y
+copy $(SolutionDir)..\client\pools-testnet.txt "$(OutDir)pools-testnet.txt" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -275,7 +281,9 @@ copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y
 copy $(SolutionDir)..\client\netdb.txt "$(OutDir)netdb.txt" /Y
 copy $(SolutionDir)..\client\netdb-testnet.txt "$(OutDir)netdb-testnet.txt" /Y
 copy $(SolutionDir)..\client\netdb-white.txt "$(OutDir)netdb-white.txt" /Y
-copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testnet.txt" /Y</Command>
+copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testnet.txt" /Y
+copy $(SolutionDir)..\client\pools.txt "$(OutDir)pools.txt" /Y
+copy $(SolutionDir)..\client\pools-testnet.txt "$(OutDir)pools-testnet.txt" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_profiling|x64'">
@@ -300,12 +308,14 @@ copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testn
       <StackCommitSize>1000000</StackCommitSize>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(PTHREAD_ROOT)\dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
+      <Command>copy $(PTHREAD_ROOT)dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
 copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y
 copy $(SolutionDir)..\client\netdb.txt "$(OutDir)netdb.txt" /Y
 copy $(SolutionDir)..\client\netdb-testnet.txt "$(OutDir)netdb-testnet.txt" /Y
 copy $(SolutionDir)..\client\netdb-white.txt "$(OutDir)netdb-white.txt" /Y
-copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testnet.txt" /Y</Command>
+copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testnet.txt" /Y
+copy $(SolutionDir)..\client\pools.txt "$(OutDir)pools.txt" /Y
+copy $(SolutionDir)..\client\pools-testnet.txt "$(OutDir)pools-testnet.txt" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
