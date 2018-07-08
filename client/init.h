@@ -1,4 +1,4 @@
-/* basic variables, T13.714-T14.294 $DVS:time$ */
+/* basic variables, T13.714-T14.297 $DVS:time$ */
 
 #ifndef XDAG_MAIN_H
 #define XDAG_MAIN_H

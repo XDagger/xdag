@@ -1,4 +1,4 @@
-/* block processing, T13.654-T14.294 $DVS:time$ */
+/* block processing, T13.654-T14.297 $DVS:time$ */
 
 #ifndef XDAG_BLOCK_H
 #define XDAG_BLOCK_H
