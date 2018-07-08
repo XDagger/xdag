@@ -306,7 +306,7 @@ begin:
 	return 0;
 
 err:
-	xdag_err("Miner : %s %s (error %d)", mess, res);
+	xdag_err("Miner: %s (error %d)", mess, res);
 
 	pthread_mutex_lock(&g_miner_mutex);
 
