@@ -469,6 +469,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	int inmask = 0, outmask = 0;
 	int verified_keys_mask = 0, err, type;
 	struct block_internal tmpNodeBlock, *blockRef = NULL, *blockRef0 = NULL;
+	struct block_internal* blockRefs[16]= {0};
 	xdag_diff_t diff0, diff;
 	int32_t cache_hit = 0, cache_miss = 0;
 
@@ -491,10 +492,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		i = 0;
 		err = 2;
 		goto end;
-	}
-
-	if(!g_light_mode) {
-		check_new_main();
 	}
 
 	for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
@@ -539,6 +536,29 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		goto end;
 	}
 
+	for(i = 1, j = 0; i < XDAG_BLOCK_FIELDS; ++i, j++) {
+		if(1 << i & (inmask | outmask)) {
+			blockRefs[j] = block_by_hash(newBlock->field[i].hash);
+			if(!blockRefs[j]) {
+				err = 5;
+				goto end;
+			}
+			if(blockRefs[j]->time >= tmpNodeBlock.time) {
+				err = 6;
+				goto end;
+			}
+			if(tmpNodeBlock.nlinks >= MAX_LINKS) {
+				err = 7;
+				goto end;
+			}
+		}
+	}
+
+	if(!g_light_mode) {
+		check_new_main();
+	}
+
+
 	if(signOutCount) {
 		our_keys = xdag_wallet_our_keys(&ourKeysCount);
 	}
@@ -572,19 +592,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 
 	for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
 		if(1 << i & (inmask | outmask)) {
-			blockRef = block_by_hash(newBlock->field[i].hash);
-			if(!blockRef) {
-				err = 5;
-				goto end;
-			}
-			if(blockRef->time >= tmpNodeBlock.time) {
-				err = 6;
-				goto end;
-			}
-			if(tmpNodeBlock.nlinks >= MAX_LINKS) {
-				err = 7;
-				goto end;
-			}
+			blockRef = blockRefs[i-1];
 			if(1 << i & inmask) {
 				if(newBlock->field[i].amount) {
 					int32_t res = 1;
