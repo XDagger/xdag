@@ -63,6 +63,8 @@
 		38B3951A2056DE70004DD3EA /* netdb-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5A20544F3F00598EC2 /* netdb-testnet.txt */; };
 		38B3951B2056DE70004DD3EA /* netdb-white-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5B20544F3F00598EC2 /* netdb-white-testnet.txt */; };
 		38B3951C2056DE70004DD3EA /* netdb-white.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5C20544F3F00598EC2 /* netdb-white.txt */; };
+		38D5E1FD20F3F73D0047D9BC /* pools-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3883C71120EA651400041D3A /* pools-testnet.txt */; };
+		38D5E1FE20F3F73D0047D9BC /* pools.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3883C71020EA651400041D3A /* pools.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -72,6 +74,8 @@
 			dstPath = .;
 			dstSubfolderSpec = 6;
 			files = (
+				38D5E1FD20F3F73D0047D9BC /* pools-testnet.txt in CopyFiles */,
+				38D5E1FE20F3F73D0047D9BC /* pools.txt in CopyFiles */,
 				38B3951A2056DE70004DD3EA /* netdb-testnet.txt in CopyFiles */,
 				38B3951B2056DE70004DD3EA /* netdb-white-testnet.txt in CopyFiles */,
 				38B3951C2056DE70004DD3EA /* netdb-white.txt in CopyFiles */,
