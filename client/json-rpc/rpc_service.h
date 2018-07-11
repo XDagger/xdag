@@ -28,6 +28,11 @@ extern int xdag_rpc_service_init(int port);
 
 /* stop xdag rpc */
 extern int xdag_rpc_service_stop(void);
+
+/* rpc white address config */
+extern int rpc_white_command(void *out, char *type, const char *address);
+
+
 	
 #ifdef __cplusplus
 };
