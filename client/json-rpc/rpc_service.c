@@ -55,14 +55,15 @@
 
 const uint32_t RPC_SERVER_PORT = 7677; //default http json-rpc port 7677
 
-struct item {
-    struct item *prev, *next;
+typedef struct rpc_white_element {
+    struct rpc_white_element *prev, *next;
     struct in_addr addr;
-};
+}rpc_white_element;
 
-struct item *g_rpc_white_host = NULL;
+struct rpc_white_element *g_rpc_white_host = NULL;
 
-static int rpc_host_addr_check_ipv4(const char *host){
+static int rpc_host_addr_check_ipv4(const char *host)
+{
 
   int n[4];
   char c[4];
@@ -77,28 +78,35 @@ static int rpc_host_addr_check_ipv4(const char *host){
 
   {
     int i;
-    for(i = 0; i < 3; ++i)
-      if (c[i] != '.')
+    for(i = 0; i < 3; ++i){
+      if (c[i] != '.'){ 
         return 0;
-    for(i = 0; i < 4; ++i)
-      if (n[i] > 255 || n[i] < 0)
+      }
+    }
+    
+    for(i = 0; i < 4; ++i){
+      if (n[i] > 255 || n[i] < 0){
         return 0;
+      }
+    }
     return 1;
-  } else
+  }else{
     return 0;
+  }
 }
 
-static int rpc_white_host_check(struct sockaddr_in peeraddr){
+static int rpc_white_host_check(struct sockaddr_in peeraddr)
+{
 
-  struct item *node = NULL ;
+  rpc_white_element *element = NULL ;
     
   if (!g_rpc_white_host){
         return 1;
   }
 
-  LL_FOREACH(g_rpc_white_host,node)
+  LL_FOREACH(g_rpc_white_host,element)
   {
-    if (node->addr.s_addr == peeraddr.sin_addr.s_addr){
+    if (element->addr.s_addr == peeraddr.sin_addr.s_addr){
         return 1;
     }
   }
@@ -107,9 +115,11 @@ static int rpc_white_host_check(struct sockaddr_in peeraddr){
 }
 
 
-static int rpc_white_host_add(const char *host){
-  struct item *new_white_host = NULL;
+static int rpc_white_host_add(const char *host)
+{
+  rpc_white_element *new_white_host = NULL,*tmp = NULL;
   int white_num = 0;
+  struct in_addr addr = {0};
 
   if (!rpc_host_addr_check_ipv4(host)){
     xdag_err("ip address is invalid");
@@ -122,24 +132,34 @@ static int rpc_white_host_add(const char *host){
     return -2;
   }
 
-  new_white_host = malloc(sizeof(struct item));
-  if (NULL == new_white_host){
-    xdag_err("memory is not enough.");
-    return -3;
+  addr.s_addr = inet_addr(host);
+  LL_FOREACH_SAFE(g_rpc_white_host,new_white_host,tmp)
+  {
+    if (new_white_host->addr.s_addr == addr.s_addr){
+        xdag_err("host [%s] is in the rpc white list.",host);
+        return -3;
+    }
   }
 
-  new_white_host->addr.s_addr = inet_addr(host);
+  new_white_host = malloc(sizeof(rpc_white_element));
+  if (NULL == new_white_host){
+    xdag_err("memory is not enough.");
+    return -4;
+  }
+
+  new_white_host->addr.s_addr = addr.s_addr;
   DL_APPEND(g_rpc_white_host, new_white_host);
 
   return 0;
 }
 
-static int rpc_white_host_del(const char *host){
+static int rpc_white_host_del(const char *host)
+{
 
-  struct item *node = NULL ,*del_node = NULL;
+  rpc_white_element *node = NULL ,*tmp = NULL,  *del_node = NULL;
   struct in_addr addr = {0};
 
-  LL_FOREACH(g_rpc_white_host,node)
+  LL_FOREACH_SAFE(g_rpc_white_host,node,tmp)
   {
     addr.s_addr = inet_addr(host);
     if (addr.s_addr == node->addr.s_addr){
@@ -153,17 +173,18 @@ static int rpc_white_host_del(const char *host){
   return -1;
 }
 
-static char  *rpc_white_host_query(){
+static char  *rpc_white_host_query()
+{
 
     static char result[RPC_WHITE_MAX * RPC_WHITE_ADDR_LEN] = {0};
-    struct item *node = NULL;
+    rpc_white_element *element = NULL, *tmp = NULL;
     char new_host[RPC_WHITE_ADDR_LEN] = {0};
 
-    LL_FOREACH(g_rpc_white_host,node)
+    LL_FOREACH_SAFE(g_rpc_white_host,element,tmp)
     {
         memset(new_host, 0, sizeof(new_host));
         
-        sprintf(new_host, "[%s]",inet_ntoa(node->addr));
+        sprintf(new_host, "[%s]\n",inet_ntoa(element->addr));
         strcat(result, new_host);
     }
     
@@ -171,7 +192,8 @@ static char  *rpc_white_host_query(){
 }
 
 
-int rpc_white_command(void *out, char *type, const char *address){
+int rpc_white_command(void *out, char *type, const char *address)
+{
 
   int result = 0;
   char *list = NULL;
