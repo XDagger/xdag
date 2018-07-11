@@ -1,4 +1,4 @@
-/* транспорт, T13.654-T13.788 $DVS:time$ */
+/* транспорт, T13.654-T14.309 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -272,11 +272,12 @@ static void conn_close_notify(void *conn)
 
 /* starts the transport system; bindto - ip:port for a socket for external connections
 * addr-port_pairs - array of pointers to strings with parameters of other host for connection (ip:port),
-* npairs - count of the strings
+* npairs - count of the strings,
+* nthreads - number of transporrt threads
 */
-int xdag_transport_start(int flags, const char *bindto, int npairs, const char **addr_port_pairs)
+int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs, const char **addr_port_pairs)
 {
-	const char **argv = malloc((npairs + 5) * sizeof(char *)), *version;
+	const char **argv = malloc((npairs + 7) * sizeof(char *)), *version;
 	int argc = 0, i, res;
 
 	if (!argv) return -1;
@@ -291,6 +292,13 @@ int xdag_transport_start(int flags, const char *bindto, int npairs, const char *
 	if (bindto) {
 		argv[argc++] = "-s"; 
 		argv[argc++] = bindto;
+	}
+
+	if (nthreads >= 0) {
+		char buf[16];
+		sprintf(buf, "%u", nthreads);
+		argv[argc++] = "-t";
+		argv[argc++] = strdup(buf);
 	}
 
 	for (i = 0; i < npairs; ++i) {
