@@ -65,6 +65,7 @@ void processMainBlocksCommand(char *nextParam, FILE *out);
 void processMinedBlocksCommand(char *nextParam, FILE *out);
 void processHelpCommand(FILE *out);
 void processDisconnectCommand(char *nextParam, FILE *out);
+void processRpcWhiteListCommand(char *nextParam, FILE *out);
 
 int xdag_com_account(char *, FILE*);
 int xdag_com_balance(char *, FILE*);
@@ -87,6 +88,7 @@ int xdag_com_run(char *, FILE*);
 int xdag_com_terminate(char *, FILE*);
 int xdag_com_exit(char *, FILE*);
 int xdag_com_disconnect(char *, FILE*);
+int xdag_com_white_list(char* args, FILE* out);
 
 XDAG_COMMAND* find_xdag_command(char*);
 
@@ -113,6 +115,7 @@ XDAG_COMMAND commands[] = {
 	{ "xfer"       , 0, (xdag_com_func_t)NULL},
 	{ "help"       , 0, xdag_com_help},
 	{ "disconnect" , 2, xdag_com_disconnect },
+	{ "rpc-white"  , 2, xdag_com_white_list},
 	{ (char *)NULL , 0, (xdag_com_func_t)NULL}
 };
 
@@ -240,6 +243,12 @@ int xdag_com_help(char *args, FILE* out)
 int xdag_com_disconnect(char *args, FILE *out)
 {
 	processDisconnectCommand(args, out);
+	return 0;
+}
+
+int xdag_com_white_list(char* args, FILE* out)
+{
+	processRpcWhiteListCommand(args, out);
 	return 0;
 }
 
@@ -451,6 +460,22 @@ void processNetCommand(char *nextParam, FILE *out)
 		strcat(netcmd, " ");
 	}
 	xdag_net_command(netcmd, out);
+}
+
+void processRpcWhiteListCommand(char *nextParam, FILE *out)
+{
+	char *method = strtok_r(nextParam, " \t\r\n", &nextParam);
+	if(!method) {
+		fprintf(out, "white: method is not given.\n");
+		return;
+	}
+	char *address = strtok_r(0, " \t\r\n", &nextParam);
+	if(!address && 0 != strcmp(method, "-l")) {
+		fprintf(out, "white: address not given.\n");
+		return;
+	}
+
+	rpc_white_command(out, method, address);
 }
 
 void processPoolCommand(char *nextParam, FILE *out)
@@ -836,36 +861,40 @@ int xdag_show_state(xdag_hash_t hash)
 void processHelpCommand(FILE *out)
 {
 	fprintf(out, "Commands:\n"
-		"  account [N]         - print first N (20 by default) our addresses with their amounts\n"
-		"  balance [A]         - print balance of the address A or total balance for all our addresses\n"
-		"  block [A]           - print extended info for the block corresponding to the address or hash A\n"
-		"  lastblocks [N]      - print latest N (20 by default, max limit 100) addresses of main blocks\n"
-		"  exit                - exit this program (not the daemon)\n"
-		"  help                - print this help\n"
-		"  keygen              - generate new private/public key pair and set it by default\n"
-		"  level [N]           - print level of logging or set it to N (0 - nothing, ..., 9 - all)\n"
-		"  miners              - for pool, print list of recent connected miners\n"
-		"  mining [N]          - print number of mining threads or set it to N\n"
-		"  net command         - run transport layer command, try 'net help'\n"
-		"  pool [CFG]          - print or set pool config; CFG is miners:maxip:maxconn:fee:reward:direct:fund\n"
-		"                         miners - maximum allowed number of miners,\n"
-		"                         maxip - maximum allowed number of miners connected from single ip,\n"
-		"                         maxconn - maximum allowed number of miners with the same address,\n"
-		"                         fee - pool fee in percent,\n"
-		"                         reward - reward to miner who got a block in percent,\n"
-		"                         direct - reward to miners participated in earned block in percent,\n"
-		"                         fund - community fund fee in percent\n"
-		"  run                 - run node after loading local blocks if option -r is used\n"
-		"  state               - print the program state\n"
-		"  stats               - print statistics for loaded and all known blocks\n"
-		"  terminate           - terminate both daemon and this program\n"
-		"  xfer S A            - transfer S our %s to the address A\n"
-		"  disconnect O [A|IP] - disconnect all connections or specified miners\n"
-		"                         O is option, can be all, address or ip\n"
-		"                         A is the miners' address\n"
-		"                         IP is the miners' IP\n"
-		"  mainblocks [N]       - print list of N (20 by default) main blocks\n"
-		"  minedblocks [N]      - print list of N (20 by default) main blocks mined by current pool\n"
+		"  account [N]          - print first N (20 by default) our addresses with their amounts\n"
+		"  balance [A]          - print balance of the address A or total balance for all our addresses\n"
+		"  block [A]            - print extended info for the block corresponding to the address or hash A\n"
+		"  lastblocks [N]       - print latest N (20 by default, max limit 100) main blocks\n"
+		"  exit                 - exit this program (not the daemon)\n"
+		"  help                 - print this help\n"
+		"  keygen               - generate new private/public key pair and set it by default\n"
+		"  level [N]            - print level of logging or set it to N (0 - nothing, ..., 9 - all)\n"
+		"  miners               - for pool, print list of recent connected miners\n"
+		"  mining [N]           - print number of mining threads or set it to N\n"
+		"  net command          - run transport layer command, try 'net help'\n"
+		"  pool [CFG]           - print or set pool config; CFG is miners:maxip:maxconn:fee:reward:direct:fund\n"
+		"                          miners - maximum allowed number of miners,\n"
+		"                          maxip - maximum allowed number of miners connected from single ip,\n"
+		"                          maxconn - maximum allowed number of miners with the same address,\n"
+		"                          fee - pool fee in percent,\n"
+		"                          reward - reward to miner who got a block in percent,\n"
+		"                          direct - reward to miners participated in earned block in percent,\n"
+		"                          fund - community fund fee in percent\n"
+		"  run                  - run node after loading local blocks if option -r is used\n"
+		"  state                - print the program state\n"
+		"  stats                - print statistics for loaded and all known blocks\n"
+		"  terminate            - terminate both daemon and this program\n"
+		"  xfer S A             - transfer S our %s to the address A\n"
+		"  disconnect O [A|IP]  - disconnect all connections or specified miners\n"
+		"                          O is option, can be all, address or ip\n"
+		"                          A is the miners' address\n"
+		"                          IP is the miners' IP\n"
+		"  rpc-white [-a|-l|-d][IP] - rpc white list manager\n"
+		"                          -a add a IP address to white list\n"
+		"                          -l list all IP addresses in  white list\n"
+		"                          -d delete a exist IP address\n"
+		"  mainblocks [N]          - print list of N (20 by default) main blocks\n"
+		"  minedblocks [N]         - print list of N (20 by default) main blocks mined by current pool\n"
 		, g_coinname);
 }
 
