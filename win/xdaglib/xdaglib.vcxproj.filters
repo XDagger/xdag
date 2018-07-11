@@ -49,6 +49,9 @@
     <Filter Include="client\http">
       <UniqueIdentifier>{083ad2d2-3218-4c42-9ae3-55fb52fe25bb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="client\utils\moving_statitics">
+      <UniqueIdentifier>{ebe447cf-4047-406a-b6a6-fb64570e8ed2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\client\address.c">
@@ -179,6 +182,15 @@
     </ClCompile>
     <ClCompile Include="..\..\client\http\http.c">
       <Filter>client\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\utils\moving_statistics\moving_average.c">
+      <Filter>client\utils\moving_statitics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\json-rpc\rpc_procedure.c">
+      <Filter>client\json-rpc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\network.c">
+      <Filter>client</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -371,6 +383,19 @@
     <ClInclude Include="..\..\client\http\url.h">
       <Filter>client\http</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\client\utils\moving_statistics\moving_average.h">
+      <Filter>client\utils\moving_statitics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\types.h">
+      <Filter>client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\json-rpc\rpc_procedure.h">
+      <Filter>client\json-rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="network.h" />
+    <ClInclude Include="..\..\client\network.h">
+      <Filter>client</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\client\netdb-testnet.txt">
@@ -383,6 +408,12 @@
       <Filter>client\pool_lists</Filter>
     </Text>
     <Text Include="..\..\client\netdb.txt">
+      <Filter>client\pool_lists</Filter>
+    </Text>
+    <Text Include="..\..\client\pools.txt">
+      <Filter>client\pool_lists</Filter>
+    </Text>
+    <Text Include="..\..\client\pools-testnet.txt">
       <Filter>client\pool_lists</Filter>
     </Text>
   </ItemGroup>

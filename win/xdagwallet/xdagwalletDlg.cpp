@@ -49,13 +49,12 @@ END_MESSAGE_MAP()
 
 CXDagWalletDlg::CXDagWalletDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_XDAGWALLET_DIALOG, pParent)
-	, _poolAddress(_T(""))
-	, _miningThreadsCount(0)
 	, _balance(_T(""))
 	, _accountAddress(_T(""))
 	, _transferAmount(_T(""))
 	, _transferAddress(_T(""))
 	, _state(_T(""))
+	, _firstActivate(false)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -64,12 +63,6 @@ void CXDagWalletDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 
-	DDX_Control(pDX, IDC_BUTTON_APPLY, _applyButton);
-	DDX_Text(pDX, IDC_EDIT_POOL_ADDRESS, _poolAddress);
-	DDV_MaxChars(pDX, _poolAddress, 64);
-	DDX_Text(pDX, IDC_EDIT_MINING_THREADS, _miningThreadsCount);
-	DDV_MinMaxInt(pDX, _miningThreadsCount, 0, 999);
-	DDX_Control(pDX, IDC_EDIT_HASHRATE, _hashRateEdit);
 	DDX_Control(pDX, IDC_EDIT_BALANCE, _balanceEdit);
 	DDX_Control(pDX, IDC_EDIT_ACCOUNT_ADDRESS, _accountAddressEdit);
 	DDX_Text(pDX, IDC_EDIT_TRANSFER_AMOUNT, _transferAmount);
@@ -86,9 +79,7 @@ BEGIN_MESSAGE_MAP(CXDagWalletDlg, CDialog)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
-	ON_BN_CLICKED(IDC_BUTTON_CONNECT, &CXDagWalletDlg::OnClickedButtonConnect)
 	ON_BN_CLICKED(IDC_BUTTON_XFER, &CXDagWalletDlg::OnClickedButtonXfer)
-	ON_BN_CLICKED(IDC_BUTTON_APPLY, &CXDagWalletDlg::OnBnClickedButtonApply)
 	ON_MESSAGE(WM_UPDATE_STATE, &CXDagWalletDlg::OnUpdateState)
 	ON_WM_TIMER()
 END_MESSAGE_MAP()
@@ -122,12 +113,11 @@ BOOL CXDagWalletDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// Set big icon
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
-	_applyButton.EnableWindow(FALSE);
 	_transferAmountEdit.EnableWindow(FALSE);
 	_transferAddressEdit.EnableWindow(FALSE);
 	_xferButton.EnableWindow(FALSE);
+	SetTimer(ID_TIMER_INIT, 500, NULL);
 
-	_poolAddress = AfxGetApp()->GetProfileString(_T("Settings"), _T("PoolAddress"));
 	UpdateData(FALSE);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
@@ -213,29 +203,6 @@ LRESULT CXDagWalletDlg::OnUpdateState(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-void CXDagWalletDlg::OnClickedButtonConnect()
-{
-	_accountAddressEdit.SendMessageA(WM_HIDE_TOOLTIP);
-
-	UpdateData(true);
-	if (_poolAddress.IsEmpty()) {
-		MessageBox("Pool address must be set", "Dagger wallet", MB_OK | MB_ICONSTOP);
-		return;
-	}
-	char buf[10];
-	char *argv[] = { "xdag.exe", "-m", _itoa(_miningThreadsCount, buf, 10), (char*)(LPCTSTR)_poolAddress };
-	xdag_set_password_callback(&InputPassword);
-	g_xdag_show_state = &ShowState;
-	xdag_init(4, argv, 1);
-
-	_applyButton.EnableWindow(TRUE);
-	_transferAmountEdit.EnableWindow(TRUE);
-	_transferAddressEdit.EnableWindow(TRUE);
-	_xferButton.EnableWindow(TRUE);
-	SetTimer(ID_TIMER_HASHRATE, 5000, NULL);
-	AfxGetApp()->WriteProfileString(_T("Settings"), _T("PoolAddress"), _poolAddress);
-}
-
 void CXDagWalletDlg::OnClickedButtonXfer()
 {
 	UpdateData(TRUE);
@@ -250,20 +217,6 @@ void CXDagWalletDlg::OnClickedButtonXfer()
 	xdag_do_xfer(0, (char*)(LPCTSTR)_transferAmount, (char*)(LPCTSTR)_transferAddress, 1);
 }
 
-void CXDagWalletDlg::OnBnClickedButtonApply()
-{
-	UpdateData(TRUE);
-	xdagSetCountMiningTread(_miningThreadsCount);
-}
-
-void CXDagWalletDlg::OnTimer(WPARAM wParam)
-{
-	const double hashRate = xdagGetHashRate();
-	CString hashRateStr;
-	hashRateStr.Format("%.2lf", hashRate);
-	_hashRateEdit.SetWindowText(hashRateStr);
-}
-
 LRESULT CXDagWalletDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
@@ -273,4 +226,18 @@ LRESULT CXDagWalletDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 	return CDialog::WindowProc(message, wParam, lParam);
+}
+
+void CXDagWalletDlg::OnTimer(WPARAM wParam)
+{
+	KillTimer(ID_TIMER_INIT);
+
+	char *argv[] = { "xdag.exe" };
+	xdag_set_password_callback(&InputPassword);
+	g_xdag_show_state = &ShowState;
+	xdag_init(1, argv, 1);
+
+	_transferAmountEdit.EnableWindow(TRUE);
+	_transferAddressEdit.EnableWindow(TRUE);
+	_xferButton.EnableWindow(TRUE);
 }

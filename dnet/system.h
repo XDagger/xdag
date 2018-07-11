@@ -20,14 +20,12 @@ typedef long ssize_t;
 #define write(a,b,c) send(a,b,c,0)
 #define read(a,b,c) recv(a,b,c,0)
 static pthread_t pthread_invalid;
-extern int system_init(void);
 #define strdup(x) _strdup(x)
 #if defined(_MSC_VER)
 #define SHUT_RDWR SD_BOTH
 #endif
 #else
 #define pthread_invalid -1
-#define system_init()	0
 #define INVALID_SOCKET	-1
 #endif
 

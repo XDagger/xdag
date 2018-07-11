@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "hash.h"
+#include "system.h"
+#include "types.h"
 
 enum xdag_field_type {
 	XDAG_FIELD_NONCE,        //0
@@ -30,9 +32,6 @@ enum xdag_message_type {
 };
 
 #define XDAG_BLOCK_FIELDS 16
-
-typedef uint64_t xdag_time_t;
-typedef uint64_t xdag_amount_t;
 
 struct xdag_field {
 	union {
@@ -60,8 +59,18 @@ struct xdag_block {
 
 #define xdag_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
+// convert cheato to xdag
+extern long double amount2xdags(xdag_amount_t amount);
+
+// contert xdag to cheato
+extern xdag_amount_t xdags2amount(const char *str);
+
 // start of regular block processing
-extern int xdag_blocks_start(int n_mining_threads, int miner_address);
+extern int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address);
 
 // checks and adds block to the storage. Returns non-zero value in case of error.
 extern int xdag_add_block(struct xdag_block *b);
@@ -71,7 +80,7 @@ extern int xdag_get_our_block(xdag_hash_t hash);
 
 // calls callback for each own block
 extern int xdag_traverse_our_blocks(void *data,
-    int (*callback)(void*, xdag_hash_t, xdag_amount_t, xdag_time_t, int));
+	int (*callback)(void*, xdag_hash_t, xdag_amount_t, xdag_time_t, int));
 
 // calls callback for each block
 extern int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag_hash_t hash,
@@ -79,7 +88,7 @@ extern int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag
 
 // create and publish a block
 extern int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, xdag_amount_t fee, 
-    xdag_time_t send_time, xdag_hash_t newBlockHashResult);
+	xdag_time_t send_time, xdag_hash_t newBlockHashResult);
 
 // returns current balance for specified address or balance for all addresses if hash == 0
 extern xdag_amount_t xdag_get_balance(xdag_hash_t hash);
@@ -108,8 +117,20 @@ extern int xdag_blocks_reset(void);
 // prints detailed information about block
 extern int xdag_print_block_info(xdag_hash_t hash, FILE *out);
 
-// retrieves addresses of N last main blocks
-// return count of retrieved blocks
-extern int xdagGetLastMainBlocks(int count, char** addressArray);
+// prints list of N last main blocks
+extern void xdag_list_main_blocks(int count, int print_only_addresses, FILE *out);
+
+// prints list of N last blocks mined by current pool
+extern void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out);
+
+// calculate difficulty from hash
+xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash);
+
+// get all transactions of specified address, and return total number of transactions
+extern int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t));
+	
+#ifdef __cplusplus
+};
+#endif
 
 #endif

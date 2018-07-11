@@ -42,6 +42,9 @@ typedef struct _url_field
 	char *fragment;
 } url_field_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern url_field_t *url_parse(const char *str);
 
@@ -49,4 +52,8 @@ extern void url_free(url_field_t *url);
 
 extern void url_field_print(url_field_t *url);
 
+#ifdef __cplusplus
+};
+#endif
+	
 #endif /* !__URI_H__ */
