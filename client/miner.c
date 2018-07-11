@@ -306,7 +306,7 @@ begin:
 	return 0;
 
 err:
-	xdag_err("Miner : %s %s (error %d)", mess, res);
+	xdag_err("Miner: %s (error %d)", mess, res);
 
 	pthread_mutex_lock(&g_miner_mutex);
 
@@ -426,7 +426,7 @@ int xdag_pick_pool(char *pool_address)
 	}
 	fclose(fp);
 
-	int start_index = rand() % count;
+	int start_index = count ? rand() % count : 0;
 	int index = start_index;
 	do {
 		int socket = xdag_connect_pool(addresses[index], &error_message);
