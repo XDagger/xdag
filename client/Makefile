@@ -10,7 +10,7 @@ utils    		= ./utils
 moving_statistics 	= ./utils/moving_statistics
 secp256k1               = ../secp256k1
 OS			:= $(shell uname)
-use_openssl_ec 		:= $(shell if grep --quiet -e 'define USE_OPTIMIZED_EC 1' -e 'define USE_OPTIMIZED_EC 2' crypt.h; then echo false; else echo true; fi)
+use_openssl_ec		:= $(shell if grep --quiet -e 'define USE_OPTIMIZED_EC 1' -e 'define USE_OPTIMIZED_EC 2' crypt.h; then echo false; else echo true; fi)
 
 ifeq ($(OS), Darwin)
 	asm_src = 						\
@@ -43,16 +43,7 @@ sources = 							\
 	terminal.c						\
 	network.c						\
 	$(dnet)/dnet_crypt.c					\
-	$(dnet)/dnet_database.c					\
-	$(dnet)/dnet_main.c					\
-	$(dnet)/dnet_threads.c					\
-	$(dnet)/dnet_connection.c				\
-	$(dnet)/dnet_stream.c					\
-	$(dnet)/dnet_packet.c					\
-	$(dnet)/dnet_command.c					\
-	$(dnet)/dnet_log.c					\
-	$(dnet)/dnet_files.c					\
-	$(dnet)/dnet_tap.c					\
+	$(dnet)/dnet_xdag.c					\
 	$(dfslib)/dfslib_crypt.c				\
 	$(dfslib)/dfslib_random.c				\
 	$(dfslib)/dfslib_string.c				\
@@ -94,17 +85,9 @@ headers = 							\
 	types.h							\
 	network.h						\
 	$(dnet)/dnet_crypt.h					\
-	$(dnet)/dnet_database.h					\
 	$(dnet)/dnet_history.h					\
-	$(dnet)/dnet_threads.h					\
-	$(dnet)/dnet_connection.h				\
-	$(dnet)/dnet_stream.h					\
+	$(dnet)/dnet_main.h					\
 	$(dnet)/dnet_packet.h					\
-	$(dnet)/dnet_command.h					\
-	$(dnet)/dnet_log.h					\
-	$(dnet)/dnet_files.h					\
-	$(dnet)/dnet_tap.h					\
-	$(dnet)/dthread.h					\
 	$(dfslib)/dfslib_crypt.h				\
 	$(dfslib)/dfslib_random.h				\
 	$(dfslib)/dfslib_string.h				\
@@ -137,19 +120,34 @@ endif
 
 ifeq ($(use_openssl_ec), false)
 	secp256k1_i = secp256k1.o -isystem$(secp256k1)/include/ -lgmp
- ifeq ("$(wildcard $(secp256k1)/src/libsecp256k1-config.h)","")
+endif
+
+ifeq ("$(wildcard $(secp256k1)/src/libsecp256k1-config.h)","")
 	secp256k1_full_compile = true
- endif
- ifeq ("$(wildcard /secp256k1.o)","")
+endif
+
+ifeq ("$(wildcard secp256k1.o)","")
 	secp256k1_full_compile = true
- endif
 endif
 
 
 all: secp256k1 xdag
 
 xdag: $(sources) $(headers) Makefile
-	cc -o xdag $(secp256k1_i) $(sources) $(asm_src) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) $(flags)
+	cc -o xdag $(secp256k1_i) $(sources) $(asm_src) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) -isystem$(secp256k1)/include/  $(flags)
+
+secp256k1:
+ifneq ($(filter true,$(use_openssl_ec) $(secp256k1_full_compile)),)
+	if grep --quiet -e 'define USE_OPTIMIZED_EC 1' -e 'define USE_OPTIMIZED_EC 2' crypt.h; then                                     \
+		cd $(secp256k1) && ./autogen.sh && ./configure && make;                                                                 \
+		cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp;        \
+	fi
+else
+	if ! cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp; then                      \
+		cd $(secp256k1) && ./autogen.sh && ./configure && make;                                                                 \
+		cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp;        \
+	fi
+endif
 
 clean:
 	rm -f xdag
@@ -158,20 +156,3 @@ clean:
 install: xdag
 	sudo cp xdag /usr/local/bin/xdag
 	sudo cp xdag /usr/local/sbin/xdag
-
-secp256k1:
-ifeq ($(use_openssl_ec), false)
- ifeq ($(secp256k1_full_compile), true)
-	if grep --quiet -e 'define USE_OPTIMIZED_EC 1' -e 'define USE_OPTIMIZED_EC 2' crypt.h; then					\
-		cd $(secp256k1) && ./autogen.sh && ./configure && make;									\
-		cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp;	\
-	fi
- 
- else
-	if ! cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp; then			\
-		cd $(secp256k1) && ./autogen.sh && ./configure && make;                                                 		\
-		cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp;        \
-	fi
-
- endif
-endif
