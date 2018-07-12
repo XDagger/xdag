@@ -120,33 +120,35 @@ endif
 
 ifeq ($(use_openssl_ec), false)
 	secp256k1_i = secp256k1.o -isystem$(secp256k1)/include/ -lgmp
-endif
-
-ifeq ("$(wildcard $(secp256k1)/src/libsecp256k1-config.h)","")
+ ifeq ("$(wildcard $(secp256k1)/src/libsecp256k1-config.h)","")
 	secp256k1_full_compile = true
-endif
-
-ifeq ("$(wildcard secp256k1.o)","")
+ endif
+ ifeq ("$(wildcard secp256k1.o)","")
 	secp256k1_full_compile = true
+ endif
 endif
 
 
 all: secp256k1 xdag
 
 xdag: $(sources) $(headers) Makefile
-	cc -o xdag $(secp256k1_i) $(sources) $(asm_src) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) -isystem$(secp256k1)/include/  $(flags)
+	cc -o xdag $(secp256k1_i) $(sources) $(asm_src) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) $(flags)
 
 secp256k1:
-ifneq ($(filter true,$(use_openssl_ec) $(secp256k1_full_compile)),)
+ifeq ($(use_openssl_ec), false)
+ ifeq ($(secp256k1_full_compile)), true)
 	if grep --quiet -e 'define USE_OPTIMIZED_EC 1' -e 'define USE_OPTIMIZED_EC 2' crypt.h; then                                     \
 		cd $(secp256k1) && ./autogen.sh && ./configure && make;                                                                 \
 		cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp;        \
 	fi
-else
+ else
 	if ! cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp; then                      \
 		cd $(secp256k1) && ./autogen.sh && ./configure && make;                                                                 \
 		cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp;        \
 	fi
+ endif
+else
+	@rm -f secp256k1.o
 endif
 
 clean:
