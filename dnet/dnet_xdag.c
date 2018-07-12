@@ -1,4 +1,4 @@
-/* dnet: code for xdag; T14.290-T14.292; $DVS:time$ */
+/* dnet: code for xdag; T14.290-T14.309; $DVS:time$ */
 
 /*
  * This file implements simple version of dnet especially for xdag.
@@ -348,7 +348,10 @@ static void *xthread_main(void *arg) {
 						if (conn - g_connections == (xs->head.length | xs->head.type << 16)) continue;
 						xs->head.type = DNET_PKT_XDAG;
 						xs->head.length = SECTOR_SIZE;
-					} else continue;
+					} else {
+						t->poll[n].events &= ~POLLOUT;
+						continue;
+					}
 					dfslib_encrypt_sector(g_crypt, xs->word, conn->packets_out - FIRST_NSECTORS + 1);
 				} else if (conn->packets_out < FIRST_NSECTORS - 1 || (!conn->crypt && conn->packets_in)) {
 					xs = ((struct xsector *)&g_xkeys.pub) + conn->packets_out;
@@ -362,6 +365,8 @@ static void *xthread_main(void *arg) {
 				if (res != SECTOR_SIZE) goto close;
 				conn->packets_out++;
 			}
+			if (conn->out_queue_size || conn->common_queue_pos != g_common_queue_pos)
+				t->poll[n].events |= POLLOUT;
 		}
 	}
 	return 0;
@@ -457,20 +462,21 @@ int dnet_init(int argc, char **argv) {
 		     if (!strcmp(argv[i], "-s") && i + 1 < argc) bindto = argv[++i];
 		else if (!strcmp(argv[i], "-t") && i + 1 < argc) sscanf(argv[++i], "%u", &nthreads);
 	}
-	if (nthreads < 1) { err = 2; goto end; }
-	g_nthreads = nthreads;
-	g_threads = calloc(sizeof(struct xthread), nthreads);
-	g_connections = calloc(sizeof(struct xconnection), nthreads * MAX_CONNECTIONS_PER_THREAD);
-	g_common_queue = malloc(COMMON_QUEUE_SIZE * SECTOR_SIZE);
-	g_crypt = malloc(sizeof(struct dfslib_crypt));
-	if (!g_threads || !g_connections || !g_common_queue || !g_crypt) { err = 3; goto end; }
-	for (n = 0; n < nthreads; ++n) {
-		pthread_mutex_init(&g_threads[n].mutex, 0);
-		for (i = 0; i < MAX_CONNECTIONS_PER_THREAD; ++i) {
-			struct xconnection *conn = &g_connections[n * MAX_CONNECTIONS_PER_THREAD + i];
-			pthread_mutex_init(&conn->mutex, 0);
-			g_threads[n].conn[i] = conn;
-			conn->nfd = i;
+	if (nthreads >= 1) {
+		g_nthreads = nthreads;
+		g_threads = calloc(sizeof(struct xthread), nthreads);
+		g_connections = calloc(sizeof(struct xconnection), nthreads * MAX_CONNECTIONS_PER_THREAD);
+		g_common_queue = malloc(COMMON_QUEUE_SIZE * SECTOR_SIZE);
+		g_crypt = malloc(sizeof(struct dfslib_crypt));
+		if (!g_threads || !g_connections || !g_common_queue || !g_crypt) { err = 3; goto end; }
+		for (n = 0; n < nthreads; ++n) {
+			pthread_mutex_init(&g_threads[n].mutex, 0);
+			for (i = 0; i < MAX_CONNECTIONS_PER_THREAD; ++i) {
+				struct xconnection *conn = &g_connections[n * MAX_CONNECTIONS_PER_THREAD + i];
+				pthread_mutex_init(&conn->mutex, 0);
+				g_threads[n].conn[i] = conn;
+				conn->nfd = i;
+			}
 		}
 	}
 	printf("%s %s%s.\n", argv[0], DNET_VERSION, (is_daemon ? ", running as daemon" : ""));
@@ -478,12 +484,12 @@ int dnet_init(int argc, char **argv) {
 		sleep(3); printf("Password incorrect.\n");
 		return err;
 	}
-	dnet_session_init_crypt(g_crypt, g_xkeys.sect0.word);
+	if (nthreads >= 1) dnet_session_init_crypt(g_crypt, g_xkeys.sect0.word);
 	if (is_daemon) daemonize();
 	angelize();
 	for (i = 0; i < nthreads; ++i)
 		pthread_create(&t, 0, xthread_main, (void *)(long)i);
-	if (bindto) pthread_create(&t, 0, accept_thread_main, (void *)bindto);
+	if (bindto && nthreads >= 1) pthread_create(&t, 0, accept_thread_main, (void *)bindto);
 	return 0;
 end:
 	printf("dnet: error %d.\n", err);

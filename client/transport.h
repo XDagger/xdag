@@ -1,4 +1,4 @@
-/* транспорт, T13.654-T13.788 $DVS:time$ */
+/* транспорт, T13.654-T14.309 $DVS:time$ */
 
 #ifndef XDAG_TRANSPORT_H
 #define XDAG_TRANSPORT_H
@@ -19,9 +19,10 @@ extern "C" {
 	
 /* starts the transport system; bindto - ip:port for a socket for external connections
  * addr-port_pairs - array of pointers to strings with parameters of other host for connection (ip:port),
- * npairs - count of the strings
+ * npairs - count of the strings,
+ * nthreads - number of transport threads
  */
-extern int xdag_transport_start(int flags, const char *bindto, int npairs, const char **addr_port_pairs);
+extern int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs, const char **addr_port_pairs);
 
 /* generates an array with random data */
 extern int xdag_generate_random_array(void *array, unsigned long size);
