@@ -1044,7 +1044,7 @@ static void *work_thread(void *arg)
 #if USE_ORPHAN_HASHTABLE == 1
 	orphan_hashtable = (struct orphan_block **)calloc(sizeof(struct orphan_block *), ORPHAN_HASH_SIZE);
 	if(orphan_hashtable != NULL)
-		g_xdag_extstats.use_orphan_hashtable++;
+		g_xdag_extstats.use_orphan_hashtable = 1;
 #endif
 
 begin:
