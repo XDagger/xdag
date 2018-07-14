@@ -1784,7 +1784,8 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 	return n;
 }
 
-void remove_orphan(struct block_internal* bi, struct block_internal* blockRef, struct block_internal* blockRef0){
+void remove_orphan(struct block_internal* bi, struct block_internal* blockRef, struct block_internal* blockRef0) 
+{
 	if(!(bi->flags & BI_REF)) {
 		if(g_xdag_extstats.use_orphan_hashtable){
 			remove_orphan_hashtable(bi, &blockRef, &blockRef0);
@@ -1807,7 +1808,8 @@ void remove_orphan(struct block_internal* bi, struct block_internal* blockRef, s
 	}
 }
 
-void remove_orphan_hashtable(struct block_internal* bi, struct block_internal** blockRef, struct block_internal** blockRef0){
+void remove_orphan_hashtable(struct block_internal* bi, struct block_internal** blockRef, struct block_internal** blockRef0)
+{
 	struct orphan_block **obt_list_first = get_orphan_list(bi->hash);
 	struct orphan_block *obt = NULL;
 	obt = *obt_list_first;
@@ -1838,7 +1840,8 @@ void remove_orphan_hashtable(struct block_internal* bi, struct block_internal** 
 	}
 }
 
-void add_orphan(struct block_internal* nodeBlock){
+void add_orphan(struct block_internal* nodeBlock)
+{
 
 	if(g_xdag_extstats.use_orphan_hashtable){
 		add_orphan_hashtable(nodeBlock);
@@ -1851,7 +1854,8 @@ void add_orphan(struct block_internal* nodeBlock){
 	g_xdag_extstats.nnoref++;
 }
 
-void add_orphan_hashtable(struct block_internal* nodeBlock){
+void add_orphan_hashtable(struct block_internal* nodeBlock)
+{
 	struct orphan_block *obt = calloc(1,sizeof(struct orphan_block));
 	if(obt == NULL){
 		xdag_warn("Error. Calloc failed. [function: add_orphan_hashtable]");
@@ -1870,7 +1874,8 @@ void add_orphan_hashtable(struct block_internal* nodeBlock){
 	}
 }
 
-void clean_orphan_hashtable(){
+void clean_orphan_hashtable()
+{
 	for(struct orphan_block *obt=orphan_first, *obt_back = NULL; obt != NULL; obt_back = obt, obt=obt->next, free(obt_back));
 	memset(orphan_hashtable, 0, sizeof(struct orphan_block *)*ORPHAN_HASH_SIZE);
 	orphan_first = orphan_last = NULL;
