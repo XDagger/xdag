@@ -1818,7 +1818,7 @@ void remove_orphan_hashtable(struct block_internal* bi, struct block_internal** 
 	} else {
 		struct orphan_block *obt_back = NULL;
 
-		for(;(obt != NULL ? obt->orphan_bi != bi : 0); obt_back=obt, obt=obt->next_hashtable);	
+		for(; obt != NULL && obt->orphan_bi != bi; obt_back=obt, obt=obt->next_hashtable);	
 		if(obt == NULL){
 			xdag_warn("Critical error. The orphan is not found in the hashtable list. [function: remove_orphan_hashtable]");
 			g_xdag_extstats.use_orphan_hashtable = 0;
@@ -1863,10 +1863,9 @@ void add_orphan_hashtable(struct block_internal* nodeBlock){
 		*(orphan_last ? &orphan_last->next : &orphan_first) = obt;
 		orphan_last = obt;
 
-		struct orphan_block **obt_list_first;
-		obt_list_first = get_orphan_list(nodeBlock->hash);
+		struct orphan_block **obt_list_first = get_orphan_list(nodeBlock->hash);
 		struct orphan_block *obt_last;
-		for(obt_last = *obt_list_first; (obt_last != NULL ? obt_last->next_hashtable != NULL : 0); obt_last=obt_last->next_hashtable);
+		for(obt_last = *obt_list_first; obt_last != NULL && obt_last->next_hashtable != NULL; obt_last=obt_last->next_hashtable);
 		*(obt_last ? &obt_last->next_hashtable : obt_list_first) = obt;
 	}
 }
