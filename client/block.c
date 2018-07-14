@@ -1040,11 +1040,12 @@ static void *work_thread(void *arg)
 	int n_mining_threads = (int)(unsigned)(uintptr_t)arg, sync_thread_running = 0;
 	uint64_t nhashes0 = 0, nhashes = 0;
 	pthread_t th;
-	if(USE_ORPHAN_HASHTABLE){
-		orphan_hashtable = (struct orphan_block **)calloc(sizeof(struct orphan_block *), ORPHAN_HASH_SIZE);
-		if(orphan_hashtable != NULL)
-			g_xdag_extstats.use_orphan_hashtable++;
-        }
+
+#if USE_ORPHAN_HASHTABLE == 1
+	orphan_hashtable = (struct orphan_block **)calloc(sizeof(struct orphan_block *), ORPHAN_HASH_SIZE);
+	if(orphan_hashtable != NULL)
+		g_xdag_extstats.use_orphan_hashtable++;
+#endif
 
 begin:
 	// loading block from the local storage
@@ -1807,10 +1808,10 @@ void remove_orphan(struct block_internal* bi, struct block_internal* blockRef, s
 }
 
 void remove_orphan_hashtable(struct block_internal* bi, struct block_internal** blockRef, struct block_internal** blockRef0){
-	struct orphan_block **obt_list_first;
-	obt_list_first = get_orphan_list(bi->hash);
+	struct orphan_block **obt_list_first = get_orphan_list(bi->hash);
 	struct orphan_block *obt = NULL;
-	if((obt = *obt_list_first) == NULL){
+	obt = *obt_list_first;
+	if(obt == NULL){
 		xdag_warn("Critical error. List in the hashtable not found. The orphan is not found in hashtable. [function: remove_orphan_hashtable]");
 		g_xdag_extstats.use_orphan_hashtable = 0;
 		clean_orphan_hashtable();
