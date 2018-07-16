@@ -136,15 +136,13 @@ xdag: $(sources) $(headers) Makefile
 
 secp256k1:
 ifeq ($(use_openssl_ec), false)
- ifeq ($(secp256k1_full_compile)), true)
-	if grep --quiet -e 'define USE_OPTIMIZED_EC 1' -e 'define USE_OPTIMIZED_EC 2' crypt.h; then                                     \
-		cd $(secp256k1) && ./autogen.sh && ./configure && make;                                                                 \
-		cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp;        \
-	fi
+ ifeq ($(secp256k1_full_compile), true)
+	cd $(secp256k1) && ./autogen.sh && ./configure && make;									\
+	cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp
  else
-	if ! cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp; then                      \
-		cd $(secp256k1) && ./autogen.sh && ./configure && make;                                                                 \
-		cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp;        \
+	if ! cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp; then			\
+		cd $(secp256k1) && ./autogen.sh && ./configure && make;									\
+		cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp;	\
 	fi
  endif
 else
