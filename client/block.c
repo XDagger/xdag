@@ -93,7 +93,7 @@ struct orphan_block {
 	struct orphan_block *prev;
 };
 
-#define get_orphan_list(hash)      (orphan_hashtable + ((hash)[0] & (ORPHAN_HASH_SIZE - 1)))
+#define get_orphan_list(hash)      (g_orphan_hashtable + ((hash)[0] & (ORPHAN_HASH_SIZE - 1)))
 
 static xdag_amount_t g_balance = 0;
 static xdag_time_t time_limit = DEF_TIME_LIMIT, xdag_era = XDAG_MAIN_ERA;
@@ -105,8 +105,8 @@ static pthread_mutex_t block_mutex;
 //TODO: this variable duplicates existing global variable g_is_pool. Probably should be removed
 static int g_light_mode = 0;
 static uint32_t cache_bounded_counter = 0;
-static struct orphan_block **orphan_hashtable = NULL;
-static struct orphan_block *orphan_first = NULL, *orphan_last = NULL;
+static struct orphan_block **g_orphan_hashtable = NULL;
+static struct orphan_block *g_orphan_first = NULL, *g_orphan_last = NULL;
 
 //functions
 void cache_retarget(int32_t, int32_t);
@@ -1042,8 +1042,8 @@ static void *work_thread(void *arg)
 	pthread_t th;
 
 #if USE_ORPHAN_HASHTABLE == 1
-	orphan_hashtable = (struct orphan_block **)calloc(sizeof(struct orphan_block *), ORPHAN_HASH_SIZE);
-	if(orphan_hashtable != NULL)
+	g_orphan_hashtable = (struct orphan_block **)calloc(sizeof(struct orphan_block *), ORPHAN_HASH_SIZE);
+	if(g_orphan_hashtable != NULL)
 		g_xdag_extstats.use_orphan_hashtable++;
 #endif
 
@@ -1828,8 +1828,8 @@ void remove_orphan_hashtable(struct block_internal* bi, struct block_internal** 
 
 			*blockRef0 = (obt->prev ? obt->prev->orphan_bi : NULL); // original list prev
 
-			*(obt->prev ? &((obt->prev)->next) : &orphan_first) = obt->next;
-			*(obt->next ? &((obt->next)->prev) : &orphan_last) = obt->prev;
+			*(obt->prev ? &((obt->prev)->next) : &g_orphan_first) = obt->next;
+			*(obt->next ? &((obt->next)->prev) : &g_orphan_last) = obt->prev;
 
 			*blockRef = obt->orphan_bi; // original list actual
 
@@ -1859,9 +1859,9 @@ void add_orphan_hashtable(struct block_internal* nodeBlock){
 		clean_orphan_hashtable();
 	} else {
 		obt->orphan_bi = nodeBlock;
-		obt->prev = orphan_last;
-		*(orphan_last ? &orphan_last->next : &orphan_first) = obt;
-		orphan_last = obt;
+		obt->prev = g_orphan_last;
+		*(g_orphan_last ? &g_orphan_last->next : &g_orphan_first) = obt;
+		g_orphan_last = obt;
 
 		struct orphan_block **obt_list_first;
 		obt_list_first = get_orphan_list(nodeBlock->hash);
@@ -1872,9 +1872,9 @@ void add_orphan_hashtable(struct block_internal* nodeBlock){
 }
 
 void clean_orphan_hashtable(){
-	for(struct orphan_block *obt=orphan_first, *obt_back = NULL; obt != NULL; obt_back = obt, obt=obt->next, free(obt_back));
-	memset(orphan_hashtable, 0, sizeof(struct orphan_block *)*ORPHAN_HASH_SIZE);
-	orphan_first = orphan_last = NULL;
+	for(struct orphan_block *obt=g_orphan_first, *obt_back = NULL; obt != NULL; obt_back = obt, obt=obt->next, free(obt_back));
+	memset(g_orphan_hashtable, 0, sizeof(struct orphan_block *)*ORPHAN_HASH_SIZE);
+	g_orphan_first = g_orphan_last = NULL;
 }
 
 void xdag_list_orphan_blocks(int count, FILE *out)
