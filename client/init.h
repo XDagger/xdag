@@ -1,4 +1,4 @@
-/* basic variables, T13.714-T13.895 $DVS:time$ */
+/* basic variables, T13.714-T14.297 $DVS:time$ */
 
 #ifndef XDAG_MAIN_H
 #define XDAG_MAIN_H
@@ -39,6 +39,7 @@ extern struct xdag_ext_stats
 	uint32_t cache_size;
 	uint32_t cache_usage;
 	double cache_hitrate;
+	int use_orphan_hashtable;
 } g_xdag_extstats;
 
 #ifdef __cplusplus

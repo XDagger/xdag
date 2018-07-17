@@ -1,3 +1,5 @@
+/* commands processing, T13.920-T14.297 $DVS:time$ */
+
 #include "commands.h"
 #include <string.h>
 #include <math.h>
@@ -57,12 +59,13 @@ void processMiningCommand(char *nextParam, FILE *out);
 void processNetCommand(char *nextParam, FILE *out);
 void processPoolCommand(char *nextParam, FILE *out);
 void processStatsCommand(FILE *out);
-void processCacheCommand(FILE *out);
+void processInternalStatsCommand(FILE *out);
 void processExitCommand(void);
 void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd);
 void processLastBlocksCommand(char *nextParam, FILE *out);
 void processMainBlocksCommand(char *nextParam, FILE *out);
 void processMinedBlocksCommand(char *nextParam, FILE *out);
+void processOrphanBlocksCommand(char *nextParam, FILE *out);
 void processHelpCommand(FILE *out);
 void processDisconnectCommand(char *nextParam, FILE *out);
 void processRpcWhiteListCommand(char *nextParam, FILE *out);
@@ -73,6 +76,7 @@ int xdag_com_block(char *, FILE*);
 int xdag_com_lastblocks(char *, FILE*);
 int xdag_com_mainblocks(char *, FILE*);
 int xdag_com_minedblocks(char *, FILE*);
+int xdag_com_orphanblocks(char *, FILE*);
 int xdag_com_keyGen(char *, FILE*);
 int xdag_com_level(char *, FILE*);
 int xdag_com_miner(char *, FILE*);
@@ -82,7 +86,7 @@ int xdag_com_net(char *, FILE*);
 int xdag_com_pool(char *, FILE*);
 int xdag_com_stats(char *, FILE*);
 int xdag_com_state(char *, FILE*);
-int xdag_com_cache(char *, FILE*);
+int xdag_com_internal_stats(char *, FILE*);
 int xdag_com_help(char *, FILE*);
 int xdag_com_run(char *, FILE*);
 int xdag_com_terminate(char *, FILE*);
@@ -93,30 +97,31 @@ int xdag_com_white_list(char* args, FILE* out);
 XDAG_COMMAND* find_xdag_command(char*);
 
 XDAG_COMMAND commands[] = {
-	{ "account"    , 0, xdag_com_account },
-	{ "balance"    , 0, xdag_com_balance },
-	{ "block"      , 2, xdag_com_block },
-	{ "lastblocks" , 2, xdag_com_lastblocks },
-	{ "mainblocks" , 2, xdag_com_mainblocks },
-	{ "minedblocks", 2, xdag_com_minedblocks },
-	{ "keyGen"     , 0, xdag_com_keyGen },
-	{ "level"      , 0, xdag_com_level },
-	{ "miner"      , 2, xdag_com_miner },
-	{ "miners"     , 2, xdag_com_miners },
-	{ "mining"     , 1, xdag_com_mining },
-	{ "net"        , 0, xdag_com_net },
-	{ "pool"       , 2, xdag_com_pool },
-	{ "run"        , 0, xdag_com_run },
-	{ "state"      , 0, xdag_com_state },
-	{ "stats"      , 0, xdag_com_stats },
-	{ "cache"      , 2, xdag_com_cache },
-	{ "terminate"  , 0, xdag_com_terminate },
-	{ "exit"       , 0, xdag_com_exit },
-	{ "xfer"       , 0, (xdag_com_func_t)NULL},
-	{ "help"       , 0, xdag_com_help},
-	{ "disconnect" , 2, xdag_com_disconnect },
-	{ "rpc-white"  , 2, xdag_com_white_list},
-	{ (char *)NULL , 0, (xdag_com_func_t)NULL}
+	{ "account"     , 0, xdag_com_account },
+	{ "balance"     , 0, xdag_com_balance },
+	{ "block"       , 2, xdag_com_block },
+	{ "lastblocks"  , 2, xdag_com_lastblocks },
+	{ "mainblocks"  , 2, xdag_com_mainblocks },
+	{ "minedblocks" , 2, xdag_com_minedblocks },
+	{ "orphanblocks", 2, xdag_com_orphanblocks },
+	{ "keyGen"      , 0, xdag_com_keyGen },
+	{ "level"       , 0, xdag_com_level },
+	{ "miner"       , 2, xdag_com_miner },
+	{ "miners"      , 2, xdag_com_miners },
+	{ "mining"      , 1, xdag_com_mining },
+	{ "net"         , 0, xdag_com_net },
+	{ "pool"        , 2, xdag_com_pool },
+	{ "run"         , 0, xdag_com_run },
+	{ "state"       , 0, xdag_com_state },
+	{ "stats"       , 0, xdag_com_stats },
+	{ "internals"   , 2, xdag_com_internal_stats },
+	{ "terminate"   , 0, xdag_com_terminate },
+	{ "exit"        , 0, xdag_com_exit },
+	{ "xfer"        , 0, (xdag_com_func_t)NULL},
+	{ "help"        , 0, xdag_com_help},
+	{ "disconnect"  , 2, xdag_com_disconnect },
+	{ "rpc-white"   , 2, xdag_com_white_list},
+	{ (char *)NULL  , 0, (xdag_com_func_t)NULL}
 };
 
 int xdag_com_account(char* args, FILE* out)
@@ -152,6 +157,12 @@ int xdag_com_mainblocks(char * args, FILE* out)
 int xdag_com_minedblocks(char * args, FILE* out)
 {
 	processMinedBlocksCommand(args, out);
+	return 0;
+}
+
+int xdag_com_orphanblocks(char * args, FILE* out)
+{
+	processOrphanBlocksCommand(args, out);
 	return 0;
 }
 
@@ -209,9 +220,9 @@ int xdag_com_state(char * args, FILE* out)
 	return 0;
 }
 
-int xdag_com_cache(char * args, FILE* out)
+int xdag_com_internal_stats(char * args, FILE* out)
 {
-	processCacheCommand(out);
+	processInternalStatsCommand(out);
 	return 0;
 }
 
@@ -521,10 +532,20 @@ void processStatsCommand(FILE *out)
 	}
 }
 
-void processCacheCommand(FILE *out)
+void processInternalStatsCommand(FILE *out)
 {
-	fprintf(out, "Cache informations:\n"
-		"     cached blocks: target amount %u, actual amount %u, hitrate %f%%\n",
+	fprintf(out,
+		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+		"Orphan hashtable  :\n"
+		"             state: %s\n"
+                "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+		"Optimized ec      :\n"
+		"             state: %s\n"
+                "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+		"Cache informations:\n"
+		"     cached blocks: target amount %u, actual amount %u, hitrate %f%%\n"
+                "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n",
+		(g_xdag_extstats.cache_hitrate ? "Active" : "Inactive" ), (USE_OPTIMIZED_EC ? "Active" : "Inactive" ), 
 		g_xdag_extstats.cache_size, g_xdag_extstats.cache_usage, g_xdag_extstats.cache_hitrate*100
 	);
 }
@@ -588,6 +609,17 @@ void processMinedBlocksCommand(char *nextParam, FILE *out)
 		fprintf(out, "Illegal number.\n");
 	} else {
 		xdag_list_mined_blocks(blocksCount, 0, out);
+	}
+}
+
+void processOrphanBlocksCommand(char *nextParam, FILE *out)
+{
+	int blocksCount = 20;
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
+		fprintf(out, "Illegal number.\n");
+	} else {
+		xdag_list_orphan_blocks(blocksCount, out);
 	}
 }
 
