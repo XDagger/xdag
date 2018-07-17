@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T14.309 $DVS:time$ */
+/* cheatcoin main, T13.654-T14.325 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -287,7 +287,7 @@ void printUsage(char* appName)
 		"  -z RAM         - use RAM instead of temp-files\n"
 		"  -rpc-enable    - enable JSON-RPC service\n"
 		"  -rpc-port      - set HTTP JSON-RPC port (default is 7677)\n"
-		"  -threads N     - create N transport layer threads for pool\n"
+		"  -threads N     - create N transport layer threads for pool (default is 6)\n"
 		"  -dm            - disable mining on pool (-P option is ignored)\n"
 		, appName);
 }

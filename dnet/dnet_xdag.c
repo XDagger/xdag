@@ -1,4 +1,4 @@
-/* dnet: code for xdag; T14.290-T14.309; $DVS:time$ */
+/* dnet: code for xdag; T14.290-T14.325; $DVS:time$ */
 
 /*
  * This file implements simple version of dnet especially for xdag.
@@ -14,10 +14,7 @@
 #include <time.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <signal.h>
 #include <pthread.h>
-#include <unistd.h>
-#include <sys/wait.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -29,6 +26,9 @@
 #define poll(a,b,c) ((a)->revents = (a)->events, (b))
 #endif
 #else
+#include <signal.h>
+#include <unistd.h>
+#include <sys/wait.h>
 #include <poll.h>
 #endif
 #include "../ldus/source/include/ldus/atomic.h"
@@ -41,13 +41,19 @@
 #include "dnet_packet.h"
 #include "dnet_history.h"
 
+#if defined (__MACOS__) || defined (__APPLE__)
+#define SIGPOLL SIGIO
+#endif
+
 #define SECTOR_SIZE			0x200
 #define MAX_CONNECTIONS_PER_THREAD	0x1000
 #define DEF_NTHREADS			6
 #define FIRST_NSECTORS			(sizeof(struct dnet_key) / SECTOR_SIZE + 1)
 #define MAX_OUT_QUEUE_SIZE		0x10000
 #define COMMON_QUEUE_SIZE		0x10000
+#define OLD_DNET_TIMEOUT_SEC		30
 
+extern int g_xdag_sync_on;
 extern void dnet_session_init_crypt(struct dfslib_crypt *crypt, uint32_t sector[SECTOR_SIZE / 4]);
 
 struct xsector {
@@ -66,11 +72,16 @@ struct xdnet_keys {
 
 extern struct xdnet_keys g_xkeys;
 
+#if defined(_WIN32) || defined(_WIN64)
+/* add proper code for Windows pools here */
+static struct xdnet_keys g_xkeys;
+#else
 asm(
 ".text					\n"
 "g_xkeys:				\n"
 ".incbin \"../dnet/dnet_keys.bin\"	\n"
 );
+#endif
 
 static struct dfslib_crypt *g_crypt;
 static struct xsector *g_common_queue;
@@ -83,6 +94,7 @@ struct xcrypt {
 	struct dnet_key pub;
 	struct xsector sect0;
 	struct dfslib_crypt crypt_in;
+	time_t last_sent;
 };
 
 struct xconnection {
@@ -274,6 +286,7 @@ static void *xthread_main(void *arg) {
 	int n, nmax, res, ttl;
 	uint32_t crc;
 	while (poll(t->poll, nmax = t->nconnections, 1) >= 0) {
+		while (!g_xdag_sync_on) sleep(1);
 		for (n = 0; n < nmax; ++n) {
 			conn = t->conn[n];
 			if (t->poll[n].revents & ~(POLLIN | POLLOUT)) {
@@ -306,6 +319,7 @@ static void *xthread_main(void *arg) {
 							if (conn->packets_in) goto close;
 							conn->crypt = (struct xcrypt *)malloc(sizeof(struct xcrypt));
 							if (!conn->crypt) goto close;
+							conn->crypt->last_sent = time(0);
 						}
 					}
 					if (conn->crypt) {
@@ -348,6 +362,9 @@ static void *xthread_main(void *arg) {
 						if (conn - g_connections == (xs->head.length | xs->head.type << 16)) continue;
 						xs->head.type = DNET_PKT_XDAG;
 						xs->head.length = SECTOR_SIZE;
+					} else if (conn->crypt && time(0) >= conn->crypt->last_sent + OLD_DNET_TIMEOUT_SEC) {
+						memset(&buf, 0, SECTOR_SIZE);
+						xs = &buf;
 					} else {
 						t->poll[n].events &= ~POLLOUT;
 						continue;
@@ -361,11 +378,13 @@ static void *xthread_main(void *arg) {
 					dfsrsa_crypt(xs->word, SECTOR_SIZE / sizeof(dfsrsa_t), conn->crypt->pub.key, DNET_KEYLEN);
 				} else continue;
 				res = write(t->poll[n].fd, xs->word, SECTOR_SIZE);
+				if (conn->crypt) conn->crypt->last_sent = time(0);
 				if (conn->packets_out >= FIRST_NSECTORS && xs != &buf) free(xs);
 				if (res != SECTOR_SIZE) goto close;
 				conn->packets_out++;
 			}
-			if (conn->out_queue_size || conn->common_queue_pos != g_common_queue_pos)
+			if (conn->out_queue_size || conn->common_queue_pos != g_common_queue_pos
+					|| (conn->crypt && time(0) >= conn->crypt->last_sent + OLD_DNET_TIMEOUT_SEC))
 				t->poll[n].events |= POLLOUT;
 		}
 	}
@@ -391,7 +410,9 @@ static void *accept_thread_main(void *arg) {
 	if (listen(fd, MAX_CONNECTIONS_PER_THREAD)) return 0;    // "1" is the maximal length of the queue
 
 	for (;;) {
-		int fd1 = accept(fd, (struct sockaddr*) &peeraddr, &peeraddr_len);
+		int fd1;
+		while (!g_xdag_sync_on) sleep(1);
+		fd1 = accept(fd, (struct sockaddr*) &peeraddr, &peeraddr_len);
 		if (fd1 < 0) continue;
 		setsockopt(fd1, SOL_SOCKET, SO_LINGER, (char *)&linger_opt, sizeof(linger_opt));
 		setsockopt(fd1, SOL_SOCKET, SO_REUSEADDR, (char *)&reuseaddr, sizeof(int));
