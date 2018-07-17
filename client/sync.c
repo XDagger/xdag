@@ -33,7 +33,6 @@ int g_xdag_sync_on = 0;
 int xdag_sync_add_block_nolock(struct xdag_block*, void*);
 int xdag_sync_pop_block_nolock(struct xdag_block*);
 
-
 /* moves the block to the wait list, block with hash written to field 'nfield' of block 'b' is expected 
  (original russian comment was unclear too) */
 static int push_block_nolock(struct xdag_block *b, void *conn, int nfield, int ttl)
@@ -125,7 +124,8 @@ begin:
 	return 0;
 }
 
-int xdag_sync_pop_block(struct xdag_block *b){
+int xdag_sync_pop_block(struct xdag_block *b)
+{
 	pthread_mutex_lock(&g_sync_hash_mutex);
 	int res = xdag_sync_pop_block_nolock(b);
 	pthread_mutex_unlock(&g_sync_hash_mutex);
@@ -179,7 +179,8 @@ begin:
 	return 0;
 }
 
-int xdag_sync_add_block(struct xdag_block *b, void *conn){
+int xdag_sync_add_block(struct xdag_block *b, void *conn)
+{
 	pthread_mutex_lock(&g_sync_hash_mutex);
 	int res = xdag_sync_add_block_nolock(b, conn);
 	pthread_mutex_unlock(&g_sync_hash_mutex);
