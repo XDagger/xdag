@@ -120,7 +120,7 @@ XDAG_COMMAND commands[] = {
 	{ "xfer"        , 0, (xdag_com_func_t)NULL},
 	{ "help"        , 0, xdag_com_help},
 	{ "disconnect"  , 2, xdag_com_disconnect },
-  { "rpc-white"   , 2, xdag_com_white_list},
+	{ "rpc-white"   , 2, xdag_com_white_list},
 	{ (char *)NULL  , 0, (xdag_com_func_t)NULL}
 };
 

@@ -3,8 +3,9 @@
  * Distributed under the MIT software license, see the accompanying   *
  * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
  **********************************************************************/
-
-#include "libsecp256k1-config.h"
+#ifdef USE_BASIC_CONFIG
+ #include "basic-config.h"
+#endif
 #include "include/secp256k1.h"
 
 #include "util.h"
