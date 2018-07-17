@@ -1048,11 +1048,6 @@ static void *work_thread(void *arg)
 	int n_mining_threads = (int)(unsigned)(uintptr_t)arg, sync_thread_running = 0;
 	uint64_t nhashes0 = 0, nhashes = 0;
 	pthread_t th;
-	if(USE_ORPHAN_HASHTABLE){
-		orphan_hashtable = (struct orphan_block **)calloc(sizeof(struct orphan_block *), ORPHAN_HASH_SIZE);
-		if(orphan_hashtable != NULL)
-			g_xdag_extstats.use_orphan_hashtable++;
-        }
 
 #if USE_ORPHAN_HASHTABLE == 1
 	g_orphan_hashtable = (struct orphan_block **)calloc(sizeof(struct orphan_block *), ORPHAN_HASH_SIZE);
