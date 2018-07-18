@@ -32,7 +32,7 @@ extern struct xdag_ext_stats
 	xdag_diff_t hashrate_total[HASHRATE_LAST_MAX_TIME];
 	xdag_diff_t hashrate_ours[HASHRATE_LAST_MAX_TIME];
 	xdag_time_t hashrate_last_time;
-	uint64_t nnoref;
+	uint64_t orphans_count;
 	uint64_t nhashes;
 	double hashrate_s;
 	uint32_t nwaitsync;
@@ -77,8 +77,4 @@ extern int(*g_xdag_show_state)(const char *state, const char *balance, const cha
 #ifdef __cplusplus
 };
 #endif
-
-#define xdag_amount2xdag(amount) ((unsigned)((amount) >> 32))
-#define xdag_amount2cheato(amount) ((unsigned)(((uint64_t)(unsigned)(amount) * 1000000000) >> 32))
-
 #endif

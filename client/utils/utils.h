@@ -19,6 +19,9 @@
 #define DELIMITER "/"
 #endif
 
+#define xdag_amount2xdag(amount) ((unsigned)((amount) >> 32))
+#define xdag_amount2cheato(amount) ((unsigned)(((uint64_t)(unsigned)(amount) * 1000000000) >> 32))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -80,6 +83,19 @@ void time_to_string(time_t time, char* buf);
 // replaces all occurences of non-printable characters (code < 33 || code > 126) in `string` with specified `symbol`
 // length - max length of string to be processed, if -1 - whole string will be processed
 void replace_all_nonprintable_characters(char *string, int length, char symbol);
+
+// convert xdag_amount_t to long double
+long double amount2xdags(xdag_amount_t amount);
+
+// convert string to xdag_amount_t
+xdag_amount_t xdags2amount(const char *str);
+
+// returns a time period index, where a period is 64 seconds long
+xdag_time_t xdag_main_time(void);
+
+// returns the time period index corresponding to the start of the network
+xdag_time_t xdag_start_main_time(void);
+
 
 #ifdef __cplusplus
 };

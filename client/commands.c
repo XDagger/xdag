@@ -15,6 +15,7 @@
 #include "netdb.h"
 #include "memory.h"
 #include "crypt.h"
+#include "utils.h"
 #if !defined(_WIN32) && !defined(_WIN64)
 #include "utils/linenoise.h"
 #endif
@@ -522,7 +523,7 @@ void processStatsCommand(FILE *out)
 			g_xdag_stats.nhosts, g_xdag_stats.total_nhosts,
 			(long long)g_xdag_stats.nblocks, (long long)g_xdag_stats.total_nblocks,
 			(long long)g_xdag_stats.nmain, (long long)g_xdag_stats.total_nmain,
-			(long long)g_xdag_extstats.nnoref, g_xdag_extstats.nwaitsync,
+			(long long)g_xdag_extstats.orphans_count, g_xdag_extstats.nwaitsync,
 			xdag_diff_args(g_xdag_stats.difficulty),
 			xdag_diff_args(g_xdag_stats.max_difficulty), g_coinname,
 			amount2xdags(xdag_get_supply(g_xdag_stats.nmain)),

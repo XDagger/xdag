@@ -33,6 +33,7 @@
 #include "../address.h"
 #include "../commands.h"
 #include "../wallet.h"
+#include "../utils/utils.h"
 #include "../../dus/programs/dfstools/source/dfslib/dfslib_random.h"
 #include "../../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
 #include "../../dus/programs/dfstools/source/dfslib/dfslib_string.h"

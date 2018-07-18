@@ -27,6 +27,7 @@
 #include "log.h"
 #include "../system.h"
 #include "math.h"
+#include "../block.h"
 
 static pthread_mutex_t g_detect_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -444,3 +445,36 @@ void replace_all_nonprintable_characters(char *string, int length, char symbol)
 		++index;
 	}
 }
+
+// convert xdag_amount_t to long double
+long double amount2xdags(xdag_amount_t amount)
+{
+	return xdag_amount2xdag(amount) + (long double)xdag_amount2cheato(amount) / 1000000000;
+}
+
+xdag_amount_t xdags2amount(const char *str)
+{
+	long double sum;
+	if(sscanf(str, "%Lf", &sum) != 1 || sum <= 0) {
+		return 0;
+	}
+	long double flr = floorl(sum);
+	xdag_amount_t res = (xdag_amount_t)flr << 32;
+	sum -= flr;
+	sum = ldexpl(sum, 32);
+	flr = ceill(sum);
+	return res + (xdag_amount_t)flr;
+}
+
+// returns a time period index, where a period is 64 seconds long
+xdag_time_t xdag_main_time(void)
+{
+	return MAIN_TIME(get_timestamp());
+}
+
+// returns the time period index corresponding to the start of the network
+xdag_time_t xdag_start_main_time(void)
+{
+	return MAIN_TIME(XDAG_ERA);
+}
+

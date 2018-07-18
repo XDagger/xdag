@@ -9,6 +9,9 @@
 #include "system.h"
 #include "types.h"
 
+#define MAIN_TIME(t)            ((t) >> 16)
+#define XDAG_ERA                xdag_era
+
 enum xdag_field_type {
 	XDAG_FIELD_NONCE,        //0
 	XDAG_FIELD_HEAD,         //1
@@ -62,12 +65,8 @@ struct xdag_block {
 #ifdef __cplusplus
 extern "C" {
 #endif
-	
-// convert cheato to xdag
-extern long double amount2xdags(xdag_amount_t amount);
 
-// contert xdag to cheato
-extern xdag_amount_t xdags2amount(const char *str);
+extern xdag_time_t xdag_era;
 
 // start of regular block processing
 extern int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address);
