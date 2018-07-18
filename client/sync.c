@@ -43,8 +43,6 @@ static int push_block_nolock(struct xdag_block *b, void *conn, int nfield, int t
 	time_t t = time(0);
 
 	xdag_hash(b, sizeof(struct xdag_block), hash);
-	
-	//pthread_mutex_lock(&g_sync_hash_mutex);
 
 	for (p = get_list(b->field[nfield].hash), q = *p; q; q = q->next) {
 		if (!memcmp(&q->b, b, sizeof(struct xdag_block))) {
@@ -55,8 +53,6 @@ static int push_block_nolock(struct xdag_block *b, void *conn, int nfield, int t
 			q->ttl = ttl;
 			
 			if (res) q->t = t;
-			
-			//pthread_mutex_unlock(&g_sync_hash_mutex);
 			
 			return res;
 		}
@@ -82,8 +78,6 @@ static int push_block_nolock(struct xdag_block *b, void *conn, int nfield, int t
 	
 	g_xdag_extstats.nwaitsync++;
 	
-	//pthread_mutex_unlock(&g_sync_hash_mutex);
-	
 	return 1;
 }
 
@@ -96,7 +90,6 @@ int xdag_sync_pop_block_nolock(struct xdag_block *b)
 	xdag_hash(b, sizeof(struct xdag_block), hash);
  
 begin:
-	//pthread_mutex_lock(&g_sync_hash_mutex);
 
 	for (p = get_list(hash); (q = *p); p = &q->next) {
 		if (!memcmp(hash, q->b.field[q->nfield].hash, sizeof(xdag_hashlow_t))) {
@@ -108,8 +101,6 @@ begin:
 			if (r == q) {
 				*p = q->next_r;
 			}
-
-			//pthread_mutex_unlock(&g_sync_hash_mutex);
 			
 			q->b.field[0].transport_header = q->ttl << 8 | 1;
 			xdag_sync_add_block_nolock(&q->b, q->conn);			
@@ -118,8 +109,6 @@ begin:
 			goto begin;
 		}
 	}
-
-//	pthread_mutex_unlock(&g_sync_hash_mutex);
 
 	return 0;
 }
@@ -150,14 +139,11 @@ int xdag_sync_add_block_nolock(struct xdag_block *b, void *conn)
 			struct sync_block **p, *q;
 			uint64_t *hash = b->field[res].hash;
 			time_t t = time(0);
-
-			//pthread_mutex_lock(&g_sync_hash_mutex);
  
 begin:
 			for (p = get_list_r(hash); (q = *p); p = &q->next_r) {
 				if (!memcmp(hash, q->hash, sizeof(xdag_hashlow_t))) {
 					if (t - q->t < REQ_PERIOD) {
-						//pthread_mutex_unlock(&g_sync_hash_mutex);
 						return 0;
 					}
 
@@ -167,8 +153,6 @@ begin:
 					goto begin;
 				}
 			}
-
-			//pthread_mutex_unlock(&g_sync_hash_mutex);
 			
 			xdag_request_block(hash, (void*)(uintptr_t)1l);
 			
