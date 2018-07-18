@@ -468,7 +468,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	int signinmask = 0, signoutmask = 0;
 	int inmask = 0, outmask = 0;
 	int verified_keys_mask = 0, err, type;
-	struct block_internal tmpNodeBlock, *blockRef = NULL, *blockRef0 = NULL, *blockRefs[XDAG_BLOCK_FIELDS]= {0};
+	struct block_internal tmpNodeBlock, *blockRef = NULL, *blockRef0 = NULL;
+	struct block_internal* blockRefs[XDAG_BLOCK_FIELDS-1]= {0};
 	xdag_diff_t diff0, diff;
 	int32_t cache_hit = 0, cache_miss = 0;
 
@@ -537,12 +538,12 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 
 	for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
 		if(1 << i & (inmask | outmask)) {
-			blockRefs[i] = block_by_hash(newBlock->field[i].hash);
-			if(!blockRefs[i]) {
+			blockRefs[i-1] = block_by_hash(newBlock->field[i].hash);
+			if(!blockRefs[i-1]) {
 				err = 5;
 				goto end;
 			}
-			if(blockRefs[i]->time >= tmpNodeBlock.time) {
+			if(blockRefs[i-1]->time >= tmpNodeBlock.time) {
 				err = 6;
 				goto end;
 			}
@@ -591,7 +592,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 
 	for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
 		if(1 << i & (inmask | outmask)) {
-			blockRef = blockRefs[i];
+			blockRef = blockRefs[i-1];
 			if(1 << i & inmask) {
 				if(newBlock->field[i].amount) {
 					int32_t res = 1;
