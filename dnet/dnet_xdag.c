@@ -1,4 +1,4 @@
-/* dnet: code for xdag; T14.290-T14.325; $DVS:time$ */
+/* dnet: code for xdag; T14.290-T14.328; $DVS:time$ */
 
 /*
  * This file implements simple version of dnet especially for xdag.
@@ -87,7 +87,7 @@ static struct dfslib_crypt *g_crypt;
 static struct xsector *g_common_queue;
 static uint64_t g_common_queue_pos, g_common_queue_reserve;
 static int (*g_arrive_callback)(void *block, void *connection_from) = 0;
-int (*dnet_connection_open_check)(void *conn, uint32_t ip, uint16_t port) = 0;
+int (*dnet_connection_open_check)(uint32_t ip, uint16_t port) = 0;
 void (*dnet_connection_close_notify)(void *conn) = 0;
 
 struct xcrypt {
@@ -161,6 +161,9 @@ static struct xconnection *add_connection(int fd, uint32_t ip, uint16_t port) {
 	int rnd = rand() % g_nthreads, i, nthread, nfd;
 	struct xconnection *conn;
 	struct xthread *t;
+	if (dnet_connection_open_check && (*dnet_connection_open_check)(ip, port)) {
+		return 0;
+	}
 	for (i = 0; i < g_nthreads; ++i) {
 		nthread = (rnd + i) % g_nthreads;
 		t = g_threads + nthread;
@@ -173,10 +176,6 @@ static struct xconnection *add_connection(int fd, uint32_t ip, uint16_t port) {
 			conn->created = time(0);
 			conn->packets_in = conn->packets_out = conn->dropped_in = 0;
 			conn->common_queue_pos = g_common_queue_pos;
-			if (dnet_connection_open_check && (*dnet_connection_open_check)(conn, ip, port)) {
-				pthread_mutex_unlock(&t->mutex);
-				return 0;
-			}
 			t->poll[nfd].events = POLLIN | POLLOUT;
 			t->poll[nfd].fd = fd;
 			t->nconnections++;
@@ -188,11 +187,25 @@ static struct xconnection *add_connection(int fd, uint32_t ip, uint16_t port) {
 	return 0;
 }
 
+/* returns 0 if connection exist, -1 otherwise */
+int dnet_test_connection(void *connection) {
+	struct xconnection *conn = (struct xconnection *)connection;
+	int nconn = conn - g_connections, nthread = nconn / MAX_CONNECTIONS_PER_THREAD, nfd;
+	struct xthread *t = g_threads + nthread;
+	if (nconn < 0 || nconn >= g_nthreads * MAX_CONNECTIONS_PER_THREAD || conn != g_connections + nconn) return -1;
+	nfd = conn->nfd;
+	if (nfd < 0 || nfd >= MAX_CONNECTIONS_PER_THREAD) return -1;
+	if (t->poll[nfd].fd < 0) return -1;
+	return 0;
+}
+
 static int close_connection(struct xconnection *conn) {
-	int nconn = conn - g_connections, nthread = nconn / MAX_CONNECTIONS_PER_THREAD, nfd = (conn ? conn->nfd : -1), fd, nconns;
+	int nconn = conn - g_connections, nthread = nconn / MAX_CONNECTIONS_PER_THREAD, nfd, fd, nconns;
 	struct xsector *xs, *xs1;
 	struct xthread *t = g_threads + nthread;
-	if (nthread < 0 || nthread >= g_nthreads || nfd < 0 || nfd >= MAX_CONNECTIONS_PER_THREAD) return -1;
+	if (nconn < 0 || nconn >= g_nthreads * MAX_CONNECTIONS_PER_THREAD || conn != g_connections + nconn) return -1;
+	nfd = conn->nfd;
+	if (nfd < 0 || nfd >= MAX_CONNECTIONS_PER_THREAD) return -1;
 	pthread_mutex_lock(&t->mutex);
 	nconns = t->nconnections;
 	if (nfd >= nconns) {
@@ -496,6 +509,7 @@ int dnet_init(int argc, char **argv) {
 				struct xconnection *conn = &g_connections[n * MAX_CONNECTIONS_PER_THREAD + i];
 				pthread_mutex_init(&conn->mutex, 0);
 				g_threads[n].conn[i] = conn;
+				g_threads[n].poll[i].fd = -1;
 				conn->nfd = i;
 			}
 		}
