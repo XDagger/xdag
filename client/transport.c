@@ -1,4 +1,4 @@
-/* транспорт, T13.654-T14.309 $DVS:time$ */
+/* транспорт, T13.654-T14.328 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -16,7 +16,6 @@
 
 #define NEW_BLOCK_TTL   5
 #define REQUEST_WAIT    64
-#define N_CONNS         4096
 
 pthread_mutex_t g_transport_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -26,64 +25,11 @@ static void *(*reply_callback)(void *block, void *data) = 0;
 static void *reply_connection;
 static xdag_hash_t reply_id;
 static int64_t reply_result;
-static void **connections = 0;
-static int N_connections = 0;
-static pthread_mutex_t conn_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct xdag_send_data {
 	struct xdag_block b;
 	void *connection;
 };
-
-static int conn_add_rm(void *conn, int addrm)
-{
-	int b, e, m;
-
-	pthread_mutex_lock(&conn_mutex);
-	
-	b = 0;
-	e = N_connections;
-
-	while (b < e) {
-		m = (b + e) / 2;
-
-		if (connections[m] == conn) {
-			if (addrm < 0) {
-				if (m < N_connections - 1) {
-					memmove(connections + m, connections + m + 1, (N_connections - m - 1) * sizeof(void *));
-				}
-
-				N_connections--;
-				m = -1;
-			}
-
-			pthread_mutex_unlock(&conn_mutex);
-
-			return m;
-		}
-
-		if (connections[m] < conn) {
-			b = m + 1;
-		} else {
-			e = m;
-		}
-	}
-
-	if (addrm > 0 && N_connections < N_CONNS) {
-		if (b < N_connections) {
-			memmove(connections + b + 1, connections + b, (N_connections - b) * sizeof(void *));
-		}
-
-		N_connections++;
-		connections[b] = conn;
-	} else {
-		b = -1;
-	}
-
-	pthread_mutex_unlock(&conn_mutex);
-	
-	return b;
-}
 
 static void *xdag_send_thread(void *arg)
 {
@@ -227,8 +173,6 @@ static int block_arrive_callback(void *packet, void *connection)
 {
 	struct xdag_block *received_block = (struct xdag_block *)packet;
 
-	conn_add_rm(connection, 1);
-
 	const enum xdag_field_type first_field_type = xdag_type(received_block, 0);
 	if(first_field_type == g_block_header_type) {
 		xdag_sync_add_block(received_block, connection);
@@ -243,7 +187,7 @@ static int block_arrive_callback(void *packet, void *connection)
 	return 0;
 }
 
-static int conn_open_check(void *conn, uint32_t ip, uint16_t port)
+static int conn_open_check(uint32_t ip, uint16_t port)
 {
 	for (int i = 0; i < g_xdag_n_blocked_ips; ++i) {
 		if(ip == g_xdag_blocked_ips[i]) {
@@ -262,8 +206,6 @@ static int conn_open_check(void *conn, uint32_t ip, uint16_t port)
 
 static void conn_close_notify(void *conn)
 {
-	conn_add_rm(conn, -1);
-
 	if (reply_connection == conn)
 		reply_connection = 0;
 }
@@ -309,10 +251,7 @@ int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs
 	dnet_set_xdag_callback(block_arrive_callback);
 	dnet_connection_open_check = &conn_open_check;
 	dnet_connection_close_notify = &conn_close_notify;
-	
-	connections = (void**)malloc(N_CONNS * sizeof(void *));
-	if (!connections) return -1;
-	
+
 	res = dnet_init(argc, (char**)argv);
 	if (!res) {
 		version = strchr(XDAG_VERSION, '-');
@@ -401,8 +340,8 @@ int xdag_net_command(const char *cmd, void *out)
 /* sends the package, conn is the same as in function dnet_send_xdag_packet */
 int xdag_send_packet(struct xdag_block *b, void *conn)
 {
-	if ((uintptr_t)conn & ~0xffl && !((uintptr_t)conn & 1) && conn_add_rm(conn, 0) < 0) {
-		conn = (void*)1l;
+	if ((uintptr_t)conn & ~0xffl && !((uintptr_t)conn & 1) && dnet_test_connection(conn) < 0) {
+		conn = (void*)(uintptr_t)1l;
 	}
 
 	dnet_send_xdag_packet(b, conn);
@@ -424,7 +363,7 @@ int xdag_request_block(xdag_hash_t hash, void *conn)
 	xdag_netdb_send((uint8_t*)&b.field[2] + sizeof(struct xdag_stats),
 						 14 * sizeof(struct xdag_field) - sizeof(struct xdag_stats));
 	
-	if ((uintptr_t)conn & ~0xffl && !((uintptr_t)conn & 1) && conn_add_rm(conn, 0) < 0) {
+	if ((uintptr_t)conn & ~0xffl && !((uintptr_t)conn & 1) && dnet_test_connection(conn) < 0) {
 		conn = (void*)(uintptr_t)1l;
 	}
 
