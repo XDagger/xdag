@@ -77,7 +77,7 @@ int xdag_mem_init(size_t size)
 
 	size_t wrote = snprintf(g_tmpfile_to_remove, TMPFILE_PATH_LEN + TMPFILE_TEMPLATE_LEN,"%s%s", g_tmpfile_path, TMPFILE_TEMPLATE);
 	if (wrote >= TMPFILE_PATH_LEN + TMPFILE_TEMPLATE_LEN){
-		printf("Error: Temporary file path exceed the max length that is 1024 characters");
+		xdag_fatal("Error: Temporary file path exceed the max length that is 1024 characters");
 		return -1;
 	}
 	g_fd = mkstemp(g_tmpfile_to_remove);
