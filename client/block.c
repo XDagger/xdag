@@ -1,4 +1,4 @@
-/* block processing, T13.654-T14.302 $DVS:time$ */
+/* block processing, T13.654-T14.330 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -1903,7 +1903,7 @@ void xdag_list_orphan_blocks(int count, FILE *out)
 	pthread_mutex_unlock(&block_mutex);
 }
 
-/* completes work with the blocks */
+// completes work with the blocks
 void xdag_block_finish(void)
 {
 	pthread_mutex_lock(&block_mutex);
