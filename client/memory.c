@@ -44,14 +44,15 @@ int xdag_free_all(void)
 #include <sys/mman.h>
 #include <errno.h>
 
-#define MEM_PORTION     ((size_t)1 << 25)
+#define MEM_PORTION     	((size_t)1 << 25)
+#define TMPFILE_TEMPLATE 	"xdag-tmp-XXXXXX"
 
 static int g_fd = -1;
 static size_t g_pos = 0, g_fsize = 0, g_size = 0;
 static void *g_mem;
 static pthread_mutex_t g_mem_mutex = PTHREAD_MUTEX_INITIALIZER;
 static char g_tmpfile_path[1024] = "";
-static char g_tmpname[64] = "xdag-tmp-XXXXXX";
+static char g_tmpfile_to_remove[1088];
 
 void xdag_mem_tempfile_path(const char *tempfile_path)
 {
@@ -60,8 +61,6 @@ void xdag_mem_tempfile_path(const char *tempfile_path)
 
 int xdag_mem_init(size_t size)
 {
-	char tmpfilename[1024];
-
 	if (!size) {
 		return 0;
 	}
@@ -74,13 +73,13 @@ int xdag_mem_init(size_t size)
 	size |= MEM_PORTION - 1;
 	size++;
 
-	printf("%s , %s\n",g_tmpfile_path, g_tmpname);
-	sprintf(tmpfilename, "%s%s", g_tmpfile_path, g_tmpname);
-	g_fd = mkstemp(tmpfilename);
+	sprintf(g_tmpfile_to_remove, "%s%s", g_tmpfile_path, TMPFILE_TEMPLATE);
+	g_fd = mkstemp(g_tmpfile_to_remove);
 	if (g_fd < 0) {
-		xdag_fatal("Unable to create temporary file %s errno:%d", tmpfilename, errno);
+		xdag_fatal("Unable to create temporary file %s errno:%d", g_tmpfile_to_remove, errno);
 		return -1;
 	}
+        printf("Temporary file created: %s\n", g_tmpfile_to_remove);
 
 	g_mem = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, g_fd, 0);
 	if (g_mem == MAP_FAILED) {
@@ -139,7 +138,7 @@ void xdag_mem_finish(void)
 	
 	munmap(g_mem, g_size);
 	close(g_fd);
-	remove(g_tmpname);
+	remove(g_tmpfile_to_remove);
 }
 
 int xdag_free_all(void)
