@@ -46,13 +46,15 @@ int xdag_free_all(void)
 
 #define MEM_PORTION     	((size_t)1 << 25)
 #define TMPFILE_TEMPLATE 	"xdag-tmp-XXXXXX"
+#define TMPFILE_TEMPLATE_LEN	15
+#define TMPFILE_PATH_LEN	1024
 
 static int g_fd = -1;
 static size_t g_pos = 0, g_fsize = 0, g_size = 0;
 static void *g_mem;
 static pthread_mutex_t g_mem_mutex = PTHREAD_MUTEX_INITIALIZER;
-static char g_tmpfile_path[1024] = "";
-static char g_tmpfile_to_remove[1088];
+static char g_tmpfile_path[TMPFILE_PATH_LEN] = "";
+static char g_tmpfile_to_remove[TMPFILE_PATH_LEN + TMPFILE_TEMPLATE_LEN];
 
 void xdag_mem_tempfile_path(const char *tempfile_path)
 {
@@ -73,7 +75,11 @@ int xdag_mem_init(size_t size)
 	size |= MEM_PORTION - 1;
 	size++;
 
-	sprintf(g_tmpfile_to_remove, "%s%s", g_tmpfile_path, TMPFILE_TEMPLATE);
+	size_t wrote = snprintf(g_tmpfile_to_remove, TMPFILE_PATH_LEN + TMPFILE_TEMPLATE_LEN,"%s%s", g_tmpfile_path, TMPFILE_TEMPLATE);
+	if (wrote >= TMPFILE_PATH_LEN + TMPFILE_TEMPLATE_LEN){
+		printf("Error: Temporary file path exceed the max length that is 1024 characters");
+		return -1;
+	}
 	g_fd = mkstemp(g_tmpfile_to_remove);
 	if (g_fd < 0) {
 		xdag_fatal("Unable to create temporary file %s errno:%d", g_tmpfile_to_remove, errno);
