@@ -1902,3 +1902,9 @@ void xdag_list_orphan_blocks(int count, FILE *out)
 
 	pthread_mutex_unlock(&block_mutex);
 }
+
+/* completes work with the blocks */
+void xdag_block_finish(void)
+{
+	pthread_mutex_lock(&block_mutex);
+}

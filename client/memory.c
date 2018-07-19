@@ -137,6 +137,7 @@ void xdag_mem_finish(void)
 	pthread_mutex_lock(&g_mem_mutex);
 	
 	munmap(g_mem, g_size);
+	ftruncate(g_fd, 0);
 	close(g_fd);
 	remove(g_tmpfile_to_remove);
 }

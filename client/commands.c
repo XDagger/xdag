@@ -556,6 +556,7 @@ void processExitCommand()
 	xdag_wallet_finish();
 	xdag_netdb_finish();
 	xdag_storage_finish();
+	xdag_block_finish();
 	xdag_mem_finish();
 }
 
