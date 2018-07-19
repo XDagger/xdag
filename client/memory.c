@@ -1,4 +1,4 @@
-/* работа с памятью, T13.816-T13.889 $DVS:time$ */
+/* memory managment, T13.816-T14.330 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -138,7 +138,6 @@ void xdag_mem_finish(void)
 	pthread_mutex_lock(&g_mem_mutex);
 	
 	munmap(g_mem, g_size);
-	ftruncate(g_fd, 0);
 	close(g_fd);
 	remove(g_tmpname);
 }
