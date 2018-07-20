@@ -1715,3 +1715,8 @@ int xdag_print_miner_stats(const char* address, FILE *out)
 
 	return exists;
 }
+
+void xdag_pool_finish()
+{
+	g_stop_general_mining = 1;
+}
