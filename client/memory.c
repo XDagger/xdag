@@ -54,7 +54,7 @@ static size_t g_pos = 0, g_fsize = 0, g_size = 0;
 static void *g_mem;
 static pthread_mutex_t g_mem_mutex = PTHREAD_MUTEX_INITIALIZER;
 static char g_tmpfile_path[TMPFILE_PATH_LEN] = "";
-static char g_tmpfile_to_remove[TMPFILE_PATH_LEN + TMPFILE_TEMPLATE_LEN];
+static char g_tmpfile[TMPFILE_PATH_LEN + TMPFILE_TEMPLATE_LEN];
 
 void xdag_mem_tempfile_path(const char *tempfile_path)
 {
@@ -75,17 +75,17 @@ int xdag_mem_init(size_t size)
 	size |= MEM_PORTION - 1;
 	size++;
 
-	size_t wrote = snprintf(g_tmpfile_to_remove, TMPFILE_PATH_LEN + TMPFILE_TEMPLATE_LEN,"%s%s", g_tmpfile_path, TMPFILE_TEMPLATE);
+	size_t wrote = snprintf(g_tmpfile, TMPFILE_PATH_LEN + TMPFILE_TEMPLATE_LEN,"%s%s", g_tmpfile_path, TMPFILE_TEMPLATE);
 	if (wrote >= TMPFILE_PATH_LEN + TMPFILE_TEMPLATE_LEN){
 		xdag_fatal("Error: Temporary file path exceed the max length that is 1024 characters");
 		return -1;
 	}
-	g_fd = mkstemp(g_tmpfile_to_remove);
+	g_fd = mkstemp(g_tmpfile);
 	if (g_fd < 0) {
-		xdag_fatal("Unable to create temporary file %s errno:%d", g_tmpfile_to_remove, errno);
+		xdag_fatal("Unable to create temporary file %s errno:%d", g_tmpfile, errno);
 		return -1;
 	}
-        printf("Temporary file created: %s\n", g_tmpfile_to_remove);
+        printf("Temporary file created: %s\n", g_tmpfile);
 
 	g_mem = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, g_fd, 0);
 	if (g_mem == MAP_FAILED) {
@@ -145,7 +145,7 @@ void xdag_mem_finish(void)
 	munmap(g_mem, g_size);
 	ftruncate(g_fd, 0);
 	close(g_fd);
-	remove(g_tmpfile_to_remove);
+	remove(g_tmpfile);
 }
 
 int xdag_free_all(void)
