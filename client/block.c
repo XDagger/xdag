@@ -1,4 +1,4 @@
-/* block processing, T13.654-T14.330 $DVS:time$ */
+/* block processing, T13.654-T14.335 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -955,14 +955,13 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 		pthread_mutex_lock((pthread_mutex_t*)g_ptr_share_mutex);
 		memcpy(block[0].field[XDAG_BLOCK_FIELDS - 1].data, task->lastfield.data, sizeof(struct xdag_field));
 		pthread_mutex_unlock((pthread_mutex_t*)g_ptr_share_mutex);
-
 	}
 
 	xdag_hash(block, sizeof(struct xdag_block), newBlockHash);
 	block[0].field[0].transport_header = 1;
 
 	log_block("Create", newBlockHash, block[0].field[0].time, 1);
-	
+
 	res = xdag_add_block(block);
 	if (res > 0) {
 		if (mining) {
