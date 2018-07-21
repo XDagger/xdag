@@ -95,7 +95,7 @@ struct orphan_block {
 
 #define get_orphan_list(hash)      (g_orphan_hashtable + ((hash)[0] & (ORPHAN_HASH_SIZE - 1)))
 
-static pthread_mutex_t g_create_block_thread_counter_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t g_create_block_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static xdag_amount_t g_balance = 0;
 static xdag_time_t time_limit = DEF_TIME_LIMIT, xdag_era = XDAG_MAIN_ERA;
@@ -105,7 +105,7 @@ static struct block_internal *ourfirst = 0, *ourlast = 0, *noref_first = 0, *nor
 static struct cache_block *cache_first = NULL, *cache_last = NULL;
 static pthread_mutex_t block_mutex;
 //TODO: this variable duplicates existing global variable g_is_pool. Probably should be removed
-static int g_light_mode = 0, g_stop_block_creation = 0, g_create_block_thread_counter = 0;
+static int g_light_mode = 0, g_stop_block_creation = 0;
 static uint32_t cache_bounded_counter = 0;
 static struct orphan_block **g_orphan_hashtable = NULL;
 static struct orphan_block *g_orphan_first = NULL, *g_orphan_last = NULL;
@@ -795,13 +795,7 @@ static void *add_block_callback(void *block, void *data)
 /* checks and adds block to the storage. Returns non-zero value in case of error. */
 int xdag_add_block(struct xdag_block *b)
 {
-	int locked = pthread_mutex_trylock(&block_mutex);
-	if(locked && g_stop_block_creation){
-		return -(0xD);
-	}
-	else{
-		pthread_mutex_lock(&block_mutex);
-	}
+	pthread_mutex_lock(&block_mutex);
 	int res = add_block_nolock(b, time_limit);
 	pthread_mutex_unlock(&block_mutex);
 
@@ -815,18 +809,6 @@ int xdag_add_block(struct xdag_block *b)
 
 #define pretop_block() (top_main_chain && MAIN_TIME(top_main_chain->time) == MAIN_TIME(send_time) ? pretop_main_chain : top_main_chain)
 
-static void xdag_create_block_exit()
-{
-	pthread_mutex_lock(&g_create_block_thread_counter_mutex);
-	if(g_create_block_thread_counter > 0){
-		g_create_block_thread_counter--;
-	} else {
-		xdag_err("Error: negative counter [function: xdag_create_block_exit]");
-		g_create_block_thread_counter = 0;
-	}
-	pthread_mutex_unlock(&g_create_block_thread_counter_mutex);
-}
-
 /* create and publish a block
  * The first 'ninput' field 'fields' contains the addresses of the inputs and the corresponding quantity of XDAG,
  * in the following 'noutput' fields similarly - outputs, fee; send_time (time of sending the block);
@@ -835,13 +817,7 @@ static void xdag_create_block_exit()
 int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, xdag_amount_t fee,
 	xdag_time_t send_time, xdag_hash_t newBlockHashResult)
 {
-	if(g_stop_block_creation){
-		return -1;
-	}
-	pthread_mutex_lock(&g_create_block_thread_counter_mutex);
-	g_create_block_thread_counter++;
-	pthread_mutex_unlock(&g_create_block_thread_counter_mutex);
-
+	pthread_mutex_lock(&g_create_block_mutex);
 	struct xdag_block block[2];
 	int i, j, res, mining, defkeynum, keysnum[XDAG_BLOCK_FIELDS], nkeys, nkeysnum = 0, outsigkeyind = -1;
 	struct xdag_public_key *defkey = xdag_wallet_default_key(&defkeynum), *keys = xdag_wallet_our_keys(&nkeys), *key;
@@ -852,7 +828,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	for (i = 0; i < inputsCount; ++i) {
 		ref = block_by_hash(fields[i].hash);
 		if (!ref || !(ref->flags & BI_OURS)) {
-			xdag_create_block_exit();
+			pthread_mutex_unlock(&g_create_block_mutex);
 			return -1;
 		}
 
@@ -865,11 +841,11 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 			keysnum[nkeysnum++] = ref->n_our_key;
 		}
 	}
+	pthread_mutex_unlock(&g_create_block_mutex);
 
 	int res0 = 1 + inputsCount + outputsCount + 3 * nkeysnum + (outsigkeyind < 0 ? 2 : 0);
 
 	if (res0 > XDAG_BLOCK_FIELDS) {
-		xdag_create_block_exit();
 		return -1;
 	}
 
@@ -890,6 +866,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	block[0].field[0].time = send_time;
 	block[0].field[0].amount = fee;
 
+	pthread_mutex_lock(&g_create_block_mutex);
 	if (g_light_mode) {
 		if (res < XDAG_BLOCK_FIELDS && ourfirst) {
 			setfld(XDAG_FIELD_OUT, ourfirst->hash, xdag_hashlow_t);
@@ -936,6 +913,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 		hash_for_signature(block, defkey, signatureHash);
 		xdag_sign(defkey->key, signatureHash, block[0].field[i].data, block[0].field[i + 1].data);
 	}
+        pthread_mutex_unlock(&g_create_block_mutex);
 
 	if (mining) {
 		uint64_t taskIndex = g_xdag_pool_task_index + 1;
@@ -961,12 +939,12 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 
 		while (get_timestamp() <= send_time) {
 			sleep(1);
-                        if(g_stop_block_creation)
-                        {
-				xdag_create_block_exit();
-                                return -1;
-                        }
+			if(g_stop_block_creation) {
+				return -1;
+			}
+			pthread_mutex_lock(&g_create_block_mutex);
 			struct block_internal *pretop_new = pretop_block();
+			pthread_mutex_unlock(&g_create_block_mutex);
 			if (pretop != pretop_new && get_timestamp() < send_time) {
 				pretop = pretop_new;
 				xdag_info("Mining: start from beginning because of pre-top block changed");
@@ -1002,7 +980,6 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 		res = 0;
 	}
 
-	xdag_create_block_exit();
 	return res;
 }
 
@@ -1940,19 +1917,18 @@ void xdag_list_orphan_blocks(int count, FILE *out)
 }
 
 // completes work with the blocks
-void xdag_block_finish(void)
-{	
-	g_stop_block_creation = 1;
-        pthread_mutex_lock(&block_mutex);
-	for(;;){
-		if(!g_create_block_thread_counter){
-			pthread_mutex_lock(&g_create_block_thread_counter_mutex);
-			if(g_create_block_thread_counter){
-				pthread_mutex_unlock(&g_create_block_thread_counter_mutex);
-			} else {
-				break;
-			}
-		}
-		sleep(1);
+void xdag_block_finish(int step)
+{
+	if(step == 1) {
+		g_stop_block_creation = 1;
+		return;
+	}
+	if(step == 2) {
+		pthread_mutex_lock(&g_create_block_mutex);
+		return;
+	}
+	if(step == 3) {
+		pthread_mutex_lock(&block_mutex);
+		return;
 	}
 }

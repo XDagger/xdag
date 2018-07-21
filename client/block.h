@@ -133,7 +133,7 @@ extern int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(v
 void xdag_list_orphan_blocks(int, FILE*);
 
 // completes work with the blocks
-void xdag_block_finish(void);
+void xdag_block_finish(int);
 	
 #ifdef __cplusplus
 };
