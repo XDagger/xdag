@@ -913,7 +913,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 		hash_for_signature(block, defkey, signatureHash);
 		xdag_sign(defkey->key, signatureHash, block[0].field[i].data, block[0].field[i + 1].data);
 	}
-        pthread_mutex_unlock(&g_create_block_mutex);
+	pthread_mutex_unlock(&g_create_block_mutex);
 
 	if (mining) {
 		uint64_t taskIndex = g_xdag_pool_task_index + 1;

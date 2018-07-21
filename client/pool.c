@@ -1721,7 +1721,7 @@ int xdag_print_miner_stats(const char* address, FILE *out)
 void xdag_pool_finish()
 {
 	g_stop_general_mining = 1;
-	while(g_stop_general_mining > 1) {
+	while(g_stop_general_mining <= 1) {
 		sleep(1);
 	}
 }
