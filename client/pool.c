@@ -144,6 +144,7 @@ static miner_list_element *g_miner_list_head = NULL;
 static uint32_t g_connection_changed = 0;
 static pthread_mutex_t g_connections_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t g_global_mining_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int pay_miners(xdag_time_t time);
 void remove_inactive_miners(void);
@@ -239,6 +240,8 @@ int xdag_initialize_pool(const char *pool_arg)
 
 void *general_mining_thread(void *arg)
 {
+
+	pthread_mutex_lock(&g_global_mining_mutex);
 	while(!g_xdag_sync_on && !g_stop_general_mining) {
 		sleep(1);
 	}
@@ -246,10 +249,9 @@ void *general_mining_thread(void *arg)
 	while(!g_stop_general_mining) {
 		xdag_create_block(0, 0, 0, 0, xdag_main_time() << 16 | 0xffff, NULL);
 	}
+        pthread_mutex_unlock(&g_global_mining_mutex);
 
 	xdag_mess("Stopping general mining thread...");
-
-	g_stop_general_mining++;
 
 	return 0;
 }
@@ -1721,7 +1723,6 @@ int xdag_print_miner_stats(const char* address, FILE *out)
 void xdag_pool_finish()
 {
 	g_stop_general_mining = 1;
-	while(g_stop_general_mining <= 1) {
-		sleep(1);
-	}
+	pthread_mutex_lock(&g_global_mining_mutex);
+
 }

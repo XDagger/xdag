@@ -554,9 +554,7 @@ void processInternalStatsCommand(FILE *out)
 void processExitCommand()
 {
 	xdag_block_finish(1);
-	if(!g_is_miner){
-		xdag_pool_finish();
-	}
+	xdag_pool_finish();
 	xdag_block_finish(2);
 	xdag_wallet_finish();
 	xdag_netdb_finish();
