@@ -1,4 +1,4 @@
-# cheatcoin: Makefile; T13.656-T14.311; $DVS:time$
+# cheatcoin: Makefile; T13.656-T14.335; $DVS:time$
 
 SRCROOT  		= ..
 dnet	 		= ../dnet
@@ -52,6 +52,7 @@ sources = 							\
 	$(utils)/utils.c					\
 	$(utils)/log.c						\
 	$(utils)/linenoise.c					\
+	$(utils)/dirname.c					\
 	$(moving_statistics)/moving_average.c			\
 	./json-rpc/cJSON.c					\
 	./json-rpc/cJSON_Utils.c				\
@@ -100,6 +101,7 @@ headers = 							\
 	$(utils)/utils.h					\
 	$(utils)/log.h						\
 	$(utils)/linenoise.h					\
+	$(utils)/dirname.h					\
 	$(moving_statistics)/moving_average.h			\
 	./json-rpc/cJSON.h					\
 	./json-rpc/cJSON_Utils.h				\

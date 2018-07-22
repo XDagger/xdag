@@ -19,6 +19,7 @@
 #else
 #include <libgen.h>
 #include <limits.h>
+#include "dirname.h"
 #endif
 #include "../uthash/utlist.h"
 #include "log.h"
@@ -309,7 +310,7 @@ void xdag_init_path(char *path)
 #else
 	char pathcopy[PATH_MAX] = {0};
 	strcpy(pathcopy, path);
-	char *prefix = dirname(pathcopy);
+	char *prefix = posix_dirname(pathcopy);
 	if (*prefix != '/' && *prefix != '\\') {
 		char buf[PATH_MAX] = {0};
 		getcwd(buf, PATH_MAX);
@@ -317,9 +318,6 @@ void xdag_init_path(char *path)
 	} else {
 		sprintf(g_xdag_current_path, "%s", prefix);
 	}
-#if defined (__MACOS__) || defined (__APPLE__)
-	free(prefix);
-#endif
 #endif
 
 	const size_t pathLen = strlen(g_xdag_current_path);
