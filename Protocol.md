@@ -114,7 +114,7 @@ Each block is a transaction. Transaction may have several inputs, outputs, publi
 - each input or output of block A is a valid block;
 - sum of all input amounts of block B is less than power(2,64);
 - sum of all output amounts of block B plus its fee is less than power(2,64);
-- if there is at least one input than sum of all inputs must be not less than sum of all outputs plus fee; otherwise sum of all outputs must be zero;
+- if there is at least one input then sum of all inputs must be not less than sum of all outputs plus fee; otherwise sum of all outputs must be zero;
 - for each input B of the block A there are public key K and input or output signature S in the block A and output signature T in the block B  such that signature S is obtained from block A using key K and signature T is obtained from block B using the same key K (informal description: only owner of block B can withdraw money from it).
 - number of output signature fields must be even instead of number of input signature fields may be odd; in this case the last input signature field may be used as nonce which can be altered without rebuilding any signatures.
 
@@ -128,7 +128,7 @@ Blocks are ordered by the following order rules:
 
 Transactions are applied in the above order. If transaction can't be applied due to some reason described below it is not applied.
 
-Each block also has its own amount of XDAG. At the start point amount of each block equals zero. Amount of block A changes in the following case:  
+Each block also has its own amount of XDAG. At the start point, amount of each block equals zero. Amount of block A changes in the following case:  
 
 1. new XDAG are mined in the block A. In this case amout of block A is increased by the mined amount.
 2. a transaction B is applied and block A is input of transaction B. In this case amount of block A is decreased by th amount written in the coresponding input field of block B.

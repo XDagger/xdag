@@ -48,6 +48,10 @@ struct dnet_stream {
 	uint8_t proto;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int dnet_send_stream_packet(struct dnet_packet_stream *st, struct dnet_connection *conn);
 extern void *dnet_thread_stream(void *arg);
 extern int dnet_stream_main(uint32_t crc_to);
@@ -57,5 +61,9 @@ extern int dnet_traverse_streams(int (*callback)(struct dnet_stream *st, void *d
 extern int dnet_print_stream(struct dnet_stream *st, struct dnet_output *out);
 extern int dnet_process_stream_packet(struct dnet_packet_stream *p);
 extern int dnet_finish_stream(uint16_t id);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif

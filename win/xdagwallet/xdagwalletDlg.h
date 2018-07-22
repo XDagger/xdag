@@ -7,7 +7,7 @@
 #include "CEditWalletAddrMine.h"
 
 #define WM_UPDATE_STATE (WM_USER+1)
-#define ID_TIMER_HASHRATE 100
+#define ID_TIMER_INIT 100
 
 // CXDagWalletDlg dialog
 class CXDagWalletDlg : public CDialog {
@@ -21,26 +21,20 @@ public:
 #endif
 
 protected:
-	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
-	LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-
-
-// Implementation
-protected:
 	HICON m_hIcon;
+
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
+	LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);	
 
 	// Generated message map functions
 	BOOL OnInitDialog() override;
+	void OnOK() override;
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 
 private:
-	CButton _applyButton;
-	CString _poolAddress;
-	int _miningThreadsCount;
-	CEdit _hashRateEdit;
 	CString _balance;
 	CEdit _balanceEdit;
 	CString _accountAddress;
@@ -52,10 +46,9 @@ private:
 	CEdit _transferAmountEdit;
 	CEditWalletAddr _transferAddressEdit;
 	CButton _xferButton;
+	bool _firstActivate;
 
-	afx_msg void OnClickedButtonConnect();
 	afx_msg void OnClickedButtonXfer();
-	afx_msg void OnBnClickedButtonApply();
 	afx_msg LRESULT OnUpdateState(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnTimer(WPARAM wParam);
 
