@@ -13,15 +13,12 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
-#if defined (__MACOS__) || defined (__APPLE__)
-#include <libgen.h>
-#define PATH_MAX 4096
-#elif defined (_WIN32)
+#if defined (_WIN32)
 #include <direct.h>
 #include <shlwapi.h>
 #else
 #include <libgen.h>
-#include <linux/limits.h>
+#include <limits.h>
 #endif
 #include "../uthash/utlist.h"
 #include "log.h"
