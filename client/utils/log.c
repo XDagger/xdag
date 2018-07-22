@@ -334,7 +334,7 @@ static void sigCatch(int signum, siginfo_t *info, void *context)
 	char **strs;
 
 	xdag_fatal("Signal %d delivered", signum);
-#ifdef __x86_64__
+#if defined (__x86_64__) && ( defined(__linux__) || (defined(__MACOS__) || defined(__APPLE__)))
 	{
 		static char buf[0x100]; *buf = 0;
 		ucontext_t *uc = (ucontext_t*)context;
