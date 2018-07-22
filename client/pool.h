@@ -17,6 +17,7 @@ enum disconnect_type
 
 extern xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT];
 extern xdag_hash_t g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
+extern int g_stop_general_mining;
 
 #ifdef __cplusplus
 extern "C" {

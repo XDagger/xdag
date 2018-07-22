@@ -105,7 +105,7 @@ static struct block_internal *ourfirst = 0, *ourlast = 0, *noref_first = 0, *nor
 static struct cache_block *cache_first = NULL, *cache_last = NULL;
 static pthread_mutex_t block_mutex;
 //TODO: this variable duplicates existing global variable g_is_pool. Probably should be removed
-static int g_light_mode = 0, g_stop_block_creation = 0;
+static int g_light_mode = 0;
 static uint32_t cache_bounded_counter = 0;
 static struct orphan_block **g_orphan_hashtable = NULL;
 static struct orphan_block *g_orphan_first = NULL, *g_orphan_last = NULL;
@@ -939,7 +939,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 
 		while (get_timestamp() <= send_time) {
 			sleep(1);
-			if(g_stop_block_creation) {
+			if(g_stop_general_mining) {
 				return -1;
 			}
 			pthread_mutex_lock(&g_create_block_mutex);
@@ -1919,14 +1919,9 @@ void xdag_list_orphan_blocks(int count, FILE *out)
 void xdag_block_finish(int step)
 {
 	if(step == 1) {
-		g_stop_block_creation = 1;
-		return;
-	}
-	if(step == 2) {
 		pthread_mutex_lock(&g_create_block_mutex);
 		return;
-	}
-	if(step == 3) {
+	} else if(step == 2) {
 		pthread_mutex_lock(&block_mutex);
 		return;
 	}
