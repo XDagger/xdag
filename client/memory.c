@@ -43,18 +43,18 @@ int xdag_free_all(void)
 #include <pthread.h>
 #include <sys/mman.h>
 #include <errno.h>
+#include <limits.h>
 
 #define MEM_PORTION     	((size_t)1 << 25)
 #define TMPFILE_TEMPLATE 	"xdag-tmp-XXXXXX"
 #define TMPFILE_TEMPLATE_LEN	15
-#define TMPFILE_PATH_LEN	1024
 
 static int g_fd = -1;
 static size_t g_pos = 0, g_fsize = 0, g_size = 0;
 static void *g_mem;
 static pthread_mutex_t g_mem_mutex = PTHREAD_MUTEX_INITIALIZER;
-static char g_tmpfile_path[TMPFILE_PATH_LEN] = "";
-static char g_tmpfile[TMPFILE_PATH_LEN + TMPFILE_TEMPLATE_LEN];
+static char g_tmpfile_path[PATH_MAX] = "";
+static char g_tmpfile[PATH_MAX];
 
 void xdag_mem_tempfile_path(const char *tempfile_path)
 {
@@ -75,9 +75,9 @@ int xdag_mem_init(size_t size)
 	size |= MEM_PORTION - 1;
 	size++;
 
-	size_t wrote = snprintf(g_tmpfile, TMPFILE_PATH_LEN + TMPFILE_TEMPLATE_LEN,"%s%s", g_tmpfile_path, TMPFILE_TEMPLATE);
-	if (wrote >= TMPFILE_PATH_LEN + TMPFILE_TEMPLATE_LEN){
-		xdag_fatal("Error: Temporary file path exceed the max length that is 1024 characters");
+	size_t wrote = snprintf(g_tmpfile, PATH_MAX,"%s%s", g_tmpfile_path, TMPFILE_TEMPLATE);
+	if (wrote >= PATH_MAX){
+		xdag_fatal("Error: Temporary file path exceed the max length that is %d characters", PATH_MAX);
 		return -1;
 	}
 	g_fd = mkstemp(g_tmpfile);
