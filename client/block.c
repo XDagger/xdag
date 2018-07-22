@@ -1920,9 +1920,7 @@ void xdag_block_finish(int step)
 {
 	if(step == 1) {
 		pthread_mutex_lock(&g_create_block_mutex);
-		return;
 	} else if(step == 2) {
 		pthread_mutex_lock(&block_mutex);
-		return;
 	}
 }
