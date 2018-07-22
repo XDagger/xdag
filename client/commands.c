@@ -1,4 +1,4 @@
-/* commands processing, T13.920-T14.297 $DVS:time$ */
+/* commands processing, T13.920-T14.335 $DVS:time$ */
 
 #include "commands.h"
 #include <string.h>
@@ -553,9 +553,12 @@ void processInternalStatsCommand(FILE *out)
 
 void processExitCommand()
 {
+	xdag_pool_finish();
+	xdag_block_finish(1);
 	xdag_wallet_finish();
 	xdag_netdb_finish();
 	xdag_storage_finish();
+	xdag_block_finish(2);
 	xdag_mem_finish();
 }
 
