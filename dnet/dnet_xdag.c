@@ -41,10 +41,6 @@
 #include "dnet_packet.h"
 #include "dnet_history.h"
 
-#if defined (__MACOS__) || defined (__APPLE__)
-#define SIGPOLL SIGIO
-#endif
-
 #define SECTOR_SIZE			0x200
 #define MAX_CONNECTIONS_PER_THREAD	0x1000
 #define DEF_NTHREADS			6
@@ -509,7 +505,7 @@ static void daemonize(void) {
 	signal(SIGUSR1, SIG_IGN);
 	signal(SIGUSR2, SIG_IGN);
 	signal(SIGTSTP, SIG_IGN); /* ignore tty signals */
-	signal(SIGPOLL, SIG_IGN);
+	signal(SIGIO, SIG_IGN);
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
 	signal(SIGVTALRM, SIG_IGN);
