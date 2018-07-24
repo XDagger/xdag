@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #if !defined(_WIN32) && !defined(_WIN64)
+#include <string.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -16,10 +17,6 @@
 #include "network.h"
 #include "utils/log.h"
 #include "utils/utils.h"
-
-#if defined (__MACOS__) || defined (__APPLE__)
-#include <string.h>
-#endif
 
 #if defined(_WIN32) || defined(_WIN64)
 #define poll WSAPoll
