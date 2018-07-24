@@ -43,6 +43,7 @@
 #define CACHE_MAX_SAMPLES	100
 #define USE_ORPHAN_HASHTABLE	1
 #define ORPHAN_HASH_SIZE	0x10000
+#define SMALL_RAM		0 // Do not use with -z RAM
 
 enum bi_flags {
 	BI_MAIN       = 0x01,
@@ -56,7 +57,9 @@ enum bi_flags {
 struct block_backrefs;
 
 struct block_internal {
+#if SMALL_RAM != 1
 	struct ldus_rbtree node;
+#endif
 	xdag_hash_t hash;
 	xdag_diff_t difficulty;
 	xdag_amount_t amount, linkamount[MAX_LINKS], fee;
@@ -162,10 +165,36 @@ static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
 
 ldus_rbtree_define_prefix(lessthan, static inline, )
 
+#if SMALL_RAM == 1
+struct cache_bi {
+	struct ldus_rbtree node;
+	xdag_hashlow_t hash;
+	struct block_internal *bi;
+};
+
+static inline struct block_internal *block_by_hash(const xdag_hashlow_t hash)
+{
+	struct cache_bi *tmp = (struct cache_bi *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
+	return ((tmp) ? tmp->bi : NULL );
+}
+
+static inline int cache_bi_insert(struct ldus_rbtree **root, struct block_internal *nodeBlock)
+{
+	struct cache_bi *tmp = calloc(sizeof(struct cache_bi),1);
+	if(tmp == NULL){
+		return 0;
+	}
+	memcpy(tmp->hash,nodeBlock->hash, sizeof(xdag_hashlow_t));
+	tmp->bi = nodeBlock;
+	ldus_rbtree_insert(root,&tmp->node);
+	return 1;
+}
+#else
 static inline struct block_internal *block_by_hash(const xdag_hashlow_t hash)
 {
 	return (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
 }
+#endif
 
 static inline struct cache_block *cache_block_by_hash(const xdag_hashlow_t hash)
 {
@@ -672,7 +701,14 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	memcpy(nodeBlock, &tmpNodeBlock, sizeof(struct block_internal));
+#if SMALL_RAM == 1
+	if(!cache_bi_insert(&root, nodeBlock)){
+		err = 0xC;
+		goto end;
+	}
+#else
 	ldus_rbtree_insert(&root, &nodeBlock->node);
+#endif
 	g_xdag_stats.nblocks++;
 
 	if(g_xdag_stats.nblocks > g_xdag_stats.total_nblocks) {
