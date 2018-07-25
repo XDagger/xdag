@@ -1,4 +1,4 @@
-/* dnet: code for xdag; T14.290-T14.330; $DVS:time$ */
+/* dnet: code for xdag; T14.290-T14.347; $DVS:time$ */
 
 /*
  * This file implements simple version of dnet especially for xdag.
@@ -48,6 +48,7 @@
 #define MAX_OUT_QUEUE_SIZE		0x10000
 #define COMMON_QUEUE_SIZE		0x10000
 #define OLD_DNET_TIMEOUT_SEC		30
+#define BAD_CONN_TIMEOUT_SEC		90
 
 extern int g_xdag_sync_on;
 extern void dnet_session_init_crypt(struct dfslib_crypt *crypt, uint32_t sector[SECTOR_SIZE / 4]);
@@ -307,7 +308,9 @@ static void *xthread_main(void *arg) {
 		while (!g_xdag_sync_on) sleep(1);
 		for (n = 0; n < nmax; ++n) {
 			conn = t->conn[n];
-			if (t->poll[n].revents & ~(POLLIN | POLLOUT)) {
+			if (t->poll[n].revents & ~(POLLIN | POLLOUT)
+					|| (conn->packets_in <= conn->dropped_in + FIRST_NSECTORS
+					&& time(0) > conn->created + BAD_CONN_TIMEOUT_SEC)) {
 			close:
 				close_connection(conn);
 				nmax--;
@@ -457,7 +460,11 @@ static void *accept_thread_main(void *arg) {
 	struct linger linger_opt = { 1, 0 }; // Linger active, timeout 5
 	struct sockaddr_in peeraddr;
 	socklen_t peeraddr_len = sizeof(peeraddr);
-	int fd = open_socket(&peeraddr, (char *)arg), reuseaddr = 1;
+	int fd, reuseaddr = 1;
+
+	while (!g_xdag_sync_on) sleep(1);
+
+	fd = open_socket(&peeraddr, (char *)arg);
 	if (fd < 0) return 0;
 
 	// Bind a socket to the address
