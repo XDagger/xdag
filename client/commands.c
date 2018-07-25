@@ -1,4 +1,4 @@
-/* commands processing, T13.920-T14.335 $DVS:time$ */
+/* commands processing, T13.920-T14.347 $DVS:time$ */
 
 #include "commands.h"
 #include <string.h>
@@ -38,9 +38,9 @@ struct out_balances_data {
 
 typedef int (*xdag_com_func_t)(char*, FILE *);
 typedef struct {
-	char *name;				/* command name */
-	int avaibility;         /* 0 - both miner and pool, 1 - only miner, 2 - only pool */
-	xdag_com_func_t func;	/* command function */
+	char *name;			/* command name */
+	int avaibility;			/* 0 - both miner and pool, 1 - only miner, 2 - only pool */
+	xdag_com_func_t func;		/* command function */
 } XDAG_COMMAND;
 
 // Function declarations
@@ -553,12 +553,10 @@ void processInternalStatsCommand(FILE *out)
 
 void processExitCommand()
 {
-	xdag_pool_finish();
-	xdag_block_finish(1);
 	xdag_wallet_finish();
 	xdag_netdb_finish();
+	xdag_block_finish();
 	xdag_storage_finish();
-	xdag_block_finish(2);
 	xdag_mem_finish();
 }
 

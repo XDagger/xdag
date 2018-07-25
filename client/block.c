@@ -1,4 +1,4 @@
-/* block processing, T13.654-T14.335 $DVS:time$ */
+/* block processing, T13.654-T14.347 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -939,9 +939,6 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 
 		while (get_timestamp() <= send_time) {
 			sleep(1);
-			if(g_stop_general_mining) {
-				return -1;
-			}
 			pthread_mutex_lock(&g_create_block_mutex);
 			struct block_internal *pretop_new = pretop_block();
 			pthread_mutex_unlock(&g_create_block_mutex);
@@ -1916,11 +1913,8 @@ void xdag_list_orphan_blocks(int count, FILE *out)
 }
 
 // completes work with the blocks
-void xdag_block_finish(int step)
+void xdag_block_finish()
 {
-	if(step == 1) {
-		pthread_mutex_lock(&g_create_block_mutex);
-	} else if(step == 2) {
-		pthread_mutex_lock(&block_mutex);
-	}
+	pthread_mutex_lock(&g_create_block_mutex);
+	pthread_mutex_lock(&block_mutex);
 }
