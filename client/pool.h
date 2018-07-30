@@ -1,4 +1,4 @@
-/* pool logic, T14.191-T14.335 $DVS:time$ */
+/* pool logic, T14.191-T14.347 $DVS:time$ */
 
 #ifndef XDAG_POOL_H
 #define XDAG_POOL_H
@@ -17,7 +17,6 @@ enum disconnect_type
 
 extern xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT];
 extern xdag_hash_t g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
-extern int g_stop_general_mining;
 
 #ifdef __cplusplus
 extern "C" {
