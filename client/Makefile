@@ -120,13 +120,15 @@ else
 	flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
 endif
 
-ifeq ($(use_openssl_ec), false)
+ifneq ($(OS), Darwin)
+ ifeq ($(use_openssl_ec), false)
 	secp256k1_i = secp256k1.o -isystem$(secp256k1)/include/ -lgmp
- ifeq ("$(wildcard $(secp256k1)/src/libsecp256k1-config.h)","")
+  ifeq ("$(wildcard $(secp256k1)/src/libsecp256k1-config.h)","")
 	secp256k1_full_compile = true
- endif
- ifeq ("$(wildcard secp256k1.o)","")
+  endif
+  ifeq ("$(wildcard secp256k1.o)","")
 	secp256k1_full_compile = true
+  endif
  endif
 endif
 
@@ -137,15 +139,19 @@ xdag: $(sources) $(headers) Makefile
 	cc -o xdag $(secp256k1_i) $(sources) $(asm_src) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) $(flags)
 
 secp256k1:
-ifeq ($(use_openssl_ec), false)
- ifeq ($(secp256k1_full_compile), true)
+ifneq ($(OS), Darwin)
+ ifeq ($(use_openssl_ec), false)
+  ifeq ($(secp256k1_full_compile), true)
 	cd $(secp256k1) && ./autogen.sh && ./configure && make;									\
 	cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp
- else
+  else
 	if ! cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp; then			\
 		cd $(secp256k1) && ./autogen.sh && ./configure && make;									\
 		cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp;	\
 	fi
+  endif
+ else
+	@rm -f secp256k1.o
  endif
 else
 	@rm -f secp256k1.o
