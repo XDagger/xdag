@@ -23,6 +23,9 @@ extern "C" {
  */
 extern int xdag_transport_start(int flags, const char *bindto, int npairs, const char **addr_port_pairs);
 
+/* start send new block thread */
+extern int xdag_send_thread_start(void);
+
 /* generates an array with random data */
 extern int xdag_generate_random_array(void *array, unsigned long size);
 
@@ -50,6 +53,9 @@ extern int xdag_net_command(const char *cmd, void *out);
 
 /* sends the package, conn is the same as in function dnet_send_xdag_packet */
 extern int xdag_send_packet(struct xdag_block *b, void *conn);
+
+/* reset list_new_blocks */
+extern void xdag_reset_transport(void);
 
 /* see dnet_user_crypt_action */
 extern int xdag_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action);

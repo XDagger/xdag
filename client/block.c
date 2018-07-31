@@ -1061,6 +1061,8 @@ begin:
 		sleep(1);
 	}
 
+	xdag_send_thread_start();
+
 	// launching of synchronization thread
 	g_xdag_sync_on = 1;
 	if (!g_light_mode && !sync_thread_running) {
@@ -1119,6 +1121,8 @@ begin:
 			}
 
 			pthread_mutex_lock(&block_mutex);
+
+			xdag_reset_transport();
 
 			if (xdag_free_all()) {
 				ldus_rbtree_walk_up(root, reset_callback);

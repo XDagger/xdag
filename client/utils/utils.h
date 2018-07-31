@@ -25,6 +25,8 @@ extern "C" {
 	
 extern uint64_t get_timestamp(void);
 
+extern uint64_t get_time_ms(void);
+
 extern void xdag_init_path(char *base);
 extern FILE* xdag_open_file(const char *path, const char *mode);
 extern void xdag_close_file(FILE *f);
