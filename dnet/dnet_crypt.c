@@ -1,4 +1,4 @@
-/* dnet: crypt; T11.231-T14.290; $DVS:time$ */
+/* dnet: crypt; T11.231-T13.806; $DVS:time$ */
 
 #include <stdio.h>
 #include <string.h>
@@ -10,6 +10,7 @@
 #include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_string.h"
 #include "../dus/programs/dar/source/include/crc.h"
+#include "dnet_database.h"
 #include "dnet_crypt.h"
 #include "dnet_main.h"
 #include "../client/utils/utils.h"
@@ -233,6 +234,7 @@ int dnet_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned 
 int dnet_crypt_init(const char *version) {
     FILE *f;
     struct dnet_keys *keys;
+    struct dnet_host *host;
 	int i;
     g_dnet_keys = malloc(sizeof(struct dnet_keys));
     if (!g_dnet_keys) return 1;
@@ -316,11 +318,13 @@ int dnet_crypt_init(const char *version) {
 			dfslib_uncrypt_sector(g_dnet_user_crypt, (uint32_t *)keys + 128 * i, ~(uint64_t)i);
 	}
     xdag_close_file(f);
+	if (!(host = dnet_add_host(&g_dnet_keys->pub, 0, 127 << 24 | 1, 0, DNET_ROUTE_LOCAL))) return 6;
+	version = strchr(version, '-');
+	if (version) dnet_set_host_version(host, version + 1);
     return -dnet_test_keys();
 }
 
-extern void dnet_session_init_crypt(struct dfslib_crypt *crypt, uint32_t sector[SECTOR_SIZE / 4]);
-void dnet_session_init_crypt(struct dfslib_crypt *crypt, uint32_t sector[SECTOR_SIZE / 4]) {
+static void dnet_session_init_crypt(struct dfslib_crypt *crypt, uint32_t sector[SECTOR_SIZE / 4]) {
     char password[PWDLEN + 1];
     struct dfslib_string str;
     dnet_sector_to_password(sector, password);
@@ -328,3 +332,82 @@ void dnet_session_init_crypt(struct dfslib_crypt *crypt, uint32_t sector[SECTOR_
     dfslib_crypt_set_sector0(crypt, sector);
 }
 
+struct dnet_session *dnet_session_create(void *private_data, const struct dnet_session_ops *ops, uint32_t route_ip, uint16_t route_port) {
+    struct dnet_session *sess = calloc(sizeof(struct dnet_session), 1);
+    if (sess) {
+        sess->private_data = private_data;
+        sess->ops = ops;
+        sess->route_ip = route_ip;
+		sess->route_port = route_port;
+	}
+    return sess;
+}
+
+int dnet_session_init(struct dnet_session *sess) {
+    ssize_t res;
+    dnet_random_sector(sess->sector_write);
+    dnet_session_init_crypt(&sess->crypt_write, sess->sector_write);
+    res = (*sess->ops->write)(sess->private_data, &g_dnet_keys->pub, sizeof(struct dnet_key));
+    if (res != sizeof(struct dnet_key)) return 1;
+    sess->pos_write += res;
+    return 0;
+}
+
+ssize_t dnet_session_write(struct dnet_session *sess, void *buf, size_t size) {
+    ssize_t res = 0;
+    if (sess->pos_write < sizeof(struct dnet_key) + SECTOR_SIZE) return 0;
+    while (size) {
+		int pos = sess->pos_write & (SECTOR_SIZE - 1);
+        unsigned todo = SECTOR_SIZE - pos;
+		if (todo > size) todo = size;
+		memcpy((uint8_t *)sess->sector_write + pos, buf, todo);
+		pos += todo;
+		if (pos == SECTOR_SIZE) {
+			dfslib_encrypt_sector(&sess->crypt_write, sess->sector_write, (sess->pos_write - sizeof(struct dnet_key)) >> SECTOR_LOG);
+			(*sess->ops->write)(sess->private_data, sess->sector_write, SECTOR_SIZE);
+		}
+		sess->pos_write += todo;
+		res += todo;
+		buf = (uint8_t *)buf + todo;
+		size -= todo;
+    }
+    return res;
+}
+
+ssize_t dnet_session_read(struct dnet_session *sess, void *buf, size_t size) {
+    ssize_t res = 0;
+    while (size) {
+        uint32_t *locbuf = (sess->pos_read < sizeof(struct dnet_key) ? (uint32_t *)sess->key.key : sess->sector_read);
+        int locbuf_size = (sess->pos_read < sizeof(struct dnet_key) ? sizeof(struct dnet_key) : SECTOR_SIZE);
+        int pos = sess->pos_read & (locbuf_size - 1);
+        unsigned todo = locbuf_size - pos;
+        if (todo > size) todo = size;
+		memcpy((uint8_t *)locbuf + pos, buf, todo);
+        pos += todo;
+        if (pos == locbuf_size) {
+            if (sess->pos_read < sizeof(struct dnet_key)) {
+                dfsrsa_crypt((dfsrsa_t *)sess->sector_write, SECTOR_SIZE / sizeof(dfsrsa_t), sess->key.key, DNET_KEYLEN);
+                (*sess->ops->write)(sess->private_data, sess->sector_write, SECTOR_SIZE);
+                sess->pos_write += SECTOR_SIZE;
+            } else if (sess->pos_read < sizeof(struct dnet_key) + SECTOR_SIZE) {
+				dfsrsa_crypt((dfsrsa_t *)sess->sector_read, SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->priv.key, DNET_KEYLEN);
+                dnet_session_init_crypt(&sess->crypt_read, sess->sector_read);
+            } else {
+                dfslib_uncrypt_sector(&sess->crypt_read, sess->sector_read, (sess->pos_read - sizeof(struct dnet_key)) >> SECTOR_LOG);
+                (*sess->ops->read)(sess->private_data, sess->sector_read, SECTOR_SIZE);
+            }
+        }
+        sess->pos_read += todo;
+        res += todo;
+		buf = (uint8_t *)buf + todo;
+        size -= todo;
+		if (sess->pos_read >= sizeof(struct dnet_key))
+			sess->host = dnet_add_host(&sess->key, 0, sess->route_ip, sess->route_port, DNET_ROUTE_IMMEDIATE);
+    }
+    return res;
+
+}
+
+struct dnet_host *dnet_session_get_host(struct dnet_session *sess) {
+	return sess ? sess->host : 0;
+}
