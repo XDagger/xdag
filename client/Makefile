@@ -43,7 +43,16 @@ sources = 							\
 	terminal.c						\
 	network.c						\
 	$(dnet)/dnet_crypt.c					\
-	$(dnet)/dnet_xdag.c					\
+	$(dnet)/dnet_database.c					\
+	$(dnet)/dnet_main.c						\
+	$(dnet)/dnet_threads.c					\
+	$(dnet)/dnet_connection.c				\
+	$(dnet)/dnet_stream.c					\
+	$(dnet)/dnet_packet.c					\
+	$(dnet)/dnet_command.c					\
+	$(dnet)/dnet_log.c						\
+	$(dnet)/dnet_files.c					\
+	$(dnet)/dnet_tap.c						\
 	$(dfslib)/dfslib_crypt.c				\
 	$(dfslib)/dfslib_random.c				\
 	$(dfslib)/dfslib_string.c				\

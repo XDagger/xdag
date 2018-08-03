@@ -528,17 +528,9 @@ int dnet_execute_command(const char *cmd, void *fileout) {
 		fd = open_socket(&peeraddr, str);
 		if (fd < 0) { fprintf(f, "connect: error opening the socket\n"); return -1; }
 		if (connect(fd, (struct sockaddr *)&peeraddr, sizeof(peeraddr)))
-<<<<<<< HEAD
-			{ close(fd); fprintf(f, "connect: error connecting the socket (ip=%08x, port=%d)\n",
-					     htonl(peeraddr.sin_addr.s_addr), htons(peeraddr.sin_port)); return -1; }
-		if (!add_connection(fd, peeraddr.sin_addr.s_addr, htons(peeraddr.sin_port)))
-			{ close(fd); fprintf(f, "connect: error adding the connection (ip=%08x, port=%d)\n",
-					     htonl(peeraddr.sin_addr.s_addr), htons(peeraddr.sin_port)); return -1; }
-=======
 			{ close(fd); fprintf(f, "error connecting the socket\n"); return -1; }
 		if (!add_connection(fd, peeraddr.sin_addr.s_addr, peeraddr.sin_port))
 			{ close(fd); fprintf(f, "error adding the connection\n"); return -1; }
->>>>>>> parent of 5afb9dd... [WIP] evident bug fixed; universal crypt key added
 	}
 	return 0;
 }
