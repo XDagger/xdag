@@ -19,10 +19,6 @@
 #include "dnet_command.h"
 #include "dnet_main.h"
 
-#if defined (__MACOS__) || defined (__APPLE__)
-#define SIGPOLL SIGIO
-#endif
-
 //#define NO_DNET_FORK
 
 extern int getdtablesize(void);
@@ -59,7 +55,7 @@ static void daemonize(void) {
 	signal(SIGUSR1, SIG_IGN);
 	signal(SIGUSR2, SIG_IGN);
 	signal(SIGTSTP, SIG_IGN); /* ignore tty signals */
-	signal(SIGPOLL, SIG_IGN);
+	signal(SIGIO, SIG_IGN);
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
 	signal(SIGVTALRM, SIG_IGN);
