@@ -10,24 +10,21 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#ifdef __LDuS__
-#include <ldus/system/network.h>
-#endif
 #include "system.h"
 #include "dnet_threads.h"
 #include "dnet_connection.h"
 #include "dnet_packet.h"
 #include "dnet_database.h"
 #include "dnet_log.h"
-#include "dnet_stream.h"
 
-#define CONNECTIONS_MAX	    100
+#define CONNECTIONS_MAX		100
 #define MAX_N_INBOUND		CONNECTIONS_MAX
-#define EXCHANGE_PERIOD	    1800
+#define EXCHANGE_PERIOD		1800
 #define EXCHANGE_MAX_TIME	(3600 * 48)
-#define LOG_PERIOD          300
-#define GC_PERIOD           60
-#define UPDATE_PERIOD	    DNET_UPDATE_PERIOD
+#define LOG_PERIOD		300
+#define GC_PERIOD		60
+#define UPDATE_PERIOD		DNET_UPDATE_PERIOD
+#define DNET_TCP		0
 
 struct list *g_threads;
 pthread_rwlock_t g_threads_rwlock;
@@ -44,14 +41,7 @@ static void dnet_thread_work(struct dnet_thread *t)
 	struct sockaddr_in peeraddr;
 	struct hostent *host;
 	char *str, *lasts;
-	int res = 0, ip_to = 0, port_to = 0, crc_to = 0, proto = DNET_TCP, reuseaddr = 1;
-
-	if (t->type == DNET_THREAD_FORWARD_FROM || t->type == DNET_THREAD_STREAM) {
-		port_to = t->st.port_to;
-		ip_to = t->st.ip_to;
-		crc_to = t->st.crc_to;
-		proto = t->st.proto;
-	}
+	int res = 0, proto = DNET_TCP, reuseaddr = 1;
 
 	// Create a socket
 	t->conn.socket = socket(AF_INET, (proto == DNET_TCP ? SOCK_STREAM : SOCK_DGRAM), IPPROTO_TCP);
@@ -90,18 +80,11 @@ static void dnet_thread_work(struct dnet_thread *t)
 	t->conn.port = atoi(str);
 	peeraddr.sin_port = htons(t->conn.port);
 
-	if (t->type == DNET_THREAD_SERVER || t->type == DNET_THREAD_FORWARD_FROM || proto == DNET_UDP) {
-		struct linger linger_opt = { 1, (proto == DNET_UDP ? 5 : 0) }; // Linger active, timeout 5
+	if (t->type == DNET_THREAD_SERVER) {
+		struct linger linger_opt = { 1, 0 }; // Linger is active, timeout is 0
 		socklen_t peeraddr_len = sizeof(peeraddr);
 
 		// Bind a socket to the address
-#ifdef __LDuS__
-		if (t->type == DNET_THREAD_SERVER) {
-			int i;
-			for (i = 0; i < 2; ++i)
-				ldus_free_network_port(AF_INET, SOCK_STREAM, 0, i, t->conn.port);
-		}
-#endif
 		res = bind(t->conn.socket, (struct sockaddr*)&peeraddr, sizeof(peeraddr));
 		if (res) {
 			mess = "cannot bind a socket";
@@ -112,20 +95,6 @@ static void dnet_thread_work(struct dnet_thread *t)
 		// immediately at program termination.
 		setsockopt(t->conn.socket, SOL_SOCKET, SO_LINGER, (char *)&linger_opt, sizeof(linger_opt));
 		setsockopt(t->conn.socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuseaddr, sizeof(int));
-
-		if (proto == DNET_UDP) {
-			if (t->type != DNET_THREAD_STREAM) {
-				dnet_generate_stream_id(&t->st.id);
-				t->type = DNET_THREAD_STREAM;
-				t->st.pkt_type = DNET_PKT_FORWARDED_UDP;
-			}
-			t->st.crc_to = crc_to;
-			t->st.ip_to = ip_to;
-			t->st.port_to = port_to;
-			t->st.input_tty = t->st.output_tty = t->conn.socket;
-			dnet_thread_stream(t);
-			return;
-		}
 
 		// Now, listen for a connection
 		res = listen(t->conn.socket, CONNECTIONS_MAX);    // "1" is the maximal length of the queue
@@ -152,21 +121,9 @@ begin:
 				&& (*dnet_connection_open_check)(&t1->conn, peeraddr.sin_addr.s_addr, ntohs(peeraddr.sin_port)))) {
 				close(t1->conn.socket); goto begin;
 			}
-			if (t->type == DNET_THREAD_FORWARD_FROM) {
-				t1->type = DNET_THREAD_STREAM;
-				t1->st.pkt_type = DNET_PKT_FORWARDED_TCP;
-				t1->st.to_exit = 0;
-				t1->st.to_reinit = 0;
-				t1->st.input_tty = t1->st.output_tty = t1->conn.socket;
-				t1->st.crc_to = crc_to;
-				t1->st.ip_to = ip_to;
-				t1->st.port_to = port_to;
-				dnet_generate_stream_id(&t1->st.id);
-			} else {
-				t1->conn.ipaddr = ntohl(peeraddr.sin_addr.s_addr);
-				t1->conn.port = ntohs(peeraddr.sin_port);
-				t1->type = DNET_THREAD_ACCEPTED;
-			}
+			t1->conn.ipaddr = ntohl(peeraddr.sin_addr.s_addr);
+			t1->conn.port = ntohs(peeraddr.sin_port);
+			t1->type = DNET_THREAD_ACCEPTED;
 			res = dnet_thread_create(t1);
 			if (res) {
 				if (t1->conn.socket >= 0) {
@@ -187,19 +144,12 @@ begin:
 			mess = "cannot connect";
 			goto err;
 		}
-
-		if (t->type == DNET_THREAD_STREAM) {
-			t->st.ip_to = ip_to;
-			t->st.port_to = port_to;
-			t->st.input_tty = t->st.output_tty = t->conn.socket;
-			dnet_thread_stream(t);
-		} else {
-			res = dnet_connection_main(&t->conn);
-			if (res) {
-				mess = "connection error"; 
-				goto err;
-			}
+		res = dnet_connection_main(&t->conn);
+		if (res) {
+			mess = "connection error"; 
+			goto err;
 		}
+		
 	}
 
 	return;
@@ -427,18 +377,12 @@ int dnet_thread_create(struct dnet_thread *t)
 	void *(*run)(void *);
 	int res;
 	switch (t->type) {
-	case DNET_THREAD_FORWARD_TO:
-		t->type = DNET_THREAD_STREAM;
 	case DNET_THREAD_CLIENT:
 	case DNET_THREAD_SERVER:
-	case DNET_THREAD_FORWARD_FROM:
 		run = &dnet_thread_client_server;
 		break;
 	case DNET_THREAD_ACCEPTED:
 		run = &dnet_thread_accepted;
-		break;
-	case DNET_THREAD_STREAM:
-		run = &dnet_thread_stream;
 		break;
 	case DNET_THREAD_EXCHANGER:
 		run = &dnet_thread_exchanger;

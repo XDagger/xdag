@@ -270,7 +270,6 @@ int dnet_crypt_init(const char *version) {
         {
 			int len;
 			memset(buf, 0, 256);
-#ifndef __LDuS__
 			gethostname(buf, 255);
 			len = strlen(buf);
 			buf[len++] = ',';
@@ -278,9 +277,6 @@ int dnet_crypt_init(const char *version) {
 			getlogin_r(buf + len, 255 - len);
 			len += strlen(buf + len);
             buf[len++] = ',';
-#endif
-#else
-			len = 0;
 #endif
 			dfslib_random_fill(buf + len, 255 - len, 0, 0);
 			for (; len < 255; len++) buf[len] %= (0x80 - ' '), buf[len] += ' ';

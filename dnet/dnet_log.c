@@ -6,12 +6,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
-#ifdef __LDuS__
-#include <ldus/system/user.h>
-#endif
 #include "dnet_database.h"
 #include "dnet_connection.h"
-#include "dnet_stream.h"
 #include "dnet_log.h"
 #include "../client/utils/utils.h"
 
@@ -33,22 +29,6 @@ static int dnet_vprintf(struct dnet_output *out, const char *format, va_list arg
             out->str += done;
 	    if (out->callback) (*out->callback)(out);
         }
-	} else done = 0;
-
-    return done;
-}
-
-ssize_t dnet_write(struct dnet_output *out, const void *data, size_t size) {
-    ssize_t done;
-
-    if (out->f) done = fwrite(data, 1, size, out->f);
-    else if (out->str && out->len) {
-		done = size;
-        if ((size_t)done > out->len) done = out->len;
-		memcpy(out->str, data, done);
-		out->len -= done;
-		out->str += done;
-		if (out->callback) (*out->callback)(out);
 	} else done = 0;
 
     return done;
@@ -106,15 +86,6 @@ int dnet_print_connections(struct dnet_output *out) {
     return count;
 }
 
-void dnet_print_streams(struct dnet_output *out) {
-    struct dnet_output new_out;
-    if (!out) dnet_log_open(out = &new_out);
-    out->count = 0;
-    dnet_printf(out, "Current streams:\n");
-    dnet_traverse_streams((int (*)(struct dnet_stream *, void *))&dnet_print_stream, out);
-    if (out == &new_out) dnet_log_close(out);
-}
-
 void dnet_log_periodic(void) {
 #ifndef QDNET
     time_t t = time(0);
@@ -124,18 +95,11 @@ void dnet_log_periodic(void) {
 			dnet_print_hosts(0, 0);
 			dnet_print_connections(0);
 		}
-        dnet_print_streams(0);
     }
 #endif
 }
 
 void dnet_log_watchdog(int count) {
-#ifdef __LDuS__
-	if (g_connections_count[0] && !g_connections_count[1] && !count) {
-		printf("dnet: connection lost\n");
-//		ldus_shutdown(0);
-	}
-#endif
     g_connections_count[0] = g_connections_count[1];
     g_connections_count[1] = count;
 }

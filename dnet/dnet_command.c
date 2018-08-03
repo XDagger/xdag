@@ -10,10 +10,10 @@
 #include "dnet_command.h"
 #include "dnet_database.h"
 #include "dnet_packet.h"
-#include "dnet_stream.h"
-#include "dnet_files.h"
 #include "dnet_main.h"
 #include "../client/utils/utils.h"
+#include "dnet_threads.h"
+
 
 #define HISTORY_FILE "dnet_history.txt"
 
@@ -85,12 +85,6 @@ begin:
 		if (!str) dnet_printf(out, "Connection limit: %d\n", g_conn_limit);
 		else if (sscanf(str, "%d", &g_conn_limit) != 1)
 			dnet_printf(out, "dnet: illegal parameter of the connlimit command\n");
-	} else if (!strcmp(cmd, "copy")) {
-		char *from, *to;
-		int err = 0;
-		if (!(from = dnet_strtok_r(0, " \t\r\n", &lasts)) || !(to = dnet_strtok_r(0, " \t\r\n", &lasts))
-				|| (err = dnet_file_command(from, to, dnet_strtok_r(0, " \t\r\n", &lasts), out)))
-			dnet_printf(out, "dnet: illegal parameters of copy command (error %X)\n", err);
 	} else if (!strcmp(cmd, "help") || !strcmp(cmd , "?")) {
 		dnet_printf(out,
 			"Commands:\n"
