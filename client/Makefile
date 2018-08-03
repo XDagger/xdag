@@ -86,9 +86,17 @@ headers = 							\
 	types.h							\
 	network.h						\
 	$(dnet)/dnet_crypt.h					\
+	$(dnet)/dnet_database.h					\
 	$(dnet)/dnet_history.h					\
-	$(dnet)/dnet_main.h					\
+	$(dnet)/dnet_threads.h					\
+	$(dnet)/dnet_connection.h				\
+	$(dnet)/dnet_stream.h					\
 	$(dnet)/dnet_packet.h					\
+	$(dnet)/dnet_command.h					\
+	$(dnet)/dnet_log.h						\
+	$(dnet)/dnet_files.h					\
+	$(dnet)/dnet_tap.h						\
+	$(dnet)/dthread.h						\
 	$(dfslib)/dfslib_crypt.h				\
 	$(dfslib)/dfslib_random.h				\
 	$(dfslib)/dfslib_string.h				\
