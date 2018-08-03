@@ -1,4 +1,4 @@
-/* dnet: code for xdag; T14.290-T14.328; $DVS:time$ */
+/* dnet: code for xdag; T14.290-T14.309; $DVS:time$ */
 
 /*
  * This file implements simple version of dnet especially for xdag.
@@ -14,7 +14,10 @@
 #include <time.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <signal.h>
 #include <pthread.h>
+#include <unistd.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -26,9 +29,6 @@
 #define poll(a,b,c) ((a)->revents = (a)->events, (b))
 #endif
 #else
-#include <signal.h>
-#include <unistd.h>
-#include <sys/wait.h>
 #include <poll.h>
 #endif
 #include "../ldus/source/include/ldus/atomic.h"
@@ -47,10 +47,7 @@
 #define FIRST_NSECTORS			(sizeof(struct dnet_key) / SECTOR_SIZE + 1)
 #define MAX_OUT_QUEUE_SIZE		0x10000
 #define COMMON_QUEUE_SIZE		0x10000
-#define OLD_DNET_TIMEOUT_SEC		30
-#define BAD_CONN_TIMEOUT_SEC		90
 
-extern int g_xdag_sync_on;
 extern void dnet_session_init_crypt(struct dfslib_crypt *crypt, uint32_t sector[SECTOR_SIZE / 4]);
 
 struct xsector {
@@ -69,29 +66,23 @@ struct xdnet_keys {
 
 extern struct xdnet_keys g_xkeys;
 
-#if defined(_WIN32) || defined(_WIN64)
-/* add proper code for Windows pools here */
-static struct xdnet_keys g_xkeys;
-#else
 asm(
 ".text					\n"
 "g_xkeys:				\n"
 ".incbin \"../dnet/dnet_keys.bin\"	\n"
 );
-#endif
 
 static struct dfslib_crypt *g_crypt;
 static struct xsector *g_common_queue;
 static uint64_t g_common_queue_pos, g_common_queue_reserve;
 static int (*g_arrive_callback)(void *block, void *connection_from) = 0;
-int (*dnet_connection_open_check)(uint32_t ip, uint16_t port) = 0;
+int (*dnet_connection_open_check)(void *conn, uint32_t ip, uint16_t port) = 0;
 void (*dnet_connection_close_notify)(void *conn) = 0;
 
 struct xcrypt {
 	struct dnet_key pub;
 	struct xsector sect0;
 	struct dfslib_crypt crypt_in;
-	time_t last_sent;
 };
 
 struct xconnection {
@@ -158,9 +149,6 @@ static struct xconnection *add_connection(int fd, uint32_t ip, uint16_t port) {
 	int rnd = rand() % g_nthreads, i, nthread, nfd;
 	struct xconnection *conn;
 	struct xthread *t;
-	if (dnet_connection_open_check && (*dnet_connection_open_check)(ip, port)) {
-		return 0;
-	}
 	for (i = 0; i < g_nthreads; ++i) {
 		nthread = (rnd + i) % g_nthreads;
 		t = g_threads + nthread;
@@ -173,6 +161,10 @@ static struct xconnection *add_connection(int fd, uint32_t ip, uint16_t port) {
 			conn->created = time(0);
 			conn->packets_in = conn->packets_out = conn->dropped_in = 0;
 			conn->common_queue_pos = g_common_queue_pos;
+			if (dnet_connection_open_check && (*dnet_connection_open_check)(conn, ip, port)) {
+				pthread_mutex_unlock(&t->mutex);
+				return 0;
+			}
 			t->poll[nfd].events = POLLIN | POLLOUT;
 			t->poll[nfd].fd = fd;
 			t->nconnections++;
@@ -184,25 +176,11 @@ static struct xconnection *add_connection(int fd, uint32_t ip, uint16_t port) {
 	return 0;
 }
 
-/* returns 0 if connection exist, -1 otherwise */
-int dnet_test_connection(void *connection) {
-	struct xconnection *conn = (struct xconnection *)connection;
-	int nconn = conn - g_connections, nthread = nconn / MAX_CONNECTIONS_PER_THREAD, nfd;
-	struct xthread *t = g_threads + nthread;
-	if (nconn < 0 || nconn >= g_nthreads * MAX_CONNECTIONS_PER_THREAD || conn != g_connections + nconn) return -1;
-	nfd = conn->nfd;
-	if (nfd < 0 || nfd >= MAX_CONNECTIONS_PER_THREAD) return -1;
-	if (t->poll[nfd].fd < 0) return -1;
-	return 0;
-}
-
 static int close_connection(struct xconnection *conn) {
-	int nconn = conn - g_connections, nthread = nconn / MAX_CONNECTIONS_PER_THREAD, nfd, fd, nconns;
+	int nconn = conn - g_connections, nthread = nconn / MAX_CONNECTIONS_PER_THREAD, nfd = (conn ? conn->nfd : -1), fd, nconns;
 	struct xsector *xs, *xs1;
 	struct xthread *t = g_threads + nthread;
-	if (nconn < 0 || nconn >= g_nthreads * MAX_CONNECTIONS_PER_THREAD || conn != g_connections + nconn) return -1;
-	nfd = conn->nfd;
-	if (nfd < 0 || nfd >= MAX_CONNECTIONS_PER_THREAD) return -1;
+	if (nthread < 0 || nthread >= g_nthreads || nfd < 0 || nfd >= MAX_CONNECTIONS_PER_THREAD) return -1;
 	pthread_mutex_lock(&t->mutex);
 	nconns = t->nconnections;
 	if (nfd >= nconns) {
@@ -296,7 +274,6 @@ static void *xthread_main(void *arg) {
 	int n, nmax, res, ttl;
 	uint32_t crc;
 	while (poll(t->poll, nmax = t->nconnections, 1) >= 0) {
-		while (!g_xdag_sync_on) sleep(1);
 		for (n = 0; n < nmax; ++n) {
 			conn = t->conn[n];
 			if (t->poll[n].revents & ~(POLLIN | POLLOUT)
@@ -331,7 +308,6 @@ static void *xthread_main(void *arg) {
 							if (conn->packets_in) goto close;
 							conn->crypt = (struct xcrypt *)malloc(sizeof(struct xcrypt));
 							if (!conn->crypt) goto close;
-							conn->crypt->last_sent = time(0);
 						}
 					}
 					if (conn->crypt) {
@@ -374,9 +350,6 @@ static void *xthread_main(void *arg) {
 						if (conn - g_connections == (xs->head.length | xs->head.type << 16)) continue;
 						xs->head.type = DNET_PKT_XDAG;
 						xs->head.length = SECTOR_SIZE;
-					} else if (conn->crypt && time(0) >= conn->crypt->last_sent + OLD_DNET_TIMEOUT_SEC) {
-						memset(&buf, 0, SECTOR_SIZE);
-						xs = &buf;
 					} else {
 						t->poll[n].events &= ~POLLOUT;
 						continue;
@@ -390,13 +363,11 @@ static void *xthread_main(void *arg) {
 					dfsrsa_crypt(xs->word, SECTOR_SIZE / sizeof(dfsrsa_t), conn->crypt->pub.key, DNET_KEYLEN);
 				} else continue;
 				res = write(t->poll[n].fd, xs->word, SECTOR_SIZE);
-				if (conn->crypt) conn->crypt->last_sent = time(0);
 				if (conn->packets_out >= FIRST_NSECTORS && xs != &buf) free(xs);
 				if (res != SECTOR_SIZE) goto close;
 				conn->packets_out++;
 			}
-			if (conn->out_queue_size || conn->common_queue_pos != g_common_queue_pos
-					|| (conn->crypt && time(0) >= conn->crypt->last_sent + OLD_DNET_TIMEOUT_SEC))
+			if (conn->out_queue_size || conn->common_queue_pos != g_common_queue_pos)
 				t->poll[n].events |= POLLOUT;
 		}
 	}
@@ -426,9 +397,7 @@ static void *accept_thread_main(void *arg) {
 	if (listen(fd, MAX_CONNECTIONS_PER_THREAD)) return 0;    // "1" is the maximal length of the queue
 
 	for (;;) {
-		int fd1;
-		while (!g_xdag_sync_on) sleep(1);
-		fd1 = accept(fd, (struct sockaddr*) &peeraddr, &peeraddr_len);
+		int fd1 = accept(fd, (struct sockaddr*) &peeraddr, &peeraddr_len);
 		if (fd1 < 0) continue;
 		setsockopt(fd1, SOL_SOCKET, SO_LINGER, (char *)&linger_opt, sizeof(linger_opt));
 		setsockopt(fd1, SOL_SOCKET, SO_REUSEADDR, (char *)&reuseaddr, sizeof(int));
@@ -512,7 +481,6 @@ int dnet_init(int argc, char **argv) {
 				struct xconnection *conn = &g_connections[n * MAX_CONNECTIONS_PER_THREAD + i];
 				pthread_mutex_init(&conn->mutex, 0);
 				g_threads[n].conn[i] = conn;
-				g_threads[n].poll[i].fd = -1;
 				conn->nfd = i;
 			}
 		}
