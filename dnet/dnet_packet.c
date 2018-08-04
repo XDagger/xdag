@@ -4,11 +4,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
-#ifdef __LDuS__
-#include <signal.h>
-#include <ldus/atomic.h>
-#include <ldus/system/kernel.h>
-#endif
 #include "../dus/programs/dar/source/include/crc.h"
 #include "dnet_database.h"
 #include "dnet_packet.h"
@@ -16,21 +11,10 @@
 #include "dnet_threads.h"
 #include "dnet_log.h"
 #include "dnet_command.h"
-#include "dnet_stream.h"
-#include "dnet_files.h"
 #include "dnet_main.h"
 
-#define SENT_COMMANDS_MAX		256
 #define XDAG_PACKET_LEN	512
 
-struct dnet_sent_command {
-	struct dnet_stream_id id;
-	struct dnet_output out;
-	char valid;
-};
-
-struct dnet_stream_id g_last_received_command_id  =  { { 0, 0, 0, 0} };
-struct dnet_sent_command *g_last_sent_command = 0;
 static int (*xdag_callback)(void *packet, void *connection) = 0;
 
 int dnet_set_xdag_callback(int (*callback)(void *, void *)) { xdag_callback = callback; return 0; }
@@ -95,32 +79,6 @@ void *dnet_send_xdag_packet(void *block, void *connection_to) {
 	return (d.nconn > 0 && d.nconn < INT_MAX ? d.conn : 0);
 }
 
-int dnet_send_command_packet(struct dnet_packet_stream *st, struct dnet_output *output) {
-    int i;
-	if (!g_last_sent_command) {
-		g_last_sent_command = calloc(SENT_COMMANDS_MAX, sizeof(struct dnet_sent_command));
-		if (!g_last_sent_command) return 4;
-    }
-	for (i = 0; i < SENT_COMMANDS_MAX; ++i) if (!g_last_sent_command[i].valid ||
-			(output->f ? (g_last_sent_command[i].out.f == output->f) : (g_last_sent_command[i].out.str == output->str))) {
-		g_last_sent_command[i].valid = 1;
-		memcpy(&g_last_sent_command[i].out, output, sizeof(struct dnet_output));
-		memcpy(&g_last_sent_command[i].id, &st->id, sizeof(struct dnet_stream_id));
-		return dnet_send_stream_packet(st, 0);
-    }
-    return 5;
-}
-
-int dnet_cancel_command(struct dnet_output *output) {
-    int i;
-	if (g_last_sent_command) for (i = 0; i < SENT_COMMANDS_MAX; ++i) if (g_last_sent_command[i].valid
-			&& (output->f ? (g_last_sent_command[i].out.f == output->f) : (g_last_sent_command[i].out.str == output->str))) {
-		g_last_sent_command[i].valid = 0;
-		return 0;
-    }
-    return 1;
-}
-
 int dnet_process_packet(struct dnet_packet *p, struct dnet_connection *conn) {
     uint32_t crc = p->header.crc32;
 	p->header.crc32 = 0;
@@ -160,15 +118,6 @@ int dnet_process_packet(struct dnet_packet *p, struct dnet_connection *conn) {
 					if (host) dnet_update_host(host, p->up.item[i].time_ago, conn->ipaddr, conn->port, DNET_ROUTE_AUTO);
                 }
             }
-	    break;
-	case DNET_PKT_COMMAND:
-	case DNET_PKT_COMMAND_OUTPUT:
-	case DNET_PKT_SHELL_INPUT:
-	case DNET_PKT_SHELL_OUTPUT:
-	case DNET_PKT_TUNNELED_MSG:
-	case DNET_PKT_FORWARDED_TCP:
-	case DNET_PKT_FORWARDED_UDP:
-	case DNET_PKT_FILE_OP:
 	    break;
 	case DNET_PKT_XDAG:
 		{

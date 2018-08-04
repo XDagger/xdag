@@ -87,9 +87,6 @@ static const struct dnet_session_ops dnet_conn_ops = {
 };
 
 static inline ssize_t dnet_socket_read(int fd, void *buf, size_t size) {
-#ifdef __LDuS__
-    return read(fd, buf, size);
-#else
 	time_t te = time(0) + DNET_UPDATE_PERIOD * 3 / 2, t;
 	while ((t = time(0)) < te) {
 		struct pollfd pfd;
@@ -101,7 +98,6 @@ static inline ssize_t dnet_socket_read(int fd, void *buf, size_t size) {
     }
 	dnet_log_printf("dnet: read poll failed for socket %d\n", fd);
 	return -1;
-#endif
 }
 
 int dnet_connection_main(struct dnet_connection *conn) {
