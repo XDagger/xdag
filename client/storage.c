@@ -491,7 +491,7 @@ void xdag_init_storage(xdag_time_t start_time, xdag_time_t end_time, void *data,
 /* Calls a callback for all blocks from the repository that are in specified time interval; returns the number of blocks */
 uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *data, void *(*callback)(void *, void *))
 {
-	struct xdag_block buf[bufsize], *pbuf[bufsize];
+	struct xdag_block *buf, *pbuf[bufsize];
 	struct xdag_storage_sum s;
 	char path[256];
 	
@@ -499,6 +499,12 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 	int64_t i, j, k, todo;
 
 	s.size = s.sum = 0;
+
+	buf = malloc(bufsize*sizeof(struct xdag_block));
+ 	if(buf == NULL){
+		xdag_fatal("malloc failed [function xdag_load_blocks]");
+		return 0;
+	}
 
 	while (start_time < end_time) {
 		sprintf(path, STORAGE_FILE, STORAGE_FILE_ARGS(start_time));
@@ -569,6 +575,7 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 		}
 	}
 
+	free(buf);
 	return sum;
 }
 
