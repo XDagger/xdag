@@ -1509,13 +1509,6 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, " direction  transaction                                amount       time                   \n");
 	fprintf(out, "-------------------------------------------------------------------------------------------\n");
 
-	if (bi->flags & BI_MAIN) {
-		xdag_hash2address(h, address);
-		fprintf(out, "   earning: %s  %10u.%09u  %s\n", address,
-			pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)),
-			time_buf);
-	}
-
 	int N = 0x10000;
 	int n = 0;
 	struct block_internal **ba = malloc(N * sizeof(struct block_internal *));
@@ -1569,7 +1562,14 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	}
 
 	free(ba);
-
+	
+	if (bi->flags & BI_MAIN) {
+		xdag_hash2address(h, address);
+		fprintf(out, "   earning: %s  %10u.%09u  %s\n", address,
+			pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)),
+			time_buf);
+	}
+	
 	return 0;
 }
 
