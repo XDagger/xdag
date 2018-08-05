@@ -385,7 +385,9 @@ static int open_pool_connection(const char *pool_arg)
 	peeraddr.sin_family = AF_INET;
 
 	// Resolve the server address (convert from symbolic name to IP number)
-	strcpy(buf, pool_arg);
+	if(pool_arg != NULL){
+		strcpy(buf, pool_arg);
+	}
 	pool_arg = strtok_r(buf, " \t\r\n:", &nextParam);
 	if(!pool_arg) {
 		xdag_err("pool: host is not given");
