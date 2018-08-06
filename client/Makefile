@@ -11,6 +11,7 @@ moving_statistics 	= ./utils/moving_statistics
 secp256k1               = ../secp256k1
 OS			:= $(shell uname)
 use_openssl_ec		:= $(shell if grep --quiet -e 'define USE_OPTIMIZED_EC 1' -e 'define USE_OPTIMIZED_EC 2' crypt.h; then echo false; else echo true; fi)
+lgmp_installed		:= $(shell if cc -lgmp 2>&1 | grep --quiet main; then echo true; else echo false; fi)
 
 ifeq ($(OS), Darwin)
 	asm_src = 						\
@@ -122,12 +123,20 @@ endif
 
 ifneq ($(OS), Darwin)
  ifeq ($(use_openssl_ec), false)
-	secp256k1_i = secp256k1.o -isystem$(secp256k1)/include/ -lgmp
+	secp256k1_i = secp256k1.o -isystem$(secp256k1)/include/ $(include_gmp)
   ifeq ("$(wildcard $(secp256k1)/src/libsecp256k1-config.h)","")
 	secp256k1_full_compile = true
   endif
   ifeq ("$(wildcard secp256k1.o)","")
 	secp256k1_full_compile = true
+  endif
+  ifeq ($(OS), Linux)
+	GNUmake = make
+  else
+	GNUmake = gmake
+  endif
+  ifeq ($(lgmp_installed), true)
+	include_gmp = -lgmp
   endif
  endif
 endif
@@ -141,13 +150,16 @@ xdag: $(sources) $(headers) Makefile
 secp256k1:
 ifneq ($(OS), Darwin)
  ifeq ($(use_openssl_ec), false)
+  ifeq ($(lgmp_installed), false)
+	@echo "\033[0;31mPlease install libgmp-dev to have better performance\033[0m";
+  endif
   ifeq ($(secp256k1_full_compile), true)
-	cd $(secp256k1) && ./autogen.sh && ./configure && make;									\
-	cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp
+	cd $(secp256k1) && ./autogen.sh && ./configure && $(GNUmake);										\
+	cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c $(include_gmp)
   else
-	if ! cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp; then			\
-		cd $(secp256k1) && ./autogen.sh && ./configure && make;									\
-		cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c -lgmp;	\
+	if ! cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c $(include_gmp); then			\
+		cd $(secp256k1) && ./autogen.sh && ./configure && $(GNUmake);									\
+		cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c $(include_gmp);	\
 	fi
   endif
  else
