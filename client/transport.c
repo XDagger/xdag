@@ -122,6 +122,8 @@ static void *xdag_send_new_block_thread(void *arg)
 	while(1) {
 		pthread_mutex_lock(&g_send_new_block_mutex);
 		elem = list_new_blocks;
+		pthread_mutex_unlock(&g_send_new_block_mutex);
+
 		if(elem) {
 			if(elem->block) {
 				xdag_debug("xdag_send_new_block_thread send block begin");
@@ -130,7 +132,11 @@ static void *xdag_send_new_block_thread(void *arg)
 				xdag_send_block_via_pool(elem->block);
 				xdag_debug("xdag_send_new_block_thread send block done. delta ms: %lld", get_time_ms() - st);
 			}
+
+			pthread_mutex_lock(&g_send_new_block_mutex);
 			LL_DELETE(list_new_blocks, elem);
+			pthread_mutex_unlock(&g_send_new_block_mutex);
+
 			free(elem);
 			processed = 1;
 		}
@@ -139,7 +145,6 @@ static void *xdag_send_new_block_thread(void *arg)
 			sleep(1);
 			xdag_debug("xdag_send_new_block_thread idle loop");
 		}
-		pthread_mutex_unlock(&g_send_new_block_mutex);
 		processed = 0;
 	}
 
