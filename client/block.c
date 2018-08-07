@@ -505,6 +505,28 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 					public_keys[keysCount++].pub = (uint64_t*)((uintptr_t)&newBlock->field[i].data | (type - XDAG_FIELD_PUBLIC_KEY_0));
 				}
 				break;
+
+			case XDAG_FIELD_RESERVE0:
+				break;
+
+			case XDAG_FIELD_RESERVE1:
+				break;
+
+			case XDAG_FIELD_RESERVE2:
+				break;
+
+			case XDAG_FIELD_RESERVE3:
+				break;
+
+			case XDAG_FIELD_RESERVE4:
+				break;
+
+			case XDAG_FIELD_RESERVE5:
+				break;
+
+			case XDAG_FIELD_RESERVE6:
+				break;
+
 			default:
 				err = 3;
 				goto end;
