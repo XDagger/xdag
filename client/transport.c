@@ -120,25 +120,27 @@ static void *xdag_send_new_block_thread(void *arg)
 	struct xdag_new_block_elem *elem = NULL;
 	int processed = 0;
 	while(1) {
-		pthread_mutex_lock(&g_send_new_block_mutex);
-		elem = list_new_blocks;
-		pthread_mutex_unlock(&g_send_new_block_mutex);
-
-		if(elem) {
-			if(elem->block) {
-				xdag_debug("xdag_send_new_block_thread send block begin");
-				uint64_t st = get_time_ms();
-				dnet_send_xdag_packet(elem->block, (void*)(uintptr_t)NEW_BLOCK_TTL);
-				xdag_send_block_via_pool(elem->block);
-				xdag_debug("xdag_send_new_block_thread send block done. delta ms: %lld", get_time_ms() - st);
-			}
-
+		if(g_xdag_state != XDAG_STATE_REST) {
 			pthread_mutex_lock(&g_send_new_block_mutex);
-			LL_DELETE(list_new_blocks, elem);
+			elem = list_new_blocks;
 			pthread_mutex_unlock(&g_send_new_block_mutex);
 
-			free(elem);
-			processed = 1;
+			if(elem) {
+				if(elem->block) {
+					xdag_debug("xdag_send_new_block_thread send block begin");
+					uint64_t st = get_time_ms();
+					dnet_send_xdag_packet(elem->block, (void*)(uintptr_t)NEW_BLOCK_TTL);
+					xdag_send_block_via_pool(elem->block);
+					xdag_debug("xdag_send_new_block_thread send block done. delta ms: %lld", get_time_ms() - st);
+				}
+
+				pthread_mutex_lock(&g_send_new_block_mutex);
+				LL_DELETE(list_new_blocks, elem);
+				pthread_mutex_unlock(&g_send_new_block_mutex);
+
+				free(elem);
+				processed = 1;
+			}
 		}
 
 		if(!processed) {
