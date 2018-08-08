@@ -73,6 +73,9 @@ extern struct xdnet_keys g_xkeys;
 #if defined(_WIN32) || defined(_WIN64)
 /* add proper code for Windows pools here */
 static struct xdnet_keys g_xkeys;
+#elif defined (__MACOS__) || defined (__APPLE__)
+/* add proper code for Mac pools here */
+struct xdnet_keys g_xkeys;
 #else
 asm(
 ".text					\n"
