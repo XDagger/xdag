@@ -102,6 +102,9 @@ extern xdag_amount_t xdag_get_supply(uint64_t nmain);
 // returns position and time of block by hash
 extern int64_t xdag_get_block_pos(const xdag_hash_t hash, xdag_time_t *time);
 
+// return state info string
+extern const char* xdag_get_block_state_info(uint8_t flag);
+
 // returns a number of the current period, period is 64 seconds
 extern xdag_time_t xdag_main_time(void);
 
@@ -135,6 +138,9 @@ void xdag_list_orphan_blocks(int, FILE*);
 // completes work with the blocks
 void xdag_block_finish(void);
 	
+// get block info of specified address
+extern int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t));
+
 #ifdef __cplusplus
 };
 #endif

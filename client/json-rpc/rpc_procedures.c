@@ -57,6 +57,10 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
 /* method: xdag_get_balance */
 cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
+/* method: xdag_get_block_info */
+int rpc_get_block_callback(void *data, int flag, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time);
+cJSON * method_xdag_get_block_info(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
+
 /* method: xdag_do_xfer */
 cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
@@ -78,7 +82,7 @@ cJSON * method_xdag_get_transactions(struct xdag_rpc_context * ctx, cJSON *param
  */
 cJSON * method_xdag_version(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version)
 {
-	xdag_debug("rpc call method version, version %s",version);
+	xdag_debug("rpc call method xdag_version, version %s",version);
 	cJSON *ret = NULL;
 	cJSON *item = cJSON_CreateObject();
 	
@@ -103,7 +107,7 @@ cJSON * method_xdag_version(struct xdag_rpc_context *ctx, cJSON *params, cJSON *
  */
 cJSON * method_xdag_state(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version)
 {
-	xdag_debug("rpc call method version, version %s",version);
+	xdag_debug("rpc call method xdag_state, version %s",version);
 	cJSON *ret = NULL;
 	cJSON *item = cJSON_CreateObject();
 
@@ -175,7 +179,7 @@ cJSON * method_xdag_state(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id
  */
 cJSON * method_xdag_stats(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version)
 {
-	xdag_debug("rpc call method version, version %s",version);
+	xdag_debug("rpc call method xdag_stats, version %s",version);
 	cJSON *ret = NULL;
 	cJSON *item = cJSON_CreateObject();
 
@@ -310,7 +314,7 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
 			ctx->error_message = strdup("Invalid parameters.");
 		}
 	}
-		
+
 	cJSON *ret = NULL;
 	if(ctx->error_code == 0) {
 		if(g_xdag_state < XDAG_STATE_XFER) {
@@ -341,7 +345,7 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
  */
 cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version)
 {
-	xdag_debug("rpc call method get_balance, version %s", version);
+	xdag_debug("rpc call method xdag_get_balance, version %s", version);
 	char address[128] = {0};
 	if (params) {
 		if (cJSON_IsArray(params)) {
@@ -390,6 +394,121 @@ cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJ
 	return NULL;
 }
 
+/* block info */
+/*
+ request:
+ "method":"xdag_get_block_info", "params":["BLOCK ADDRESS"], "id":1
+ "jsonrpc":"2.0", "method":"xdag_get_block_info", "params":["BLOCK ADDRESS"], "id":1
+ "version":"1.1", "method":"xdag_get_block_info", "params":["BLOCK ADDRESS"], "id":1
+
+ reponse:
+ "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
+ "jsonrpc":"2.0", "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
+ "version":"1.1", "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
+ */
+
+int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time)
+{
+	cJSON *callback_data = (cJSON *)data;
+
+	if(!callback_data)
+	{
+		return -1;
+	}
+
+	char address_buf[33];
+	xdag_hash2address(hash, address_buf);
+	cJSON *json_address = cJSON_CreateString(address_buf);
+	cJSON_AddItemToObject(callback_data, "address", json_address);
+
+	char str[128] = {0};
+	sprintf(str, "%.9Lf",  amount2xdags(amount));
+	cJSON *json_amount = cJSON_CreateString(str);
+	cJSON_AddItemToObject(callback_data, "amount", json_amount);
+
+	sprintf(str, "%x", flags);
+	cJSON *json_flags = cJSON_CreateString(str);
+	cJSON_AddItemToObject(callback_data, "flags", json_flags);
+
+	sprintf(str, "%s", xdag_get_block_state_info(flags));
+	cJSON *json_state = cJSON_CreateString(str);
+	cJSON_AddItemToObject(callback_data, "state", json_state);
+
+	struct tm tm;
+	char buf[64], tbuf[64];
+	time_t t = time >> 10;
+	localtime_r(&t, &tm);
+	strftime(buf, 64, "%Y-%m-%d %H:%M:%S", &tm);
+	sprintf(tbuf, "%s.%03d UTC", buf, (int)((time & 0x3ff) * 1000) >> 10);
+	cJSON *json_time = cJSON_CreateString(tbuf);
+	cJSON_AddItemToObject(callback_data, "timestamp", json_time);
+
+	return 0;
+}
+
+cJSON * method_xdag_get_block_info(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version)
+{
+	xdag_debug("rpc call method xdag_get_block_info, version %s", version);
+	char address[128] = {0};
+	if (params) {
+		if (cJSON_IsArray(params)) {
+			size_t size = cJSON_GetArraySize(params);
+			int i = 0;
+			for (i = 0; i < size; i++) {
+				cJSON *item = cJSON_GetArrayItem(params, i);
+				if(cJSON_IsString(item)) {
+					strcpy(address, item->valuestring);
+					break;
+				}
+			}
+		} else {
+			ctx->error_code = 1;
+			ctx->error_message = strdup("Invalid parameters.");
+			return NULL;
+		}
+	}
+
+	xdag_hash_t hash;
+	size_t len = strlen(address);
+
+	if(len == 32) {
+		if(xdag_address2hash(address, hash)) {
+			ctx->error_code = 1;
+			ctx->error_message = strdup("Address is incorrect.");
+			return NULL;
+		}
+	} else if(len == 48 || len == 64) {
+		for(int i = 0; i < len; ++i) {
+			if(!isxdigit(address[i])) {
+				ctx->error_code = 1;
+				ctx->error_message = strdup("Hash is incorrect.");
+				return NULL;
+			}
+		}
+		int c;
+		for(int i = 0; i < 24; ++i) {
+			sscanf(address + len - 2 - 2 * i, "%2x", &c);
+			((uint8_t *)hash)[i] = c;
+		}
+	} else {
+		ctx->error_code = 1;
+		ctx->error_message = strdup("Argument is incorrect.");
+		return NULL;
+	}
+
+	cJSON *ret = NULL;
+	cJSON *item = cJSON_CreateObject();
+	if(xdag_get_block_info(hash, (void *)item, rpc_get_block_callback)) {
+		ctx->error_code = 1;
+		ctx->error_message = strdup("Block not found.");
+		free(item);
+		return NULL;
+	}
+
+	ret = cJSON_CreateArray();
+	cJSON_AddItemToArray(ret, item);
+	return ret;
+}
 
 /* xfer */
 /*
@@ -591,7 +710,6 @@ cJSON * method_xdag_get_transactions(struct xdag_rpc_context * ctx, cJSON *param
 	}
 	
 	xdag_hash_t hash;
-	int incorrect = 0;
 	size_t len = strlen(address);
 	
 	if(len == 32) {
@@ -608,12 +726,11 @@ cJSON * method_xdag_get_transactions(struct xdag_rpc_context * ctx, cJSON *param
 				return NULL;
 			}
 		}
-		if(!incorrect) {
-			int c;
-			for(int i = 0; i < 24; ++i) {
-				sscanf(address + len - 2 - 2 * i, "%2x", &c);
-				((uint8_t *)hash)[i] = c;
-			}
+
+		int c;
+		for(int i = 0; i < 24; ++i) {
+			sscanf(address + len - 2 - 2 * i, "%2x", &c);
+			((uint8_t *)hash)[i] = c;
 		}
 	} else {
 		ctx->error_code = 1;
@@ -647,14 +764,15 @@ cJSON * method_xdag_get_transactions(struct xdag_rpc_context * ctx, cJSON *param
 /* init rpc procedures */
 int xdag_rpc_init_procedures(void)
 {
-	/* register query func */
+	/* register */
 	rpc_register_func(xdag_version);
 	rpc_register_func(xdag_state);
 	rpc_register_func(xdag_stats);
-	
+
 	/* register xdag_get_account, xdag_get_balance, xdag_do_xfer, xdag_get_transactions */
 	rpc_register_func(xdag_get_account);
 	rpc_register_func(xdag_get_balance);
+	rpc_register_func(xdag_get_block_info);
 	rpc_register_func(xdag_do_xfer);
 	rpc_register_func(xdag_get_transactions);
 	return 0;
