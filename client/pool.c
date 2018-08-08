@@ -145,6 +145,13 @@ static uint32_t g_connection_changed = 0;
 static pthread_mutex_t g_connections_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+struct xdag_new_block_elem {
+	struct xdag_new_block_elem *next;
+	struct xdag_block *block;
+};
+static struct xdag_new_block_elem * list_new_blocks = NULL;
+pthread_mutex_t g_send_new_block_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 int pay_miners(xdag_time_t time);
 void remove_inactive_miners(void);
 
@@ -153,6 +160,7 @@ void *pool_net_thread(void *arg);
 void *pool_main_thread(void *arg);
 void *pool_block_thread(void *arg);
 void *pool_remove_inactive_connections(void *arg);
+void *pool_send_to_mainnet_thread(void *arg);
 
 void update_mean_log_diff(struct connection_pool_data *, struct xdag_pool_task *, xdag_hash_t);
 
@@ -234,7 +242,71 @@ int xdag_initialize_pool(const char *pool_arg)
 		return -1;
 	}
 
+	err = pthread_create(&th, 0, pool_send_to_mainnet_thread, 0);
+	if(err) {
+		xdag_err("create pool_send_to_mainnet_thread failed. error : %s", strerror(err));
+		return -1;
+	}
+
+	err = pthread_detach(th);
+	if(err) {
+		xdag_err("detach pool_send_to_mainnet_thread failed. error : %s", strerror(err));
+		return -1;
+	}
+
 	return 0;
+}
+
+int xdag_send_block_via_network(struct xdag_block *b)
+{
+	struct xdag_new_block_elem *elem = (struct xdag_new_block_elem*)malloc(sizeof(struct xdag_new_block_elem));
+	if(elem) {
+		xdag_mess("append new block");
+		elem->block = (struct xdag_block *)malloc(sizeof(struct xdag_block));
+		memcpy(elem->block, b, sizeof(struct xdag_block));
+		pthread_mutex_lock(&g_send_new_block_mutex);
+		LL_APPEND(list_new_blocks, elem);
+		pthread_mutex_unlock(&g_send_new_block_mutex);
+
+		return 0;
+	} else {
+		xdag_err("malloc failed.");
+		return -1;
+	}
+}
+
+void *pool_send_to_mainnet_thread(void *arg)
+{
+	xdag_debug("start pool_send_to_mainnet_thread...");
+	struct xdag_new_block_elem *elem = NULL;
+	int processed = 0;
+	while(1) {
+		pthread_mutex_lock(&g_send_new_block_mutex);
+		elem = list_new_blocks;
+		if(elem) LL_DELETE(list_new_blocks, elem);
+		pthread_mutex_unlock(&g_send_new_block_mutex);
+
+		if(elem) {
+			if(elem->block) {
+				xdag_debug("pool_send_to_mainnet_thread send block begin");
+				uint64_t st = get_time_ms();
+				xdag_send_new_block(elem->block);
+				xdag_debug("pool_send_to_mainnet_thread send block done. delta ms: %lld", get_time_ms() - st);
+				free(elem->block);
+			}
+
+			free(elem);
+			processed = 1;
+		}
+
+		if(!processed) {
+			sleep(1);
+			xdag_debug("pool_send_to_mainnet_thread idle loop");
+		}
+		processed = 0;
+	}
+
+	xdag_err("pool_send_to_mainnet_thread finished.");
 }
 
 void *general_mining_thread(void *arg)

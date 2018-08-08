@@ -38,13 +38,6 @@ struct xdag_send_data {
 	void *connection;
 };
 
-struct xdag_new_block_elem {
-	struct xdag_new_block_elem *next;
-	struct xdag_block *block;
-};
-static struct xdag_new_block_elem * list_new_blocks = NULL;
-pthread_mutex_t g_send_new_block_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 static int conn_add_rm(void *conn, int addrm)
 {
 	int b, e, m;
@@ -112,45 +105,6 @@ static void *xdag_send_thread(void *arg)
 	free(d);
 	
 	return 0;
-}
-
-static void *xdag_send_new_block_thread(void *arg)
-{
-	xdag_mess("start send new block thread...");
-	struct xdag_new_block_elem *elem = NULL;
-	int processed = 0;
-	while(1) {
-		if(g_xdag_state != XDAG_STATE_REST) {
-			pthread_mutex_lock(&g_send_new_block_mutex);
-			elem = list_new_blocks;
-			pthread_mutex_unlock(&g_send_new_block_mutex);
-
-			if(elem) {
-				if(elem->block) {
-					xdag_debug("xdag_send_new_block_thread send block begin");
-					uint64_t st = get_time_ms();
-					dnet_send_xdag_packet(elem->block, (void*)(uintptr_t)NEW_BLOCK_TTL);
-					xdag_send_block_via_pool(elem->block);
-					xdag_debug("xdag_send_new_block_thread send block done. delta ms: %lld", get_time_ms() - st);
-				}
-
-				pthread_mutex_lock(&g_send_new_block_mutex);
-				LL_DELETE(list_new_blocks, elem);
-				pthread_mutex_unlock(&g_send_new_block_mutex);
-
-				free(elem);
-				processed = 1;
-			}
-		}
-
-		if(!processed) {
-			sleep(1);
-			xdag_debug("xdag_send_new_block_thread idle loop");
-		}
-		processed = 0;
-	}
-
-	xdag_err("send new block thread finished.");
 }
 
 static int process_transport_block(struct xdag_block *received_block, void *connection)
@@ -363,22 +317,6 @@ int xdag_transport_start(int flags, const char *bindto, int npairs, const char *
 	return res;
 }
 
-int xdag_send_thread_start(void)
-{
-	pthread_t th;
-	int res = pthread_create(&th, 0, xdag_send_new_block_thread, 0);
-	if(res) {
-		xdag_err("create xdag_send_new_block_thread failed. error : %s", strerror(res));
-		return res;
-	}
-
-	res = pthread_detach(th);
-	if(res) {
-		xdag_err("detach xdag_send_new_block_thread failed. error : %s", strerror(res));
-	}
-	return 0;
-}
-
 /* generates an array with random data */
 int xdag_generate_random_array(void *array, unsigned long size)
 {
@@ -443,20 +381,8 @@ int xdag_request_sums(xdag_time_t start_time, xdag_time_t end_time, struct xdag_
 /* sends a new block to network */
 int xdag_send_new_block(struct xdag_block *b)
 {
-//	dnet_send_xdag_packet(b, (void*)(uintptr_t)NEW_BLOCK_TTL);
+	dnet_send_xdag_packet(b, (void*)(uintptr_t)NEW_BLOCK_TTL);
 //	xdag_send_block_via_pool(b);
-
-	struct xdag_new_block_elem *elem = (struct xdag_new_block_elem*)malloc(sizeof(struct xdag_new_block_elem));
-	if(elem) {
-		xdag_mess("append new block");
-		elem->block = b;
-		pthread_mutex_lock(&g_send_new_block_mutex);
-		LL_APPEND(list_new_blocks, elem);
-		pthread_mutex_unlock(&g_send_new_block_mutex);
-	} else {
-		xdag_err("malloc failed.");
-	}
-
 	return 0;
 }
 
@@ -476,20 +402,6 @@ int xdag_send_packet(struct xdag_block *b, void *conn)
 	dnet_send_xdag_packet(b, conn);
 	
 	return 0;
-}
-
-void xdag_reset_transport(void)
-{
-	xdag_mess("reset transport");
-	pthread_mutex_lock(&g_send_new_block_mutex);
-	struct xdag_new_block_elem *elem, *eletmp;
-	LL_FOREACH_SAFE(list_new_blocks, elem, eletmp)
-	{
-		LL_DELETE(list_new_blocks, elem);
-		free(elem);
-	}
-	list_new_blocks = NULL;
-	pthread_mutex_unlock(&g_send_new_block_mutex);
 }
 
 /* requests a block by hash from another host */

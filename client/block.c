@@ -949,7 +949,11 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 				block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
 		}
 
-		xdag_send_new_block(block);
+		if(g_xdag_pool) { /* send pool created block to network, send miner created block to pool */
+			xdag_send_block_via_network(block);
+		} else {
+			xdag_send_block_via_pool(block);
+		}
 
 		if(newBlockHashResult != NULL) {
 			memcpy(newBlockHashResult, newBlockHash, sizeof(xdag_hash_t));
@@ -1061,8 +1065,6 @@ begin:
 		sleep(1);
 	}
 
-	xdag_send_thread_start();
-
 	// launching of synchronization thread
 	g_xdag_sync_on = 1;
 	if (!g_light_mode && !sync_thread_running) {
@@ -1121,8 +1123,6 @@ begin:
 			}
 
 			pthread_mutex_lock(&block_mutex);
-
-			xdag_reset_transport();
 
 			if (xdag_free_all()) {
 				ldus_rbtree_walk_up(root, reset_callback);
