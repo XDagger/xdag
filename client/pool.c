@@ -261,7 +261,7 @@ int xdag_send_block_via_network(struct xdag_block *b)
 {
 	struct xdag_new_block_elem *elem = (struct xdag_new_block_elem*)malloc(sizeof(struct xdag_new_block_elem));
 	if(elem) {
-		xdag_mess("append new block");
+		xdag_debug("append new block");
 		elem->block = (struct xdag_block *)malloc(sizeof(struct xdag_block));
 		memcpy(elem->block, b, sizeof(struct xdag_block));
 		pthread_mutex_lock(&g_send_new_block_mutex);
