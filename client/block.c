@@ -1,4 +1,4 @@
-/* block processing, T13.654-T14.347 $DVS:time$ */
+/* block processing, T13.654-T14.390 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -97,6 +97,12 @@ struct orphan_block {
 	struct orphan_block *next;
 	struct orphan_block *prev;
 	struct xdag_block block[0];
+};
+
+enum orphan_remove_actions {
+	ORPHAN_REMOVE_NORMAL,
+	ORPHAN_REMOVE_REUSE,
+	ORPHAN_REMOVE_EXTRA
 };
 
 #define get_orphan_index(bi)      (!!((bi)->flags & BI_EXTRA))
@@ -680,7 +686,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	if (g_xdag_extstats.nextra > MAX_ALLOWED_EXTRA) {
 		/* if too many extra blocks then reuse the oldest */
 		nodeBlock = g_orphan_first[1]->orphan_bi;
-		remove_orphan(nodeBlock, 1);
+		remove_orphan(nodeBlock, ORPHAN_REMOVE_REUSE);
 		pthread_mutex_lock(&rbtree_mutex);
 		ldus_rbtree_remove(&root, &nodeBlock->node);
 		pthread_mutex_unlock(&rbtree_mutex);
@@ -705,7 +711,10 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		tmpNodeBlock.storage_pos = transportHeader;
 	} else if (!(tmpNodeBlock.flags & BI_EXTRA)) {
 		tmpNodeBlock.storage_pos = xdag_storage_save(newBlock);
-	} /* do not store extra block right now */
+	} else {
+		/* do not store extra block right now */
+		tmpNodeBlock.storage_pos = -2l;
+	}
 
 	memcpy(nodeBlock, &tmpNodeBlock, sizeof(struct block_internal));
 	pthread_mutex_lock(&rbtree_mutex);
@@ -759,8 +768,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	for(i = 0; i < tmpNodeBlock.nlinks; ++i) {
-		if (!(tmpNodeBlock.flags & BI_EXTRA))
-			remove_orphan(tmpNodeBlock.link[i], 0);
+		remove_orphan(tmpNodeBlock.link[i],
+				tmpNodeBlock.flags & BI_EXTRA ? ORPHAN_REMOVE_EXTRA : ORPHAN_REMOVE_NORMAL);
 
 		if(tmpNodeBlock.linkamount[i]) {
 			blockRef = tmpNodeBlock.link[i];
@@ -1431,14 +1440,22 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 	return 0;
 }
 
-// returns position and time of block by hash
-int64_t xdag_get_block_pos(const xdag_hash_t hash, xdag_time_t *t)
+// returns position and time of block by hash; if block is extra and block != 0 also returns the whole block
+int64_t xdag_get_block_pos(const xdag_hash_t hash, xdag_time_t *t, struct xdag_block *block)
 {
+	if (block) pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
 
 	if (!bi) {
+		if (block) pthread_mutex_unlock(&block_mutex);
 		return -1;
 	}
+
+	if (block && bi->flags & BI_EXTRA) {
+		memcpy(block, bi->oref->block, sizeof(struct xdag_block));
+	}
+
+	if (block) pthread_mutex_unlock(&block_mutex);
 
 	*t = bi->time;
 
@@ -1833,9 +1850,9 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 	return n;
 }
 
-void remove_orphan(struct block_internal* bi, int reuse)
+void remove_orphan(struct block_internal* bi, int remove_action)
 {
-	if(!(bi->flags & BI_REF)) {
+	if(!(bi->flags & BI_REF) && (remove_action != ORPHAN_REMOVE_EXTRA || (bi->flags & BI_EXTRA))) {
 		struct orphan_block *obt = bi->oref;
 		if (obt == NULL) {
 			xdag_crit("Critical error. List in the hashtable not found. The orphan is not found in hashtable. [function: remove_orphan]");
@@ -1847,10 +1864,11 @@ void remove_orphan(struct block_internal* bi, int reuse)
 			*(next ? &(next->prev) : &g_orphan_last[index]) = prev;
 
 			if (index) {
-				if (!reuse) {
+				if (remove_action != ORPHAN_REMOVE_REUSE) {
 					bi->storage_pos = xdag_storage_save(obt->block);
 					for (i = 0; i < bi->nlinks; ++i) {
-						remove_orphan(bi->link[i], 0);
+						remove_orphan(bi->link[i], bi->flags & BI_EXTRA ?
+								ORPHAN_REMOVE_EXTRA : ORPHAN_REMOVE_NORMAL);
 					}
 				}
 				bi->flags &= ~BI_EXTRA;
