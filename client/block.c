@@ -371,7 +371,7 @@ static void check_new_main(void)
 		}
 	}
 
-	if (p && i > MAX_WAITING_MAIN && get_timestamp() >= p->time + 2 * 1024) {
+	if (p && (p->flags & BI_REF) && i > MAX_WAITING_MAIN && get_timestamp() >= p->time + 2 * 1024) {
 		set_main(p);
 	}
 }
@@ -690,6 +690,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		pthread_mutex_lock(&rbtree_mutex);
 		ldus_rbtree_remove(&root, &nodeBlock->node);
 		pthread_mutex_unlock(&rbtree_mutex);
+		if (g_xdag_stats.nblocks-- == g_xdag_stats.total_nblocks)
+			g_xdag_stats.total_nblocks--;
 		if (nodeBlock->flags & BI_OURS) {
 			struct block_internal *prev = nodeBlock->ourprev, *next = nodeBlock->ournext;
 			*(prev ? &prev->ournext : &ourfirst) = next;
@@ -1383,8 +1385,8 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 {
 	if (!hash) return -1;
 
-	struct block_internal *bi = block_by_hash(hash);
 	pthread_mutex_lock(&block_mutex);
+	struct block_internal *bi = block_by_hash(hash);
 	if (bi->flags & BI_OURS && bi != ourfirst) {
 		if (bi->ourprev) {
 			bi->ourprev->ournext = bi->ournext;
@@ -1867,8 +1869,7 @@ void remove_orphan(struct block_internal* bi, int remove_action)
 				if (remove_action != ORPHAN_REMOVE_REUSE) {
 					bi->storage_pos = xdag_storage_save(obt->block);
 					for (i = 0; i < bi->nlinks; ++i) {
-						remove_orphan(bi->link[i], bi->flags & BI_EXTRA ?
-								ORPHAN_REMOVE_EXTRA : ORPHAN_REMOVE_NORMAL);
+						remove_orphan(bi->link[i], ORPHAN_REMOVE_NORMAL);
 					}
 				}
 				bi->flags &= ~BI_EXTRA;
