@@ -1857,7 +1857,10 @@ void remove_orphan(struct block_internal* bi, int remove_action)
 	if(!(bi->flags & BI_REF) && (remove_action != ORPHAN_REMOVE_EXTRA || (bi->flags & BI_EXTRA))) {
 		struct orphan_block *obt = bi->oref;
 		if (obt == NULL) {
-			xdag_crit("Critical error. List in the hashtable not found. The orphan is not found in hashtable. [function: remove_orphan]");
+			xdag_crit("Critical error. obt=0");
+		} else if (obt->orphan_bi != bi) {
+			xdag_crit("Critical error. bi=%p, flags=%x, action=%d, obt=%p, prev=%p, next=%p, obi=%p",
+				  bi, bi->flags, remove_action, obt, obt->prev, obt->next, obt->orphan_bi);
 		} else {
 			int index = get_orphan_index(bi), i;
 			struct orphan_block *prev = obt->prev, *next = obt->next;
