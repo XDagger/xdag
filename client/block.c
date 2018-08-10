@@ -110,6 +110,7 @@ static struct block_internal *volatile top_main_chain = 0, *volatile pretop_main
 static struct block_internal *ourfirst = 0, *ourlast = 0;
 static struct cache_block *cache_first = NULL, *cache_last = NULL;
 static pthread_mutex_t block_mutex;
+static pthread_mutex_t rbtree_mutex;
 //TODO: this variable duplicates existing global variable g_is_pool. Probably should be removed
 static int g_light_mode = 0;
 static uint32_t cache_bounded_counter = 0;
@@ -166,7 +167,11 @@ ldus_rbtree_define_prefix(lessthan, static inline, )
 
 static inline struct block_internal *block_by_hash(const xdag_hashlow_t hash)
 {
-	return (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
+	struct block_internal *bi;
+	pthread_mutex_lock(&rbtree_mutex);
+	bi = (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
+	pthread_mutex_unlock(&rbtree_mutex);
+	return bi;
 }
 
 static inline struct cache_block *cache_block_by_hash(const xdag_hashlow_t hash)
@@ -600,6 +605,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	tmpNodeBlock.difficulty = diff0 = xdag_hash_difficulty(tmpNodeBlock.hash);
 	sum_out += newBlock->field[0].amount;
 	tmpNodeBlock.fee = newBlock->field[0].amount;
+	if (tmpNodeBlock.fee) {
+		tmpNodeBlock.flags &= ~BI_EXTRA;
+	}
 
 	for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
 		if(1 << i & (inmask | outmask)) {
@@ -673,7 +681,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		/* if too many extra blocks then reuse the oldest */
 		nodeBlock = g_orphan_first[1]->orphan_bi;
 		remove_orphan(nodeBlock, 1);
+		pthread_mutex_lock(&rbtree_mutex);
 		ldus_rbtree_remove(&root, &nodeBlock->node);
+		pthread_mutex_unlock(&rbtree_mutex);
 		if (nodeBlock->flags & BI_OURS) {
 			struct block_internal *prev = nodeBlock->ourprev, *next = nodeBlock->ournext;
 			*(prev ? &prev->ournext : &ourfirst) = next;
@@ -698,7 +708,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	} /* do not store extra block right now */
 
 	memcpy(nodeBlock, &tmpNodeBlock, sizeof(struct block_internal));
+	pthread_mutex_lock(&rbtree_mutex);
 	ldus_rbtree_insert(&root, &nodeBlock->node);
+	pthread_mutex_unlock(&rbtree_mutex);
 	g_xdag_stats.nblocks++;
 
 	if(g_xdag_stats.nblocks > g_xdag_stats.total_nblocks) {
@@ -747,7 +759,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	for(i = 0; i < tmpNodeBlock.nlinks; ++i) {
-		remove_orphan(tmpNodeBlock.link[i], 0);
+		if (!(tmpNodeBlock.flags & BI_EXTRA))
+			remove_orphan(tmpNodeBlock.link[i], 0);
 
 		if(tmpNodeBlock.linkamount[i]) {
 			blockRef = tmpNodeBlock.link[i];
@@ -1172,7 +1185,10 @@ begin:
 			pthread_mutex_lock(&block_mutex);
 
 			if (xdag_free_all()) {
+				pthread_mutex_lock(&rbtree_mutex);
 				ldus_rbtree_walk_up(root, reset_callback);
+				pthread_mutex_unlock(&rbtree_mutex);
+
 			}
 			
 			root = 0;
@@ -1259,6 +1275,7 @@ int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address)
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&block_mutex, &attr);
+	pthread_mutex_init(&rbtree_mutex, 0);
 	int err = pthread_create(&th, 0, work_thread, (void*)(uintptr_t)(unsigned)mining_threads_count);
 	if(err != 0) {
 		printf("create work_thread failed, error : %s\n", strerror(err));
@@ -1329,7 +1346,9 @@ int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag_hash_t
 	pthread_mutex_lock(&block_mutex);
 	g_traverse_callback = callback;
 	g_traverse_data = data;
+	pthread_mutex_lock(&rbtree_mutex);
 	ldus_rbtree_walk_right(root, traverse_all_callback);
+	pthread_mutex_unlock(&rbtree_mutex);
 	pthread_mutex_unlock(&block_mutex);
 	return 0;
 }
@@ -1341,9 +1360,7 @@ xdag_amount_t xdag_get_balance(xdag_hash_t hash)
 		return g_balance;
 	}
 
-	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
-	pthread_mutex_unlock(&block_mutex);
 
 	if (!bi) {
 		return 0;
@@ -1357,9 +1374,8 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 {
 	if (!hash) return -1;
 
-	pthread_mutex_lock(&block_mutex);
-
 	struct block_internal *bi = block_by_hash(hash);
+	pthread_mutex_lock(&block_mutex);
 	if (bi->flags & BI_OURS && bi != ourfirst) {
 		if (bi->ourprev) {
 			bi->ourprev->ournext = bi->ournext;
@@ -1418,9 +1434,7 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 // returns position and time of block by hash
 int64_t xdag_get_block_pos(const xdag_hash_t hash, xdag_time_t *t)
 {
-	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
-	pthread_mutex_unlock(&block_mutex);
 
 	if (!bi) {
 		return -1;
@@ -1434,9 +1448,7 @@ int64_t xdag_get_block_pos(const xdag_hash_t hash, xdag_time_t *t)
 //returns a number of key by hash of block, or -1 if block is not ours
 int xdag_get_key(xdag_hash_t hash)
 {
-	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
-	pthread_mutex_unlock(&block_mutex);
 
 	if (!bi || !(bi->flags & BI_OURS)) {
 		return -1;
@@ -1491,9 +1503,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	char address[33];
 	int i;
 
-	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
-	pthread_mutex_unlock(&block_mutex);
 
 	if (!bi) {
 		return -1;
@@ -1760,9 +1770,7 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
 
 int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t))
 {
-	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
-	pthread_mutex_unlock(&block_mutex);
 	
 	if (!bi) {
 		return -1;
