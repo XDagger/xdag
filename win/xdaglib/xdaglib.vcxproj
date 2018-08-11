@@ -56,17 +56,8 @@
     <ClCompile Include="..\..\client\utils\moving_statistics\moving_average.c" />
     <ClCompile Include="..\..\client\utils\utils.c" />
     <ClCompile Include="..\..\client\wallet.c" />
-    <ClCompile Include="..\..\dnet\dnet_command.c" />
-    <ClCompile Include="..\..\dnet\dnet_connection.c" />
     <ClCompile Include="..\..\dnet\dnet_crypt.c" />
-    <ClCompile Include="..\..\dnet\dnet_database.c" />
-    <ClCompile Include="..\..\dnet\dnet_files.c" />
-    <ClCompile Include="..\..\dnet\dnet_log.c" />
-    <ClCompile Include="..\..\dnet\dnet_main.c" />
-    <ClCompile Include="..\..\dnet\dnet_packet.c" />
-    <ClCompile Include="..\..\dnet\dnet_stream.c" />
-    <ClCompile Include="..\..\dnet\dnet_tap.c" />
-    <ClCompile Include="..\..\dnet\dnet_threads.c" />
+    <ClCompile Include="..\..\dnet\dnet_xdag.c" />
     <ClCompile Include="..\..\dus\programs\dar\source\lib\crc_c.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_crypt.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_random.c" />
@@ -110,19 +101,10 @@
     <ClInclude Include="..\..\client\utils\utils.h" />
     <ClInclude Include="..\..\client\version.h" />
     <ClInclude Include="..\..\client\wallet.h" />
-    <ClInclude Include="..\..\dnet\dnet_command.h" />
-    <ClInclude Include="..\..\dnet\dnet_connection.h" />
     <ClInclude Include="..\..\dnet\dnet_crypt.h" />
-    <ClInclude Include="..\..\dnet\dnet_database.h" />
-    <ClInclude Include="..\..\dnet\dnet_files.h" />
     <ClInclude Include="..\..\dnet\dnet_history.h" />
-    <ClInclude Include="..\..\dnet\dnet_log.h" />
     <ClInclude Include="..\..\dnet\dnet_main.h" />
     <ClInclude Include="..\..\dnet\dnet_packet.h" />
-    <ClInclude Include="..\..\dnet\dnet_stream.h" />
-    <ClInclude Include="..\..\dnet\dnet_tap.h" />
-    <ClInclude Include="..\..\dnet\dnet_threads.h" />
-    <ClInclude Include="..\..\dnet\dthread.h" />
     <ClInclude Include="..\..\dnet\system.h" />
     <ClInclude Include="..\..\dus\programs\dar\source\include\crc.h" />
     <ClInclude Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_crypt.h" />
@@ -142,7 +124,6 @@
     <ClInclude Include="..\sys\time.h" />
     <ClInclude Include="..\termios.h" />
     <ClInclude Include="..\unistd.h" />
-    <ClInclude Include="network.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\client\netdb-testnet.txt" />
@@ -151,6 +132,9 @@
     <Text Include="..\..\client\netdb.txt" />
     <Text Include="..\..\client\pools-testnet.txt" />
     <Text Include="..\..\client\pools.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\dnet\dnet_keys.bin" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
