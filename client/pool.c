@@ -1,4 +1,4 @@
-/* pool logic, T14.191-T14.347 $DVS:time$ */
+/* pool logic, T14.191-T14.390 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -651,7 +651,7 @@ static int register_new_miner(connection_list_element *connection)
 	struct connection_pool_data *conn_data = &connection->connection_data;
 
 	xdag_time_t tm;
-	const int64_t position = xdag_get_block_pos((const uint64_t*)conn_data->data, &tm);
+	const int64_t position = xdag_get_block_pos((const uint64_t*)conn_data->data, &tm, 0);
 	if(position < 0) {
 		char address_buf[33];
 		char message[100];
@@ -1168,7 +1168,7 @@ static int precalculate_payments(uint64_t *hash, int confirmation_index, struct 
 	if(g_pool_fund) {
 		if(g_fund_miner.state == MINER_UNKNOWN) {
 			xdag_time_t t;
-			if(!xdag_address2hash(FUND_ADDRESS, g_fund_miner.id.hash) && xdag_get_block_pos(g_fund_miner.id.hash, &t) >= 0) {
+			if(!xdag_address2hash(FUND_ADDRESS, g_fund_miner.id.hash) && xdag_get_block_pos(g_fund_miner.id.hash, &t, 0) >= 0) {
 				g_fund_miner.state = MINER_SERVICE;
 			}
 		}
@@ -1311,12 +1311,16 @@ int pay_miners(xdag_time_t time)
 
 	const int payments_per_block = (key == defkey ? 12 : 10);
 
-	int64_t pos = xdag_get_block_pos(hash, &time);
-	if(pos < 0) return -6;
-
 	struct xdag_block buf;
-	struct xdag_block *block = xdag_storage_load(hash, time, pos, &buf);
-	if(!block) return -7;
+	int64_t pos = xdag_get_block_pos(hash, &time, &buf);
+	if (pos == -2l) {
+		;
+	} else if (pos < 0) {
+		return -6;
+	} else {
+		struct xdag_block *block = xdag_storage_load(hash, time, pos, &buf);
+		if(!block) return -7;
+	}
 
 	double *diff = malloc(2 * miners_count * sizeof(double));
 	if(!diff) return -8;

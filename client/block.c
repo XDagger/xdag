@@ -1,4 +1,4 @@
-/* block processing, T13.654-T14.347 $DVS:time$ */
+/* block processing, T13.654-T14.390 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -41,8 +41,8 @@
 #define CACHE			1
 #define CACHE_MAX_SIZE		600000
 #define CACHE_MAX_SAMPLES	100
-#define USE_ORPHAN_HASHTABLE	1
-#define ORPHAN_HASH_SIZE	0x10000
+#define ORPHAN_HASH_SIZE	2
+#define MAX_ALLOWED_EXTRA	0x10000
 
 enum bi_flags {
 	BI_MAIN       = 0x01,
@@ -51,9 +51,11 @@ enum bi_flags {
 	BI_MAIN_REF   = 0x08,
 	BI_REF        = 0x10,
 	BI_OURS       = 0x20,
+	BI_EXTRA      = 0x40,
 };
 
 struct block_backrefs;
+struct orphan_block;
 
 struct block_internal {
 	struct ldus_rbtree node;
@@ -62,7 +64,11 @@ struct block_internal {
 	xdag_amount_t amount, linkamount[MAX_LINKS], fee;
 	xdag_time_t time;
 	uint64_t storage_pos;
-	struct block_internal *ref, *link[MAX_LINKS];
+	union {
+		struct block_internal *ref;
+		struct orphan_block *oref;
+	};
+	struct block_internal *link[MAX_LINKS];
 	struct block_backrefs *backrefs;
 	uint8_t flags, nlinks, max_diff_link, reserved;
 	uint16_t in_mask;
@@ -88,12 +94,18 @@ struct cache_block {
 
 struct orphan_block {
 	struct block_internal *orphan_bi;
-	struct orphan_block *next_hashtable;
 	struct orphan_block *next;
 	struct orphan_block *prev;
+	struct xdag_block block[0];
 };
 
-#define get_orphan_list(hash)      (g_orphan_hashtable + ((hash)[0] & (ORPHAN_HASH_SIZE - 1)))
+enum orphan_remove_actions {
+	ORPHAN_REMOVE_NORMAL,
+	ORPHAN_REMOVE_REUSE,
+	ORPHAN_REMOVE_EXTRA
+};
+
+#define get_orphan_index(bi)      (!!((bi)->flags & BI_EXTRA))
 
 static pthread_mutex_t g_create_block_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -101,14 +113,14 @@ static xdag_amount_t g_balance = 0;
 static xdag_time_t time_limit = DEF_TIME_LIMIT, xdag_era = XDAG_MAIN_ERA;
 static struct ldus_rbtree *root = 0, *cache_root = 0;
 static struct block_internal *volatile top_main_chain = 0, *volatile pretop_main_chain = 0;
-static struct block_internal *ourfirst = 0, *ourlast = 0, *noref_first = 0, *noref_last = 0;
+static struct block_internal *ourfirst = 0, *ourlast = 0;
 static struct cache_block *cache_first = NULL, *cache_last = NULL;
 static pthread_mutex_t block_mutex;
+static pthread_mutex_t rbtree_mutex;
 //TODO: this variable duplicates existing global variable g_is_pool. Probably should be removed
 static int g_light_mode = 0;
 static uint32_t cache_bounded_counter = 0;
-static struct orphan_block **g_orphan_hashtable = NULL;
-static struct orphan_block *g_orphan_first = NULL, *g_orphan_last = NULL;
+static struct orphan_block *g_orphan_first[ORPHAN_HASH_SIZE], *g_orphan_last[ORPHAN_HASH_SIZE];
 
 //functions
 void cache_retarget(int32_t, int32_t);
@@ -116,11 +128,8 @@ void cache_add(struct xdag_block*, xdag_hash_t);
 int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
 int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
 static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
-void remove_orphan(struct block_internal*, struct block_internal*, struct block_internal*);
-void add_orphan(struct block_internal*);
-void remove_orphan_hashtable(struct block_internal*, struct block_internal**, struct block_internal**);
-void add_orphan_hashtable(struct block_internal*);
-void clean_orphan_hashtable(void);
+void remove_orphan(struct block_internal*,int);
+void add_orphan(struct block_internal*,struct xdag_block*);
 
 
 // convert xdag_amount_t to long double
@@ -164,7 +173,11 @@ ldus_rbtree_define_prefix(lessthan, static inline, )
 
 static inline struct block_internal *block_by_hash(const xdag_hashlow_t hash)
 {
-	return (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
+	struct block_internal *bi;
+	pthread_mutex_lock(&rbtree_mutex);
+	bi = (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
+	pthread_mutex_unlock(&rbtree_mutex);
+	return bi;
 }
 
 static inline struct cache_block *cache_block_by_hash(const xdag_hashlow_t hash)
@@ -358,7 +371,7 @@ static void check_new_main(void)
 		}
 	}
 
-	if (p && i > MAX_WAITING_MAIN && get_timestamp() >= p->time + 2 * 1024) {
+	if (p && (p->flags & BI_REF) && i > MAX_WAITING_MAIN && get_timestamp() >= p->time + 2 * 1024) {
 		set_main(p);
 	}
 }
@@ -538,6 +551,13 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		goto end;
 	}
 
+	/* if not read from storage and timestamp is ...ffff and last field is nonce than the block is extra */
+	if (!g_light_mode && (transportHeader & (sizeof(struct xdag_block) - 1))
+			&& (tmpNodeBlock.time & (MAIN_CHAIN_PERIOD - 1)) == (MAIN_CHAIN_PERIOD - 1)
+			&& (signinmask & 1 << (XDAG_BLOCK_FIELDS - 1))) {
+		tmpNodeBlock.flags |= BI_EXTRA;
+	}
+
 	for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
 		if(1 << i & (inmask | outmask)) {
 			blockRefs[i-1] = block_by_hash(newBlock->field[i].hash);
@@ -591,6 +611,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	tmpNodeBlock.difficulty = diff0 = xdag_hash_difficulty(tmpNodeBlock.hash);
 	sum_out += newBlock->field[0].amount;
 	tmpNodeBlock.fee = newBlock->field[0].amount;
+	if (tmpNodeBlock.fee) {
+		tmpNodeBlock.flags &= ~BI_EXTRA;
+	}
 
 	for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
 		if(1 << i & (inmask | outmask)) {
@@ -613,6 +636,10 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 				tmpNodeBlock.in_mask |= 1 << tmpNodeBlock.nlinks;
 			} else {
 				psum = &sum_out;
+			}
+
+			if (newBlock->field[i].amount) {
+				tmpNodeBlock.flags &= ~BI_EXTRA;
 			}
 
 			if(*psum + newBlock->field[i].amount < *psum) {
@@ -655,7 +682,24 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		goto end;
 	}
 
-	struct block_internal *nodeBlock = xdag_malloc(sizeof(struct block_internal));
+	struct block_internal *nodeBlock;
+	if (g_xdag_extstats.nextra > MAX_ALLOWED_EXTRA) {
+		/* if too many extra blocks then reuse the oldest */
+		nodeBlock = g_orphan_first[1]->orphan_bi;
+		remove_orphan(nodeBlock, ORPHAN_REMOVE_REUSE);
+		pthread_mutex_lock(&rbtree_mutex);
+		ldus_rbtree_remove(&root, &nodeBlock->node);
+		pthread_mutex_unlock(&rbtree_mutex);
+		if (g_xdag_stats.nblocks-- == g_xdag_stats.total_nblocks)
+			g_xdag_stats.total_nblocks--;
+		if (nodeBlock->flags & BI_OURS) {
+			struct block_internal *prev = nodeBlock->ourprev, *next = nodeBlock->ournext;
+			*(prev ? &prev->ournext : &ourfirst) = next;
+			*(next ? &next->ourprev : &ourlast) = prev;
+		}
+	} else {
+		nodeBlock = xdag_malloc(sizeof(struct block_internal));
+	}
 	if(!nodeBlock) {
 		err = 0xC;
 		goto end;
@@ -667,12 +711,17 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 
 	if(!(transportHeader & (sizeof(struct xdag_block) - 1))) {
 		tmpNodeBlock.storage_pos = transportHeader;
-	} else {
+	} else if (!(tmpNodeBlock.flags & BI_EXTRA)) {
 		tmpNodeBlock.storage_pos = xdag_storage_save(newBlock);
+	} else {
+		/* do not store extra block right now */
+		tmpNodeBlock.storage_pos = -2l;
 	}
 
 	memcpy(nodeBlock, &tmpNodeBlock, sizeof(struct block_internal));
+	pthread_mutex_lock(&rbtree_mutex);
 	ldus_rbtree_insert(&root, &nodeBlock->node);
+	pthread_mutex_unlock(&rbtree_mutex);
 	g_xdag_stats.nblocks++;
 
 	if(g_xdag_stats.nblocks > g_xdag_stats.total_nblocks) {
@@ -706,6 +755,12 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		if(xdag_diff_gt(g_xdag_stats.difficulty, g_xdag_stats.max_difficulty)) {
 			g_xdag_stats.max_difficulty = g_xdag_stats.difficulty;
 		}
+
+		err = -1;
+	} else if (tmpNodeBlock.flags & BI_EXTRA) {
+		err = 0;
+	} else {
+		err = -1;
 	}
 
 	if(tmpNodeBlock.flags & BI_OURS) {
@@ -715,7 +770,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	for(i = 0; i < tmpNodeBlock.nlinks; ++i) {
-		remove_orphan(tmpNodeBlock.link[i], blockRef, blockRef0);
+		remove_orphan(tmpNodeBlock.link[i],
+				tmpNodeBlock.flags & BI_EXTRA ? ORPHAN_REMOVE_EXTRA : ORPHAN_REMOVE_NORMAL);
 
 		if(tmpNodeBlock.linkamount[i]) {
 			blockRef = tmpNodeBlock.link[i];
@@ -733,7 +789,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		}
 	}
 	
-	add_orphan(nodeBlock);
+	add_orphan(nodeBlock, newBlock);
 
 	log_block((tmpNodeBlock.flags & BI_OURS ? "Good +" : "Good  "), tmpNodeBlock.hash, tmpNodeBlock.time, tmpNodeBlock.storage_pos);
 
@@ -751,8 +807,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	if(tmpNodeBlock.flags & BI_OURS && xdag_diff_gt(diff0, g_xdag_extstats.hashrate_ours[i])) {
 		g_xdag_extstats.hashrate_ours[i] = diff0;
 	}
-
-	err = -1;
 
 end:
 	for(j = 0; j < keysCount; ++j) {
@@ -824,6 +878,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	xdag_hash_t signatureHash;
 	xdag_hash_t newBlockHash;
 	struct block_internal *ref, *pretop = pretop_block();
+	struct orphan_block *oref;
 
 	for (i = 0; i < inputsCount; ++i) {
 		ref = block_by_hash(fields[i].hash);
@@ -878,7 +933,8 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 			setfld(XDAG_FIELD_OUT, pretop->hash, xdag_hashlow_t); res++;
 		}
 
-		for (ref = noref_first; ref && res < XDAG_BLOCK_FIELDS; ref = ref->ref) {
+		for (oref = g_orphan_first[0]; oref && res < XDAG_BLOCK_FIELDS; oref = oref->next) {
+			ref = oref->orphan_bi;
 			if (ref->time < send_time) {
 				setfld(XDAG_FIELD_OUT, ref->hash, xdag_hashlow_t); res++;
 			}
@@ -1058,12 +1114,6 @@ static void *work_thread(void *arg)
 	uint64_t nhashes0 = 0, nhashes = 0;
 	pthread_t th;
 
-#if USE_ORPHAN_HASHTABLE == 1
-	g_orphan_hashtable = (struct orphan_block **)calloc(sizeof(struct orphan_block *), ORPHAN_HASH_SIZE);
-	if(g_orphan_hashtable != NULL)
-		g_xdag_extstats.use_orphan_hashtable = 1;
-#endif
-
 begin:
 	// loading block from the local storage
 	g_xdag_state = XDAG_STATE_LOAD;
@@ -1146,17 +1196,18 @@ begin:
 			pthread_mutex_lock(&block_mutex);
 
 			if (xdag_free_all()) {
+				pthread_mutex_lock(&rbtree_mutex);
 				ldus_rbtree_walk_up(root, reset_callback);
+				pthread_mutex_unlock(&rbtree_mutex);
+
 			}
 			
-			if(g_xdag_extstats.use_orphan_hashtable){
-				clean_orphan_hashtable();
-			}
-
 			root = 0;
 			g_balance = 0;
 			top_main_chain = pretop_main_chain = 0;
-			ourfirst = ourlast = noref_first = noref_last = 0;
+			ourfirst = ourlast = 0;
+			g_orphan_first[0] = g_orphan_last[0] = 0;
+			g_orphan_first[1] = g_orphan_last[1] = 0;
 			memset(&g_xdag_stats, 0, sizeof(g_xdag_stats));
 			memset(&g_xdag_extstats, 0, sizeof(g_xdag_extstats));
 			pthread_mutex_unlock(&block_mutex);
@@ -1235,6 +1286,7 @@ int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address)
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&block_mutex, &attr);
+	pthread_mutex_init(&rbtree_mutex, 0);
 	int err = pthread_create(&th, 0, work_thread, (void*)(uintptr_t)(unsigned)mining_threads_count);
 	if(err != 0) {
 		printf("create work_thread failed, error : %s\n", strerror(err));
@@ -1305,7 +1357,9 @@ int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag_hash_t
 	pthread_mutex_lock(&block_mutex);
 	g_traverse_callback = callback;
 	g_traverse_data = data;
+	pthread_mutex_lock(&rbtree_mutex);
 	ldus_rbtree_walk_right(root, traverse_all_callback);
+	pthread_mutex_unlock(&rbtree_mutex);
 	pthread_mutex_unlock(&block_mutex);
 	return 0;
 }
@@ -1317,9 +1371,7 @@ xdag_amount_t xdag_get_balance(xdag_hash_t hash)
 		return g_balance;
 	}
 
-	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
-	pthread_mutex_unlock(&block_mutex);
 
 	if (!bi) {
 		return 0;
@@ -1334,7 +1386,6 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 	if (!hash) return -1;
 
 	pthread_mutex_lock(&block_mutex);
-
 	struct block_internal *bi = block_by_hash(hash);
 	if (bi->flags & BI_OURS && bi != ourfirst) {
 		if (bi->ourprev) {
@@ -1391,16 +1442,22 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 	return 0;
 }
 
-// returns position and time of block by hash
-int64_t xdag_get_block_pos(const xdag_hash_t hash, xdag_time_t *t)
+// returns position and time of block by hash; if block is extra and block != 0 also returns the whole block
+int64_t xdag_get_block_pos(const xdag_hash_t hash, xdag_time_t *t, struct xdag_block *block)
 {
-	pthread_mutex_lock(&block_mutex);
+	if (block) pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
-	pthread_mutex_unlock(&block_mutex);
 
 	if (!bi) {
+		if (block) pthread_mutex_unlock(&block_mutex);
 		return -1;
 	}
+
+	if (block && bi->flags & BI_EXTRA) {
+		memcpy(block, bi->oref->block, sizeof(struct xdag_block));
+	}
+
+	if (block) pthread_mutex_unlock(&block_mutex);
 
 	*t = bi->time;
 
@@ -1410,9 +1467,7 @@ int64_t xdag_get_block_pos(const xdag_hash_t hash, xdag_time_t *t)
 //returns a number of key by hash of block, or -1 if block is not ours
 int xdag_get_key(xdag_hash_t hash)
 {
-	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
-	pthread_mutex_unlock(&block_mutex);
 
 	if (!bi || !(bi->flags & BI_OURS)) {
 		return -1;
@@ -1467,9 +1522,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	char address[33];
 	int i;
 
-	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
-	pthread_mutex_unlock(&block_mutex);
 
 	if (!bi) {
 		return -1;
@@ -1736,9 +1789,7 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
 
 int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t))
 {
-	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
-	pthread_mutex_unlock(&block_mutex);
 	
 	if (!bi) {
 		return -1;
@@ -1801,101 +1852,62 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 	return n;
 }
 
-void remove_orphan(struct block_internal* bi, struct block_internal* blockRef, struct block_internal* blockRef0) 
+void remove_orphan(struct block_internal* bi, int remove_action)
 {
-	if(!(bi->flags & BI_REF)) {
-		if(g_xdag_extstats.use_orphan_hashtable){
-			remove_orphan_hashtable(bi, &blockRef, &blockRef0);
-		}
-
-		// original remove orphan
-		if(!g_xdag_extstats.use_orphan_hashtable){
-			for(blockRef0 = 0, blockRef = noref_first; blockRef != bi; blockRef0 = blockRef, blockRef = blockRef->ref) {
-				;
-			}
-		}
-		*(blockRef0 ? &blockRef0->ref : &noref_first) = blockRef->ref;
-		if(blockRef == noref_last) {
-			noref_last = blockRef0;
-		}
-
-		blockRef->ref = 0;
-		bi->flags |= BI_REF;
-		g_xdag_extstats.nnoref--;
-	}
-}
-
-void remove_orphan_hashtable(struct block_internal* bi, struct block_internal** blockRef, struct block_internal** blockRef0)
-{
-	struct orphan_block **obt_list_first = get_orphan_list(bi->hash);
-	struct orphan_block *obt = NULL;
-	obt = *obt_list_first;
-	if(obt == NULL){
-		xdag_warn("Critical error. List in the hashtable not found. The orphan is not found in hashtable. [function: remove_orphan_hashtable]");
-		g_xdag_extstats.use_orphan_hashtable = 0;
-		clean_orphan_hashtable();
-	} else {
-		struct orphan_block *obt_back = NULL;
-
-		for(; obt != NULL && obt->orphan_bi != bi; obt_back=obt, obt=obt->next_hashtable);	
-		if(obt == NULL){
-			xdag_warn("Critical error. The orphan is not found in the hashtable list. [function: remove_orphan_hashtable]");
-			g_xdag_extstats.use_orphan_hashtable = 0;
-			clean_orphan_hashtable();
+	if(!(bi->flags & BI_REF) && (remove_action != ORPHAN_REMOVE_EXTRA || (bi->flags & BI_EXTRA))) {
+		struct orphan_block *obt = bi->oref;
+		if (obt == NULL) {
+			xdag_crit("Critical error. obt=0");
+		} else if (obt->orphan_bi != bi) {
+			xdag_crit("Critical error. bi=%p, flags=%x, action=%d, obt=%p, prev=%p, next=%p, obi=%p",
+				  bi, bi->flags, remove_action, obt, obt->prev, obt->next, obt->orphan_bi);
 		} else {
-			*(obt_back ? &obt_back->next_hashtable : obt_list_first) = obt->next_hashtable;
+			int index = get_orphan_index(bi), i;
+			struct orphan_block *prev = obt->prev, *next = obt->next;
 
-			*blockRef0 = (obt->prev ? obt->prev->orphan_bi : NULL); // original list prev
+			*(prev ? &(prev->next) : &g_orphan_first[index]) = next;
+			*(next ? &(next->prev) : &g_orphan_last[index]) = prev;
 
-			*(obt->prev ? &((obt->prev)->next) : &g_orphan_first) = obt->next;
-			*(obt->next ? &((obt->next)->prev) : &g_orphan_last) = obt->prev;
+			if (index) {
+				if (remove_action != ORPHAN_REMOVE_REUSE) {
+					bi->storage_pos = xdag_storage_save(obt->block);
+					for (i = 0; i < bi->nlinks; ++i) {
+						remove_orphan(bi->link[i], ORPHAN_REMOVE_NORMAL);
+					}
+				}
+				bi->flags &= ~BI_EXTRA;
+				g_xdag_extstats.nextra--;
+			} else {
+				g_xdag_extstats.nnoref--;
+			}
 
-			*blockRef = obt->orphan_bi; // original list actual
-
+			bi->oref = 0;
+			bi->flags |= BI_REF;
 			free(obt);
 		}
 	}
 }
 
-void add_orphan(struct block_internal* nodeBlock)
+void add_orphan(struct block_internal* bi, struct xdag_block *block)
 {
-
-	if(g_xdag_extstats.use_orphan_hashtable){
-		add_orphan_hashtable(nodeBlock);
-	}
-
-	// original add orphan
-	*(noref_last ? &noref_last->ref : &noref_first) = nodeBlock;
-	noref_last = nodeBlock;
-	
-	g_xdag_extstats.nnoref++;
-}
-
-void add_orphan_hashtable(struct block_internal* nodeBlock)
-{
-	struct orphan_block *obt = calloc(1,sizeof(struct orphan_block));
+	int index = get_orphan_index(bi);
+	struct orphan_block *obt = malloc(sizeof(struct orphan_block) + index * sizeof(struct xdag_block));
 	if(obt == NULL){
-		xdag_warn("Error. Calloc failed. [function: add_orphan_hashtable]");
-		g_xdag_extstats.use_orphan_hashtable = 0;
-		clean_orphan_hashtable();
+		xdag_crit("Error. Malloc failed. [function: add_orphan]");
 	} else {
-		obt->orphan_bi = nodeBlock;
-		obt->prev = g_orphan_last;
-		*(g_orphan_last ? &g_orphan_last->next : &g_orphan_first) = obt;
-		g_orphan_last = obt;
-
-		struct orphan_block **obt_list_first = get_orphan_list(nodeBlock->hash);
-		struct orphan_block *obt_last;
-		for(obt_last = *obt_list_first; obt_last != NULL && obt_last->next_hashtable != NULL; obt_last=obt_last->next_hashtable);
-		*(obt_last ? &obt_last->next_hashtable : obt_list_first) = obt;
+		obt->orphan_bi = bi;
+		obt->prev = g_orphan_last[index];
+		obt->next = 0;
+		bi->oref = obt;
+		*(g_orphan_last[index] ? &g_orphan_last[index]->next : &g_orphan_first[index]) = obt;
+		g_orphan_last[index] = obt;
+		if (index) {
+			memcpy(obt->block, block, sizeof(struct xdag_block));
+			g_xdag_extstats.nextra++;
+		} else {
+			g_xdag_extstats.nnoref++;
+		}
 	}
-}
-
-void clean_orphan_hashtable()
-{
-	for(struct orphan_block *obt=g_orphan_first, *obt_back = NULL; obt != NULL; obt_back = obt, obt=obt->next, free(obt_back));
-	memset(g_orphan_hashtable, 0, sizeof(struct orphan_block *)*ORPHAN_HASH_SIZE);
-	g_orphan_first = g_orphan_last = NULL;
 }
 
 void xdag_list_orphan_blocks(int count, FILE *out)
@@ -1905,8 +1917,8 @@ void xdag_list_orphan_blocks(int count, FILE *out)
 
 	pthread_mutex_lock(&block_mutex);
 
-	for(struct block_internal *b = noref_first; b && i < count; b = b->ref, i++) {
-		print_block(b, 0, out);
+	for(struct orphan_block *b = g_orphan_first[0]; b && i < count; b = b->next, i++) {
+		print_block(b->orphan_bi, 0, out);
 	}
 
 	pthread_mutex_unlock(&block_mutex);

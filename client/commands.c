@@ -515,6 +515,7 @@ void processStatsCommand(FILE *out)
 			"            hosts: %u of %u\n"
 			"           blocks: %llu of %llu\n"
 			"      main blocks: %llu of %llu\n"
+			"     extra blocks: %llu\n"
 			"    orphan blocks: %llu\n"
 			" wait sync blocks: %u\n"
 			" chain difficulty: %llx%016llx of %llx%016llx\n"
@@ -523,6 +524,7 @@ void processStatsCommand(FILE *out)
 			g_xdag_stats.nhosts, g_xdag_stats.total_nhosts,
 			(long long)g_xdag_stats.nblocks, (long long)g_xdag_stats.total_nblocks,
 			(long long)g_xdag_stats.nmain, (long long)g_xdag_stats.total_nmain,
+			(long long)g_xdag_extstats.nextra,
 			(long long)g_xdag_extstats.nnoref, g_xdag_extstats.nwaitsync,
 			xdag_diff_args(g_xdag_stats.difficulty),
 			xdag_diff_args(g_xdag_stats.max_difficulty), g_coinname,
