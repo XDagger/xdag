@@ -378,7 +378,7 @@ static void check_new_main(void)
 
 static void unwind_main(struct block_internal *b)
 {
-	for (struct block_internal *t = top_main_chain; t != b; t = t->link[t->max_diff_link]) {
+	for (struct block_internal *t = top_main_chain; t && t != b; t = t->link[t->max_diff_link]) {
 		t->flags &= ~BI_MAIN_CHAIN;
 		if (t->flags & BI_MAIN) {
 			unset_main(t);
@@ -683,7 +683,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	struct block_internal *nodeBlock;
-	if (g_xdag_extstats.nextra > MAX_ALLOWED_EXTRA) {
+	if (g_xdag_extstats.nextra > MAX_ALLOWED_EXTRA
+			&& (g_xdag_state == XDAG_STATE_SYNC || g_xdag_state == XDAG_STATE_STST)) {
 		/* if too many extra blocks then reuse the oldest */
 		nodeBlock = g_orphan_first[1]->orphan_bi;
 		remove_orphan(nodeBlock, ORPHAN_REMOVE_REUSE);
