@@ -949,10 +949,10 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 				block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
 		}
 
-		if(g_xdag_pool) { /* send pool created block to network, send miner created block to pool */
-			xdag_send_block_via_network(block);
-		} else {
-			xdag_send_block_via_pool(block);
+		if(g_xdag_pool) { /* append pool created block to list */
+			xdag_append_new_block(block);
+		} else { /* send miner created block directly */
+			xdag_send_new_block(block);
 		}
 
 		if(newBlockHashResult != NULL) {

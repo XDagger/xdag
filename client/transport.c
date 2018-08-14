@@ -382,7 +382,7 @@ int xdag_request_sums(xdag_time_t start_time, xdag_time_t end_time, struct xdag_
 int xdag_send_new_block(struct xdag_block *b)
 {
 	dnet_send_xdag_packet(b, (void*)(uintptr_t)NEW_BLOCK_TTL);
-//	xdag_send_block_via_pool(b);
+	xdag_send_block_via_pool(b);
 	return 0;
 }
 
