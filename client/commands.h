@@ -15,6 +15,8 @@ extern time_t g_xdag_xfer_last;
 extern int xdag_do_xfer(void *outv, const char *amount, const char *address, int isGui);
 extern void xdagSetCountMiningTread(int miningThreadsCount);
 extern double xdagGetHashRate(void);
+extern long double hashrate(xdag_diff_t *diff);
+extern const char *get_state(void);
 
 #ifdef __cplusplus
 };

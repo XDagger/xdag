@@ -46,8 +46,6 @@ typedef struct {
 
 // Function declarations
 int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
-long double hashrate(xdag_diff_t *diff);
-const char *get_state(void);
 
 void processAccountCommand(char *nextParam, FILE *out);
 void processBalanceCommand(char *nextParam, FILE *out);

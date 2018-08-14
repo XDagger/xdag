@@ -233,6 +233,7 @@ int rpc_white_command(void *out, char *type, const char *address)
 static int send_response(struct xdag_rpc_connection * conn,const char *response) {
 	int fd = conn->fd;
 	xdag_debug("JSON Response:\n%s\n", response);
+	write(fd, "\r\n", 2);// fix http issue
 	write(fd, response, strlen(response));
 	write(fd, "\n", 1);
 	return 0;
