@@ -8,12 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		380AAA94211B6DA50090A5A4 /* dnet_crypt.c in Sources */ = {isa = PBXBuildFile; fileRef = 380AAA8A211B6DA40090A5A4 /* dnet_crypt.c */; };
-		380AAA95211B6DA50090A5A4 /* dnet_keys.bin in Resources */ = {isa = PBXBuildFile; fileRef = 380AAA8D211B6DA40090A5A4 /* dnet_keys.bin */; };
 		380AAA96211B6DA50090A5A4 /* dnet_xdag.c in Sources */ = {isa = PBXBuildFile; fileRef = 380AAA90211B6DA40090A5A4 /* dnet_xdag.c */; };
 		380AAA9A211B6E350090A5A4 /* dirname.c in Sources */ = {isa = PBXBuildFile; fileRef = 380AAA99211B6E350090A5A4 /* dirname.c */; };
 		383256BB206BF099006CAE67 /* miner.c in Sources */ = {isa = PBXBuildFile; fileRef = 383256B7206BF098006CAE67 /* miner.c */; };
 		383256BC206BF099006CAE67 /* pool.c in Sources */ = {isa = PBXBuildFile; fileRef = 383256B8206BF098006CAE67 /* pool.c */; };
 		38439AFB206BF6D100D563A8 /* mining_common.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6020544F3F00598EC2 /* mining_common.c */; };
+		384457BC21233982008BBBBD /* dnet_keys.bin in CopyFiles */ = {isa = PBXBuildFile; fileRef = 380AAA8D211B6DA40090A5A4 /* dnet_keys.bin */; };
 		385827B420737CC6009C83CB /* log.c in Sources */ = {isa = PBXBuildFile; fileRef = 385827A520737CC6009C83CB /* log.c */; };
 		385827B520737CC6009C83CB /* utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 385827A720737CC6009C83CB /* utils.c */; };
 		385827B620737CC6009C83CB /* cJSON.c in Sources */ = {isa = PBXBuildFile; fileRef = 385827AA20737CC6009C83CB /* cJSON.c */; };
@@ -25,8 +25,6 @@
 		386E313620B736ED000F165C /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 386E313420B736ED000F165C /* libcrypto.a */; };
 		3878725920E0084B00107FAE /* rpc_procedure.c in Sources */ = {isa = PBXBuildFile; fileRef = 3878725820E0084B00107FAE /* rpc_procedure.c */; };
 		3883C71220EA651400041D3A /* network.c in Sources */ = {isa = PBXBuildFile; fileRef = 3883C70D20EA651300041D3A /* network.c */; };
-		3883C71320EA651400041D3A /* pools.txt in Resources */ = {isa = PBXBuildFile; fileRef = 3883C71020EA651400041D3A /* pools.txt */; };
-		3883C71420EA651400041D3A /* pools-testnet.txt in Resources */ = {isa = PBXBuildFile; fileRef = 3883C71120EA651400041D3A /* pools-testnet.txt */; };
 		388E850120D402D0009E01C1 /* moving_average.c in Sources */ = {isa = PBXBuildFile; fileRef = 388E84FF20D402D0009E01C1 /* moving_average.c */; };
 		38931ED720B8599D00FDD32F /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = 38931ED320B8599D00FDD32F /* http.c */; };
 		38931ED820B8599D00FDD32F /* url.c in Sources */ = {isa = PBXBuildFile; fileRef = 38931ED520B8599D00FDD32F /* url.c */; };
@@ -67,6 +65,7 @@
 			dstPath = .;
 			dstSubfolderSpec = 6;
 			files = (
+				384457BC21233982008BBBBD /* dnet_keys.bin in CopyFiles */,
 				38D5E1FD20F3F73D0047D9BC /* pools-testnet.txt in CopyFiles */,
 				38D5E1FE20F3F73D0047D9BC /* pools.txt in CopyFiles */,
 				38B3951A2056DE70004DD3EA /* netdb-testnet.txt in CopyFiles */,
@@ -563,9 +562,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3883C71420EA651400041D3A /* pools-testnet.txt in Resources */,
-				3883C71320EA651400041D3A /* pools.txt in Resources */,
-				380AAA95211B6DA50090A5A4 /* dnet_keys.bin in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -561,6 +561,27 @@ static void angelize(void) {
 #endif
 }
 
+#if defined(_WIN32) || defined(_WIN64) || defined (__MACOS__) || defined (__APPLE__)
+#include "../client/utils/utils.h"
+int dnet_load_keys(void)
+{
+	FILE *f = xdag_open_file("dnet_keys.bin", "rb");
+	if(!f) {
+		xdag_err("Load dnet keys failed");
+		return -1;
+	}
+
+	if(fread(&g_xkeys, sizeof(struct xdnet_keys), 1, f) != 1) {
+		xdag_err("Load dnet keys failed");
+		xdag_close_file(f);
+		return -1;
+	}
+
+	xdag_close_file(f);
+	return 0;
+}
+#endif
+
 int dnet_init(int argc, char **argv) {
 	const char *bindto = 0;
 	int is_daemon = 0, i, err, nthreads = DEF_NTHREADS, n;
@@ -573,6 +594,14 @@ int dnet_init(int argc, char **argv) {
 		     if (!strcmp(argv[i], "-s") && i + 1 < argc) bindto = argv[++i];
 		else if (!strcmp(argv[i], "-t") && i + 1 < argc) sscanf(argv[++i], "%u", &nthreads);
 	}
+
+#if defined(_WIN32) || defined(_WIN64) || defined (__MACOS__) || defined (__APPLE__)
+	if((err = dnet_load_keys())) {
+		printf("Load dnet keys failed.");
+		return err;
+	}
+#endif
+
 	if (nthreads >= 1) {
 		g_nthreads = nthreads;
 		g_threads = calloc(sizeof(struct xthread), nthreads);
