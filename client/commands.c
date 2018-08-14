@@ -65,6 +65,7 @@ void processMainBlocksCommand(char *nextParam, FILE *out);
 void processMinedBlocksCommand(char *nextParam, FILE *out);
 void processHelpCommand(FILE *out);
 void processDisconnectCommand(char *nextParam, FILE *out);
+void processAutoRefreshCommand(char *nextPram, FILE *out);
 
 int xdag_com_account(char *, FILE*);
 int xdag_com_balance(char *, FILE*);
@@ -87,6 +88,7 @@ int xdag_com_run(char *, FILE*);
 int xdag_com_terminate(char *, FILE*);
 int xdag_com_exit(char *, FILE*);
 int xdag_com_disconnect(char *, FILE*);
+int xdag_com_autorefresh(char *, FILE*);
 
 XDAG_COMMAND* find_xdag_command(char*);
 
@@ -113,6 +115,7 @@ XDAG_COMMAND commands[] = {
 	{ "xfer"       , 0, (xdag_com_func_t)NULL},
 	{ "help"       , 0, xdag_com_help},
 	{ "disconnect" , 2, xdag_com_disconnect },
+	{ "autorefresh", 2, xdag_com_autorefresh },
 	{ (char *)NULL , 0, (xdag_com_func_t)NULL}
 };
 
@@ -240,6 +243,12 @@ int xdag_com_help(char *args, FILE* out)
 int xdag_com_disconnect(char *args, FILE *out)
 {
 	processDisconnectCommand(args, out);
+	return 0;
+}
+
+int xdag_com_autorefresh(char *args, FILE *out)
+{
+	processAutoRefreshCommand(args, out);
 	return 0;
 }
 
@@ -598,6 +607,23 @@ void processDisconnectCommand(char *nextParam, FILE *out)
 	}
 
 	disconnect_connections(type, value);
+}
+
+void processAutoRefreshCommand(char *nextParam, FILE *out)
+{
+	char *typestr = strtok_r(nextParam, " \t\r\n", &nextParam);
+
+	if(!typestr) {
+		fprintf(out, g_prevent_auto_refresh ? "Auto refresh disabled.\n" : "Auto refresh enabled.\n");
+	} else {
+		if(strcmp(typestr, "enable") == 0) {
+			g_prevent_auto_refresh = 0;
+		} else if(strcmp(typestr, "disable") == 0) {
+			g_prevent_auto_refresh = 1;
+		} else {
+			fprintf(out, "Invalid parameters.\n");
+		}
+	}
 }
 
 long double hashrate(xdag_diff_t *diff)
