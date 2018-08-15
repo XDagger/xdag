@@ -591,18 +591,19 @@ int dnet_init(int argc, char **argv) {
 		if (!strcmp(argv[i], "-d")) is_daemon = 1;
 		else
 #endif
-		     if (!strcmp(argv[i], "-s") && i + 1 < argc) bindto = argv[++i];
+			if (!strcmp(argv[i], "-s") && i + 1 < argc) bindto = argv[++i];
 		else if (!strcmp(argv[i], "-t") && i + 1 < argc) sscanf(argv[++i], "%u", &nthreads);
 	}
 
+	if (nthreads >= 1) {
+
 #if defined(_WIN32) || defined(_WIN64) || defined (__MACOS__) || defined (__APPLE__)
-	if((err = dnet_load_keys())) {
-		printf("Load dnet keys failed.");
-		return err;
-	}
+		if((err = dnet_load_keys())) {
+			printf("Load dnet keys failed.");
+			return err;
+		}
 #endif
 
-	if (nthreads >= 1) {
 		g_nthreads = nthreads;
 		g_threads = calloc(sizeof(struct xthread), nthreads);
 		g_connections = calloc(sizeof(struct xconnection), nthreads * MAX_CONNECTIONS_PER_THREAD);
