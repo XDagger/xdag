@@ -426,7 +426,7 @@ int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_
 	cJSON *json_amount = cJSON_CreateString(str);
 	cJSON_AddItemToObject(callback_data, "amount", json_amount);
 
-	sprintf(str, "%x", flags);
+	sprintf(str, "%x", flags & ~BI_OURS);
 	cJSON *json_flags = cJSON_CreateString(str);
 	cJSON_AddItemToObject(callback_data, "flags", json_flags);
 

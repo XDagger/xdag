@@ -44,15 +44,6 @@
 #define USE_ORPHAN_HASHTABLE	1
 #define ORPHAN_HASH_SIZE	0x10000
 
-enum bi_flags {
-	BI_MAIN       = 0x01,
-	BI_MAIN_CHAIN = 0x02,
-	BI_APPLIED    = 0x04,
-	BI_MAIN_REF   = 0x08,
-	BI_REF        = 0x10,
-	BI_OURS       = 0x20,
-};
-
 struct block_backrefs;
 
 struct block_internal {
@@ -1445,8 +1436,10 @@ static int bi_compar(const void *l, const void *r)
 }
 
 // returns string representation for the block state. Ignores BI_OURS flag
-const char* xdag_get_block_state_info(uint8_t flag)
+const char* xdag_get_block_state_info(uint8_t flags)
 {
+	const uint8_t flag = flags & ~BI_OURS;
+
 	if(flag == (BI_REF | BI_MAIN_REF | BI_APPLIED | BI_MAIN | BI_MAIN_CHAIN)) { //1F
 		return "Main";
 	}
@@ -1479,7 +1472,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "      time: %s\n", time_buf);
 	fprintf(out, " timestamp: %llx\n", (unsigned long long)bi->time);
 	fprintf(out, "     flags: %x\n", bi->flags & ~BI_OURS);
-	fprintf(out, "     state: %s\n", xdag_get_block_state_info(bi->flags & ~BI_OURS));
+	fprintf(out, "     state: %s\n", xdag_get_block_state_info(bi->flags));
 	fprintf(out, "  file pos: %llx\n", (unsigned long long)bi->storage_pos);
 	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 		(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
@@ -1583,7 +1576,7 @@ static inline void print_block(struct block_internal *block, int print_only_addr
 		fprintf(out, "%s\n", address);
 	} else {
 		xdag_time_to_string(block->time, time_buf);
-		fprintf(out, "%s   %s   %s\n", address, time_buf, xdag_get_block_state_info(block->flags & ~BI_OURS));
+		fprintf(out, "%s   %s   %s\n", address, time_buf, xdag_get_block_state_info(block->flags));
 	}
 }
 
@@ -1784,7 +1777,7 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 			struct block_internal *ri = block_array[i];
 			for (int j = 0; j < ri->nlinks; j++) {
 				if(ri->link[j] == bi && ri->linkamount[j]) {
-					if(callback(data, 1 << j & ri->in_mask, ri->flags & ~BI_OURS, ri->hash, ri->linkamount[j], ri->time)) {
+					if(callback(data, 1 << j & ri->in_mask, ri->flags, ri->hash, ri->linkamount[j], ri->time)) {
 						free(block_array);
 						return 0;
 					}

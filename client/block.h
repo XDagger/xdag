@@ -31,6 +31,15 @@ enum xdag_message_type {
 	XDAG_MESSAGE_BLOCK_REQUEST,
 };
 
+enum bi_flags {
+	BI_MAIN       = 0x01,
+	BI_MAIN_CHAIN = 0x02,
+	BI_APPLIED    = 0x04,
+	BI_MAIN_REF   = 0x08,
+	BI_REF        = 0x10,
+	BI_OURS       = 0x20,
+};
+
 #define XDAG_BLOCK_FIELDS 16
 
 struct xdag_field {
