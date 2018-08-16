@@ -1693,7 +1693,7 @@ void cache_retarget(int32_t cache_hit, int32_t cache_miss)
 	if(g_xdag_extstats.cache_usage >= g_xdag_extstats.cache_size) {
 		if(g_xdag_extstats.cache_hitrate < 0.94 && g_xdag_extstats.cache_size < CACHE_MAX_SIZE) {
 			g_xdag_extstats.cache_size++;
-		} else if(g_xdag_extstats.cache_hitrate > 0.98 && !cache_miss && g_xdag_extstats.cache_size) {
+		} else if(g_xdag_extstats.cache_hitrate > 0.98 && !cache_miss && g_xdag_extstats.cache_size && (rand() & 0xF) < 0x5) {
 			g_xdag_extstats.cache_size--;
 		}
 		for(int l = g_xdag_extstats.cache_usage; l > g_xdag_extstats.cache_size; l--) {
@@ -1712,7 +1712,7 @@ void cache_retarget(int32_t cache_hit, int32_t cache_miss)
 			}
 		}
 
-	} else if(g_xdag_extstats.cache_hitrate > 0.98 && !cache_miss && g_xdag_extstats.cache_size) {
+	} else if(g_xdag_extstats.cache_hitrate > 0.98 && !cache_miss && g_xdag_extstats.cache_size && (rand() & 0xF) < 0x5) {
 		g_xdag_extstats.cache_size--;
 	}
 	if((uint32_t)(g_xdag_extstats.cache_size / 0.9) > CACHE_MAX_SIZE) {
