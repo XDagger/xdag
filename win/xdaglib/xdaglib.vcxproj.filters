@@ -209,9 +209,6 @@
     <ClInclude Include="..\..\client\transport.h">
       <Filter>client</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\client\version.h">
-      <Filter>client</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\client\wallet.h">
       <Filter>client</Filter>
     </ClInclude>
@@ -335,6 +332,7 @@
     <ClInclude Include="..\..\client\network.h">
       <Filter>client</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\client\version.h" />
     <ClInclude Include="..\..\dnet\dnet_crypt.h">
       <Filter>dnet</Filter>
     </ClInclude>
