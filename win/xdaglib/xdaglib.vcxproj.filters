@@ -236,9 +236,6 @@
     <ClInclude Include="..\..\client\transport.h">
       <Filter>client</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\client\version.h">
-      <Filter>client</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\client\wallet.h">
       <Filter>client</Filter>
     </ClInclude>
@@ -392,10 +389,10 @@
     <ClInclude Include="..\..\client\json-rpc\rpc_procedure.h">
       <Filter>client\json-rpc</Filter>
     </ClInclude>
-    <ClInclude Include="network.h" />
     <ClInclude Include="..\..\client\network.h">
       <Filter>client</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\client\version.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\client\netdb-testnet.txt">
