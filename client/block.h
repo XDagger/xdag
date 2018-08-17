@@ -38,6 +38,7 @@ enum bi_flags {
 	BI_MAIN_REF   = 0x08,
 	BI_REF        = 0x10,
 	BI_OURS       = 0x20,
+	BI_EXTRA      = 0x40,
 };
 
 #define XDAG_BLOCK_FIELDS 16
