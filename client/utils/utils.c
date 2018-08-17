@@ -295,6 +295,15 @@ uint64_t get_timestamp(void)
 	return (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
 }
 
+uint64_t get_time_ms(void)
+{
+	struct timeval tp;
+
+	gettimeofday(&tp, 0);
+
+	return (uint64_t)(unsigned long)tp.tv_sec * 1000 + tp.tv_usec / 1000;
+}
+
 static char g_xdag_current_path[4096] = {0};
 
 void xdag_init_path(char *path)

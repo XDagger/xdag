@@ -8,7 +8,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-	
+
+/* prevent auto refresh */
+extern int g_prevent_auto_refresh;
+
 /* initialized hosts base, 'our_host_str' - exteranal address of our host (ip:port),
  * 'addr_port_pairs' - addresses of other 'npairs' hosts in the same format
  */
