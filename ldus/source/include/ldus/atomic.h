@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 
+#if !defined(_WIN32) && !defined(_WIN64)
 #define LDUS_USE_ATOMIC
 
 #ifndef _GCC_VERSION
@@ -17,6 +18,8 @@
 #define __atomic_add_fetch(ptr, value, mode) __sync_add_and_fetch(ptr, value)
 #define __atomic_sub_fetch(ptr, value, mode) __sync_sub_and_fetch(ptr, value)
 #define __atomic_compare_exchange_n(ptr, old_, new_, param, mode1, mode2) (*(old_) = __sync_val_compare_and_swap(ptr, *(old_), new_))
+#endif
+
 #endif
 
 typedef uint32_t ldus_atomic;

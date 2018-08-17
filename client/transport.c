@@ -1,4 +1,4 @@
-/* транспорт, T13.654-T14.328 $DVS:time$ */
+/* транспорт, T13.654-T14.390 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -153,9 +153,11 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 		{
 			struct xdag_block buf, *blk;
 			xdag_time_t t;
-			int64_t pos = xdag_get_block_pos(received_block->field[1].hash, &t);
+			int64_t pos = xdag_get_block_pos(received_block->field[1].hash, &t, &buf);
 
-			if(pos >= 0 && (blk = xdag_storage_load(received_block->field[1].hash, t, pos, &buf))) {
+			if (pos == -2l) {
+				dnet_send_xdag_packet(&buf, connection);
+			} else if (pos >= 0 && (blk = xdag_storage_load(received_block->field[1].hash, t, pos, &buf))) {
 				dnet_send_xdag_packet(blk, connection);
 			}
 

@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.895 $DVS:time$ */
+/* пул и майнер, T13.744-T14.390 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -172,18 +172,20 @@ begin:
 		goto err;
 	}
 
-	const int64_t pos = xdag_get_block_pos(hash, &t);
-	if(pos < 0) {
+	const int64_t pos = xdag_get_block_pos(hash, &t, &b);
+	if (pos == -2l) {
+		;
+	} else if (pos < 0) {
 		mess = "can't find the block";
 		goto err;
+	} else {
+		struct xdag_block *blk = xdag_storage_load(hash, t, pos, &b);
+		if(!blk) {
+			mess = "can't load the block";
+			goto err;
+		}
+		if(blk != &b) memcpy(&b, blk, sizeof(struct xdag_block));
 	}
-
-	struct xdag_block *blk = xdag_storage_load(hash, t, pos, &b);
-	if(!blk) {
-		mess = "can't load the block";
-		goto err;
-	}
-	if(blk != &b) memcpy(&b, blk, sizeof(struct xdag_block));
 
 	pthread_mutex_lock(&g_miner_mutex);
 	g_socket = xdag_connect_pool(pool_address, &mess);

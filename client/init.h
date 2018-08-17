@@ -33,6 +33,7 @@ extern struct xdag_ext_stats
 	xdag_diff_t hashrate_ours[HASHRATE_LAST_MAX_TIME];
 	xdag_time_t hashrate_last_time;
 	uint64_t nnoref;
+	uint64_t nextra;
 	uint64_t nhashes;
 	double hashrate_s;
 	uint32_t nwaitsync;
