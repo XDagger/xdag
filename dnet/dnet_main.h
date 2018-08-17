@@ -42,7 +42,7 @@ extern void (*dnet_connection_close_notify)(void *conn);
 extern int dnet_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action);
 
 #ifdef __cplusplus
-}
+};
 #endif
 
 #endif

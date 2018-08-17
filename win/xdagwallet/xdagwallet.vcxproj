@@ -149,7 +149,7 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libeay32MT.lib;ssleay32MT.lib;pthreadVC2.lib;ws2_32.lib;legacy_stdio_definitions.lib;nafxcw.lib;libcmt.lib;xdaglib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libeay32MT.lib;ssleay32MT.lib;pthreadVC2.lib;ws2_32.lib;legacy_stdio_definitions.lib;nafxcw.lib;libcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>nafxcw.lib;libcmt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <StackReserveSize>40000000</StackReserveSize>
       <StackCommitSize>1000000</StackCommitSize>
@@ -184,7 +184,7 @@ copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libeay32MT.lib;ssleay32MT.lib;pthreadVC2.lib;ws2_32.lib;legacy_stdio_definitions.lib;nafxcw.lib;libcmt.lib;xdaglib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libeay32MT.lib;ssleay32MT.lib;pthreadVC2.lib;ws2_32.lib;legacy_stdio_definitions.lib;nafxcw.lib;libcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>nafxcw.lib;libcmt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <StackReserveSize>40000000</StackReserveSize>
       <StackCommitSize>1000000</StackCommitSize>
@@ -214,7 +214,7 @@ copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;nafxcwd.lib;LIBCMTd.lib;xdaglib.lib</AdditionalDependencies>
+      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;nafxcwd.lib;LIBCMTd.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>nafxcwd.lib;LIBCMTd.lib</IgnoreSpecificDefaultLibraries>
       <StackCommitSize>1000000</StackCommitSize>
       <StackReserveSize>40000000</StackReserveSize>
@@ -243,7 +243,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>libeay32MTd.lib;ssleay32MTd.lib;pthreadVC2.lib;ws2_32.lib;legacy_stdio_definitions.lib;xdaglib.lib;nafxcwd.lib;libcmtd.lib</AdditionalDependencies>
+      <AdditionalDependencies>libeay32MTd.lib;ssleay32MTd.lib;pthreadVC2.lib;ws2_32.lib;legacy_stdio_definitions.lib;nafxcwd.lib;libcmtd.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>nafxcwd.lib;libcmtd.lib</IgnoreSpecificDefaultLibraries>
       <StackCommitSize>1000000</StackCommitSize>
       <StackReserveSize>40000000</StackReserveSize>
@@ -260,7 +260,9 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
     </ResourceCompile>
     <PostBuildEvent>
       <Command>copy $(PTHREAD_ROOT)dll\x64\pthreadVC2.dll "$(OutDir)pthreadVC2.dll" /Y
-copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Command>
+copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y
+copy $(SolutionDir)..\client\pools.txt "$(OutDir)pools.txt" /Y
+copy $(SolutionDir)..\client\pools-testnet.txt "$(OutDir)pools-testnet.txt" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -277,7 +279,7 @@ copy $(SolutionDir)dependencies\x64\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;nafxcw.lib;LIBCMT.lib;xdaglib.lib</AdditionalDependencies>
+      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;nafxcw.lib;LIBCMT.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>nafxcw.lib;LIBCMT.lib</IgnoreSpecificDefaultLibraries>
       <StackCommitSize>1000000</StackCommitSize>
       <StackReserveSize>40000000</StackReserveSize>
@@ -312,7 +314,7 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;nafxcw.lib;LIBCMT.lib;xdaglib.lib</AdditionalDependencies>
+      <AdditionalDependencies>libeay32MD.lib;ssleay32MD.lib;ws2_32.lib;legacy_stdio_definitions.lib;pthreadVC2.lib;nafxcw.lib;LIBCMT.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>nafxcw.lib;LIBCMT.lib</IgnoreSpecificDefaultLibraries>
       <StackCommitSize>1000000</StackCommitSize>
       <StackReserveSize>40000000</StackReserveSize>
@@ -361,6 +363,14 @@ copy $(SolutionDir)dependencies\x86\msvcr100.dll "$(OutDir)msvcr100.dll" /Y</Com
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\xdagwallet.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\secp256k1\secp256k1\secp256k1.vcxproj">
+      <Project>{76685a91-5d47-423a-bb5d-0d180029da22}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\xdaglib\xdaglib.vcxproj">
+      <Project>{49c6ce86-04e0-4431-b55f-a6ce88268996}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

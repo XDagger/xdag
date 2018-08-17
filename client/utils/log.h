@@ -16,6 +16,10 @@ enum xdag_debug_levels {
 	XDAG_TRACE,
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 extern int xdag_log(int level, const char *format, ...);
 
 extern char *xdag_log_array(const void *arr, unsigned size);
@@ -26,6 +30,10 @@ extern int xdag_log_init(void);
 
 // sets the maximum error level for output to the log, returns the previous level (0 - do not log anything, 9 - all)
 extern int xdag_set_log_level(int level);
+	
+#ifdef __cplusplus
+};
+#endif
 
 #define xdag_fatal(...) xdag_log(XDAG_FATAL   , __VA_ARGS__)
 #define xdag_crit(...)  xdag_log(XDAG_CRITICAL, __VA_ARGS__)

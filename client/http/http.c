@@ -20,6 +20,11 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <unistd.h>
+#include <sys/fcntl.h>
+#include <errno.h>
+#else
+
 #endif
 
 #include <stdio.h>
@@ -31,24 +36,6 @@
 #include "../system.h"
 
 
-#if defined(_WIN32) || defined(_WIN64)
-#if defined(_WIN64)
-#define poll WSAPoll
-#else
-#define poll(a, b, c)((a)->revents =(a)->events,(b))
-#endif
-#else
-#include <poll.h>
-#endif
-
-#if defined(_WIN32) || defined(_WIN64)
-#else
-#include <netinet/in.h>
-#include <unistd.h>
-#include <sys/fcntl.h>
-#include <errno.h>
-#endif
-
 
 // Simple structure to keep track of the handle, and
 // of what needs to be freed later.
@@ -58,46 +45,57 @@ typedef struct {
 	SSL_CTX *sslContext;
 } connection;
 
-#define SERVER  "raw.githubusercontent.com"
-#define PORT 443
-
 connection * tcpConnect(const char* h, int port);
 void tcpDisconnect(connection *c);
 char* tcpRead(connection *c);
-void tcpWrite(connection *c, char *text);
+int tcpWrite(connection *c, char *text);
 
 connection *sslConnect(const char* h, int port);
 void sslDisconnect(connection *c);
 char *sslRead(connection *c);
-void sslWrite(connection *c, char *text);
+int sslWrite(connection *c, char *text);
 
 // Establish a regular tcp connection
 connection * tcpConnect(const char* h, int port)
-{	
-	int error, sock = 0 ;
+{
+	int sock = 0 ;
 	struct sockaddr_in server;
 	if(!strcmp(h, "any")) {
 		server.sin_addr.s_addr = htonl(INADDR_ANY);
 	} else if(!inet_aton(h, &server.sin_addr)) {
 		struct hostent *host = gethostbyname(h);
-		sock = socket(AF_INET, SOCK_STREAM, 0);
-		if(sock == -1) {
-			xdag_err("Create sock error, %s", strerror(sock));
+		if(!host) {
+			xdag_err("Cannot resolve host name %s.", h);
+			return NULL;
+		}
+		server.sin_addr = *((struct in_addr *) host->h_addr);
+	}
+	
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if(sock == -1) {
+		xdag_err("Create sock error, %s", strerror(sock));
+		sock = 0;
+	} else {
+		server.sin_family = AF_INET;
+		server.sin_port = htons(port);
+		
+		memset(&(server.sin_zero), 0, 8);
+		
+		struct timeval timeout = {10, 0};
+		if(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout))) {
+			xdag_err("Set SO_SNDTIMEO failed.");
+			return NULL;
+		}
+
+		if(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout))) {
+			xdag_err("Set SO_RCVTIMEO failed.");
+			return NULL;
+		}
+
+		int error = connect(sock,(struct sockaddr *) &server, sizeof(struct sockaddr));
+		if(error == -1) {
+			xdag_err("Connect error, %s", strerror(error));
 			sock = 0;
-		} else {
-			server.sin_family = AF_INET;
-			server.sin_port = htons(port);
-			server.sin_addr = *((struct in_addr *) host->h_addr);
-			memset(&(server.sin_zero), 0, 8);
-			
-			uint32_t timeout = 1000*10;
-			setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
-			error = connect(sock,(struct sockaddr *) &server, sizeof(struct sockaddr));
-			if(error == -1)
-			{
-				xdag_err("Connect error, %s", strerror(error));
-				sock = 0;
-			}
 		}
 	}
 	
@@ -158,11 +156,14 @@ char *tcpRead(connection *c)
 	return rc;
 }
 
-void tcpWrite(connection *c, char *text)
+int tcpWrite(connection *c, char *text)
 {
 	if(c) {
-		write(c->socket, text, strlen(text));
+		if(write(c->socket, text, strlen(text)) < 0) {
+			return -1;
+		}
 	}
+	return 0;
 }
 
 // Establish a connection using an SSL layer
@@ -174,29 +175,44 @@ connection *sslConnect(const char* h, int port)
 		server.sin_addr.s_addr = htonl(INADDR_ANY);
 	} else if(!inet_aton(h, &server.sin_addr)) {
 		struct hostent *host = gethostbyname(h);
-		sock = socket(AF_INET, SOCK_STREAM, 0);
-		if(sock == -1) {
-			xdag_err("Create sock error, %s", strerror(sock));
+		if(!host) {
+			xdag_err("Cannot resolve host name %s.", h);
+			return NULL;
+		}
+		server.sin_addr = *((struct in_addr *) host->h_addr);
+	}
+	
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if(sock == -1) {
+		xdag_err("Create sock error, %s", strerror(sock));
+		sock = 0;
+	} else {
+		server.sin_family = AF_INET;
+		server.sin_port = htons(port);
+		
+		memset(&(server.sin_zero), 0, 8);
+		
+		struct timeval timeout = {10, 0};
+		if(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout))) {
+			xdag_err("Set SO_SNDTIMEO failed.");
+			return NULL;
+		}
+
+		if(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout))) {
+			xdag_err("Set SO_RCVTIMEO failed.");
+			return NULL;
+		}
+
+		int error = connect(sock,(struct sockaddr *) &server, sizeof(struct sockaddr));
+		if(error == -1) {
+			xdag_err("Connect error, %s", strerror(error));
 			sock = 0;
-		} else {
-			server.sin_family = AF_INET;
-			server.sin_port = htons(port);
-			server.sin_addr = *((struct in_addr *) host->h_addr);
-			memset(&(server.sin_zero), 0, 8);
-			
-			int error = connect(sock,(struct sockaddr *) &server, sizeof(struct sockaddr));
-			if(error == -1)
-			{
-				xdag_err("Connect error, %s", strerror(error));
-				sock = 0;
-			}
 		}
 	}
 	
 	if(sock) {
 		connection *c = malloc(sizeof(connection));
-		c->sslHandle = NULL;
-		c->sslContext = NULL;
+		memset(c, 0, sizeof(connection));
 		c->socket = sock;
 		
 		// Register the error strings for libcrypto & libssl
@@ -205,27 +221,39 @@ connection *sslConnect(const char* h, int port)
 		// Register the available ciphers and digests
 		SSL_library_init();
 		OpenSSL_add_all_algorithms();
-		
+
 		// New context saying we are a client, and using SSL 2 or 3
 		c->sslContext = SSL_CTX_new(SSLv23_client_method());
 		if(c->sslContext == NULL) {
+			xdag_err("SSL_CTX_new failed.");
 			ERR_print_errors_fp(stderr);
+			sslDisconnect(c);
+			return NULL;
 		}
-		
+
 		// Create an SSL struct for the connection
 		c->sslHandle = SSL_new(c->sslContext);
 		if(c->sslHandle == NULL) {
+			xdag_err("SSL_new failed.");
 			ERR_print_errors_fp(stderr);
+			sslDisconnect(c);
+			return NULL;
 		}
-		
+
 		// Connect the SSL struct to our connection
 		if(!SSL_set_fd(c->sslHandle, c->socket)) {
+			xdag_err("SSL_set_fd failed.");
 			ERR_print_errors_fp(stderr);
+			sslDisconnect(c);
+			return NULL;
 		}
-		
+
 		// Initiate SSL handshake
 		if(SSL_connect(c->sslHandle) != 1) {
+			xdag_err("SSL_connect failed.");
 			ERR_print_errors_fp(stderr);
+			sslDisconnect(c);
+			return NULL;
 		}
 		
 		return c;
@@ -269,6 +297,10 @@ char *sslRead(connection *c)
 			} else {
 				rc = realloc(rc,(count + 1) * readSize * sizeof(char) + 1);
 			}
+			if(!rc) {
+				xdag_err("malloc error");
+				return NULL;
+			}
 			
 			memset(rc + count * readSize,0,readSize + 1);
 			memset(buffer, 0, 1024);
@@ -291,11 +323,17 @@ char *sslRead(connection *c)
 }
 
 // Write text to the connection
-void sslWrite(connection *c, char *text)
+int sslWrite(connection *c, char *text)
 {
 	if(c) {
-		SSL_write(c->sslHandle, text, (int)strlen(text));
+		int err = SSL_write(c->sslHandle, text, (int)strlen(text));
+		if(err < 0) {
+			xdag_err("SSL write error : %s", strerror(SSL_get_error(c->sslHandle, err)));
+			return -1;
+		}
 	}
+
+	return 0;
 }
 
 char *http_get(const char *url)
@@ -304,7 +342,6 @@ char *http_get(const char *url)
 	char *resp = NULL;
 	
 	url_field_t *fields = url_parse(url);
-//	url_field_print(fields);
 	
 	if(fields->host) {
 		char *path = "";
@@ -323,9 +360,14 @@ char *http_get(const char *url)
 			
 			connection *conn = sslConnect(fields->host, port);
 			if(conn) {
-				sslWrite(conn, request);
-				resp = sslRead(conn);
+				if(sslWrite(conn, request) != 0) {
+					xdag_err("ssl write error");
+				} else {
+					resp = sslRead(conn);
+				}
 				sslDisconnect(conn);
+			} else {
+				xdag_err("https connection to %s:%d failed.", fields->host, port);
 			}
 		} else if(!strcmp("http", fields->schema)) {
 			int port = 80;
@@ -335,14 +377,20 @@ char *http_get(const char *url)
 			
 			connection *conn = tcpConnect(fields->host, port);
 			if(conn) {
-				tcpWrite(conn, request);
-				resp = tcpRead(conn);
+				if(tcpWrite(conn, request) != 0) {
+					xdag_err("tcp write error");
+				} else {
+					resp = tcpRead(conn);
+				}
 				tcpDisconnect(conn);
+			} else {
+				xdag_err("http connection to %s:%d failed.", fields->host, port);
 			}
 		} else {
 			xdag_err("schema not supported yet! schema: %s", fields->schema);
 		}
 	}
+	url_free(fields);
 	
 	if(resp) {
 		char *ptr = strstr(resp, "\r\n\r\n");
@@ -352,8 +400,6 @@ char *http_get(const char *url)
 			free(ori);
 		}
 	}
-	
-	url_free(fields);
 	return resp;
 }
 
@@ -363,7 +409,7 @@ int test_https(void)
 	connection *c;
 	char *resp;
 	
-	c = sslConnect(SERVER, PORT);
+	c = sslConnect("raw.githubusercontent.com", 443);
 	
 	sslWrite(c, "GET /XDagger/xdag/master/client/netdb-white.txt HTTP/1.1\r\nHost: raw.githubusercontent.com\r\nconnection: close\r\n\r\n");
 	resp = sslRead(c);
@@ -381,7 +427,7 @@ int test_http(void)
 	connection *c;
 	char *resp;
 	
-	c = tcpConnect(SERVER, 80);
+	c = tcpConnect("raw.githubusercontent.com", 80);
 	
 	tcpWrite(c, "GET /XDagger/xdag/master/client/netdb-white.txt HTTP/1.1\r\nHost: raw.githubusercontent.com\r\nconnection: close\r\n\r\n");
 	resp = tcpRead(c);

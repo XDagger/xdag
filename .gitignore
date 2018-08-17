@@ -24,3 +24,14 @@ autoscan.log
 /win/xdag/x64/
 /win/xdaglib/x64/
 /win/xdagwallet/x64/
+
+#configs
+/secp256k1/src/libsecp256k1-config.h
+
+# xdag
+xdag
+*.log
+/client/.cmd.history
+/client/dnet_key.dat
+/client/storage
+/client/wallet.dat

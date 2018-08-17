@@ -99,8 +99,10 @@ int dnet_init(int argc, char **argv) {
     int i = 0, err = 0, res, is_daemon = 0, is_server = 0;
     const char *mess = 0;
 
-    if (system_init() || dnet_threads_init() || dnet_hosts_init()) {
-		err = 4; mess = "initializing error"; goto end;
+    if (dnet_threads_init() || dnet_hosts_init()) {
+		err = 4; 
+		mess = "initializing error"; 
+		goto end;
     }
 
     for (i = 1; i < argc + 2; ++i) {

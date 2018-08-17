@@ -37,6 +37,7 @@
     <ClCompile Include="..\..\client\init.c" />
     <ClCompile Include="..\..\client\json-rpc\cJSON.c" />
     <ClCompile Include="..\..\client\json-rpc\cJSON_Utils.c" />
+    <ClCompile Include="..\..\client\json-rpc\rpc_procedure.c" />
     <ClCompile Include="..\..\client\json-rpc\rpc_procedures.c" />
     <ClCompile Include="..\..\client\json-rpc\rpc_service.c" />
     <ClCompile Include="..\..\client\json-rpc\rpc_wrapper.c" />
@@ -44,6 +45,7 @@
     <ClCompile Include="..\..\client\miner.c" />
     <ClCompile Include="..\..\client\mining_common.c" />
     <ClCompile Include="..\..\client\netdb.c" />
+    <ClCompile Include="..\..\client\network.c" />
     <ClCompile Include="..\..\client\pool.c" />
     <ClCompile Include="..\..\client\sha256.c" />
     <ClCompile Include="..\..\client\storage.c" />
@@ -51,6 +53,7 @@
     <ClCompile Include="..\..\client\terminal.c" />
     <ClCompile Include="..\..\client\transport.c" />
     <ClCompile Include="..\..\client\utils\log.c" />
+    <ClCompile Include="..\..\client\utils\moving_statistics\moving_average.c" />
     <ClCompile Include="..\..\client\utils\utils.c" />
     <ClCompile Include="..\..\client\wallet.c" />
     <ClCompile Include="..\..\dnet\dnet_command.c" />
@@ -82,6 +85,7 @@
     <ClInclude Include="..\..\client\init.h" />
     <ClInclude Include="..\..\client\json-rpc\cJSON.h" />
     <ClInclude Include="..\..\client\json-rpc\cJSON_Utils.h" />
+    <ClInclude Include="..\..\client\json-rpc\rpc_procedure.h" />
     <ClInclude Include="..\..\client\json-rpc\rpc_procedures.h" />
     <ClInclude Include="..\..\client\json-rpc\rpc_service.h" />
     <ClInclude Include="..\..\client\json-rpc\rpc_wrapper.h" />
@@ -89,6 +93,7 @@
     <ClInclude Include="..\..\client\miner.h" />
     <ClInclude Include="..\..\client\mining_common.h" />
     <ClInclude Include="..\..\client\netdb.h" />
+    <ClInclude Include="..\..\client\network.h" />
     <ClInclude Include="..\..\client\pool.h" />
     <ClInclude Include="..\..\client\sha256.h" />
     <ClInclude Include="..\..\client\state.h" />
@@ -97,9 +102,11 @@
     <ClInclude Include="..\..\client\system.h" />
     <ClInclude Include="..\..\client\terminal.h" />
     <ClInclude Include="..\..\client\transport.h" />
+    <ClInclude Include="..\..\client\types.h" />
     <ClInclude Include="..\..\client\uthash\uthash.h" />
     <ClInclude Include="..\..\client\uthash\utlist.h" />
     <ClInclude Include="..\..\client\utils\log.h" />
+    <ClInclude Include="..\..\client\utils\moving_statistics\moving_average.h" />
     <ClInclude Include="..\..\client\utils\utils.h" />
     <ClInclude Include="..\..\client\version.h" />
     <ClInclude Include="..\..\client\wallet.h" />
@@ -135,12 +142,15 @@
     <ClInclude Include="..\sys\time.h" />
     <ClInclude Include="..\termios.h" />
     <ClInclude Include="..\unistd.h" />
+    <ClInclude Include="network.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\client\netdb-testnet.txt" />
     <Text Include="..\..\client\netdb-white-testnet.txt" />
     <Text Include="..\..\client\netdb-white.txt" />
     <Text Include="..\..\client\netdb.txt" />
+    <Text Include="..\..\client\pools-testnet.txt" />
+    <Text Include="..\..\client\pools.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
