@@ -971,11 +971,11 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 				block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
 		}
 
-		if(g_xdag_pool) { /* append pool created block to list */
-			xdag_append_new_block(block);
-		} else { /* send miner created block directly */
+//		if(g_xdag_pool) { /* append pool created block to list */
+//			xdag_append_new_block(block);
+//		} else { /* send miner created block directly */
 			xdag_send_new_block(block);
-		}
+//		}
 
 		if(newBlockHashResult != NULL) {
 			memcpy(newBlockHashResult, newBlockHash, sizeof(xdag_hash_t));
