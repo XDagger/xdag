@@ -38,6 +38,16 @@ enum xdag_message_type {
 	XDAG_MESSAGE_BLOCK_REQUEST,
 };
 
+enum bi_flags {
+	BI_MAIN       = 0x01,
+	BI_MAIN_CHAIN = 0x02,
+	BI_APPLIED    = 0x04,
+	BI_MAIN_REF   = 0x08,
+	BI_REF        = 0x10,
+	BI_OURS       = 0x20,
+	BI_EXTRA      = 0x40,
+};
+
 #define XDAG_BLOCK_FIELDS 16
 
 struct xdag_field {
@@ -109,6 +119,9 @@ extern xdag_amount_t xdag_get_supply(uint64_t nmain);
 // returns position and time of block by hash; if block is extra and block != 0 also returns the whole block
 extern int64_t xdag_get_block_pos(const xdag_hash_t hash, xdag_time_t *time, struct xdag_block *block);
 
+// return state info string
+extern const char* xdag_get_block_state_info(uint8_t flag);
+
 // returns a number of the current period, period is 64 seconds
 extern xdag_time_t xdag_main_time(void);
 
@@ -134,7 +147,7 @@ extern void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out);
 xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash);
 
 // get all transactions of specified address, and return total number of transactions
-extern int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t));
+extern int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t));
 
 // print orphan blocks
 void xdag_list_orphan_blocks(int, FILE*);
@@ -142,6 +155,9 @@ void xdag_list_orphan_blocks(int, FILE*);
 // completes work with the blocks
 void xdag_block_finish(void);
 	
+// get block info of specified address
+extern int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t));
+
 #ifdef __cplusplus
 };
 #endif
