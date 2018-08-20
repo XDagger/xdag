@@ -950,7 +950,10 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 		}
 
 		if(g_xdag_pool) { /* append pool created block to list */
-			xdag_append_new_block(block);
+			struct xdag_block * new_block = (struct xdag_block *)malloc(sizeof(struct xdag_block));
+			memcpy(new_block, block, sizeof(struct xdag_block));
+			new_block->field[0].transport_header = 0;
+			xdag_append_new_block(new_block);
 		} else { /* send miner created block directly */
 			xdag_send_new_block(block);
 		}
