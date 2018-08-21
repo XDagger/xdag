@@ -1139,11 +1139,7 @@ begin:
 	uint64_t start = get_timestamp();
 	xdag_show_state(0);
 
-#if MULTI_THREAD_LOADING
-	xdag_init_storage(t, get_timestamp(), &t, add_block_callback);
-#else
 	xdag_load_blocks(t, get_timestamp(), &t, &add_block_callback);
-#endif
 
 	xdag_mess("Finish loading blocks, time cost %ldms", get_timestamp() - start);
 
