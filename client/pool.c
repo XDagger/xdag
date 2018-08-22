@@ -1057,6 +1057,7 @@ void *pool_block_thread(void *arg)
 			if(res > 0) {
 				xdag_send_new_block(b);
 			}
+			free(b);
 		}
 
 		if(!processed) sleep(1);
