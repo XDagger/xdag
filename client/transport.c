@@ -13,9 +13,6 @@
 #include "pool.h"
 #include "version.h"
 #include "../dnet/dnet_main.h"
-#include "uthash/utlist.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 #define NEW_BLOCK_TTL   5
 #define REQUEST_WAIT    64
