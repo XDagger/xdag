@@ -563,7 +563,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		goto end;
 	}
 
-	/* if not read from storage and timestamp is ...ffff and last field is nonce than the block is extra */
+	/* if not read from storage and timestamp is ...ffff and last field is nonce then the block is extra */
 	if (!g_light_mode && (transportHeader & (sizeof(struct xdag_block) - 1))
 			&& (tmpNodeBlock.time & (MAIN_CHAIN_PERIOD - 1)) == (MAIN_CHAIN_PERIOD - 1)
 			&& (signinmask & 1 << (XDAG_BLOCK_FIELDS - 1))) {
