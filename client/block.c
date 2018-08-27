@@ -899,7 +899,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	struct orphan_block *oref;
 
 	for (i = 0; i < inputsCount; ++i) {
-		ref = block_by_hash(fields[i].hash);
+		ref = block_by_hash(fields[i + hasRemark].hash);
 		if (!ref || !(ref->flags & BI_OURS)) {
 			pthread_mutex_unlock(&g_create_block_mutex);
 			return -1;
@@ -919,6 +919,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	int res0 = 1 + hasRemark + inputsCount + outputsCount + 3 * nkeysnum + (outsigkeyind < 0 ? 2 : 0);
 
 	if (res0 > XDAG_BLOCK_FIELDS) {
+		xdag_err("create block failed, exceed max number of fields.");
 		return -1;
 	}
 
