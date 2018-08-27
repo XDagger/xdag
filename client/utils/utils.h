@@ -83,6 +83,9 @@ void time_to_string(time_t time, char* buf);
 // length - max length of string to be processed, if -1 - whole string will be processed
 void replace_all_nonprintable_characters(char *string, int length, char symbol);
 
+int validate_ipv4(const char *str);
+int validate_ipv4_port(const char *str);
+
 #ifdef __cplusplus
 };
 #endif

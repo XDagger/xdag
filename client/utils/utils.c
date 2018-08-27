@@ -448,3 +448,50 @@ void replace_all_nonprintable_characters(char *string, int length, char symbol)
 		++index;
 	}
 }
+
+int validate_ipv4(const char *str)
+{
+	if(!str) {
+		return 0;
+	}
+
+	int a, b, c, d;
+	char tmp;
+	if(4 != sscanf(str, "%d.%d.%d.%d%c", &a, &b, &c, &d, &tmp)) {
+		return 0;
+	}
+
+	if(a < 0 || a > 255
+	   || b < 0 || b > 255
+	   || c < 0 || c > 255
+	   || d < 0 || d > 255) {
+		return 0;
+	}
+
+	return 1;
+}
+
+
+int validate_ipv4_port(const char *str)
+{
+	if(!str) {
+		return 0;
+	}
+	
+	int a, b, c, d, e;
+	char tmp;
+	if(5 != sscanf(str, "%d.%d.%d.%d:%d%c", &a, &b, &c, &d, &e, &tmp)) {
+		return 0;
+	}
+
+	if(a < 0 || a > 255
+	   || b < 0 || b > 255
+	   || c < 0 || c > 255
+	   || d < 0 || d > 255
+	   || e < 0 || e > 65535) {
+		return 0;
+	}
+
+	return 1;
+}
+
