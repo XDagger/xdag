@@ -50,6 +50,7 @@ struct orphan_block;
 struct block_internal {
 	struct ldus_rbtree node;
 	xdag_hash_t hash;
+	xdag_remark remark;
 	xdag_diff_t difficulty;
 	xdag_amount_t amount, linkamount[MAX_LINKS], fee;
 	xdag_time_t time;
@@ -526,7 +527,11 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 				}
 				break;
 
-			case XDAG_FIELD_RESERVE0:
+			case XDAG_FIELD_HEAD_TEST:
+				break;
+
+			case XDAG_FIELD_REMARK:
+				memcpy(tmpNodeBlock.remark, newBlock->field[i].remark, sizeof(xdag_remark));
 				break;
 
 			case XDAG_FIELD_RESERVE1:
@@ -881,12 +886,12 @@ int xdag_add_block(struct xdag_block *b)
  * in the following 'noutput' fields similarly - outputs, fee; send_time (time of sending the block);
  * if it is greater than the current one, then the mining is performed to generate the most optimal hash
  */
-int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, xdag_amount_t fee,
+int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, int hasRemark, xdag_amount_t fee,
 	xdag_time_t send_time, xdag_hash_t newBlockHashResult)
 {
 	pthread_mutex_lock(&g_create_block_mutex);
 	struct xdag_block block[2];
-	int i, j, res, mining, defkeynum, keysnum[XDAG_BLOCK_FIELDS], nkeys, nkeysnum = 0, outsigkeyind = -1;
+	int i, j, res, mining, defkeynum, keysnum[XDAG_BLOCK_FIELDS], nkeys, nkeysnum = 0, outsigkeyind = -1, hasTag = 0;
 	struct xdag_public_key *defkey = xdag_wallet_default_key(&defkeynum), *keys = xdag_wallet_our_keys(&nkeys), *key;
 	xdag_hash_t signatureHash;
 	xdag_hash_t newBlockHash;
@@ -911,7 +916,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	}
 	pthread_mutex_unlock(&g_create_block_mutex);
 
-	int res0 = 1 + inputsCount + outputsCount + 3 * nkeysnum + (outsigkeyind < 0 ? 2 : 0);
+	int res0 = 1 + hasRemark + inputsCount + outputsCount + 3 * nkeysnum + (outsigkeyind < 0 ? 2 : 0);
 
 	if (res0 > XDAG_BLOCK_FIELDS) {
 		return -1;
@@ -925,6 +930,12 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	}
 
 	res0 += mining;
+
+	/* reserve field for pool tag in generated main block */
+	if(strlen(g_pool_tag)>0 && strlen(g_pool_tag) < 32) {
+		hasTag = 1;
+	}
+	res0 += hasTag * mining;
 
  begin:
 	res = res0;
@@ -943,23 +954,29 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	} else {
 		if (res < XDAG_BLOCK_FIELDS && mining && pretop && pretop->time < send_time) {
 			log_block("Mintop", pretop->hash, pretop->time, pretop->storage_pos);
-			setfld(XDAG_FIELD_OUT, pretop->hash, xdag_hashlow_t); res++;
+			setfld(XDAG_FIELD_OUT, pretop->hash, xdag_hashlow_t);
+			res++;
 		}
 
 		for (oref = g_orphan_first[0]; oref && res < XDAG_BLOCK_FIELDS; oref = oref->next) {
 			ref = oref->orphan_bi;
 			if (ref->time < send_time) {
-				setfld(XDAG_FIELD_OUT, ref->hash, xdag_hashlow_t); res++;
+				setfld(XDAG_FIELD_OUT, ref->hash, xdag_hashlow_t);
+				res++;
 			}
 		}
 	}
 
+	if(hasRemark) {
+		setfld(XDAG_FIELD_REMARK, fields, xdag_remark);
+	}
+
 	for (j = 0; j < inputsCount; ++j) {
-		setfld(XDAG_FIELD_IN, fields + j, xdag_hash_t);
+		setfld(XDAG_FIELD_IN, fields + hasRemark + j, xdag_hash_t);
 	}
 
 	for (j = 0; j < outputsCount; ++j) {
-		setfld(XDAG_FIELD_OUT, fields + inputsCount + j, xdag_hash_t);
+		setfld(XDAG_FIELD_OUT, fields + hasRemark + inputsCount + j, xdag_hash_t);
 	}
 
 	for (j = 0; j < nkeysnum; ++j) {
@@ -1018,6 +1035,11 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 			}
 		}
 
+		if(hasTag) {
+			xdag_mess("pool tag : %s", g_pool_tag);
+			block[0].field[0].type |= (uint64_t)(XDAG_FIELD_REMARK) << (i << 2);
+			memcpy(&block[0].field[i++], (void*)(g_pool_tag), sizeof(xdag_remark));
+		}
 		pthread_mutex_lock((pthread_mutex_t*)g_ptr_share_mutex);
 		memcpy(block[0].field[XDAG_BLOCK_FIELDS - 1].data, task->lastfield.data, sizeof(struct xdag_field));
 		pthread_mutex_unlock((pthread_mutex_t*)g_ptr_share_mutex);
@@ -1199,7 +1221,7 @@ begin:
 			nblk = nblk / 61 + (nblk % 61 > (unsigned)rand() % 61);
 
 			while (nblk--) {
-				xdag_create_block(0, 0, 0, 0, 0, NULL);
+				xdag_create_block(0, 0, 0, 0, 0, 0, NULL);
 			}
 		}
 
@@ -1330,7 +1352,7 @@ int xdag_get_our_block(xdag_hash_t hash)
 	pthread_mutex_unlock(&block_mutex);
 
 	if (!bi) {
-		xdag_create_block(0, 0, 0, 0, 0, NULL);
+		xdag_create_block(0, 0, 0, 0, 0, 0, NULL);
 		pthread_mutex_lock(&block_mutex);
 		bi = ourfirst;
 		pthread_mutex_unlock(&block_mutex);
@@ -1559,6 +1581,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "  file pos: %llx\n", (unsigned long long)bi->storage_pos);
 	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 		(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
+	fprintf(out, "    remark: %s\n", bi->remark);
 	fprintf(out, "difficulty: %llx%016llx\n", xdag_diff_args(bi->difficulty));
 	xdag_hash2address(h, address);
 	fprintf(out, "   balance: %s  %10u.%09u\n", address, pramount(bi->amount));
@@ -1627,9 +1650,9 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 					if(ri->link[j] == bi && ri->linkamount[j]) {
 						xdag_time_to_string(ri->time, time_buf);
 						xdag_hash2address(ri->hash, address);
-						fprintf(out, "    %6s: %s  %10u.%09u  %s\n",
+						fprintf(out, "    %6s: %s  %10u.%09u  %s %s\n",
 							(1 << j & ri->in_mask ? "output" : " input"), address,
-							pramount(ri->linkamount[j]), time_buf);
+							pramount(ri->linkamount[j]), time_buf, ri->remark);
 					}
 				}
 			}
