@@ -19,7 +19,7 @@ enum xdag_field_type {
 	XDAG_FIELD_PUBLIC_KEY_0, //6
 	XDAG_FIELD_PUBLIC_KEY_1, //7
 	XDAG_FIELD_HEAD_TEST,    //8
-	XDAG_FIELD_RESERVE0,     //9
+	XDAG_FIELD_REMARK,     //9
 	XDAG_FIELD_RESERVE1,     //10
 	XDAG_FIELD_RESERVE2,     //11
 	XDAG_FIELD_RESERVE3,     //12
@@ -50,6 +50,8 @@ enum bi_flags {
 
 #define XDAG_BLOCK_FIELDS 16
 
+typedef char xdag_remark[32];
+
 struct xdag_field {
 	union {
 		struct {
@@ -67,6 +69,7 @@ struct xdag_field {
 			};
 		};
 		xdag_hash_t data;
+		xdag_remark remark;
 	};
 };
 
@@ -104,7 +107,7 @@ extern int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag
 	xdag_amount_t amount, xdag_time_t time));
 
 // create and publish a block
-extern int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, xdag_amount_t fee, 
+extern int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, int hasRemark, xdag_amount_t fee, 
 	xdag_time_t send_time, xdag_hash_t newBlockHashResult);
 
 // returns current balance for specified address or balance for all addresses if hash == 0
