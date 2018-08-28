@@ -980,6 +980,10 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 		setfld(XDAG_FIELD_OUT, fields + hasRemark + inputsCount + j, xdag_hash_t);
 	}
 
+	if(mining && hasTag) {
+		setfld(XDAG_FIELD_REMARK, g_pool_tag, xdag_remark);
+	}
+
 	for (j = 0; j < nkeysnum; ++j) {
 		key = keys + keysnum[j];
 		block[0].field[0].type |= (uint64_t)((j == outsigkeyind ? XDAG_FIELD_SIGN_OUT : XDAG_FIELD_SIGN_IN) * 0x11) << ((i + j + nkeysnum) * 4);
@@ -1036,11 +1040,6 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 			}
 		}
 
-		if(hasTag) {
-			xdag_mess("pool tag : %s", g_pool_tag);
-			block[0].field[0].type |= (uint64_t)(XDAG_FIELD_REMARK) << (i << 2);
-			memcpy(&block[0].field[i++], (void*)(g_pool_tag), sizeof(xdag_remark));
-		}
 		pthread_mutex_lock((pthread_mutex_t*)g_ptr_share_mutex);
 		memcpy(block[0].field[XDAG_BLOCK_FIELDS - 1].data, task->lastfield.data, sizeof(struct xdag_field));
 		pthread_mutex_unlock((pthread_mutex_t*)g_ptr_share_mutex);
