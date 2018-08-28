@@ -1063,14 +1063,14 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 			struct xdag_block * new_block = (struct xdag_block *)malloc(sizeof(struct xdag_block));
 			if(new_block == NULL){
 				xdag_warn("Non-critical error, malloc failed [function: create_block]");
-				xdag_send_new_block(block);
+				xdag_send_new_block(block); /* send pool generated block to network directly */
 			} else {
 				memcpy(new_block, block, sizeof(struct xdag_block));
 				new_block->field[0].transport_header = 0;
 				xdag_append_new_block(new_block);
 			}
-		} else { /* send miner created block directly */
-			xdag_send_new_block(block);
+		} else { /* send miner created block to pool directly */
+			xdag_send_new_block_to_pool(block);
 		}
 
 		if(newBlockHashResult != NULL) {

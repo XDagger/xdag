@@ -332,6 +332,14 @@ int xdag_send_new_block(struct xdag_block *b)
 	return 0;
 }
 
+/* sends a new block to pool */
+int xdag_send_new_block_to_pool(struct xdag_block *b)
+{
+//	dnet_send_xdag_packet(b, (void*)(uintptr_t)NEW_BLOCK_TTL);
+	xdag_send_block_via_pool(b);
+	return 0;
+}
+
 /* executes transport level command, out - stream to display the result of the command execution */
 int xdag_net_command(const char *cmd, void *out)
 {
