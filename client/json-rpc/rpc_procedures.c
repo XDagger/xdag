@@ -516,9 +516,9 @@ cJSON * method_xdag_get_block_info(struct xdag_rpc_context * ctx, cJSON *params,
 /* xfer */
 /*
  request:
- "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"ADDRESS"}], "id":1
- "jsonrpc":"2.0", "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"ADDRESS"}], "id":1
- "version":"1.1", "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"ADDRESS"}], "id":1
+ "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"ADDRESS", "remark":"REMARK"}], "id":1
+ "jsonrpc":"2.0", "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"ADDRESS", "remark":"REMARK"}], "id":1
+ "version":"1.1", "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"ADDRESS", "remark":"REMARK"}], "id":1
  
  reponse:
  "result":[{"block":"ADDRESS"}], "error":null, "id":1
@@ -533,6 +533,7 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
 	
 	char amount[128] = {0};
 	char address[128] = {0};
+	char remark[32] = {0};
 	
 	if (params) {
 		if (cJSON_IsArray(params) && cJSON_GetArraySize(params) == 1) {
@@ -551,6 +552,17 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
 			cJSON *json_address = cJSON_GetObjectItem(param, "address");
 			if (cJSON_IsString(json_address)) {
 				strcpy(address, json_address->valuestring);
+			}
+
+			cJSON *json_remark = cJSON_GetObjectItem(param, "remark");
+			if (cJSON_IsString(json_remark)) {
+				if(strlen(json_remark->valuestring) < 32) {
+					strcpy(remark, json_remark->valuestring);
+				} else {
+					ctx->error_code = 1;
+					ctx->error_message = strdup("Transacion remark exceed max length 32.");
+					return NULL;
+				}
 			}
 		} else {
 			ctx->error_code = 1;
@@ -584,6 +596,12 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
 		} else {
 			xdag_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
 			xfer.outsig = 1;
+
+			if(strlen(remark)>0) {
+				xfer.hasRemark = 1;
+				strcpy(xfer.remark, remark);
+			}
+
 			g_xdag_state = XDAG_STATE_XFER;
 			g_xdag_xfer_last = time(0);
 			xdag_traverse_our_blocks(&xfer, &xfer_callback);
