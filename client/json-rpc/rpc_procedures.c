@@ -58,7 +58,7 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
 cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_get_block_info */
-int rpc_get_block_callback(void *data, int flag, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time);
+int rpc_get_block_callback(void *data, int flag, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, xdag_remark remark);
 cJSON * method_xdag_get_block_info(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_do_xfer */
@@ -407,7 +407,7 @@ cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJ
  "version":"1.1", "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"2018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
  */
 
-int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time)
+int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, xdag_remark remark)
 {
 	cJSON *callback_data = (cJSON *)data;
 
@@ -433,6 +433,9 @@ int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_
 	sprintf(str, "%s", xdag_get_block_state_info(flags));
 	cJSON *json_state = cJSON_CreateString(str);
 	cJSON_AddItemToObject(callback_data, "state", json_state);
+
+	cJSON *json_remark = cJSON_CreateString(remark);
+	cJSON_AddItemToObject(callback_data, "remark", json_remark);
 
 	struct tm tm;
 	char buf[64], tbuf[64];

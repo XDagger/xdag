@@ -1974,14 +1974,14 @@ void xdag_block_finish()
 	pthread_mutex_lock(&block_mutex);
 }
 
-int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t))
+int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark))
 {
 	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
 	pthread_mutex_unlock(&block_mutex);
 
 	if(callback) {
-		return callback(data, bi->flags & ~BI_OURS,  bi->hash, bi->amount, bi->time);
+		return callback(data, bi->flags & ~BI_OURS,  bi->hash, bi->amount, bi->time, bi->remark);
 	}
 
 	return 0;
