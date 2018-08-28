@@ -731,14 +731,15 @@ static int make_transaction_block(struct xfer_callback_data *xferData)
 {
 	char address[33];
 
-	if(xferData->hasRemark && strlen(xferData->remark) > 0) {
-		memcpy(xferData->fields, xferData->remark, sizeof(struct xdag_field));
-	}
-
-	if(xferData->fieldsCount != XFER_MAX_IN) { // fixme: here may have problem with remark. Have to figure out the XFER_MAX_IN. [frozen]
-		memcpy(xferData->fields + xferData->hasRemark + xferData->fieldsCount, xferData->fields + XFER_MAX_IN, sizeof(xdag_hashlow_t));
+	if(xferData->fieldsCount != XFER_MAX_IN) {
+		memcpy(xferData->fields + xferData->fieldsCount, xferData->fields + XFER_MAX_IN, sizeof(xdag_hashlow_t));
 	}
 	xferData->fields[xferData->fieldsCount].amount = xferData->todo;
+
+	if(xferData->hasRemark && strlen(xferData->remark) > 0) {
+		memcpy(xferData->fields + xferData->fieldsCount + xferData->hasRemark, xferData->remark, sizeof(xdag_remark));
+	}
+
 	int res = xdag_create_block(xferData->fields, xferData->fieldsCount, 1, xferData->hasRemark, 0, 0, xferData->transactionBlockHash);
 	if(res) {
 		xdag_hash2address(xferData->fields[xferData->fieldsCount].hash, address);
@@ -846,7 +847,7 @@ int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_
 	if(amount < todo) {
 		todo = amount;
 	}
-	memcpy(xferData->fields + xferData->hasRemark + xferData->fieldsCount, hash, sizeof(xdag_hashlow_t));
+	memcpy(xferData->fields + xferData->fieldsCount, hash, sizeof(xdag_hashlow_t));
 	xferData->fields[xferData->fieldsCount++].amount = todo;
 	xferData->todo += todo;
 	xferData->remains -= todo;
