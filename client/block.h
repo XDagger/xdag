@@ -150,7 +150,7 @@ extern void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out);
 xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash);
 
 // get all transactions of specified address, and return total number of transactions
-extern int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t));
+extern int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark));
 
 // print orphan blocks
 void xdag_list_orphan_blocks(int, FILE*);
