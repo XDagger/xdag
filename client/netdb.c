@@ -296,23 +296,14 @@ static int is_valid_whitelist(char *content)
 	}
 
 	char buf[0x1000];
-	int a, b, c, d, e, is_valid = 1;
-	char tmp, *next;
+	int is_valid = 1;
+	char *next;
 	strcpy(buf, content);
 
 	char * line = strtok_r(buf,"\r\n\t", &next);
 	while (line) {
-		if(5 != sscanf(line, "%d.%d.%d.%d:%d%c", &a, &b, &c, &d, &e, &tmp)) {
-			is_valid = 0;
-			break;
-		}
-
-		if(a < 0 || a > 255
-		   || b < 0 || b > 255
-		   || c < 0 || c > 255
-		   || d < 0 || d > 255
-		   || e < 0 || e > 65535) {
-			is_valid = 0;
+		is_valid = validate_ipv4_port(line);
+		if(!is_valid) {
 			break;
 		}
 
