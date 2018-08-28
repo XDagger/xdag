@@ -37,17 +37,9 @@ sources = \
 	$(client)/wallet.c                              \
 	$(client)/commands.c                            \
 	$(client)/terminal.c                            \
+	$(client)/network.c	                            \
 	$(dnet)/dnet_crypt.c                            \
-	$(dnet)/dnet_database.c                         \
-	$(dnet)/dnet_main.c                             \
-	$(dnet)/dnet_threads.c                          \
-	$(dnet)/dnet_connection.c                       \
-	$(dnet)/dnet_stream.c                           \
-	$(dnet)/dnet_packet.c                           \
-	$(dnet)/dnet_command.c                          \
-	$(dnet)/dnet_log.c                              \
-	$(dnet)/dnet_files.c                            \
-	$(dnet)/dnet_tap.c                              \
+	$(dnet)/dnet_xdag.c                          	\
 	$(dfslib)/dfslib_crypt.c                        \
 	$(dfslib)/dfslib_random.c                       \
 	$(dfslib)/dfslib_string.c                       \
@@ -56,6 +48,7 @@ sources = \
 	$(utils)/log.c                                  \
 	$(utils)/utils.c                                \
 	$(utils)/linenoise.c                            \
+	$(utils)/dirname.c 	                            \
 	$(moving_statistics)/moving_average.c           \
 	$(jsonrpc)/cJSON.c                              \
 	$(jsonrpc)/cJSON_Utils.c                        \
