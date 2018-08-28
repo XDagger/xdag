@@ -899,7 +899,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	struct orphan_block *oref;
 
 	for (i = 0; i < inputsCount; ++i) {
-		ref = block_by_hash(fields[i + hasRemark].hash);
+		ref = block_by_hash(fields[i].hash);
 		if (!ref || !(ref->flags & BI_OURS)) {
 			pthread_mutex_unlock(&g_create_block_mutex);
 			return -1;
@@ -916,7 +916,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	}
 	pthread_mutex_unlock(&g_create_block_mutex);
 
-	int res0 = 1 + hasRemark + inputsCount + outputsCount + 3 * nkeysnum + (outsigkeyind < 0 ? 2 : 0);
+	int res0 = 1 + inputsCount + outputsCount + hasRemark + 3 * nkeysnum + (outsigkeyind < 0 ? 2 : 0);
 
 	if (res0 > XDAG_BLOCK_FIELDS) {
 		xdag_err("create block failed, exceed max number of fields.");
@@ -968,16 +968,16 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 		}
 	}
 
-	if(hasRemark) {
-		setfld(XDAG_FIELD_REMARK, fields, xdag_remark);
-	}
-
 	for (j = 0; j < inputsCount; ++j) {
-		setfld(XDAG_FIELD_IN, fields + hasRemark + j, xdag_hash_t);
+		setfld(XDAG_FIELD_IN, fields + j, xdag_hash_t);
 	}
 
 	for (j = 0; j < outputsCount; ++j) {
-		setfld(XDAG_FIELD_OUT, fields + hasRemark + inputsCount + j, xdag_hash_t);
+		setfld(XDAG_FIELD_OUT, fields + inputsCount + j, xdag_hash_t);
+	}
+
+	if(hasRemark) {
+		setfld(XDAG_FIELD_REMARK, fields + inputsCount + outputsCount, xdag_remark);
 	}
 
 	if(mining && hasTag) {
@@ -1602,10 +1602,10 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 			address, pramount(bi->linkamount[i]));
 	}
 
-	fprintf(out, "-------------------------------------------------------------------------------------------\n");
+	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
 	fprintf(out, "                                 block as address: details\n");
-	fprintf(out, " direction  transaction                                amount       time                   \n");
-	fprintf(out, "-------------------------------------------------------------------------------------------\n");
+	fprintf(out, " direction  transaction                                amount       time                     remark                          \n");
+	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
 
 	int N = 0x10000;
 	int n = 0;
@@ -1689,7 +1689,7 @@ static inline void print_block(struct block_internal *block, int print_only_addr
 static inline void print_header_block_list(FILE *out)
 {
 	fprintf(out, "-----------------------------------------------------------------------\n");
-	fprintf(out, "address                            time                      state\n");
+	fprintf(out, "address                            time                      state     \n");
 	fprintf(out, "-----------------------------------------------------------------------\n");
 }
 
@@ -1832,7 +1832,7 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
 	return 0;
 }
 
-int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t))
+int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark))
 {
 	struct block_internal *bi = block_by_hash(hash);
 	
@@ -1881,7 +1881,7 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 			struct block_internal *ri = block_array[i];
 			for (int j = 0; j < ri->nlinks; j++) {
 				if(ri->link[j] == bi && ri->linkamount[j]) {
-					if(callback(data, 1 << j & ri->in_mask, ri->flags, ri->hash, ri->linkamount[j], ri->time)) {
+					if(callback(data, 1 << j & ri->in_mask, ri->flags, ri->hash, ri->linkamount[j], ri->time, ri->remark)) {
 						free(block_array);
 						return 0;
 					}
