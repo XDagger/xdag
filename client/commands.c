@@ -594,8 +594,8 @@ void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd)
 	}
 
 	char *remark = strtok_r(0, " \t\r\n", &nextParam);
-	if(remark && strlen(remark) >= 32) {
-		fprintf(out, "Xfer: tx remark (Transaction ID) exceed max length 32.\n");
+	if(remark && strlen(remark) >= 32 || !validate_ascii(remark)) {
+		fprintf(out, "Xfer: tx remark (Transaction ID) exceed max length 31 chars or is invalid ascii.\n");
 		return;
 	}
 
@@ -805,7 +805,7 @@ int xdag_do_xfer(void *outv, const char *amount, const char *address, const char
 	if(remark) {
 		if(strlen(remark) >= 32 || !validate_ascii(remark)) {
 			if(out) {
-				fprintf(out, "Xfer: transaction remark exceeds max length 32 or is invalid ascii.\n");
+				fprintf(out, "Xfer: transaction remark exceeds max length 31 chars or is invalid ascii.\n");
 			}
 			return 1;
 		} else if(strlen(remark) > 0) {

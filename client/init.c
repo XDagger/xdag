@@ -159,11 +159,11 @@ int xdag_init(int argc, char **argv, int isGui)
 			g_disable_mining = 1;
 		} else if(ARG_EQUAL(argv[i], "", "-tag")) {
 			if(i+1 < argc) {
-				if(strlen(argv[i+1]) < 32) {
+				if(strlen(argv[i+1]) < 32 && validate_ascii(argv[i+1])) {
 					strcpy(g_pool_tag, argv[i+1]);
 					i++;
 				} else {
-					printf("Pool tag exceeds max length. Max length 31.\n");
+					printf("Pool tag exceeds max length. Max length 31 chars or is invalid ascii.\n");
 					return -1;
 				}
 			} else {
@@ -303,6 +303,6 @@ void printUsage(char* appName)
 		"  -rpc-port      - set HTTP JSON-RPC port (default is 7677)\n"
 		"  -threads N     - create N transport layer threads for pool (default is 6)\n"
 		"  -dm            - disable mining on pool (-P option is ignored)\n"
-		"  -tag           - tag for pool to distingush pools. Max length is 31\n"
+		"  -tag           - tag for pool to distingush pools. Max length is 31 chars\n"
 		, appName);
 }
