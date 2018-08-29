@@ -38,6 +38,7 @@
 #include "../../dus/programs/dfstools/source/dfslib/dfslib_string.h"
 #include "../../dnet/dnet_main.h"
 #include "../utils/log.h"
+#include "../utils/utils.h"
 
 #define rpc_register_func(command) xdag_rpc_service_register_procedure(&method_##command, #command, NULL);
 
@@ -556,11 +557,11 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
 
 			cJSON *json_remark = cJSON_GetObjectItem(param, "remark");
 			if (cJSON_IsString(json_remark)) {
-				if(strlen(json_remark->valuestring) < 32) {
+				if(strlen(json_remark->valuestring) < 32 && validate_ascii(json_remark->valuestring)) {
 					strcpy(remark, json_remark->valuestring);
 				} else {
 					ctx->error_code = 1;
-					ctx->error_message = strdup("Transacion remark exceed max length 32.");
+					ctx->error_message = strdup("Transacion remark exceeds max length 32 or is invalid ascii.");
 					return NULL;
 				}
 			}
