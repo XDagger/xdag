@@ -561,7 +561,7 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
 					strcpy(remark, json_remark->valuestring);
 				} else {
 					ctx->error_code = 1;
-					ctx->error_message = strdup("Transacion remark exceeds max length 32 or is invalid ascii.");
+					ctx->error_message = strdup("Transacion remark exceeds max length 31 chars or is invalid ascii.");
 					return NULL;
 				}
 			}
