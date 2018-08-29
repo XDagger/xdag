@@ -563,7 +563,7 @@ static void angelize(void) {
 
 #if defined(_WIN32) || defined(_WIN64) || defined (__MACOS__) || defined (__APPLE__)
 #include "../client/utils/utils.h"
-int dnet_load_keys(void)
+static int dnet_load_keys(void)
 {
 	FILE *f = xdag_open_file("dnet_keys.bin", "rb");
 	if(!f) {
