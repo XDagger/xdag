@@ -532,9 +532,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 					xdag_free(tmpNodeBlock.remark);
 				}
 				tmpNodeBlock.remark = NULL;
-				tmpNodeBlock.remark = (char *)xdag_malloc(sizeof(xdag_remark));
+				tmpNodeBlock.remark = (char *)xdag_malloc(sizeof(xdag_remark_t));
 				if(tmpNodeBlock.remark) {
-					memcpy(tmpNodeBlock.remark, newBlock->field[i].remark, sizeof(xdag_remark));
+					memcpy(tmpNodeBlock.remark, newBlock->field[i].remark, sizeof(xdag_remark_t));
 				} else {
 					xdag_warn("malloc failed. [add_block_nolock:%d]", __LINE__);
 				}
@@ -984,11 +984,11 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	}
 
 	if(hasRemark) {
-		setfld(XDAG_FIELD_REMARK, fields + inputsCount + outputsCount, xdag_remark);
+		setfld(XDAG_FIELD_REMARK, fields + inputsCount + outputsCount, xdag_remark_t);
 	}
 
 	if(mining && hasTag) {
-		setfld(XDAG_FIELD_REMARK, g_pool_tag, xdag_remark);
+		setfld(XDAG_FIELD_REMARK, g_pool_tag, xdag_remark_t);
 	}
 
 	for (j = 0; j < nkeysnum; ++j) {
@@ -1842,7 +1842,7 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
 	return 0;
 }
 
-int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark))
+int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark_t))
 {
 	struct block_internal *bi = block_by_hash(hash);
 	
@@ -1984,7 +1984,7 @@ void xdag_block_finish()
 	pthread_mutex_lock(&block_mutex);
 }
 
-int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark))
+int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark_t))
 {
 	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
