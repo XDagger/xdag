@@ -752,7 +752,7 @@ static int make_transaction_block(struct xfer_callback_data *xferData)
 	xferData->fields[xferData->fieldsCount].amount = xferData->todo;
 
 	if(xferData->hasRemark && strlen(xferData->remark) > 0) {
-		memcpy(xferData->fields + xferData->fieldsCount + xferData->hasRemark, xferData->remark, sizeof(xdag_remark));
+		memcpy(xferData->fields + xferData->fieldsCount + xferData->hasRemark, xferData->remark, sizeof(xdag_remark_t));
 	}
 
 	int res = xdag_create_block(xferData->fields, xferData->fieldsCount, 1, xferData->hasRemark, 0, 0, xferData->transactionBlockHash);

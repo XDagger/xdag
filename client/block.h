@@ -50,7 +50,7 @@ enum bi_flags {
 
 #define XDAG_BLOCK_FIELDS 16
 
-typedef char xdag_remark[32];
+typedef char xdag_remark_t[32];
 
 struct xdag_field {
 	union {
@@ -69,7 +69,7 @@ struct xdag_field {
 			};
 		};
 		xdag_hash_t data;
-		xdag_remark remark;
+		xdag_remark_t remark;
 	};
 };
 
@@ -150,7 +150,7 @@ extern void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out);
 xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash);
 
 // get all transactions of specified address, and return total number of transactions
-extern int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark));
+extern int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark_t));
 
 // print orphan blocks
 void xdag_list_orphan_blocks(int, FILE*);
@@ -159,7 +159,7 @@ void xdag_list_orphan_blocks(int, FILE*);
 void xdag_block_finish(void);
 	
 // get block info of specified address
-extern int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark));
+extern int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark_t));
 
 #ifdef __cplusplus
 };
