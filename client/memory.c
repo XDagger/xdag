@@ -134,6 +134,9 @@ void *xdag_malloc(size_t size)
 
 void xdag_free(void *mem)
 {
+	if(g_fd < 0) {
+		free(mem);
+	}
 }
 
 void xdag_mem_finish(void)
@@ -151,7 +154,12 @@ void xdag_mem_finish(void)
 int xdag_free_all(void)
 {
 	g_pos = 0;
-	return 0;
+
+	if(g_fd < 0) { /* when use -z RAM, have to free all blocks */
+		return -1;
+	} else {
+		return 0;
+	}
 }
 
 #endif
