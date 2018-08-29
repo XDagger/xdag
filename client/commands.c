@@ -9,6 +9,7 @@
 #include "address.h"
 #include "wallet.h"
 #include "utils/log.h"
+#include "utils/utils.h"
 #include "pool.h"
 #include "miner.h"
 #include "transport.h"
@@ -68,7 +69,8 @@ void processOrphanBlocksCommand(char *nextParam, FILE *out);
 void processHelpCommand(FILE *out);
 void processDisconnectCommand(char *nextParam, FILE *out);
 void processRpcWhiteListCommand(char *nextParam, FILE *out);
-void processAutoRefreshCommand(char *nextPram, FILE *out);
+void processAutoRefreshCommand(char *nextParam, FILE *out);
+void processReloadCommand(char *nextParam, FILE *out);
 
 int xdag_com_account(char *, FILE*);
 int xdag_com_balance(char *, FILE*);
@@ -92,8 +94,9 @@ int xdag_com_run(char *, FILE*);
 int xdag_com_terminate(char *, FILE*);
 int xdag_com_exit(char *, FILE*);
 int xdag_com_disconnect(char *, FILE*);
-int xdag_com_white_list(char* args, FILE* out);
+int xdag_com_white_list(char *, FILE*);
 int xdag_com_autorefresh(char *, FILE*);
+int xdag_com_reload(char *, FILE*);
 
 XDAG_COMMAND* find_xdag_command(char*);
 
@@ -121,8 +124,9 @@ XDAG_COMMAND commands[] = {
 	{ "xfer"        , 0, (xdag_com_func_t)NULL},
 	{ "help"        , 0, xdag_com_help},
 	{ "disconnect"  , 2, xdag_com_disconnect },
-	{ "rpc-white"   , 2, xdag_com_white_list},
-	{ "autorefresh", 2, xdag_com_autorefresh },
+	{ "rpc-white"   , 2, xdag_com_white_list },
+	{ "autorefresh" , 2, xdag_com_autorefresh },
+	{ "reload"      , 2, xdag_com_reload },
 	{ (char *)NULL  , 0, (xdag_com_func_t)NULL}
 };
 
@@ -268,6 +272,12 @@ int xdag_com_white_list(char* args, FILE* out)
 int xdag_com_autorefresh(char *args, FILE *out)
 {
 	processAutoRefreshCommand(args, out);
+	return 0;
+}
+
+int xdag_com_reload(char *args, FILE *out)
+{
+	processReloadCommand(args, out);
 	return 0;
 }
 
@@ -692,6 +702,11 @@ void processAutoRefreshCommand(char *nextParam, FILE *out)
 	}
 }
 
+void processReloadCommand(char *nextParam, FILE *out)
+{
+	g_xdag_state = XDAG_STATE_REST;
+}
+
 long double hashrate(xdag_diff_t *diff)
 {
 	long double sum = 0;
@@ -788,9 +803,9 @@ int xdag_do_xfer(void *outv, const char *amount, const char *address, const char
 	}
 
 	if(remark) {
-		if(strlen(remark) >= 32) {
+		if(strlen(remark) >= 32 || !validate_ascii(remark)) {
 			if(out) {
-				fprintf(out, "Xfer: transaction remark exceeds max length 32.\n");
+				fprintf(out, "Xfer: transaction remark exceeds max length 32 or is invalid ascii.\n");
 			}
 			return 1;
 		} else if(strlen(remark) > 0) {
