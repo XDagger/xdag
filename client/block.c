@@ -531,7 +531,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 				if(tmpNodeBlock.remark) {
 					xdag_free(tmpNodeBlock.remark);
 				}
-				tmpNodeBlock.remark = NULL;
 				tmpNodeBlock.remark = (char *)xdag_malloc(sizeof(xdag_remark_t));
 				if(tmpNodeBlock.remark) {
 					memcpy(tmpNodeBlock.remark, newBlock->field[i].remark, sizeof(xdag_remark_t));
@@ -1161,7 +1160,7 @@ static void reset_callback(struct ldus_rbtree *node)
 	if(b->remark) {
 		xdag_free(b->remark);
 	}
-	xdag_free(b);
+	xdag_free(node);
 }
 
 // main thread which works with block
