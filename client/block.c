@@ -535,7 +535,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 				if(tmpNodeBlock.remark) {
 					memcpy(tmpNodeBlock.remark, newBlock->field[i].remark, sizeof(xdag_remark_t));
 				} else {
-					xdag_warn("malloc failed. [add_block_nolock:%d]", __LINE__);
+					xdag_warn("xdag_malloc failed. [add_block_nolock:%d]", __LINE__);
 				}
 				break;
 
@@ -722,6 +722,11 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		}
 	} else {
 		nodeBlock = xdag_malloc(sizeof(struct block_internal));
+		if(!nodeBlock) {
+			xdag_err("xdag_malloc failed. [add_block_nolock:%d]", __LINE__);
+			err = -1;
+			goto end;
+		}
 		memset(nodeBlock, 0, sizeof(struct block_internal));
 	}
 	if(!nodeBlock) {
@@ -801,7 +806,10 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 			blockRef = tmpNodeBlock.link[i];
 			if(!blockRef->backrefs || blockRef->backrefs->backrefs[N_BACKREFS - 1]) {
 				struct block_backrefs *back = xdag_malloc(sizeof(struct block_backrefs));
-				if(!back) continue;
+				if(!back) {
+					xdag_err("xdag_malloc failed. [add_block_nolock:%d]", __LINE__);
+					continue;
+				}
 				memset(back, 0, sizeof(struct block_backrefs));
 				back->next = blockRef->backrefs;
 				blockRef->backrefs = back;
