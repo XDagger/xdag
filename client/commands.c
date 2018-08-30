@@ -1,4 +1,4 @@
-/* commands processing, T13.920-T14.347 $DVS:time$ */
+/* commands processing, T13.920-T14.423 $DVS:time$ */
 
 #include "commands.h"
 #include <string.h>
@@ -43,6 +43,8 @@ typedef struct {
 	int avaibility;			/* 0 - both miner and pool, 1 - only miner, 2 - only pool */
 	xdag_com_func_t func;		/* command function */
 } XDAG_COMMAND;
+
+extern int g_use_tmpfile;
 
 // Function declarations
 int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
@@ -546,16 +548,16 @@ void processInternalStatsCommand(FILE *out)
 {
 	fprintf(out,
 		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-		"Orphan hashtable  :\n"
-		"             state: %s\n"
+		"Temp file   :\n"
+		"       state: %s\n"
                 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-		"Optimized ec      :\n"
-		"             state: %s\n"
+		"Optimized ec:\n"
+		"       state: %s\n"
                 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 		"Cache informations:\n"
 		"     cached blocks: target amount %u, actual amount %u, hitrate %f%%\n"
                 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n",
-		(g_xdag_extstats.cache_hitrate ? "Active" : "Inactive" ), (USE_OPTIMIZED_EC ? "Active" : "Inactive" ), 
+		(g_use_tmpfile ? "Active" : "Inactive" ), (USE_OPTIMIZED_EC ? "Active" : "Inactive" ), 
 		g_xdag_extstats.cache_size, g_xdag_extstats.cache_usage, g_xdag_extstats.cache_hitrate*100
 	);
 }
