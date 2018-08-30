@@ -504,7 +504,7 @@ int validate_ascii(const char *str)
 	uint8_t c = 0;
 	for(int i = 0; i < strlen(str); i++) {
 		c = str[i];
-		if(c>128) {
+		if(c > 126 && c < 32) {
 			return 0;
 		}
 	}
