@@ -1031,7 +1031,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	res = xdag_add_block(block);
 	if (res > 0) {
 		if (mining) {
-			memcpy(g_xdag_mined_hashes[MAIN_TIME(send_time) & (CONFIRMATIONS_COUNT - 1)],
+			memcpy(g_xdag_mined_hashes[MAIN_TIME(send_time) & (POOL_HASHES_ARRAY_SIZE - 1)],
 				newBlockHash, sizeof(xdag_hash_t));
 			memcpy(g_xdag_mined_nonce[MAIN_TIME(send_time) & (CONFIRMATIONS_COUNT - 1)],
 				block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));

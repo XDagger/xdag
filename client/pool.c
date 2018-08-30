@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <inttypes.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #if defined(_WIN32) || defined(_WIN64)
@@ -124,7 +125,7 @@ struct payment_data {
 	int reward_index;
 };
 
-xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT], g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
+xdag_hash_t g_xdag_mined_hashes[POOL_HASHES_ARRAY_SIZE], g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
 
 static uint32_t g_max_connections_count = START_MINERS_COUNT, g_max_miner_ip_count = START_MINERS_IP_COUNT;
 static uint32_t g_connections_per_miner_limit = DEFAUL_CONNECTIONS_PER_MINER_LIMIT;
@@ -1020,7 +1021,7 @@ void *pool_main_thread(void *arg)
 
 void *pool_block_thread(void *arg)
 {
-	xdag_time_t prev_task_time = 0;
+	xdag_time_t todo_task_time = 0;
 	struct xdag_block *b;
 	int res;
 
@@ -1034,17 +1035,25 @@ void *pool_block_thread(void *arg)
 		struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
 		const xdag_time_t current_task_time = task->task_time;
 
-		if(current_task_time > prev_task_time) {
-			uint64_t *hash = g_xdag_mined_hashes[(current_task_time - CONFIRMATIONS_COUNT + 1) & (CONFIRMATIONS_COUNT - 1)];
+		if(current_task_time >= todo_task_time) {
+			if(todo_task_time == 0){
+				todo_task_time = current_task_time;
+			}
+			else if(current_task_time - todo_task_time > POOL_HASHES_ARRAY_SIZE - CONFIRMATIONS_COUNT){
+				int old_todo_task_time = todo_task_time;
+				todo_task_time = current_task_time - (POOL_HASHES_ARRAY_SIZE - CONFIRMATIONS_COUNT);
+				xdag_warn("Skipped check for payment of latest %" PRIu64 " mined blocks.", todo_task_time - old_todo_task_time);
+			}
+			uint64_t *hash = g_xdag_mined_hashes[(todo_task_time - CONFIRMATIONS_COUNT + 1) & (POOL_HASHES_ARRAY_SIZE - 1)];
 
-			processed = 1;
-			prev_task_time = current_task_time;
-
-			res = pay_miners(current_task_time - CONFIRMATIONS_COUNT + 1);
+			res = pay_miners(todo_task_time - CONFIRMATIONS_COUNT + 1);
 			remove_inactive_miners();
 
 			xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
-				hash[3], hash[2], hash[1], hash[0], (current_task_time - CONFIRMATIONS_COUNT + 1) << 16 | 0xffff, res);
+				hash[3], hash[2], hash[1], hash[0], (todo_task_time - CONFIRMATIONS_COUNT + 1) << 16 | 0xffff, res);
+
+			processed = 1;
+			todo_task_time++;
 		}
 
 		b = xdag_first_new_block();
@@ -1277,7 +1286,7 @@ int pay_miners(xdag_time_t time)
 	if(!miners_count) return -1;
 
 	const int confirmation_index = time & (CONFIRMATIONS_COUNT - 1);
-	uint64_t *hash = g_xdag_mined_hashes[confirmation_index];
+	uint64_t *hash = g_xdag_mined_hashes[time & (POOL_HASHES_ARRAY_SIZE -1)];
 	uint64_t *nonce = g_xdag_mined_nonce[confirmation_index];
 
 	data.balance = xdag_get_balance(hash);
