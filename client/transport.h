@@ -30,6 +30,9 @@ extern int xdag_generate_random_array(void *array, unsigned long size);
 /* sends a new block to network */
 extern int xdag_send_new_block(struct xdag_block *b);
 
+/* sends a new block to pool */
+extern int xdag_send_new_block_to_pool(struct xdag_block *b);
+
 /* requests all blocks from the remote host, that are in specified time interval;
  * calls callback() for each block, callback received the block and data as paramenters;
  * return -1 in case of error

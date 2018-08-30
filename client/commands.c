@@ -1,4 +1,4 @@
-/* commands processing, T13.920-T14.347 $DVS:time$ */
+/* commands processing, T13.920-T14.423 $DVS:time$ */
 
 #include "commands.h"
 #include <string.h>
@@ -9,6 +9,7 @@
 #include "address.h"
 #include "wallet.h"
 #include "utils/log.h"
+#include "utils/utils.h"
 #include "pool.h"
 #include "miner.h"
 #include "transport.h"
@@ -24,7 +25,7 @@
 #include <unistd.h>
 #endif
 
-#define Nfields(d) (2 + d->fieldsCount + 3 * d->keysCount + 2 * d->outsig)
+#define Nfields(d) (2 + d->hasRemark + d->fieldsCount + 3 * d->keysCount + 2 * d->outsig)
 #define COMMAND_HISTORY ".cmd.history"
 
 struct account_callback_data {
@@ -43,6 +44,8 @@ typedef struct {
 	int avaibility;			/* 0 - both miner and pool, 1 - only miner, 2 - only pool */
 	xdag_com_func_t func;		/* command function */
 } XDAG_COMMAND;
+
+extern int g_use_tmpfile;
 
 // Function declarations
 int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
@@ -68,7 +71,8 @@ void processOrphanBlocksCommand(char *nextParam, FILE *out);
 void processHelpCommand(FILE *out);
 void processDisconnectCommand(char *nextParam, FILE *out);
 void processRpcWhiteListCommand(char *nextParam, FILE *out);
-void processAutoRefreshCommand(char *nextPram, FILE *out);
+void processAutoRefreshCommand(char *nextParam, FILE *out);
+void processReloadCommand(char *nextParam, FILE *out);
 
 int xdag_com_account(char *, FILE*);
 int xdag_com_balance(char *, FILE*);
@@ -92,8 +96,9 @@ int xdag_com_run(char *, FILE*);
 int xdag_com_terminate(char *, FILE*);
 int xdag_com_exit(char *, FILE*);
 int xdag_com_disconnect(char *, FILE*);
-int xdag_com_white_list(char* args, FILE* out);
+int xdag_com_white_list(char *, FILE*);
 int xdag_com_autorefresh(char *, FILE*);
+int xdag_com_reload(char *, FILE*);
 
 XDAG_COMMAND* find_xdag_command(char*);
 
@@ -121,8 +126,9 @@ XDAG_COMMAND commands[] = {
 	{ "xfer"        , 0, (xdag_com_func_t)NULL},
 	{ "help"        , 0, xdag_com_help},
 	{ "disconnect"  , 2, xdag_com_disconnect },
-	{ "rpc-white"   , 2, xdag_com_white_list},
-	{ "autorefresh", 2, xdag_com_autorefresh },
+	{ "rpc-white"   , 2, xdag_com_white_list },
+	{ "autorefresh" , 2, xdag_com_autorefresh },
+	{ "reload"      , 2, xdag_com_reload },
 	{ (char *)NULL  , 0, (xdag_com_func_t)NULL}
 };
 
@@ -268,6 +274,12 @@ int xdag_com_white_list(char* args, FILE* out)
 int xdag_com_autorefresh(char *args, FILE *out)
 {
 	processAutoRefreshCommand(args, out);
+	return 0;
+}
+
+int xdag_com_reload(char *args, FILE *out)
+{
+	processReloadCommand(args, out);
 	return 0;
 }
 
@@ -546,16 +558,16 @@ void processInternalStatsCommand(FILE *out)
 {
 	fprintf(out,
 		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-		"Orphan hashtable  :\n"
-		"             state: %s\n"
+		"Temp file   :\n"
+		"       state: %s\n"
                 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-		"Optimized ec      :\n"
-		"             state: %s\n"
+		"Optimized ec:\n"
+		"       state: %s\n"
                 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 		"Cache informations:\n"
 		"     cached blocks: target amount %u, actual amount %u, hitrate %f%%\n"
                 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n",
-		(g_xdag_extstats.cache_hitrate ? "Active" : "Inactive" ), (USE_OPTIMIZED_EC ? "Active" : "Inactive" ), 
+		(g_use_tmpfile ? "Active" : "Inactive" ), (USE_OPTIMIZED_EC ? "Active" : "Inactive" ), 
 		g_xdag_extstats.cache_size, g_xdag_extstats.cache_usage, g_xdag_extstats.cache_hitrate*100
 	);
 }
@@ -582,11 +594,18 @@ void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd)
 		fprintf(out, "Xfer: destination address not given.\n");
 		return;
 	}
+
+	char *remark = strtok_r(0, " \t\r\n", &nextParam);
+	if(remark && strlen(remark) >= 32 || !validate_ascii(remark)) {
+		fprintf(out, "Xfer: tx remark (Transaction ID) exceed max length 31 chars or is invalid ascii.\n");
+		return;
+	}
+
 	if(out == stdout ? xdag_user_crypt_action(0, 0, 0, 3) : (ispwd ? xdag_user_crypt_action(pwd, 0, 4, 5) : 1)) {
 		sleep(3);
 		fprintf(out, "Password incorrect.\n");
 	} else {
-		xdag_do_xfer(out, amount, address, 0);
+		xdag_do_xfer(out, amount, address, remark, 0);
 	}
 }
 
@@ -685,6 +704,11 @@ void processAutoRefreshCommand(char *nextParam, FILE *out)
 	}
 }
 
+void processReloadCommand(char *nextParam, FILE *out)
+{
+	g_xdag_state = XDAG_STATE_REST;
+}
+
 long double hashrate(xdag_diff_t *diff)
 {
 	long double sum = 0;
@@ -723,11 +747,17 @@ int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_ti
 static int make_transaction_block(struct xfer_callback_data *xferData)
 {
 	char address[33];
+
 	if(xferData->fieldsCount != XFER_MAX_IN) {
 		memcpy(xferData->fields + xferData->fieldsCount, xferData->fields + XFER_MAX_IN, sizeof(xdag_hashlow_t));
 	}
 	xferData->fields[xferData->fieldsCount].amount = xferData->todo;
-	int res = xdag_create_block(xferData->fields, xferData->fieldsCount, 1, 0, 0, xferData->transactionBlockHash);
+
+	if(xferData->hasRemark && strlen(xferData->remark) > 0) {
+		memcpy(xferData->fields + xferData->fieldsCount + xferData->hasRemark, xferData->remark, sizeof(xdag_remark_t));
+	}
+
+	int res = xdag_create_block(xferData->fields, xferData->fieldsCount, 1, xferData->hasRemark, 0, 0, xferData->transactionBlockHash);
 	if(res) {
 		xdag_hash2address(xferData->fields[xferData->fieldsCount].hash, address);
 		xdag_err("FAILED: to %s xfer %.9Lf %s, error %d",
@@ -742,7 +772,7 @@ static int make_transaction_block(struct xfer_callback_data *xferData)
 	return 0;
 }
 
-int xdag_do_xfer(void *outv, const char *amount, const char *address, int isGui)
+int xdag_do_xfer(void *outv, const char *amount, const char *address, const char *remark, int isGui)
 {
 	char address_buf[33];
 	struct xfer_callback_data xfer;
@@ -773,6 +803,19 @@ int xdag_do_xfer(void *outv, const char *amount, const char *address, int isGui)
 		}
 		return 1;
 	}
+
+	if(remark) {
+		if(strlen(remark) >= 32 || !validate_ascii(remark)) {
+			if(out) {
+				fprintf(out, "Xfer: transaction remark exceeds max length 31 chars or is invalid ascii.\n");
+			}
+			return 1;
+		} else if(strlen(remark) > 0) {
+			strcpy(xfer.remark, remark);
+			xfer.hasRemark = 1;
+		}
+	}
+
 	xdag_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
 	xfer.outsig = 1;
 	g_xdag_state = XDAG_STATE_XFER;
@@ -944,7 +987,7 @@ void processHelpCommand(FILE *out)
 		"  state                - print the program state\n"
 		"  stats                - print statistics for loaded and all known blocks\n"
 		"  terminate            - terminate both daemon and this program\n"
-		"  xfer S A             - transfer S our %s to the address A\n"
+		"  xfer S A [T]         - transfer S our %s to the address A with remark T\n"
 		"  disconnect O [A|IP]  - disconnect all connections or specified miners\n"
 		"                          O is option, can be all, address or ip\n"
 		"                          A is the miners' address\n"

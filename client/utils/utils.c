@@ -495,3 +495,20 @@ int validate_ipv4_port(const char *str)
 	return 1;
 }
 
+int validate_ascii(const char *str)
+{
+	if(!str || strlen(str) == 0) {
+		return 1;
+	}
+
+	uint8_t c = 0;
+	for(int i = 0; i < strlen(str); i++) {
+		c = str[i];
+		if(c > 126 && c < 32) {
+			return 0;
+		}
+	}
+
+	return 1;
+}
+

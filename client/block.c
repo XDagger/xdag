@@ -53,6 +53,7 @@ struct block_internal {
 	xdag_diff_t difficulty;
 	xdag_amount_t amount, linkamount[MAX_LINKS], fee;
 	xdag_time_t time;
+	char * remark;
 	uint64_t storage_pos;
 	union {
 		struct block_internal *ref;
@@ -526,7 +527,16 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 				}
 				break;
 
-			case XDAG_FIELD_RESERVE0:
+			case XDAG_FIELD_REMARK:
+				if(tmpNodeBlock.remark) {
+					xdag_free(tmpNodeBlock.remark);
+				}
+				tmpNodeBlock.remark = (char *)xdag_malloc(sizeof(xdag_remark_t));
+				if(tmpNodeBlock.remark) {
+					memcpy(tmpNodeBlock.remark, newBlock->field[i].remark, sizeof(xdag_remark_t));
+				} else {
+					xdag_warn("xdag_malloc failed. [add_block_nolock:%d]", __LINE__);
+				}
 				break;
 
 			case XDAG_FIELD_RESERVE1:
@@ -563,7 +573,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		goto end;
 	}
 
-	/* if not read from storage and timestamp is ...ffff and last field is nonce than the block is extra */
+	/* if not read from storage and timestamp is ...ffff and last field is nonce then the block is extra */
 	if (!g_light_mode && (transportHeader & (sizeof(struct xdag_block) - 1))
 			&& (tmpNodeBlock.time & (MAIN_CHAIN_PERIOD - 1)) == (MAIN_CHAIN_PERIOD - 1)
 			&& (signinmask & 1 << (XDAG_BLOCK_FIELDS - 1))) {
@@ -712,6 +722,12 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		}
 	} else {
 		nodeBlock = xdag_malloc(sizeof(struct block_internal));
+		if(!nodeBlock) {
+			xdag_err("xdag_malloc failed. [add_block_nolock:%d]", __LINE__);
+			err = -1;
+			goto end;
+		}
+		memset(nodeBlock, 0, sizeof(struct block_internal));
 	}
 	if(!nodeBlock) {
 		err = 0xC;
@@ -790,7 +806,10 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 			blockRef = tmpNodeBlock.link[i];
 			if(!blockRef->backrefs || blockRef->backrefs->backrefs[N_BACKREFS - 1]) {
 				struct block_backrefs *back = xdag_malloc(sizeof(struct block_backrefs));
-				if(!back) continue;
+				if(!back) {
+					xdag_err("xdag_malloc failed. [add_block_nolock:%d]", __LINE__);
+					continue;
+				}
 				memset(back, 0, sizeof(struct block_backrefs));
 				back->next = blockRef->backrefs;
 				blockRef->backrefs = back;
@@ -881,12 +900,12 @@ int xdag_add_block(struct xdag_block *b)
  * in the following 'noutput' fields similarly - outputs, fee; send_time (time of sending the block);
  * if it is greater than the current one, then the mining is performed to generate the most optimal hash
  */
-int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, xdag_amount_t fee,
+int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, int hasRemark, xdag_amount_t fee,
 	xdag_time_t send_time, xdag_hash_t newBlockHashResult)
 {
 	pthread_mutex_lock(&g_create_block_mutex);
 	struct xdag_block block[2];
-	int i, j, res, mining, defkeynum, keysnum[XDAG_BLOCK_FIELDS], nkeys, nkeysnum = 0, outsigkeyind = -1;
+	int i, j, res, mining, defkeynum, keysnum[XDAG_BLOCK_FIELDS], nkeys, nkeysnum = 0, outsigkeyind = -1, hasTag = 0;
 	struct xdag_public_key *defkey = xdag_wallet_default_key(&defkeynum), *keys = xdag_wallet_our_keys(&nkeys), *key;
 	xdag_hash_t signatureHash;
 	xdag_hash_t newBlockHash;
@@ -911,9 +930,10 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	}
 	pthread_mutex_unlock(&g_create_block_mutex);
 
-	int res0 = 1 + inputsCount + outputsCount + 3 * nkeysnum + (outsigkeyind < 0 ? 2 : 0);
+	int res0 = 1 + inputsCount + outputsCount + hasRemark + 3 * nkeysnum + (outsigkeyind < 0 ? 2 : 0);
 
 	if (res0 > XDAG_BLOCK_FIELDS) {
+		xdag_err("create block failed, exceed max number of fields.");
 		return -1;
 	}
 
@@ -925,6 +945,12 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	}
 
 	res0 += mining;
+
+	/* reserve field for pool tag in generated main block */
+	if(strlen(g_pool_tag)>0 && strlen(g_pool_tag) < 32) {
+		hasTag = 1;
+	}
+	res0 += hasTag * mining;
 
  begin:
 	res = res0;
@@ -943,13 +969,15 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	} else {
 		if (res < XDAG_BLOCK_FIELDS && mining && pretop && pretop->time < send_time) {
 			log_block("Mintop", pretop->hash, pretop->time, pretop->storage_pos);
-			setfld(XDAG_FIELD_OUT, pretop->hash, xdag_hashlow_t); res++;
+			setfld(XDAG_FIELD_OUT, pretop->hash, xdag_hashlow_t);
+			res++;
 		}
 
 		for (oref = g_orphan_first[0]; oref && res < XDAG_BLOCK_FIELDS; oref = oref->next) {
 			ref = oref->orphan_bi;
 			if (ref->time < send_time) {
-				setfld(XDAG_FIELD_OUT, ref->hash, xdag_hashlow_t); res++;
+				setfld(XDAG_FIELD_OUT, ref->hash, xdag_hashlow_t);
+				res++;
 			}
 		}
 	}
@@ -960,6 +988,14 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 
 	for (j = 0; j < outputsCount; ++j) {
 		setfld(XDAG_FIELD_OUT, fields + inputsCount + j, xdag_hash_t);
+	}
+
+	if(hasRemark) {
+		setfld(XDAG_FIELD_REMARK, fields + inputsCount + outputsCount, xdag_remark_t);
+	}
+
+	if(mining && hasTag) {
+		setfld(XDAG_FIELD_REMARK, g_pool_tag, xdag_remark_t);
 	}
 
 	for (j = 0; j < nkeysnum; ++j) {
@@ -1041,14 +1077,14 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 			struct xdag_block * new_block = (struct xdag_block *)malloc(sizeof(struct xdag_block));
 			if(new_block == NULL){
 				xdag_warn("Non-critical error, malloc failed [function: create_block]");
-				xdag_send_new_block(block);
+				xdag_send_new_block(block); /* send pool generated block to network directly */
 			} else {
 				memcpy(new_block, block, sizeof(struct xdag_block));
 				new_block->field[0].transport_header = 0;
 				xdag_append_new_block(new_block);
 			}
-		} else { /* send miner created block directly */
-			xdag_send_new_block(block);
+		} else { /* send miner created block to pool directly */
+			xdag_send_new_block_to_pool(block);
 		}
 
 		if(newBlockHashResult != NULL) {
@@ -1128,7 +1164,11 @@ static void *sync_thread(void *arg)
 
 static void reset_callback(struct ldus_rbtree *node)
 {
-	free(node);
+	struct block_internal *b = (struct block_internal *)_rbtree_ptr(node);
+	if(b->remark) {
+		xdag_free(b->remark);
+	}
+	xdag_free(node);
 }
 
 // main thread which works with block
@@ -1199,7 +1239,7 @@ begin:
 			nblk = nblk / 61 + (nblk % 61 > (unsigned)rand() % 61);
 
 			while (nblk--) {
-				xdag_create_block(0, 0, 0, 0, 0, NULL);
+				xdag_create_block(0, 0, 0, 0, 0, 0, NULL);
 			}
 		}
 
@@ -1220,7 +1260,6 @@ begin:
 				pthread_mutex_lock(&rbtree_mutex);
 				ldus_rbtree_walk_up(root, reset_callback);
 				pthread_mutex_unlock(&rbtree_mutex);
-
 			}
 			
 			root = 0;
@@ -1330,7 +1369,7 @@ int xdag_get_our_block(xdag_hash_t hash)
 	pthread_mutex_unlock(&block_mutex);
 
 	if (!bi) {
-		xdag_create_block(0, 0, 0, 0, 0, NULL);
+		xdag_create_block(0, 0, 0, 0, 0, 0, NULL);
 		pthread_mutex_lock(&block_mutex);
 		bi = ourfirst;
 		pthread_mutex_unlock(&block_mutex);
@@ -1559,6 +1598,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "  file pos: %llx\n", (unsigned long long)bi->storage_pos);
 	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 		(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
+	fprintf(out, "    remark: %s\n", bi->remark ? bi->remark : "");
 	fprintf(out, "difficulty: %llx%016llx\n", xdag_diff_args(bi->difficulty));
 	xdag_hash2address(h, address);
 	fprintf(out, "   balance: %s  %10u.%09u\n", address, pramount(bi->amount));
@@ -1579,10 +1619,10 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 			address, pramount(bi->linkamount[i]));
 	}
 
-	fprintf(out, "-------------------------------------------------------------------------------------------\n");
+	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
 	fprintf(out, "                                 block as address: details\n");
-	fprintf(out, " direction  transaction                                amount       time                   \n");
-	fprintf(out, "-------------------------------------------------------------------------------------------\n");
+	fprintf(out, " direction  transaction                                amount       time                     remark                          \n");
+	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
 
 	int N = 0x10000;
 	int n = 0;
@@ -1627,9 +1667,9 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 					if(ri->link[j] == bi && ri->linkamount[j]) {
 						xdag_time_to_string(ri->time, time_buf);
 						xdag_hash2address(ri->hash, address);
-						fprintf(out, "    %6s: %s  %10u.%09u  %s\n",
+						fprintf(out, "    %6s: %s  %10u.%09u  %s %s\n",
 							(1 << j & ri->in_mask ? "output" : " input"), address,
-							pramount(ri->linkamount[j]), time_buf);
+							pramount(ri->linkamount[j]), time_buf, ri->remark ? ri->remark : "");
 					}
 				}
 			}
@@ -1666,7 +1706,7 @@ static inline void print_block(struct block_internal *block, int print_only_addr
 static inline void print_header_block_list(FILE *out)
 {
 	fprintf(out, "-----------------------------------------------------------------------\n");
-	fprintf(out, "address                            time                      state\n");
+	fprintf(out, "address                            time                      state     \n");
 	fprintf(out, "-----------------------------------------------------------------------\n");
 }
 
@@ -1809,7 +1849,7 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
 	return 0;
 }
 
-int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t))
+int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark_t))
 {
 	struct block_internal *bi = block_by_hash(hash);
 	
@@ -1858,7 +1898,7 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 			struct block_internal *ri = block_array[i];
 			for (int j = 0; j < ri->nlinks; j++) {
 				if(ri->link[j] == bi && ri->linkamount[j]) {
-					if(callback(data, 1 << j & ri->in_mask, ri->flags, ri->hash, ri->linkamount[j], ri->time)) {
+					if(callback(data, 1 << j & ri->in_mask, ri->flags, ri->hash, ri->linkamount[j], ri->time, ri->remark ? ri->remark : "")) {
 						free(block_array);
 						return 0;
 					}
@@ -1951,14 +1991,14 @@ void xdag_block_finish()
 	pthread_mutex_lock(&block_mutex);
 }
 
-int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t))
+int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark_t))
 {
 	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
 	pthread_mutex_unlock(&block_mutex);
 
 	if(callback) {
-		return callback(data, bi->flags & ~BI_OURS,  bi->hash, bi->amount, bi->time);
+		return callback(data, bi->flags & ~BI_OURS,  bi->hash, bi->amount, bi->time, bi->remark ? bi->remark : "");
 	}
 
 	return 0;

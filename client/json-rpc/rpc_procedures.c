@@ -38,6 +38,7 @@
 #include "../../dus/programs/dfstools/source/dfslib/dfslib_string.h"
 #include "../../dnet/dnet_main.h"
 #include "../utils/log.h"
+#include "../utils/utils.h"
 
 #define rpc_register_func(command) xdag_rpc_service_register_procedure(&method_##command, #command, NULL);
 
@@ -58,14 +59,14 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
 cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_get_block_info */
-int rpc_get_block_callback(void *data, int flag, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time);
+int rpc_get_block_callback(void *data, int flag, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, xdag_remark_t remark);
 cJSON * method_xdag_get_block_info(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_do_xfer */
 cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_get_transactions */
-int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time);
+int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, xdag_remark_t remark);
 cJSON * method_xdag_get_transactions(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* version */
@@ -407,7 +408,7 @@ cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJ
  "version":"1.1", "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"2018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
  */
 
-int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time)
+int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, xdag_remark_t remark)
 {
 	cJSON *callback_data = (cJSON *)data;
 
@@ -433,6 +434,9 @@ int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_
 	sprintf(str, "%s", xdag_get_block_state_info(flags));
 	cJSON *json_state = cJSON_CreateString(str);
 	cJSON_AddItemToObject(callback_data, "state", json_state);
+
+	cJSON *json_remark = cJSON_CreateString(remark);
+	cJSON_AddItemToObject(callback_data, "remark", json_remark);
 
 	struct tm tm;
 	char buf[64], tbuf[64];
@@ -513,9 +517,9 @@ cJSON * method_xdag_get_block_info(struct xdag_rpc_context * ctx, cJSON *params,
 /* xfer */
 /*
  request:
- "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"ADDRESS"}], "id":1
- "jsonrpc":"2.0", "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"ADDRESS"}], "id":1
- "version":"1.1", "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"ADDRESS"}], "id":1
+ "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"ADDRESS", "remark":"REMARK"}], "id":1
+ "jsonrpc":"2.0", "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"ADDRESS", "remark":"REMARK"}], "id":1
+ "version":"1.1", "method":"xdag_do_xfer", "params":[{"amount":"1.0", "address":"ADDRESS", "remark":"REMARK"}], "id":1
  
  reponse:
  "result":[{"block":"ADDRESS"}], "error":null, "id":1
@@ -530,6 +534,7 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
 	
 	char amount[128] = {0};
 	char address[128] = {0};
+	char remark[32] = {0};
 	
 	if (params) {
 		if (cJSON_IsArray(params) && cJSON_GetArraySize(params) == 1) {
@@ -548,6 +553,17 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
 			cJSON *json_address = cJSON_GetObjectItem(param, "address");
 			if (cJSON_IsString(json_address)) {
 				strcpy(address, json_address->valuestring);
+			}
+
+			cJSON *json_remark = cJSON_GetObjectItem(param, "remark");
+			if (cJSON_IsString(json_remark)) {
+				if(strlen(json_remark->valuestring) < 32 && validate_ascii(json_remark->valuestring)) {
+					strcpy(remark, json_remark->valuestring);
+				} else {
+					ctx->error_code = 1;
+					ctx->error_message = strdup("Transacion remark exceeds max length 31 chars or is invalid ascii.");
+					return NULL;
+				}
 			}
 		} else {
 			ctx->error_code = 1;
@@ -581,6 +597,12 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
 		} else {
 			xdag_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
 			xfer.outsig = 1;
+
+			if(strlen(remark)>0) {
+				xfer.hasRemark = 1;
+				strcpy(xfer.remark, remark);
+			}
+
 			g_xdag_state = XDAG_STATE_XFER;
 			g_xdag_xfer_last = time(0);
 			xdag_traverse_our_blocks(&xfer, &xfer_callback);
@@ -609,9 +631,9 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
  "version":"1.1", "method":"xdag_get_account", "params":[{"address":"ADDRESS", "page":0, "pagesize":50}], "id":1
  
  reponse:
- "result":{"total": 1, "transactions":[{"direction":"input", "address":"ADDRESS", "amount":"10.111111", "timestamp":"2018-06-03 03:36:33.866 UTC"}]}, "error":null, "id":1
- "jsonrpc":"2.0", "result":{"total": 1, "transactions":[{"direction":"input", "address":"ADDRESS", "amount":"10.111111", "timestamp":"2018-06-03 03:36:33.866 UTC"}]}, "error":null, "id":1
- "version":"1.1", "result":{"total": 1, "transactions":[{"direction":"input", "address":"ADDRESS", "amount":"10.111111", "timestamp":"2018-06-03 03:36:33.866 UTC"}]}, "error":null, "id":1
+ "result":{"total": 1, "transactions":[{"direction":"input", "address":"ADDRESS", "amount":"10.111111", "timestamp":"2018-06-03 03:36:33.866 UTC", "remark":"remark tag"}]}, "error":null, "id":1
+ "jsonrpc":"2.0", "result":{"total": 1, "transactions":[{"direction":"input", "address":"ADDRESS", "amount":"10.111111", "timestamp":"2018-06-03 03:36:33.866 UTC", "remark":"remark tag"}]}, "error":null, "id":1
+ "version":"1.1", "result":{"total": 1, "transactions":[{"direction":"input", "address":"ADDRESS", "amount":"10.111111", "timestamp":"2018-06-03 03:36:33.866 UTC", "remark":"remark tag"}]}, "error":null, "id":1
  */
 
 struct rpc_transactions_callback_data {
@@ -621,7 +643,7 @@ struct rpc_transactions_callback_data {
 	int count;
 };
 
-int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time)
+int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, xdag_remark_t remark)
 {
 	struct rpc_transactions_callback_data *callback_data = (struct rpc_transactions_callback_data*)data;
 	
@@ -654,6 +676,8 @@ int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash,
 	strftime(buf, 64, "%Y-%m-%d %H:%M:%S", &tm);
 	sprintf(tbuf, "%s.%03d UTC", buf, (int)((time & 0x3ff) * 1000) >> 10);
 	cJSON *json_time = cJSON_CreateString(tbuf);
+
+	cJSON *json_remark = cJSON_CreateString(remark);
 	
 	cJSON *json_item = cJSON_CreateObject();
 	cJSON_AddItemToObject(json_item, "status", json_status);
@@ -661,6 +685,7 @@ int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash,
 	cJSON_AddItemToObject(json_item, "address", json_address);
 	cJSON_AddItemToObject(json_item, "amount", json_amount);
 	cJSON_AddItemToObject(json_item, "timestamp", json_time);
+	cJSON_AddItemToObject(json_item, "remark", json_remark);
 	
 	cJSON_AddItemToArray(callback_data->json_root, json_item);
 	return 0;
