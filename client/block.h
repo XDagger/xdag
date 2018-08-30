@@ -19,13 +19,13 @@ enum xdag_field_type {
 	XDAG_FIELD_PUBLIC_KEY_0, //6
 	XDAG_FIELD_PUBLIC_KEY_1, //7
 	XDAG_FIELD_HEAD_TEST,    //8
-	XDAG_FIELD_RESERVE0,     //9
-	XDAG_FIELD_RESERVE1,     //10
-	XDAG_FIELD_RESERVE2,     //11
-	XDAG_FIELD_RESERVE3,     //12
-	XDAG_FIELD_RESERVE4,     //13
-	XDAG_FIELD_RESERVE5,     //14
-	XDAG_FIELD_RESERVE6      //15
+	XDAG_FIELD_REMARK,       //9
+	XDAG_FIELD_RESERVE1,     //A
+	XDAG_FIELD_RESERVE2,     //B
+	XDAG_FIELD_RESERVE3,     //C
+	XDAG_FIELD_RESERVE4,     //D
+	XDAG_FIELD_RESERVE5,     //E
+	XDAG_FIELD_RESERVE6      //F
 };
 
 enum xdag_message_type {
@@ -50,6 +50,8 @@ enum bi_flags {
 
 #define XDAG_BLOCK_FIELDS 16
 
+typedef char xdag_remark_t[32];
+
 struct xdag_field {
 	union {
 		struct {
@@ -67,6 +69,7 @@ struct xdag_field {
 			};
 		};
 		xdag_hash_t data;
+		xdag_remark_t remark;
 	};
 };
 
@@ -104,7 +107,7 @@ extern int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag
 	xdag_amount_t amount, xdag_time_t time));
 
 // create and publish a block
-extern int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, xdag_amount_t fee, 
+extern int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, int hasRemark, xdag_amount_t fee, 
 	xdag_time_t send_time, xdag_hash_t newBlockHashResult);
 
 // returns current balance for specified address or balance for all addresses if hash == 0
@@ -147,7 +150,7 @@ extern void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out);
 xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash);
 
 // get all transactions of specified address, and return total number of transactions
-extern int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t));
+extern int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark_t));
 
 // print orphan blocks
 void xdag_list_orphan_blocks(int, FILE*);
@@ -156,7 +159,7 @@ void xdag_list_orphan_blocks(int, FILE*);
 void xdag_block_finish(void);
 	
 // get block info of specified address
-extern int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t));
+extern int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark_t));
 
 #ifdef __cplusplus
 };

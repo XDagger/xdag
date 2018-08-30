@@ -124,7 +124,9 @@ struct payment_data {
 	int reward_index;
 };
 
-xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT], g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
+xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT];
+xdag_hash_t g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
+xdag_remark_t g_pool_tag = {0};
 
 static uint32_t g_max_connections_count = START_MINERS_COUNT, g_max_miner_ip_count = START_MINERS_IP_COUNT;
 static uint32_t g_connections_per_miner_limit = DEFAUL_CONNECTIONS_PER_MINER_LIMIT;
@@ -245,7 +247,7 @@ void *general_mining_thread(void *arg)
 	}
 
 	while(!g_stop_general_mining) {
-		xdag_create_block(0, 0, 0, 0, xdag_main_time() << 16 | 0xffff, NULL);
+		xdag_create_block(0, 0, 0, 0, 0, xdag_main_time() << 16 | 0xffff, NULL);
 	}
 
 	xdag_mess("Stopping general mining thread...");
@@ -1213,7 +1215,7 @@ static void transfer_payment(struct miner_pool_data *miner, xdag_amount_t paymen
 	xdag_log_xfer(fields[0].data, fields[*field_index].data, payment_sum);
 
 	if(++*field_index == payments_per_block) {
-		xdag_create_block(fields, 1, *field_index - 1, 0, 0, NULL);
+		xdag_create_block(fields, 1, *field_index - 1, 0, 0, 0, NULL);
 		*field_index = 1;
 		fields[0].amount = 0;
 	}
@@ -1257,7 +1259,7 @@ static void do_payments(uint64_t *hash, int payments_per_block, struct payment_d
 	}
 
 	if(field_index > 1) {
-		xdag_create_block(fields, 1, field_index - 1, 0, 0, NULL);
+		xdag_create_block(fields, 1, field_index - 1, 0, 0, 0, NULL);
 	}
 }
 

@@ -104,7 +104,7 @@ int xdag_mem_init(size_t size)
 		free(tfile_node);
 		return -1;
 	}
-        xdag_info("Temporary file created: %s\n", tfile_node->tmpfile);
+	xdag_info("Temporary file created: %s\n", tfile_node->tmpfile);
 
 	tfile_node->mem = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, tfile_node->fd, 0);
 	if (tfile_node->mem == MAP_FAILED) {
@@ -173,6 +173,9 @@ void *xdag_malloc(size_t size)
 
 void xdag_free(void *mem)
 {
+	if(!g_use_tmpfile) {
+		free(mem);
+	}
 }
 
 void xdag_mem_finish(void)
@@ -200,6 +203,7 @@ int xdag_free_all(void)
 		delete_actual_tmpfile();
 	}
 	g_pos = 0;
+
 	return 0;
 }
 
