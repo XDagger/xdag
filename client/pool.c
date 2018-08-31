@@ -761,7 +761,7 @@ static int is_block_data_received(connection_list_element *connection)
 			conn_data->block->field[0].transport_header &= (uint64_t)0xffffffffu;
 
 			if(crc == crc_of_array((uint8_t*)conn_data->block, sizeof(struct xdag_block))) {
-				conn_data->block->field[0].transport_header = 0;
+				conn_data->block->field[0].transport_header = 0; // mask block as extern
 				xdag_append_new_block(conn_data->block);
 			} else {
 				free(conn_data->block);
@@ -1049,11 +1049,15 @@ void *pool_block_thread(void *arg)
 
 		if(b) {
 			processed = 1;
-			b->field[0].transport_header = 2;
-
-			res = xdag_add_block(b);
-			if(res > 0) {
+			if(b->field[0].transport_header) {	// if our
+				b->field[0].transport_header = 1;
 				xdag_send_new_block(b);
+			} else {			// if not our
+				b->field[0].transport_header = 2;
+				res = xdag_add_block(b);
+				if(res > 0) {
+					xdag_send_new_block(b);
+				}
 			}
 			free(b);
 		}
@@ -1523,12 +1527,17 @@ void xdag_append_new_block(struct xdag_block *b)
 {
 	if(!b) return;
 
+	if(b->field[0].transport_header){ // if our block
+		b=((struct xdag_block*)((uintptr_t)b | (uintptr_t)1)); // change last bit to remember that it is our
+		b->field[0].transport_header = 0;
+	}
+
 	pthread_mutex_lock(&g_pool_mutex);
 
 	if(!g_firstb) {
 		g_firstb = g_lastb = b;
 	} else {
-		g_lastb->field[0].transport_header = (uint64_t)(uintptr_t)b;
+		((struct xdag_block*)((uintptr_t)g_lastb & ~(uintptr_t)1))->field[0].transport_header = (uint64_t)(uintptr_t)b;
 		g_lastb = b;
 	}
 
@@ -1542,7 +1551,15 @@ struct xdag_block * xdag_first_new_block(void)
 
 	if(g_firstb) {
 		b = g_firstb;
-		g_firstb = (struct xdag_block *)(uintptr_t)b->field[0].transport_header;
+		if((uintptr_t)b & (uintptr_t)1) { // if our block
+			b = (struct xdag_block*)((uintptr_t)b & ~(uintptr_t)1); // change last bit to 0 to have correct memory address
+			g_firstb = (struct xdag_block *)(uintptr_t)b->field[0].transport_header;
+			b->field[0].transport_header = 1;
+		}
+		else {
+			g_firstb = (struct xdag_block *)(uintptr_t)b->field[0].transport_header;
+			b->field[0].transport_header = 0;
+		}
 		if(!g_firstb) g_lastb = 0;
 	} else {
 		b = 0;

@@ -958,7 +958,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	}
 
 	xdag_hash(block, sizeof(struct xdag_block), newBlockHash);
-	block[0].field[0].transport_header = 1;
+	block[0].field[0].transport_header = 1; // mark the block as our (and not in storage yet)
 
 	log_block("Create", newBlockHash, block[0].field[0].time, 1);
 
@@ -973,9 +973,13 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 
 		if(g_xdag_pool) { /* append pool created block to list */
 			struct xdag_block * new_block = (struct xdag_block *)malloc(sizeof(struct xdag_block));
-			memcpy(new_block, block, sizeof(struct xdag_block));
-			new_block->field[0].transport_header = 0;
-			xdag_append_new_block(new_block);
+			if(new_block == NULL){
+				xdag_warn("Non-critical error, malloc failed [function: create_block]");
+				xdag_send_new_block(block);
+			} else {
+				memcpy(new_block, block, sizeof(struct xdag_block));
+				xdag_append_new_block(new_block);
+			}
 		} else { /* send miner created block directly */
 			xdag_send_new_block(block);
 		}
