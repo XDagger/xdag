@@ -293,9 +293,9 @@ extern int xdag_set_log_level(int level)
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-#include <execinfo.h>
 
 #if defined (__MACOS__) || defined (__APPLE__)
+#include <execinfo.h>
 #include <sys/ucontext.h>
 #define RIP_sig(context)     (*((unsigned long*)&(context)->uc_mcontext->__ss.__rip))
 #define RSP_sig(context)     (*((unsigned long*)&(context)->uc_mcontext->__ss.__rsp))
@@ -321,7 +321,8 @@ extern int xdag_set_log_level(int level)
 
 #define REG_(name) sprintf(buf + strlen(buf), #name "=%llx, ",(unsigned long long)name##_sig(uc))
 
-#else
+#elif defined (__linux__)
+#include <execinfo.h>
 #include <ucontext.h>
 #define REG_(name) sprintf(buf + strlen(buf), #name "=%llx, ", (unsigned long long)uc->uc_mcontext.gregs[REG_ ## name])
 #endif
@@ -329,11 +330,15 @@ extern int xdag_set_log_level(int level)
 
 static void sigCatch(int signum, siginfo_t *info, void *context)
 {
-	static void *callstack[100];
-	int frames, i;
-	char **strs;
 
 	xdag_fatal("Signal %d delivered", signum);
+
+#if defined (__linux__) || ( defined (__MACOS__) || defined (__APPLE__) )
+
+        static void *callstack[100];
+        int frames, i;
+        char **strs;
+
 #ifdef __x86_64__
 	{
 		static char buf[0x100]; *buf = 0;
@@ -352,6 +357,7 @@ static void sigCatch(int signum, siginfo_t *info, void *context)
 	for (i = 0; i < frames; ++i) {
 		xdag_fatal("%s", strs[i]);
 	}
+#endif
 	signal(signum, SIG_DFL);
 	kill(getpid(), signum);
 	

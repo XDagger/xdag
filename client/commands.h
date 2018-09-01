@@ -12,9 +12,11 @@ extern "C" {
 
 /* time of last transfer */
 extern time_t g_xdag_xfer_last;
-extern int xdag_do_xfer(void *outv, const char *amount, const char *address, int isGui);
+extern int xdag_do_xfer(void *outv, const char *amount, const char *address, const char *remark, int isGui);
 extern void xdagSetCountMiningTread(int miningThreadsCount);
 extern double xdagGetHashRate(void);
+extern long double hashrate(xdag_diff_t *diff);
+extern const char *get_state(void);
 
 #ifdef __cplusplus
 };
@@ -26,8 +28,9 @@ struct xfer_callback_data {
 	struct xdag_field fields[XFER_MAX_IN + 1];
 	int keys[XFER_MAX_IN + 1];
 	xdag_amount_t todo, done, remains;
-	int fieldsCount, keysCount, outsig;
+	int fieldsCount, keysCount, outsig, hasRemark;
 	xdag_hash_t transactionBlockHash;
+	char remark[32];
 };
 
 void startCommandProcessing(int transportFlags);
@@ -37,8 +40,6 @@ int out_balances(void);
 int xdag_show_state(xdag_hash_t hash);
 
 int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
-long double amount2xdags(xdag_amount_t amount);
-xdag_amount_t xdags2amount(const char *str);
 
 int read_command(char* cmd);
 

@@ -37,6 +37,7 @@
     <ClCompile Include="..\..\client\init.c" />
     <ClCompile Include="..\..\client\json-rpc\cJSON.c" />
     <ClCompile Include="..\..\client\json-rpc\cJSON_Utils.c" />
+    <ClCompile Include="..\..\client\json-rpc\rpc_procedure.c" />
     <ClCompile Include="..\..\client\json-rpc\rpc_procedures.c" />
     <ClCompile Include="..\..\client\json-rpc\rpc_service.c" />
     <ClCompile Include="..\..\client\json-rpc\rpc_wrapper.c" />
@@ -44,6 +45,7 @@
     <ClCompile Include="..\..\client\miner.c" />
     <ClCompile Include="..\..\client\mining_common.c" />
     <ClCompile Include="..\..\client\netdb.c" />
+    <ClCompile Include="..\..\client\network.c" />
     <ClCompile Include="..\..\client\pool.c" />
     <ClCompile Include="..\..\client\sha256.c" />
     <ClCompile Include="..\..\client\storage.c" />
@@ -51,19 +53,11 @@
     <ClCompile Include="..\..\client\terminal.c" />
     <ClCompile Include="..\..\client\transport.c" />
     <ClCompile Include="..\..\client\utils\log.c" />
+    <ClCompile Include="..\..\client\utils\moving_statistics\moving_average.c" />
     <ClCompile Include="..\..\client\utils\utils.c" />
     <ClCompile Include="..\..\client\wallet.c" />
-    <ClCompile Include="..\..\dnet\dnet_command.c" />
-    <ClCompile Include="..\..\dnet\dnet_connection.c" />
     <ClCompile Include="..\..\dnet\dnet_crypt.c" />
-    <ClCompile Include="..\..\dnet\dnet_database.c" />
-    <ClCompile Include="..\..\dnet\dnet_files.c" />
-    <ClCompile Include="..\..\dnet\dnet_log.c" />
-    <ClCompile Include="..\..\dnet\dnet_main.c" />
-    <ClCompile Include="..\..\dnet\dnet_packet.c" />
-    <ClCompile Include="..\..\dnet\dnet_stream.c" />
-    <ClCompile Include="..\..\dnet\dnet_tap.c" />
-    <ClCompile Include="..\..\dnet\dnet_threads.c" />
+    <ClCompile Include="..\..\dnet\dnet_xdag.c" />
     <ClCompile Include="..\..\dus\programs\dar\source\lib\crc_c.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_crypt.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_random.c" />
@@ -82,6 +76,7 @@
     <ClInclude Include="..\..\client\init.h" />
     <ClInclude Include="..\..\client\json-rpc\cJSON.h" />
     <ClInclude Include="..\..\client\json-rpc\cJSON_Utils.h" />
+    <ClInclude Include="..\..\client\json-rpc\rpc_procedure.h" />
     <ClInclude Include="..\..\client\json-rpc\rpc_procedures.h" />
     <ClInclude Include="..\..\client\json-rpc\rpc_service.h" />
     <ClInclude Include="..\..\client\json-rpc\rpc_wrapper.h" />
@@ -89,6 +84,7 @@
     <ClInclude Include="..\..\client\miner.h" />
     <ClInclude Include="..\..\client\mining_common.h" />
     <ClInclude Include="..\..\client\netdb.h" />
+    <ClInclude Include="..\..\client\network.h" />
     <ClInclude Include="..\..\client\pool.h" />
     <ClInclude Include="..\..\client\sha256.h" />
     <ClInclude Include="..\..\client\state.h" />
@@ -97,25 +93,18 @@
     <ClInclude Include="..\..\client\system.h" />
     <ClInclude Include="..\..\client\terminal.h" />
     <ClInclude Include="..\..\client\transport.h" />
+    <ClInclude Include="..\..\client\types.h" />
     <ClInclude Include="..\..\client\uthash\uthash.h" />
     <ClInclude Include="..\..\client\uthash\utlist.h" />
     <ClInclude Include="..\..\client\utils\log.h" />
+    <ClInclude Include="..\..\client\utils\moving_statistics\moving_average.h" />
     <ClInclude Include="..\..\client\utils\utils.h" />
     <ClInclude Include="..\..\client\version.h" />
     <ClInclude Include="..\..\client\wallet.h" />
-    <ClInclude Include="..\..\dnet\dnet_command.h" />
-    <ClInclude Include="..\..\dnet\dnet_connection.h" />
     <ClInclude Include="..\..\dnet\dnet_crypt.h" />
-    <ClInclude Include="..\..\dnet\dnet_database.h" />
-    <ClInclude Include="..\..\dnet\dnet_files.h" />
     <ClInclude Include="..\..\dnet\dnet_history.h" />
-    <ClInclude Include="..\..\dnet\dnet_log.h" />
     <ClInclude Include="..\..\dnet\dnet_main.h" />
     <ClInclude Include="..\..\dnet\dnet_packet.h" />
-    <ClInclude Include="..\..\dnet\dnet_stream.h" />
-    <ClInclude Include="..\..\dnet\dnet_tap.h" />
-    <ClInclude Include="..\..\dnet\dnet_threads.h" />
-    <ClInclude Include="..\..\dnet\dthread.h" />
     <ClInclude Include="..\..\dnet\system.h" />
     <ClInclude Include="..\..\dus\programs\dar\source\include\crc.h" />
     <ClInclude Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_crypt.h" />
@@ -141,6 +130,11 @@
     <Text Include="..\..\client\netdb-white-testnet.txt" />
     <Text Include="..\..\client\netdb-white.txt" />
     <Text Include="..\..\client\netdb.txt" />
+    <Text Include="..\..\client\pools-testnet.txt" />
+    <Text Include="..\..\client\pools.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\dnet\dnet_keys.bin" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

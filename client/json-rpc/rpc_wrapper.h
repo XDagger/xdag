@@ -8,5 +8,15 @@
 
 #ifndef XDAG_RPC_WRAPPER_H
 #define XDAG_RPC_WRAPPER_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 extern void rpc_call_dnet_command(const char *method, const char *params, char **result);
-#endif //XDAG_TERMINAL_H
+	
+#ifdef __cplusplus
+};
+#endif
+		
+#endif //XDAG_RPC_WRAPPER_H

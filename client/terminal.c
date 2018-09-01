@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #if !defined(_WIN32) && !defined(_WIN64)
+#include <string.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -15,14 +16,9 @@
 #include "commands.h"
 #include "init.h"
 #include "transport.h"
+#include "network.h"
 #include "utils/log.h"
 #include "utils/utils.h"
-
-#if defined (__APPLE__) || defined (__MACOS__)
-#include <string.h>
-#endif
-
-#include "../dnet/system.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #define poll WSAPoll
@@ -37,13 +33,12 @@
 #define APPLICATION_DOMAIN_PORT 7676
 #endif
 
-
 int terminal(void)
 {
 	char *lasts;
 	int sock;
 
-	if(system_init() != 0) {
+	if(!xdag_network_init()) {
 		printf("Can't initialize sockets");
 	}
 

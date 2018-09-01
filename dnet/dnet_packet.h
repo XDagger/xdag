@@ -1,12 +1,9 @@
-/* dnet: packets; T11.258-T13.658; $DVS:time$ */
+/* dnet: packets; T11.258-T14.290; $DVS:time$ */
 
 #ifndef DNET_PACKET_H_INCLUDED
 #define DNET_PACKET_H_INCLUDED
 
 #include <stdint.h>
-#include "dnet_crypt.h"
-#include "dnet_database.h"
-#include "dnet_log.h"
 
 #define DNET_PKT_STREAM_DATA_MAX   0x1000
 
@@ -34,58 +31,8 @@ struct dnet_packet_header {
     uint32_t crc32;
 };
 
-struct dnet_packet_exchange {
-    struct dnet_packet_header header;
-    struct dnet_key pub_key;
-    uint32_t time_ago;
-    char name[DNET_HOST_NAME_MAX];
+#ifdef __cplusplus
 };
-
-struct dnet_packet_update_item {
-    uint32_t crc32;
-    uint32_t time_ago;
-};
-
-#define DNET_PKT_EXCHANGE_MIN_LEN ((long)((struct dnet_packet_exchange *)0)->name)
-#define DNET_PKT_EXCHANGE_MAX_LEN (DNET_PKT_EXCHANGE_MIN_LEN + DNET_HOST_NAME_MAX)
-
-#define DNET_PKT_UPDATE_ITEMS_MAX (DNET_PKT_STREAM_DATA_MAX / sizeof(struct dnet_packet_update_item) - 1)
-
-struct dnet_packet_update {
-    struct dnet_packet_header header;
-	struct dnet_packet_update_item item[DNET_PKT_UPDATE_ITEMS_MAX];
-};
-
-#define DNET_PKT_UPDATE_MIN_LEN ((long)((struct dnet_packet_update *)0)->item)
-#define DNET_PKT_UPDATE_MAX_LEN (DNET_PKT_UPDATE_MIN_LEN + DNET_PKT_UPDATE_ITEMS_MAX * sizeof(struct dnet_packet_update_item))
-
-struct dnet_packet_stream {
-    struct dnet_packet_header header;
-    uint32_t crc_from;
-    uint32_t crc_to;
-    uint64_t seq;
-    uint64_t ack;
-    struct dnet_stream_id id;
-    uint8_t data[DNET_PKT_STREAM_DATA_MAX];
-};
-
-#define DNET_PKT_STREAM_MIN_LEN ((long)((struct dnet_packet_stream *)0)->data)
-#define DNET_PKT_STREAM_MAX_LEN (DNET_PKT_STREAM_MIN_LEN + DNET_PKT_STREAM_DATA_MAX)
-
-struct dnet_packet {
-    union {
-        struct dnet_packet_header header;
-        struct dnet_packet_exchange ex;
-        struct dnet_packet_update up;
-		struct dnet_packet_stream st;
-    };
-};
-
-struct dnet_connection;
-
-extern int dnet_process_packet(struct dnet_packet *p, struct dnet_connection *conn);
-extern int dnet_send_packet(struct dnet_packet *p, struct dnet_connection *conn);
-extern int dnet_send_command_packet(struct dnet_packet_stream *st, struct dnet_output *output);
-extern int dnet_cancel_command(struct dnet_output *output);
+#endif
 
 #endif

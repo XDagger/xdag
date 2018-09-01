@@ -67,6 +67,7 @@ AC_CHECK_LIB([m], [main])
 AC_CHECK_LIB([pthread], [main])
 AC_CHECK_LIB([ssl], [main])
 AC_CHECK_LIB([readline], [main])
+AC_CHECK_LIB([gmp], [__gmpz_init])
 
 AC_CONFIG_FILES([
     Makefile

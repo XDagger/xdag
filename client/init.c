@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T13.895 $DVS:time$ */
+/* cheatcoin main, T13.654-T14.325 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,6 +22,9 @@
 #include "commands.h"
 #include "terminal.h"
 #include "memory.h"
+#include "miner.h"
+#include "pool.h"
+#include "network.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "json-rpc/rpc_service.h"
@@ -40,6 +43,9 @@ time_t g_xdag_xfer_last = 0;
 enum xdag_field_type g_block_header_type = XDAG_FIELD_HEAD;
 struct xdag_stats g_xdag_stats;
 struct xdag_ext_stats g_xdag_extstats;
+int g_disable_mining = 0;
+char g_pool_address[50];
+
 int(*g_xdag_show_state)(const char *state, const char *balance, const char *address) = 0;
 
 void printUsage(char* appName);
@@ -49,8 +55,8 @@ int xdag_init(int argc, char **argv, int isGui)
     xdag_init_path(argv[0]);
 
 	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
-	char *ptr;
-	int transport_flags = 0, n_addrports = 0, n_mining_threads = 0, is_pool = 0, is_miner = 0, level, is_rpc = 0, rpc_port = 0;
+	int transport_flags = 0, transport_threads = -1, n_addrports = 0, mining_threads_count = 0,
+			is_pool = 0, is_miner = 0, level, is_rpc = 0, rpc_port = 0;
 	
 	memset(addrports, 0, 256);
 	
@@ -61,12 +67,15 @@ int xdag_init(int argc, char **argv, int isGui)
 	signal(SIGINT, SIG_IGN);
 	signal(SIGTERM, SIG_IGN);
 #endif
-	g_progname = strdup(argv[0]);
-	while ((ptr = strchr(g_progname, '/')) || (ptr = strchr(g_progname, '\\'))) g_progname = ptr + 1;
-	if ((ptr = strchr(g_progname, '.'))) *ptr = 0;
-	for (ptr = g_progname; *ptr; ptr++) *ptr = tolower((unsigned char)*ptr);
-	coinname = strdup(g_progname);
-	for (ptr = coinname; *ptr; ptr++) *ptr = toupper((unsigned char)*ptr);
+
+	char *filename = xdag_filename(argv[0]);
+
+	g_progname = strdup(filename);
+	g_coinname = strdup(filename);
+	free(filename);
+
+	xdag_str_toupper(g_coinname);
+	xdag_str_tolower(g_progname);
 
 	if (!isGui) {
 		printf("%s client/server, version %s.\n", g_progname, XDAG_VERSION);
@@ -74,11 +83,6 @@ int xdag_init(int argc, char **argv, int isGui)
 
 	g_xdag_run = 1;
 	xdag_show_state(0);
-
-	if (argc <= 1) {
-		printUsage(argv[0]);
-		return 0;
-	}
 
 	for (int i = 1; i < argc; ++i) {
 		if (argv[i][0] != '-') {
@@ -110,15 +114,16 @@ int xdag_init(int argc, char **argv, int isGui)
 			return out_balances();
 		} else if(ARG_EQUAL(argv[i], "-m", "")) { /* mining thread number */
 			if (++i < argc) {
-				sscanf(argv[i], "%d", &n_mining_threads);
-				if (n_mining_threads < 0) n_mining_threads = 0;
+				sscanf(argv[i], "%d", &mining_threads_count);
+				if (mining_threads_count < 0) mining_threads_count = 0;
 			}
 		} else if(ARG_EQUAL(argv[i], "-p", "")) { /* public address & port */
-			if (++i < argc)
-				pubaddr = argv[i];
-		} else if(ARG_EQUAL(argv[i], "-P", "")) { /* pool config */
 			if (++i < argc) {
 				is_pool = 1;
+				pubaddr = argv[i];
+			}
+		} else if(ARG_EQUAL(argv[i], "-P", "")) { /* pool config */
+			if (++i < argc) {
 				pool_arg = argv[i];
 			}
 		} else if(ARG_EQUAL(argv[i], "-r", "")) { /* load blocks and wait for run command */
@@ -147,15 +152,49 @@ int xdag_init(int argc, char **argv, int isGui)
 					rpc_port = 0;
 				}
 			}
+		} else if(ARG_EQUAL(argv[i], "", "-threads")) { /* number of transport layer threads */
+			if (!(++i < argc && sscanf(argv[i], "%d", &transport_threads) == 1))
+				printf("Number of transport threads is not given.\n");
+		} else if(ARG_EQUAL(argv[i], "", "-dm")) {
+			g_disable_mining = 1;
+		} else if(ARG_EQUAL(argv[i], "", "-tag")) {
+			if(i+1 < argc) {
+				if(strlen(argv[i+1]) < 32 && validate_ascii(argv[i+1])) {
+					strcpy(g_pool_tag, argv[i+1]);
+					i++;
+				} else {
+					printf("Pool tag exceeds max length. Max length 31 chars or is invalid ascii.\n");
+					return -1;
+				}
+			} else {
+				printUsage(argv[0]);
+				return -1;
+			}
 		} else {
 			printUsage(argv[0]);
 			return 0;
 		}
 	}
 
-	if (is_miner && (is_pool || pubaddr || bindto || n_addrports)) {
-		printf("Miner can't be a pool or have directly connected to the xdag network.\n");
+	if(!xdag_network_init()) {
+		printf("Cannot initialize network\n");
 		return -1;
+	}
+
+	if(!is_pool && pool_arg == NULL) {
+		if(!xdag_pick_pool(g_pool_address)) {
+			return -1;
+		}
+		is_miner = 1;
+		pool_arg = g_pool_address;
+	}
+
+	if (is_miner) {
+		if (is_pool || bindto || n_addrports || transport_threads > 0) {
+			printf("Miner can't be a pool or have directly connected to the xdag network.\n");
+			return -1;
+		}
+		transport_threads = 0;
 	}
 	
 	g_xdag_pool = is_pool; // move to here to avoid Data Race
@@ -173,6 +212,9 @@ int xdag_init(int argc, char **argv, int isGui)
 	if(g_xdag_testnet) {
 		g_block_header_type = XDAG_FIELD_HEAD_TEST; //block header has the different type in the test network
 	}
+	if(g_disable_mining && g_is_miner) {
+		g_disable_mining = 0;   // this option is only for pools
+	}
 
 	memset(&g_xdag_stats, 0, sizeof(g_xdag_stats));
 	memset(&g_xdag_extstats, 0, sizeof(g_xdag_extstats));
@@ -182,7 +224,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	if (xdag_sync_init()) return -1;
 	xdag_mess("Starting dnet transport...");
 	printf("Transport module: ");
-	if (xdag_transport_start(transport_flags, bindto, n_addrports, addrports)) return -1;
+	if (xdag_transport_start(transport_flags, transport_threads, bindto, n_addrports, addrports)) return -1;
 	
 	if (xdag_log_init()) return -1;
 	
@@ -201,9 +243,12 @@ int xdag_init(int argc, char **argv, int isGui)
 		if(!!xdag_rpc_service_init(rpc_port)) return -1;
 	}
 	xdag_mess("Starting blocks engine...");
-	if (xdag_blocks_start((is_miner ? ~n_mining_threads : n_mining_threads), !!miner_address)) return -1;
-	xdag_mess("Starting pool engine...");
-	if (xdag_initialize_mining(pool_arg, miner_address)) return -1;
+	if (xdag_blocks_start(g_is_pool, mining_threads_count, !!miner_address)) return -1;
+
+	if(!g_disable_mining) {
+		xdag_mess("Starting pool engine...");
+		if(xdag_initialize_mining(pool_arg, miner_address)) return -1;
+	}
 
 	if (!isGui) {
 		if (is_pool || (transport_flags & XDAG_DAEMON) > 0) {
@@ -256,5 +301,8 @@ void printUsage(char* appName)
 		"  -z RAM         - use RAM instead of temp-files\n"
 		"  -rpc-enable    - enable JSON-RPC service\n"
 		"  -rpc-port      - set HTTP JSON-RPC port (default is 7677)\n"
+		"  -threads N     - create N transport layer threads for pool (default is 6)\n"
+		"  -dm            - disable mining on pool (-P option is ignored)\n"
+		"  -tag           - tag for pool to distingush pools. Max length is 31 chars\n"
 		, appName);
 }

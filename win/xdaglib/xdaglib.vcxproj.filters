@@ -49,6 +49,9 @@
     <Filter Include="client\http">
       <UniqueIdentifier>{083ad2d2-3218-4c42-9ae3-55fb52fe25bb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="client\utils\moving_statitics">
+      <UniqueIdentifier>{ebe447cf-4047-406a-b6a6-fb64570e8ed2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\client\address.c">
@@ -89,39 +92,6 @@
     </ClCompile>
     <ClCompile Include="..\..\client\wallet.c">
       <Filter>client</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dnet\dnet_command.c">
-      <Filter>dnet</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dnet\dnet_connection.c">
-      <Filter>dnet</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dnet\dnet_crypt.c">
-      <Filter>dnet</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dnet\dnet_database.c">
-      <Filter>dnet</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dnet\dnet_files.c">
-      <Filter>dnet</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dnet\dnet_log.c">
-      <Filter>dnet</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dnet\dnet_main.c">
-      <Filter>dnet</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dnet\dnet_packet.c">
-      <Filter>dnet</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dnet\dnet_stream.c">
-      <Filter>dnet</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dnet\dnet_tap.c">
-      <Filter>dnet</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dnet\dnet_threads.c">
-      <Filter>dnet</Filter>
     </ClCompile>
     <ClCompile Include="..\..\dus\programs\dar\source\lib\crc_c.c">
       <Filter>dus\dar</Filter>
@@ -180,6 +150,21 @@
     <ClCompile Include="..\..\client\http\http.c">
       <Filter>client\http</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\client\utils\moving_statistics\moving_average.c">
+      <Filter>client\utils\moving_statitics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\json-rpc\rpc_procedure.c">
+      <Filter>client\json-rpc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\network.c">
+      <Filter>client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dnet\dnet_crypt.c">
+      <Filter>dnet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dnet\dnet_xdag.c">
+      <Filter>dnet</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client\address.h">
@@ -224,49 +209,13 @@
     <ClInclude Include="..\..\client\transport.h">
       <Filter>client</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\client\version.h">
-      <Filter>client</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\client\wallet.h">
       <Filter>client</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dnet\dnet_command.h">
-      <Filter>dnet</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dnet\dnet_connection.h">
-      <Filter>dnet</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dnet\dnet_crypt.h">
-      <Filter>dnet</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dnet\dnet_database.h">
-      <Filter>dnet</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dnet\dnet_files.h">
-      <Filter>dnet</Filter>
     </ClInclude>
     <ClInclude Include="..\..\dnet\dnet_history.h">
       <Filter>dnet</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\dnet\dnet_log.h">
-      <Filter>dnet</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\dnet\dnet_main.h">
-      <Filter>dnet</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dnet\dnet_packet.h">
-      <Filter>dnet</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dnet\dnet_stream.h">
-      <Filter>dnet</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dnet\dnet_tap.h">
-      <Filter>dnet</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dnet\dnet_threads.h">
-      <Filter>dnet</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dnet\dthread.h">
       <Filter>dnet</Filter>
     </ClInclude>
     <ClInclude Include="..\..\dnet\system.h">
@@ -371,6 +320,25 @@
     <ClInclude Include="..\..\client\http\url.h">
       <Filter>client\http</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\client\utils\moving_statistics\moving_average.h">
+      <Filter>client\utils\moving_statitics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\types.h">
+      <Filter>client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\json-rpc\rpc_procedure.h">
+      <Filter>client\json-rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\network.h">
+      <Filter>client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\version.h" />
+    <ClInclude Include="..\..\dnet\dnet_crypt.h">
+      <Filter>dnet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dnet\dnet_packet.h">
+      <Filter>dnet</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\client\netdb-testnet.txt">
@@ -385,5 +353,16 @@
     <Text Include="..\..\client\netdb.txt">
       <Filter>client\pool_lists</Filter>
     </Text>
+    <Text Include="..\..\client\pools.txt">
+      <Filter>client\pool_lists</Filter>
+    </Text>
+    <Text Include="..\..\client\pools-testnet.txt">
+      <Filter>client\pool_lists</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\dnet\dnet_keys.bin">
+      <Filter>dnet</Filter>
+    </None>
   </ItemGroup>
 </Project>

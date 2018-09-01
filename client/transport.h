@@ -1,4 +1,4 @@
-/* транспорт, T13.654-T13.788 $DVS:time$ */
+/* транспорт, T13.654-T14.309 $DVS:time$ */
 
 #ifndef XDAG_TRANSPORT_H
 #define XDAG_TRANSPORT_H
@@ -13,17 +13,25 @@ enum xdag_transport_flags {
 	XDAG_DAEMON = 1,
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 /* starts the transport system; bindto - ip:port for a socket for external connections
  * addr-port_pairs - array of pointers to strings with parameters of other host for connection (ip:port),
- * npairs - count of the strings
+ * npairs - count of the strings,
+ * nthreads - number of transport threads
  */
-extern int xdag_transport_start(int flags, const char *bindto, int npairs, const char **addr_port_pairs);
+extern int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs, const char **addr_port_pairs);
 
 /* generates an array with random data */
 extern int xdag_generate_random_array(void *array, unsigned long size);
 
 /* sends a new block to network */
 extern int xdag_send_new_block(struct xdag_block *b);
+
+/* sends a new block to pool */
+extern int xdag_send_new_block_to_pool(struct xdag_block *b);
 
 /* requests all blocks from the remote host, that are in specified time interval;
  * calls callback() for each block, callback received the block and data as paramenters;
@@ -52,5 +60,9 @@ extern int xdag_user_crypt_action(unsigned *data, unsigned long long data_id, un
 
 extern pthread_mutex_t g_transport_mutex;
 extern time_t g_xdag_last_received;
+	
+#ifdef __cplusplus
+};
+#endif
 
 #endif

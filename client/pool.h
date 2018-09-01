@@ -1,4 +1,4 @@
-/* pool logic */
+/* pool logic, T14.191-T14.347 $DVS:time$ */
 
 #ifndef XDAG_POOL_H
 #define XDAG_POOL_H
@@ -17,9 +17,20 @@ enum disconnect_type
 
 extern xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT];
 extern xdag_hash_t g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
+extern xdag_remark_t g_pool_tag;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 /* initialization of the pool */
 extern int xdag_initialize_pool(const char *pool_arg);
+
+/* append new generated block and new blocks received from miner to list */
+extern void xdag_append_new_block(struct xdag_block *b);
+
+/* get the first new block in list */
+extern struct xdag_block *xdag_first_new_block(void);
 
 /* gets pool parameters as a string, 0 - if the pool is disabled */
 extern char *xdag_pool_get_config(char *buf);
@@ -30,9 +41,21 @@ extern int xdag_pool_set_config(const char *pool_config);
 /* output to the file a list of miners */
 extern int xdag_print_miners(FILE *out, int printOnlyConnections);
 
+// prints miner's stats
+extern int xdag_print_miner_stats(const char* address, FILE *out);
+
 // disconnect connections by condition
 // condition type: all, ip or address
 // value: address of ip depending on type
 extern void disconnect_connections(enum disconnect_type type, char *value);
+
+// completes global mining thread
+void xdag_pool_finish(void);
+	
+#ifdef __cplusplus
+};
+#endif
+
+long double diff2log(xdag_diff_t diff);
 
 #endif

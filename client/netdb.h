@@ -5,6 +5,13 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* prevent auto refresh */
+extern int g_prevent_auto_refresh;
+
 /* initialized hosts base, 'our_host_str' - exteranal address of our host (ip:port),
  * 'addr_port_pairs' - addresses of other 'npairs' hosts in the same format
  */
@@ -22,5 +29,9 @@ extern void xdag_netdb_finish(void);
 /* blocked ip for incoming connections and their number */
 extern uint32_t *g_xdag_blocked_ips, *g_xdag_white_ips;
 extern int g_xdag_n_blocked_ips, g_xdag_n_white_ips;
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif

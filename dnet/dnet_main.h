@@ -1,4 +1,4 @@
-/* dnet: external interface; T13.011-T13.794; $DVS:time$ */
+/* dnet: external interface; T13.011-T14.328; $DVS:time$ */
 
 #ifndef DNET_MAIN_H_INCLUDED
 #define DNET_MAIN_H_INCLUDED
@@ -21,12 +21,15 @@ extern int dnet_set_xdag_callback(int (*callback)(void *block, void *connection_
  */
 extern void *dnet_send_xdag_packet(void *block, void *connection_to);
 
+/* returns 0 if connection exist, -1 otherwise */
+extern int dnet_test_connection(void *connection);
+
 extern int dnet_execute_command(const char *cmd, void *fileout);
 
 extern int dnet_set_self_version(const char *version);
 
 /* возвращает не 0, если данное входящее соединение не разрешается открывать */
-extern int (*dnet_connection_open_check)(void *conn, uint32_t ip, uint16_t port);
+extern int (*dnet_connection_open_check)(uint32_t ip, uint16_t port);
 
 extern void (*dnet_connection_close_notify)(void *conn);
 
@@ -42,7 +45,7 @@ extern void (*dnet_connection_close_notify)(void *conn);
 extern int dnet_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action);
 
 #ifdef __cplusplus
-}
+};
 #endif
 
 #endif

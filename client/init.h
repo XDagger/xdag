@@ -1,4 +1,4 @@
-/* basic variables, T13.714-T13.895 $DVS:time$ */
+/* basic variables, T13.714-T14.297 $DVS:time$ */
 
 #ifndef XDAG_MAIN_H
 #define XDAG_MAIN_H
@@ -29,13 +29,18 @@ extern struct xdag_stats
 
 extern struct xdag_ext_stats
 {
-    xdag_diff_t hashrate_total[HASHRATE_LAST_MAX_TIME];
-    xdag_diff_t hashrate_ours[HASHRATE_LAST_MAX_TIME];
-    xdag_time_t hashrate_last_time;
-    uint64_t nnoref;
-    uint64_t nhashes;
-    double hashrate_s;
-    uint32_t nwaitsync;
+	xdag_diff_t hashrate_total[HASHRATE_LAST_MAX_TIME];
+	xdag_diff_t hashrate_ours[HASHRATE_LAST_MAX_TIME];
+	xdag_time_t hashrate_last_time;
+	uint64_t nnoref;
+	uint64_t nextra;
+	uint64_t nhashes;
+	double hashrate_s;
+	uint32_t nwaitsync;
+	uint32_t cache_size;
+	uint32_t cache_usage;
+	double cache_hitrate;
+	int use_orphan_hashtable;
 } g_xdag_extstats;
 
 #ifdef __cplusplus
@@ -56,6 +61,9 @@ extern char *g_coinname, *g_progname;
 
 //defines if client runs as miner or pool
 extern int g_is_miner;
+
+//defines if mining is disabled (pool)
+extern int g_disable_mining;
 
 //Default type of the block header
 //Test network and main network have different types of the block headers, so blocks from different networks are incompatible

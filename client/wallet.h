@@ -7,9 +7,13 @@
 
 struct xdag_public_key {
 	void *key;
-	uint64_t *pub; /* lower bit contains parity */
+	uint64_t *pub; /* lowest bit contains parity */
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 /* initializes a wallet */
 extern int xdag_wallet_init(void);
 
@@ -25,4 +29,8 @@ extern struct xdag_public_key *xdag_wallet_our_keys(int *pnkeys);
 /* completes work with wallet */
 extern void xdag_wallet_finish(void);
 
+#ifdef __cplusplus
+};
+#endif
+		
 #endif
