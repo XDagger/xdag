@@ -505,6 +505,28 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 					public_keys[keysCount++].pub = (uint64_t*)((uintptr_t)&newBlock->field[i].data | (type - XDAG_FIELD_PUBLIC_KEY_0));
 				}
 				break;
+
+			case XDAG_FIELD_RESERVE0:
+				break;
+
+			case XDAG_FIELD_RESERVE1:
+				break;
+
+			case XDAG_FIELD_RESERVE2:
+				break;
+
+			case XDAG_FIELD_RESERVE3:
+				break;
+
+			case XDAG_FIELD_RESERVE4:
+				break;
+
+			case XDAG_FIELD_RESERVE5:
+				break;
+
+			case XDAG_FIELD_RESERVE6:
+				break;
+
 			default:
 				err = 3;
 				goto end;
@@ -949,7 +971,14 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 				block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
 		}
 
-		xdag_send_new_block(block);
+		if(g_xdag_pool) { /* append pool created block to list */
+			struct xdag_block * new_block = (struct xdag_block *)malloc(sizeof(struct xdag_block));
+			memcpy(new_block, block, sizeof(struct xdag_block));
+			new_block->field[0].transport_header = 0;
+			xdag_append_new_block(new_block);
+		} else { /* send miner created block directly */
+			xdag_send_new_block(block);
+		}
 
 		if(newBlockHashResult != NULL) {
 			memcpy(newBlockHashResult, newBlockHash, sizeof(xdag_hash_t));
@@ -1199,7 +1228,7 @@ int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address)
 		g_light_mode = 1;
 	}
 
-	if (xdag_mem_init(g_light_mode && !miner_address ? 0 : (((get_timestamp() - XDAG_ERA) >> 10) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal))) {
+	if (xdag_mem_init(g_light_mode && !miner_address ? 0 : (((get_timestamp() - XDAG_ERA) >> 8) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal))) {
 		return -1;
 	}
 

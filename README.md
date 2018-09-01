@@ -76,7 +76,8 @@ Types of fields:
 5. half of output signature; only owner of this key can use this block as input
 6. public key (x) with even y
 7. public key with odd y
-8. ... 15. are reserved for future usage.
+8. header of testnet
+9. ... 15. are reserved for future usage.  
 
 
 Transport layer:

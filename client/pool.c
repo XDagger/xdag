@@ -153,6 +153,7 @@ void *pool_net_thread(void *arg);
 void *pool_main_thread(void *arg);
 void *pool_block_thread(void *arg);
 void *pool_remove_inactive_connections(void *arg);
+void *pool_send_to_mainnet_thread(void *arg);
 
 void update_mean_log_diff(struct connection_pool_data *, struct xdag_pool_task *, xdag_hash_t);
 
@@ -761,17 +762,7 @@ static int is_block_data_received(connection_list_element *connection)
 
 			if(crc == crc_of_array((uint8_t*)conn_data->block, sizeof(struct xdag_block))) {
 				conn_data->block->field[0].transport_header = 0;
-
-				pthread_mutex_lock(&g_pool_mutex);
-
-				if(!g_firstb) {
-					g_firstb = g_lastb = conn_data->block;
-				} else {
-					g_lastb->field[0].transport_header = (uintptr_t)conn_data->block;
-					g_lastb = conn_data->block;
-				}
-
-				pthread_mutex_unlock(&g_pool_mutex);
+				xdag_append_new_block(conn_data->block);
 			} else {
 				free(conn_data->block);
 			}
@@ -1054,17 +1045,7 @@ void *pool_block_thread(void *arg)
 				hash[3], hash[2], hash[1], hash[0], (current_task_time - CONFIRMATIONS_COUNT + 1) << 16 | 0xffff, res);
 		}
 
-		pthread_mutex_lock(&g_pool_mutex);
-
-		if(g_firstb) {
-			b = g_firstb;
-			g_firstb = (struct xdag_block *)(uintptr_t)b->field[0].transport_header;
-			if(!g_firstb) g_lastb = 0;
-		} else {
-			b = 0;
-		}
-
-		pthread_mutex_unlock(&g_pool_mutex);
+		b = xdag_first_new_block();
 
 		if(b) {
 			processed = 1;
@@ -1074,6 +1055,7 @@ void *pool_block_thread(void *arg)
 			if(res > 0) {
 				xdag_send_new_block(b);
 			}
+			free(b);
 		}
 
 		if(!processed) sleep(1);
@@ -1535,6 +1517,40 @@ void* pool_remove_inactive_connections(void* arg)
 	}
 
 	return NULL;
+}
+
+void xdag_append_new_block(struct xdag_block *b)
+{
+	if(!b) return;
+
+	pthread_mutex_lock(&g_pool_mutex);
+
+	if(!g_firstb) {
+		g_firstb = g_lastb = b;
+	} else {
+		g_lastb->field[0].transport_header = (uint64_t)(uintptr_t)b;
+		g_lastb = b;
+	}
+
+	pthread_mutex_unlock(&g_pool_mutex);
+}
+
+struct xdag_block * xdag_first_new_block(void)
+{
+	struct xdag_block *b = 0;
+	pthread_mutex_lock(&g_pool_mutex);
+
+	if(g_firstb) {
+		b = g_firstb;
+		g_firstb = (struct xdag_block *)(uintptr_t)b->field[0].transport_header;
+		if(!g_firstb) g_lastb = 0;
+	} else {
+		b = 0;
+	}
+
+	pthread_mutex_unlock(&g_pool_mutex);
+
+	return b;
 }
 
 void update_mean_log_diff(struct connection_pool_data *conn_data, struct xdag_pool_task *task, xdag_hash_t hash)
