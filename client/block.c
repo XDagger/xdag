@@ -972,7 +972,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 			setfld(XDAG_FIELD_OUT, pretop->hash, xdag_hashlow_t);
 			res++;
 		}
-
+		pthread_mutex_lock(&block_mutex);
 		for (oref = g_orphan_first[0]; oref && res < XDAG_BLOCK_FIELDS; oref = oref->next) {
 			ref = oref->orphan_bi;
 			if (ref->time < send_time) {
@@ -980,6 +980,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 				res++;
 			}
 		}
+		pthread_mutex_unlock(&block_mutex);
 	}
 
 	for (j = 0; j < inputsCount; ++j) {
