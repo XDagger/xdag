@@ -926,15 +926,16 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 		if(!do_mining(block, pretop, send_time)) {
 			goto begin;
 		}
-		
+	}
+
+	xdag_hash(block, sizeof(struct xdag_block), newBlockHash);
+
+	if(mining) {
 		memcpy(g_xdag_mined_hashes[MAIN_TIME(send_time) & (CONFIRMATIONS_COUNT - 1)],
 			newBlockHash, sizeof(xdag_hash_t));
 		memcpy(g_xdag_mined_nonce[MAIN_TIME(send_time) & (CONFIRMATIONS_COUNT - 1)],
 			block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
 	}
-
-	xdag_hash(block, sizeof(struct xdag_block), newBlockHash);
-	block[0].field[0].transport_header = 1;
 
 	log_block("Create", newBlockHash, block[0].field[0].time, 1);
 	
@@ -960,6 +961,7 @@ int xdag_create_and_send_block(struct xdag_field *fields, int inputsCount, int o
 		return 0;
 	}
 
+	block->field[0].transport_header = 1;
 	int res = xdag_add_block(block);
 	if(res > 0) {
 		xdag_send_new_block(block);

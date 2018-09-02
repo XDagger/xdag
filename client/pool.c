@@ -155,7 +155,7 @@ void *pool_net_thread(void *arg);
 void *pool_main_thread(void *arg);
 void *pool_block_thread(void *arg);
 void *pool_remove_inactive_connections(void *arg);
-void *pool_send_to_mainnet_thread(void *arg);
+void *pool_payment_thread(void *arg);
 
 void update_mean_log_diff(struct connection_pool_data *, struct xdag_pool_task *, xdag_hash_t);
 
@@ -218,6 +218,18 @@ int xdag_initialize_pool(const char *pool_arg)
 	err = pthread_detach(th);
 	if(err != 0) {
 		printf("detach pool_remove_inactive_connections failed: %s\n", strerror(err));
+		return -1;
+	}
+
+	err = pthread_create(&th, 0, pool_payment_thread, 0);
+	if(err != 0) {
+		printf("create pool_payment_thread failed: %s\n", strerror(err));
+		return -1;
+	}
+
+	err = pthread_detach(th);
+	if(err != 0) {
+		printf("detach pool_payment_thread failed: %s\n", strerror(err));
 		return -1;
 	}
 
