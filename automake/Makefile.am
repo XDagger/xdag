@@ -7,7 +7,7 @@ client              = $(SRCROOT)/client
 dnet	            = $(SRCROOT)/dnet
 dfstools            = $(SRCROOT)/dus/programs/dfstools/source
 dfslib	            = $(dfstools)/dfslib
-dar		            = $(SRCROOT)/dus/programs/dar/source
+dar		    = $(SRCROOT)/dus/programs/dar/source
 ldusinc	            = $(SRCROOT)/ldus/source/include/ldus
 utils               = $(SRCROOT)/client/utils
 jsonrpc             = $(SRCROOT)/client/json-rpc
@@ -37,7 +37,7 @@ sources = \
 	$(client)/wallet.c                              \
 	$(client)/commands.c                            \
 	$(client)/terminal.c                            \
-	$(client)/network.c	                            \
+	$(client)/network.c	                        \
 	$(dnet)/dnet_crypt.c                            \
 	$(dnet)/dnet_xdag.c                          	\
 	$(dfslib)/dfslib_crypt.c                        \
@@ -48,7 +48,7 @@ sources = \
 	$(utils)/log.c                                  \
 	$(utils)/utils.c                                \
 	$(utils)/linenoise.c                            \
-	$(utils)/dirname.c 	                            \
+	$(utils)/dirname.c 	                        \
 	$(moving_statistics)/moving_average.c           \
 	$(jsonrpc)/cJSON.c                              \
 	$(jsonrpc)/cJSON_Utils.c                        \
