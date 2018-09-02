@@ -25,12 +25,6 @@ extern "C" {
 /* initialization of the pool */
 extern int xdag_initialize_pool(const char *pool_arg);
 
-/* append new generated block and new blocks received from miner to list */
-extern void xdag_append_new_block(struct xdag_block *b);
-
-/* get the first new block in list */
-extern struct xdag_block *xdag_first_new_block(void);
-
 /* gets pool parameters as a string, 0 - if the pool is disabled */
 extern char *xdag_pool_get_config(char *buf);
 
