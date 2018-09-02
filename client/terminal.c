@@ -9,8 +9,6 @@
 #include <signal.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <readline/readline.h>
-#include <readline/history.h>
 #endif
 #include <sys/socket.h>
 #include "commands.h"
@@ -100,7 +98,6 @@ int terminal(void)
 			putchar(c);
 		}
 		close(sock);
-		free(cmd);
 	}
 	return 0;
 }
