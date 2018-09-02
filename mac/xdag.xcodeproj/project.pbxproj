@@ -54,8 +54,8 @@
 		38B3951C2056DE70004DD3EA /* netdb-white.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5C20544F3F00598EC2 /* netdb-white.txt */; };
 		38D5E1FD20F3F73D0047D9BC /* pools-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3883C71120EA651400041D3A /* pools-testnet.txt */; };
 		38D5E1FE20F3F73D0047D9BC /* pools.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3883C71020EA651400041D3A /* pools.txt */; };
-		417E241C213A77CD000D5F64 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 417E241A213A77CD000D5F64 /* libcrypto.a */; };
-		417E241D213A77CD000D5F64 /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 417E241B213A77CD000D5F64 /* libssl.a */; };
+		418AAFF2213BB2C900E96520 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 418AAFF1213BB2C900E96520 /* libcrypto.a */; };
+		418AAFF4213BB2D400E96520 /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 418AAFF3213BB2D400E96520 /* libssl.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -177,8 +177,8 @@
 		38A15E7220544F3F00598EC2 /* wallet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wallet.h; sourceTree = "<group>"; };
 		38B395162056D68E004DD3EA /* x86_64cpuid-mac.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = "x86_64cpuid-mac.s"; sourceTree = "<group>"; };
 		38B395172056D68E004DD3EA /* sha256-mb-x86_64-mac.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = "sha256-mb-x86_64-mac.s"; sourceTree = "<group>"; };
-		417E241A213A77CD000D5F64 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = "lib/openssl@1.1/1.1.0i/libcrypto.a"; sourceTree = "<group>"; };
-		417E241B213A77CD000D5F64 /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libssl.a; path = "lib/openssl@1.1/1.1.0i/libssl.a"; sourceTree = "<group>"; };
+		418AAFF1213BB2C900E96520 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = lib/openssl/libcrypto.a; sourceTree = "<group>"; };
+		418AAFF3213BB2D400E96520 /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libssl.a; path = lib/openssl/libssl.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -186,8 +186,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				417E241C213A77CD000D5F64 /* libcrypto.a in Frameworks */,
-				417E241D213A77CD000D5F64 /* libssl.a in Frameworks */,
+				418AAFF4213BB2D400E96520 /* libssl.a in Frameworks */,
+				418AAFF2213BB2C900E96520 /* libcrypto.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -492,8 +492,8 @@
 		38A15E9E20545CCE00598EC2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				417E241A213A77CD000D5F64 /* libcrypto.a */,
-				417E241B213A77CD000D5F64 /* libssl.a */,
+				418AAFF3213BB2D400E96520 /* libssl.a */,
+				418AAFF1213BB2C900E96520 /* libcrypto.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -739,7 +739,7 @@
 				HEADER_SEARCH_PATHS = /usr/local/opt/openssl/include;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/opt/openssl/lib,
+					"$(PROJECT_DIR)/lib/openssl",
 				);
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -772,7 +772,7 @@
 				HEADER_SEARCH_PATHS = /usr/local/opt/openssl/include;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/opt/openssl/lib,
+					"$(PROJECT_DIR)/lib/openssl",
 				);
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";

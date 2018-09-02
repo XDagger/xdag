@@ -60,6 +60,7 @@ AC_CHECK_FUNCS([ftruncate gethostbyname gettimeofday localtime_r memmove memset 
 # for macos
 LIBCRYPTO_CFLAGS="-I/usr/local/opt/openssl/include"
 LIBCRYPTO_LDFLAGS="-L/usr/local/opt/openssl/lib"
+
 AC_SUBST(LIBCRYPTO_CFLAGS)
 AC_SUBST(LIBCRYPTO_LDFLAGS)
 
