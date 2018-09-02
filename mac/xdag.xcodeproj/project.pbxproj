@@ -739,7 +739,6 @@
 				HEADER_SEARCH_PATHS = /usr/local/opt/openssl/include;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/lib/openssl",
 					"$(PROJECT_DIR)/lib/openssl/lib",
 				);
 				OTHER_CFLAGS = "";
@@ -773,7 +772,6 @@
 				HEADER_SEARCH_PATHS = /usr/local/opt/openssl/include;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/lib/openssl",
 					"$(PROJECT_DIR)/lib/openssl/lib",
 				);
 				OTHER_CFLAGS = "";
