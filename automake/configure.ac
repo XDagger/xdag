@@ -39,7 +39,7 @@ AC_PROG_CC
 AM_PROG_AS
 
 # Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h memory.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h readline/readline.h])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h memory.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
@@ -55,23 +55,23 @@ AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_MMAP
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([ftruncate gethostbyname gettimeofday localtime_r memmove memset munmap socket strchr strdup strerror readline])
+AC_CHECK_FUNCS([ftruncate gethostbyname gettimeofday localtime_r memmove memset munmap socket strchr strdup strerror])
 
 # for macos
 LIBCRYPTO_CFLAGS="-I/usr/local/opt/openssl/include"
+LIBCRYPTO_LDFLAGS="-L/usr/local/opt/openssl/lib"
+
 AC_SUBST(LIBCRYPTO_CFLAGS)
+AC_SUBST(LIBCRYPTO_LDFLAGS)
 
 # Checks for libraries.
 AC_CHECK_LIB([crypto], [main])
 AC_CHECK_LIB([m], [main])
 AC_CHECK_LIB([pthread], [main])
 AC_CHECK_LIB([ssl], [main])
-AC_CHECK_LIB([readline], [main])
 AC_CHECK_LIB([gmp], [__gmpz_init])
 
-AC_CONFIG_FILES([
-    Makefile
-])
+AC_CONFIG_FILES([Makefile])
 
 AC_OUTPUT
 
