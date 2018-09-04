@@ -98,7 +98,8 @@ enum orphan_remove_actions {
 
 #define get_orphan_index(bi)      (!!((bi)->flags & BI_EXTRA))
 
-static pthread_mutex_t g_create_block_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_rwlock_t g_create_block_lock_rw = PTHREAD_RWLOCK_INITIALIZER;
+static pthread_rwlock_t g_orphan_lock_rw = PTHREAD_RWLOCK_INITIALIZER;
 
 static xdag_amount_t g_balance = 0;
 static xdag_time_t time_limit = DEF_TIME_LIMIT, xdag_era = XDAG_MAIN_ERA;
@@ -708,11 +709,16 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	if (g_xdag_extstats.nextra > MAX_ALLOWED_EXTRA
 			&& (g_xdag_state == XDAG_STATE_SYNC || g_xdag_state == XDAG_STATE_STST)) {
 		/* if too many extra blocks then reuse the oldest */
+
+		pthread_rwlock_wrlock(&g_orphan_lock_rw);
 		nodeBlock = g_orphan_first[1]->orphan_bi;
 		remove_orphan(nodeBlock, ORPHAN_REMOVE_REUSE);
+		pthread_rwlock_unlock(&g_orphan_lock_rw);
+
 		pthread_mutex_lock(&rbtree_mutex);
 		ldus_rbtree_remove(&root, &nodeBlock->node);
 		pthread_mutex_unlock(&rbtree_mutex);
+
 		if (g_xdag_stats.nblocks-- == g_xdag_stats.total_nblocks)
 			g_xdag_stats.total_nblocks--;
 		if (nodeBlock->flags & BI_OURS) {
@@ -798,6 +804,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		ourlast = nodeBlock;
 	}
 
+	pthread_rwlock_wrlock(&g_orphan_lock_rw);
 	for(i = 0; i < tmpNodeBlock.nlinks; ++i) {
 		remove_orphan(tmpNodeBlock.link[i],
 				tmpNodeBlock.flags & BI_EXTRA ? ORPHAN_REMOVE_EXTRA : ORPHAN_REMOVE_NORMAL);
@@ -820,8 +827,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 			blockRef->backrefs->backrefs[j] = nodeBlock;
 		}
 	}
-	
+
 	add_orphan(nodeBlock, newBlock);
+	pthread_rwlock_unlock(&g_orphan_lock_rw);
 
 	log_block((tmpNodeBlock.flags & BI_OURS ? "Good +" : "Good  "), tmpNodeBlock.hash, tmpNodeBlock.time, tmpNodeBlock.storage_pos);
 
@@ -903,7 +911,7 @@ int xdag_add_block(struct xdag_block *b)
 int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, int hasRemark, xdag_amount_t fee,
 	xdag_time_t send_time, xdag_hash_t newBlockHashResult)
 {
-	pthread_mutex_lock(&g_create_block_mutex);
+	pthread_rwlock_rdlock(&g_create_block_lock_rw);
 	struct xdag_block block[2];
 	int i, j, res, mining, defkeynum, keysnum[XDAG_BLOCK_FIELDS], nkeys, nkeysnum = 0, outsigkeyind = -1, hasTag = 0;
 	struct xdag_public_key *defkey = xdag_wallet_default_key(&defkeynum), *keys = xdag_wallet_our_keys(&nkeys), *key;
@@ -915,7 +923,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	for (i = 0; i < inputsCount; ++i) {
 		ref = block_by_hash(fields[i].hash);
 		if (!ref || !(ref->flags & BI_OURS)) {
-			pthread_mutex_unlock(&g_create_block_mutex);
+			pthread_rwlock_unlock(&g_create_block_lock_rw);
 			return -1;
 		}
 
@@ -928,7 +936,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 			keysnum[nkeysnum++] = ref->n_our_key;
 		}
 	}
-	pthread_mutex_unlock(&g_create_block_mutex);
+	pthread_rwlock_unlock(&g_create_block_lock_rw);
 
 	int res0 = 1 + inputsCount + outputsCount + hasRemark + 3 * nkeysnum + (outsigkeyind < 0 ? 2 : 0);
 
@@ -960,7 +968,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	block[0].field[0].time = send_time;
 	block[0].field[0].amount = fee;
 
-	pthread_mutex_lock(&g_create_block_mutex);
+	pthread_rwlock_rdlock(&g_create_block_lock_rw);
 	if (g_light_mode) {
 		if (res < XDAG_BLOCK_FIELDS && ourfirst) {
 			setfld(XDAG_FIELD_OUT, ourfirst->hash, xdag_hashlow_t);
@@ -972,7 +980,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 			setfld(XDAG_FIELD_OUT, pretop->hash, xdag_hashlow_t);
 			res++;
 		}
-		pthread_mutex_lock(&block_mutex);
+		pthread_rwlock_rdlock(&g_orphan_lock_rw);
 		for (oref = g_orphan_first[0]; oref && res < XDAG_BLOCK_FIELDS; oref = oref->next) {
 			ref = oref->orphan_bi;
 			if (ref->time < send_time) {
@@ -980,7 +988,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 				res++;
 			}
 		}
-		pthread_mutex_unlock(&block_mutex);
+		pthread_rwlock_unlock(&g_orphan_lock_rw);
 	}
 
 	for (j = 0; j < inputsCount; ++j) {
@@ -1019,7 +1027,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 		hash_for_signature(block, defkey, signatureHash);
 		xdag_sign(defkey->key, signatureHash, block[0].field[i].data, block[0].field[i + 1].data);
 	}
-	pthread_mutex_unlock(&g_create_block_mutex);
+	pthread_rwlock_unlock(&g_create_block_lock_rw);
 
 	if (mining) {
 		uint64_t taskIndex = g_xdag_pool_task_index + 1;
@@ -1045,9 +1053,9 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 
 		while (get_timestamp() <= send_time) {
 			sleep(1);
-			pthread_mutex_lock(&g_create_block_mutex);
+			pthread_rwlock_rdlock(&g_create_block_lock_rw);
 			struct block_internal *pretop_new = pretop_block();
-			pthread_mutex_unlock(&g_create_block_mutex);
+			pthread_rwlock_unlock(&g_create_block_lock_rw);
 			if (pretop != pretop_new && get_timestamp() < send_time) {
 				pretop = pretop_new;
 				xdag_info("Mining: start from beginning because of pre-top block changed");
@@ -1267,8 +1275,10 @@ begin:
 			g_balance = 0;
 			top_main_chain = pretop_main_chain = 0;
 			ourfirst = ourlast = 0;
+			pthread_rwlock_wrlock(&g_orphan_lock_rw);
 			g_orphan_first[0] = g_orphan_last[0] = 0;
 			g_orphan_first[1] = g_orphan_last[1] = 0;
+			pthread_rwlock_unlock(&g_orphan_lock_rw);
 			memset(&g_xdag_stats, 0, sizeof(g_xdag_stats));
 			memset(&g_xdag_extstats, 0, sizeof(g_xdag_extstats));
 			pthread_mutex_unlock(&block_mutex);
@@ -1977,19 +1987,22 @@ void xdag_list_orphan_blocks(int count, FILE *out)
 	print_header_block_list(out);
 
 	pthread_mutex_lock(&block_mutex);
+	pthread_rwlock_rdlock(&g_orphan_lock_rw);
 
 	for(struct orphan_block *b = g_orphan_first[0]; b && i < count; b = b->next, i++) {
 		print_block(b->orphan_bi, 0, out);
 	}
 
+	pthread_rwlock_unlock(&g_orphan_lock_rw);
 	pthread_mutex_unlock(&block_mutex);
 }
 
 // completes work with the blocks
 void xdag_block_finish()
 {
-	pthread_mutex_lock(&g_create_block_mutex);
+	pthread_rwlock_wrlock(&g_create_block_lock_rw);
 	pthread_mutex_lock(&block_mutex);
+	pthread_rwlock_wrlock(&g_orphan_lock_rw);
 }
 
 int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark_t))
