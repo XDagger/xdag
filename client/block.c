@@ -944,7 +944,9 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 	}
 
 	struct xdag_block *new_block = (struct xdag_block *)malloc(sizeof(struct xdag_block));
-	memcpy(new_block, block, sizeof(struct xdag_block));
+	if(new_block) {
+		memcpy(new_block, block, sizeof(struct xdag_block));
+	}	
 	return new_block;
 }
 
