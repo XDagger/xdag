@@ -125,7 +125,7 @@ struct xconnection {
 };
 
 struct xthread {
-	struct pollfd poll[MAX_CONNECTIONS_PER_THREAD];
+	struct pollfd fds[MAX_CONNECTIONS_PER_THREAD];
 	struct xconnection *conn[MAX_CONNECTIONS_PER_THREAD];
 	pthread_mutex_t mutex;
 	int nconnections;
@@ -172,29 +172,27 @@ static int open_socket(struct sockaddr_in *peeraddr, const char *ipport)
 
 static struct xconnection *add_connection(int fd, uint32_t ip, uint16_t port, int direction)
 {
-	int rnd = rand() % g_nthreads, i, nthread, nfd;
-	struct xconnection *conn;
-	struct xthread *t;
+	int rnd = rand() % g_nthreads;
 	if(dnet_connection_open_check && (*dnet_connection_open_check)(ip, port)) {
 		xdag_info("DNET  : failed %s %d.%d.%d.%d:%d, rejected by white list",
 			(direction ? "from" : "to  "),
 			ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, port);
 		return 0;
 	}
-	for(i = 0; i < g_nthreads; ++i) {
-		nthread = (rnd + i) % g_nthreads;
-		t = g_threads + nthread;
+	for(int i = 0; i < g_nthreads; ++i) {
+		int nthread = (rnd + i) % g_nthreads;
+		struct xthread *t = g_threads + nthread;
 		pthread_mutex_lock(&t->mutex);
-		nfd = t->nconnections;
+		int nfd = t->nconnections;
 		if(nfd < MAX_CONNECTIONS_PER_THREAD) {
-			conn = t->conn[nfd];
+			struct xconnection *conn = t->conn[nfd];
 			conn->ip = ip;
 			conn->port = port;
 			conn->created = time(0);
 			conn->packets_in = conn->packets_out = conn->dropped_in = 0;
 			conn->common_queue_pos = g_common_queue_pos;
-			t->poll[nfd].events = POLLIN | POLLOUT;
-			t->poll[nfd].fd = fd;
+			t->fds[nfd].events = POLLIN | POLLOUT;
+			t->fds[nfd].fd = fd;
 			t->nconnections++;
 			pthread_mutex_unlock(&t->mutex);
 			xdag_info("DNET  : opened %s %d.%d.%d.%d:%d, nthread=%d, nfd=%d, fd=%d, conn=%p",
@@ -220,7 +218,7 @@ int dnet_test_connection(void *connection)
 	if(nconn < 0 || nconn >= g_nthreads * MAX_CONNECTIONS_PER_THREAD || conn != g_connections + nconn) return -1;
 	nfd = conn->nfd;
 	if(nfd < 0 || nfd >= MAX_CONNECTIONS_PER_THREAD) return -1;
-	if(t->poll[nfd].fd < 0) return -1;
+	if(t->fds[nfd].fd < 0) return -1;
 	return 0;
 }
 
@@ -239,15 +237,15 @@ static int close_connection(struct xconnection *conn, int error)
 		return -1;
 	}
 	if(dnet_connection_close_notify) (*dnet_connection_close_notify)(conn);
-	fd = t->poll[nfd].fd;
+	fd = t->fds[nfd].fd;
 	t->nconnections--; nconns--;
 	if(nconns) {
-		t->poll[nfd].fd = t->poll[nconns].fd;
-		t->poll[nfd].revents = t->poll[nconns].revents;
+		t->fds[nfd].fd = t->fds[nconns].fd;
+		t->fds[nfd].revents = t->fds[nconns].revents;
 		t->conn[nfd] = t->conn[nconns];
 		t->conn[nfd]->nfd = nfd;
-		t->poll[nconns].fd = -1;
-		t->poll[nconns].revents = 0;
+		t->fds[nconns].fd = -1;
+		t->fds[nconns].revents = 0;
 		t->conn[nconns] = conn;
 		conn->nfd = nconns;
 	}
@@ -330,25 +328,25 @@ static void *xthread_main(void *arg)
 {
 	int nthread = (long)arg;
 	struct xthread *t = g_threads + nthread;
-	struct xconnection *conn;
 	struct xsector buf, *xs;
-	int n, nmax, res, ttl, size, err;
-	uint32_t crc;
-	while(poll(t->poll, nmax = t->nconnections, 1) >= 0) {
+	int res, ttl, size, err;
+	while(t->nconnections == 0) sleep(1);
+	while(poll(t->fds, t->nconnections, 1) >= 0) {
 		while(!g_xdag_sync_on) sleep(1);
-		for(n = 0; n < nmax; ++n) {
-			conn = t->conn[n];
-			if(t->poll[n].revents & ~(POLLIN | POLLOUT)
+		int nmax = t->nconnections;
+		for(int n = 0; n < nmax; ++n) {
+			struct xconnection *conn = t->conn[n];
+			if(t->fds[n].revents & ~(POLLIN | POLLOUT)
 				|| (conn->packets_in <= conn->dropped_in + FIRST_NSECTORS
 					&& time(0) > conn->created + BAD_CONN_TIMEOUT_SEC)) {
-				if(t->poll[n].revents & ~(POLLIN | POLLOUT)) err = t->poll[n].revents << 4 | 1;
+				if(t->fds[n].revents & ~(POLLIN | POLLOUT)) err = t->fds[n].revents << 4 | 1;
 				else err = conn->packets_in << 4 | 2;
 close:
 				close_connection(conn, err);
 				nmax--;
 				continue;
 			}
-			if(t->poll[n].revents & POLLIN) {
+			if(t->fds[n].revents & POLLIN) {
 				if(conn->part && conn->part->readlen) {
 					xs = &conn->part->read;
 					size = conn->part->readlen;
@@ -356,7 +354,7 @@ close:
 					xs = &buf;
 					size = SECTOR_SIZE;
 				}
-				res = read(t->poll[n].fd, xs->byte + SECTOR_SIZE - size, size);
+				res = read(t->fds[n].fd, xs->byte + SECTOR_SIZE - size, size);
 				if(res <= 0) { err = res << 4 | 3; goto close; }
 				if(res != size) {
 					if(!conn->part) {
@@ -377,7 +375,7 @@ close:
 					if(xs->head.type != DNET_PKT_XDAG || xs->head.length != SECTOR_SIZE || !ttl) {
 						conn->dropped_in++; goto decline;
 					}
-					crc = xs->head.crc32;
+					uint32_t crc = xs->head.crc32;
 					xs->head.crc32 = 0;
 					if(crc_of_array(xs->byte, SECTOR_SIZE) != crc) { conn->dropped_in++; goto decline; }
 					if(!g_arrive_callback) goto decline;
@@ -409,7 +407,7 @@ decline:
 				conn->packets_in++;
 			}
 skip_in:
-			if(t->poll[n].revents & POLLOUT) {
+			if(t->fds[n].revents & POLLOUT) {
 				size = SECTOR_SIZE;
 				if(conn->part && conn->part->writelen) {
 					xs = &conn->part->write;
@@ -445,7 +443,7 @@ skip_in:
 						memset(&buf, 0, SECTOR_SIZE);
 						xs = &buf;
 					} else {
-						t->poll[n].events &= ~POLLOUT;
+						t->fds[n].events &= ~POLLOUT;
 						continue;
 					}
 					dfslib_encrypt_sector(g_crypt, xs->word, conn->packets_out - FIRST_NSECTORS + 1);
@@ -456,9 +454,12 @@ skip_in:
 					xs = &buf;
 					dfsrsa_crypt(xs->word, SECTOR_SIZE / sizeof(dfsrsa_t), conn->crypt->pub.key, DNET_KEYLEN);
 				} else continue;
-				res = write(t->poll[n].fd, xs->byte + SECTOR_SIZE - size, size);
+				res = write(t->fds[n].fd, xs->byte + SECTOR_SIZE - size, size);
 				if(conn->part && conn->part->writelen) {
-					if(res <= 0) { err = res << 4 | 7; goto close; }
+					if(res <= 0) {
+						err = res << 4 | 7;
+						goto close;
+					}
 					conn->part->writelen = size - res;
 					if(conn->part->writelen) continue;
 				} else {
@@ -482,8 +483,9 @@ skip_in:
 				conn->packets_out++;
 			}
 			if(conn->out_queue_size || conn->common_queue_pos != g_common_queue_pos
-				|| (conn->crypt && time(0) >= conn->crypt->last_sent + OLD_DNET_TIMEOUT_SEC))
-				t->poll[n].events |= POLLOUT;
+				|| (conn->crypt && time(0) >= conn->crypt->last_sent + OLD_DNET_TIMEOUT_SEC)) {
+				t->fds[n].events |= POLLOUT;
+			}
 		}
 	}
 	return 0;
@@ -494,11 +496,11 @@ static void *accept_thread_main(void *arg)
 	struct linger linger_opt = { 1, 0 }; // Linger active, timeout 5
 	struct sockaddr_in peeraddr;
 	socklen_t peeraddr_len = sizeof(peeraddr);
-	int fd, reuseaddr = 1;
+	int reuseaddr = 1;
 
 	while(!g_xdag_sync_on) sleep(1);
 
-	fd = open_socket(&peeraddr, (char *)arg);
+	int fd = open_socket(&peeraddr, (char *)arg);
 	if(fd < 0) return 0;
 
 	// Bind a socket to the address
@@ -513,9 +515,8 @@ static void *accept_thread_main(void *arg)
 	if(listen(fd, MAX_CONNECTIONS_PER_THREAD)) return 0;    // "1" is the maximal length of the queue
 
 	for(;;) {
-		int fd1;
 		while(!g_xdag_sync_on) sleep(1);
-		fd1 = accept(fd, (struct sockaddr*) &peeraddr, &peeraddr_len);
+		int fd1 = accept(fd, (struct sockaddr*)&peeraddr, &peeraddr_len);
 		if(fd1 < 0) continue;
 		setsockopt(fd1, SOL_SOCKET, SO_LINGER, (char *)&linger_opt, sizeof(linger_opt));
 		setsockopt(fd1, SOL_SOCKET, SO_REUSEADDR, (char *)&reuseaddr, sizeof(int));
@@ -529,9 +530,8 @@ static void *accept_thread_main(void *arg)
 static void daemonize(void)
 {
 #if !defined(_WIN32) && !defined(_WIN64)
-	int i;
 	if(getppid() == 1) exit(0); /* already a daemon */
-	i = fork();
+	int i = fork();
 	if(i < 0) exit(1); /* fork error */
 	if(i > 0) exit(0); /* parent exits */
 
@@ -634,7 +634,7 @@ int dnet_init(int argc, char **argv)
 				struct xconnection *conn = &g_connections[n * MAX_CONNECTIONS_PER_THREAD + i];
 				pthread_mutex_init(&conn->mutex, 0);
 				g_threads[n].conn[i] = conn;
-				g_threads[n].poll[i].fd = -1;
+				g_threads[n].fds[i].fd = -1;
 				conn->nfd = i;
 			}
 		}
