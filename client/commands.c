@@ -668,8 +668,8 @@ static int make_transaction_block(struct xfer_callback_data *xferData)
 		memcpy(xferData->fields + xferData->fieldsCount, xferData->fields + XFER_MAX_IN, sizeof(xdag_hashlow_t));
 	}
 	xferData->fields[xferData->fieldsCount].amount = xferData->todo;
-	int res = xdag_create_block(xferData->fields, xferData->fieldsCount, 1, 0, 0, xferData->transactionBlockHash);
-	if(res) {
+	int res = xdag_create_and_send_block(xferData->fields, xferData->fieldsCount, 1, 0, 0, xferData->transactionBlockHash);
+	if(!res) {
 		xdag_hash2address(xferData->fields[xferData->fieldsCount].hash, address);
 		xdag_err("FAILED: to %s xfer %.9Lf %s, error %d",
 			address, amount2xdags(xferData->todo), g_coinname, res);
