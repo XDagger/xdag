@@ -102,6 +102,7 @@ void cache_add(struct xdag_block*, xdag_hash_t);
 int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
 int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
 static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
+int do_mining(struct xdag_block *block, struct block_internal *pretop, xdag_time_t send_time);
 
 // convert xdag_amount_t to long double
 long double amount2xdags(xdag_amount_t amount)
