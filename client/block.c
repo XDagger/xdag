@@ -854,7 +854,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 	int res0 = 1 + inputsCount + outputsCount + 3 * nkeysnum + (outsigkeyind < 0 ? 2 : 0);
 
 	if (res0 > XDAG_BLOCK_FIELDS) {
-		return -1;
+		return NULL;
 	}
 
 	if (!send_time) {
