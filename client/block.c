@@ -1165,7 +1165,7 @@ static void *sync_thread(void *arg)
 
 static void reset_callback(struct ldus_rbtree *node)
 {
-	struct block_internal *b = (struct block_internal *)_rbtree_ptr(node);
+	struct block_internal *b = (struct block_internal *)node;
 	if(b->remark) {
 		xdag_free(b->remark);
 	}

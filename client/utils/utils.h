@@ -49,7 +49,7 @@ extern void test_deadlock(void);
 #define XDAG_MUTEX_LOCK(x) \
 do {\
 	apply_lock_before(pthread_self(), &x, #x);\
-	pthread_mutex_trylock(&x);\
+	pthread_mutex_lock(&x);\
 	apply_lock_after(pthread_self(), &x);\
 } while(0)
 
