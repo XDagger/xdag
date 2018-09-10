@@ -1603,10 +1603,10 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "difficulty: %llx%016llx\n", xdag_diff_args(bi->difficulty));
 	xdag_hash2address(h, address);
 	fprintf(out, "   balance: %s  %10u.%09u\n", address, pramount(bi->amount));
-	fprintf(out, "-------------------------------------------------------------------------------------------\n");
+	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
 	fprintf(out, "                               block as transaction: details\n");
 	fprintf(out, " direction  address                                    amount\n");
-	fprintf(out, "-------------------------------------------------------------------------------------------\n");
+	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
 	if(bi->ref) {
 		xdag_hash2address(bi->ref->hash, address);
 	} else {
@@ -1668,7 +1668,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 					if(ri->link[j] == bi && ri->linkamount[j]) {
 						xdag_time_to_string(ri->time, time_buf);
 						xdag_hash2address(ri->hash, address);
-						fprintf(out, "    %6s: %s  %10u.%09u  %s %s\n",
+						fprintf(out, "    %6s: %s  %10u.%09u  %s  %s\n",
 							(1 << j & ri->in_mask ? "output" : " input"), address,
 							pramount(ri->linkamount[j]), time_buf, ri->remark ? ri->remark : "");
 					}
