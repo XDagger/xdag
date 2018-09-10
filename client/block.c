@@ -1653,24 +1653,21 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 		n += i;
 	}
 
-	if (!n) {
-		free(ba);
-		return 0;
-	}
+	if (n) {
+		qsort(ba, n, sizeof(struct block_internal *), bi_compar);
 
-	qsort(ba, n, sizeof(struct block_internal *), bi_compar);
-
-	for (i = 0; i < n; ++i) {
-		if (!i || ba[i] != ba[i - 1]) {
-			struct block_internal *ri = ba[i];
-			if (ri->flags & BI_APPLIED) {
-				for (int j = 0; j < ri->nlinks; j++) {
-					if(ri->link[j] == bi && ri->linkamount[j]) {
-						xdag_time_to_string(ri->time, time_buf);
-						xdag_hash2address(ri->hash, address);
-						fprintf(out, "    %6s: %s  %10u.%09u  %s %s\n",
-							(1 << j & ri->in_mask ? "output" : " input"), address,
-							pramount(ri->linkamount[j]), time_buf, ri->remark ? ri->remark : "");
+		for (i = 0; i < n; ++i) {
+			if (!i || ba[i] != ba[i - 1]) {
+				struct block_internal *ri = ba[i];
+				if (ri->flags & BI_APPLIED) {
+					for (int j = 0; j < ri->nlinks; j++) {
+						if(ri->link[j] == bi && ri->linkamount[j]) {
+							xdag_time_to_string(ri->time, time_buf);
+							xdag_hash2address(ri->hash, address);
+							fprintf(out, "    %6s: %s  %10u.%09u  %s %s\n",
+								(1 << j & ri->in_mask ? "output" : " input"), address,
+								pramount(ri->linkamount[j]), time_buf, ri->remark ? ri->remark : "");
+						}
 					}
 				}
 			}
