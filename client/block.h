@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <limits.h>
 #include "hash.h"
 #include "system.h"
 #include "types.h"
@@ -46,9 +47,14 @@ enum bi_flags {
 	BI_REF        = 0x10,
 	BI_OURS       = 0x20,
 	BI_EXTRA      = 0x40,
+	BI_REMARK     = 0x80
 };
 
 #define XDAG_BLOCK_FIELDS 16
+
+#if CHAR_BIT != 8
+#error Your system hasn't exactly 8 bit for a char, it won't run.
+#endif
 
 typedef char xdag_remark_t[32];
 
@@ -150,7 +156,7 @@ extern void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out);
 xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash);
 
 // get all transactions of specified address, and return total number of transactions
-extern int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark_t));
+extern int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, const xdag_remark_t));
 
 // print orphan blocks
 void xdag_list_orphan_blocks(int, FILE*);
@@ -159,7 +165,7 @@ void xdag_list_orphan_blocks(int, FILE*);
 void xdag_block_finish(void);
 	
 // get block info of specified address
-extern int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark_t));
+extern int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, const xdag_remark_t));
 
 #ifdef __cplusplus
 };
