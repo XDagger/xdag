@@ -102,7 +102,7 @@ void cache_add(struct xdag_block*, xdag_hash_t);
 int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
 int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
 static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
-int do_mining(struct xdag_block *block, struct block_internal *pretop, xdag_time_t send_time);
+int do_mining(struct xdag_block *block, struct block_internal **pretop, xdag_time_t send_time);
 
 // convert xdag_amount_t to long double
 long double amount2xdags(xdag_amount_t amount)
@@ -924,7 +924,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 	}
 
 	if (mining) {
-		if(!do_mining(block, pretop, send_time)) {
+		if(!do_mining(block, &pretop, send_time)) {
 			goto begin;
 		}
 	}
@@ -978,7 +978,7 @@ int xdag_create_and_send_block(struct xdag_field *fields, int inputsCount, int o
 	return res;
 }
 
-int do_mining(struct xdag_block *block, struct block_internal *pretop, xdag_time_t send_time)
+int do_mining(struct xdag_block *block, struct block_internal **pretop, xdag_time_t send_time)
 {
 	uint64_t taskIndex = g_xdag_pool_task_index + 1;
 	struct xdag_pool_task *task = &g_xdag_pool_task[taskIndex & 1];
@@ -1004,8 +1004,8 @@ int do_mining(struct xdag_block *block, struct block_internal *pretop, xdag_time
 	while(get_timestamp() <= send_time) {
 		sleep(1);
 		struct block_internal *pretop_new = pretop_block();
-		if(pretop != pretop_new && get_timestamp() < send_time) {
-			pretop = pretop_new;
+		if(*pretop != pretop_new && get_timestamp() < send_time) {
+			*pretop = pretop_new;
 			xdag_info("Mining: start from beginning because of pre-top block changed");
 			return 0;
 		}
