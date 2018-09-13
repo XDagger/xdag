@@ -105,7 +105,7 @@ static struct host *find_add_host(struct host *h)
 
 static struct host *random_host(int mask)
 {
-	struct ldus_rbtree *r, *p = 0;
+	struct ldus_rbtree *r = 0, *p = 0;
 
 	for (int i = 0; !p && i < 10; ++i) {
 		pthread_mutex_lock(&host_mutex);
@@ -133,12 +133,12 @@ static struct host *random_host(int mask)
 
 static struct host *ipport2host(struct host *h, const char *ipport, int flags)
 {
-	unsigned ip[5];
+	unsigned ip[5] = {0};
 
-	if (sscanf(ipport, "%u.%u.%u.%u:%u", ip, ip + 1, ip + 2, ip + 3, ip + 4) != 5
-		|| (ip[0] | ip[1] | ip[2] | ip[3]) & ~0xff || ip[4] & ~0xffff) return 0;
+	if (sscanf(ipport, "%u.%u.%u.%u:%u", ip, ip + 1, ip+2, ip+3, ip+4) != 5
+		|| (ip[0] | ip[1] | ip[2] | ip[3]) & ~0xff  || ip[4] & ~0xffff) return 0;
 
-	h->ip = ip[0] | ip[1] << 8 | ip[2] << 16 | ip[3] << 24;
+	h->ip 	= ip[0] | ip[1] << 8 | ip[2] << 16 | ip[3] << 24;
 	h->port = ip[4];
 	h->flags = flags;
 
@@ -158,10 +158,10 @@ static struct host *find_add_ipport(struct host *h, const char *ipport, int flag
 
 static int read_database(const char *fname, int flags)
 {
-	uint32_t ips[MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP];
-	uint8_t ips_count[MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP];
+	uint32_t ips[MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP] = {0};
+	uint8_t ips_count[MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP] = {0};
 	struct host h0;
-	char str[64], *p;
+	char str[64] = {0}, *p = NULL;
 	FILE *f = xdag_open_file(fname, "r");
 	int n = 0, n_ips = 0, n_blocked = 0, i;
 
@@ -169,9 +169,12 @@ static int read_database(const char *fname, int flags)
 
 	while (fscanf(f, "%63s", str) == 1) {
 		p = strchr(str, ':');
-		if (!p || !p[1]) continue;
-	
-		h0.flags = 0;
+		if (!p || !p[1]) {
+			memset(str, 0, 64);
+			continue;
+		}
+
+		memset(&h0, 0, sizeof(struct host));
 		struct host *h = find_add_ipport(&h0, str, flags);
 		
 		if (flags & HOST_CONNECTED && h0.flags & HOST_CONNECTED) {
@@ -187,15 +190,16 @@ static int read_database(const char *fname, int flags)
 			}
 		}
 
-		if (!h) continue;
-
-		xdag_debug("Netdb : host=%lx, flags=%x, read '%s'", (long)h, h->flags, str);
+		if (h) {
+			xdag_debug("Netdb : host=%lx, flags=%x, read '%s'", (long)h, h->flags, str);
 		
-		if (flags & HOST_CONNECTED && n_selected_hosts < MAX_SELECTED_HOSTS / 2) {
-			selected_hosts[n_selected_hosts++] = h;
-		}
-		
-		n++;
+			if (flags & HOST_CONNECTED && n_selected_hosts < MAX_SELECTED_HOSTS / 2) {
+				selected_hosts[n_selected_hosts++] = h;
+			}
+			n++;
+		}	
+	
+		memset(str, 0, 64);
 	}
 
 	xdag_close_file(f);
@@ -256,7 +260,8 @@ static void *monitor_thread(void *arg)
 			if (n < MAX_SELECTED_HOSTS) {
 				for (int j = 0; j < g_xdag_n_white_ips; ++j) {
 					if (h->ip == g_xdag_white_ips[j]) {
-						sprintf(str, "connect %u.%u.%u.%u:%u", h->ip & 0xff, h->ip >> 8 & 0xff, h->ip >> 16 & 0xff, h->ip >> 24 & 0xff, h->port);
+						memset(str, 0, 64);
+						snprintf(str, 64, "connect %u.%u.%u.%u:%u", h->ip & 0xff, h->ip >> 8 & 0xff, h->ip >> 16 & 0xff, h->ip >> 24 & 0xff, h->port);
 						xdag_debug("Netdb : host=%lx flags=%x query='%s'", (long)h, h->flags, str);
 						xdag_net_command(str, (f ? f : stderr));
 						n++;
@@ -295,10 +300,10 @@ static int is_valid_whitelist(char *content)
 		return 0;
 	}
 
-	char buf[0x1000];
-	int is_valid = 1;
-	char *next;
-	strcpy(buf, content);
+	char buf[0x1000] = {0};
+	int is_valid 	= 1;
+	char *next 		= NULL;
+	strncpy(buf, content, 0x1000-1);
 
 	char * line = strtok_r(buf,"\r\n\t", &next);
 	while (line) {
@@ -402,12 +407,15 @@ int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port
 unsigned xdag_netdb_send(uint8_t *data, unsigned len)
 {
 	unsigned i;
-
+	
+	if (!data || !len)
+		return 0;
+	
 	for (i = 0; i < n_selected_hosts && len >= 6; ++i, len -= 6, data += 6) {
 		memcpy(data, &selected_hosts[i]->ip, 4);
 		memcpy(data + 4, &selected_hosts[i]->port, 2);
 	}
-	
+		
 	memset(data, 0, len);
 	
 	return i * 6;
@@ -419,9 +427,8 @@ unsigned xdag_netdb_receive(const uint8_t *data, unsigned len)
 	struct host h;
 	int i;
 
-	h.flags = 0;
-
 	for (i = 0; len >= 6; ++i, len -= 6, data += 6) {
+		memset(&h, 0, sizeof(struct host));
 		memcpy(&h.ip, data, 4);
 		memcpy(&h.port, data + 4, 2);
 		if (!h.ip || !h.port) continue;

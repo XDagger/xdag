@@ -60,13 +60,16 @@ struct temp_file {
 
 static size_t g_pos = 0, g_fsize = 0, g_size = 0;
 static pthread_mutex_t g_mem_mutex = PTHREAD_MUTEX_INITIALIZER;
-static char g_tmpfile_path[PATH_MAX] = "";
+static char g_tmpfile_path[PATH_MAX] = {0};
 static struct temp_file *g_last_tmpfile = NULL;
 void delete_actual_tmpfile(void);
 
 void xdag_mem_tempfile_path(const char *tempfile_path)
 {
-	strcpy(g_tmpfile_path, tempfile_path);
+	if (!tempfile_path)
+		return;
+
+	strncpy(g_tmpfile_path, tempfile_path, PATH_MAX-1);
 }
 
 int xdag_mem_init(size_t size)
@@ -92,9 +95,9 @@ int xdag_mem_init(size_t size)
 		size++;
 	}
 
-	size_t wrote = snprintf(tfile_node->tmpfile, PATH_MAX,"%s%s", g_tmpfile_path, TMPFILE_TEMPLATE);
-	if (wrote >= PATH_MAX){
-		xdag_fatal("Error: Temporary file path exceed the max length that is %d characters", PATH_MAX);
+	int wrote = snprintf(tfile_node->tmpfile, PATH_MAX,"%s%s", g_tmpfile_path, TMPFILE_TEMPLATE);
+	if (wrote < 0 || wrote >= PATH_MAX){
+		xdag_fatal("Error: Fail to write tmpfile or tempfile file path exceed the max length that is %d characters", PATH_MAX);
 		free(tfile_node);
 		return -1;
 	}
@@ -131,6 +134,10 @@ int xdag_mem_init(size_t size)
 void *xdag_malloc(size_t size)
 {
 	uint8_t *res;
+	
+	if (!size) {
+		return 0;
+	}
 
 	if (!g_use_tmpfile) {
 		return malloc(size);
@@ -141,10 +148,7 @@ void *xdag_malloc(size_t size)
 		return malloc(size);
 	}
 
-	if (!size) {
-		return 0;
-	}
-
+	
 	pthread_mutex_lock(&g_mem_mutex);
 	
 	size--;
