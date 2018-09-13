@@ -497,18 +497,19 @@ int validate_ipv4_port(const char *str)
 
 int validate_ascii(const char *str)
 {
-	if(!str || strlen(str) == 0) {
-		return 1;
+	if(str == NULL) {
+		return 0;
 	}
 
-	uint8_t c = 0;
-	for(int i = 0; i < strlen(str); i++) {
-		c = str[i];
-		if(c > 126 && c < 32) {
+	for(;;++str) {
+		if(*str < 32 || *str > 126) {
+			if(*str == '\0') {
+				return 1;
+			}
 			return 0;
 		}
 	}
 
-	return 1;
+	return 0;
 }
 
