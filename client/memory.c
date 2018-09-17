@@ -74,7 +74,7 @@ void xdag_mem_tempfile_path(const char *tempfile_path)
 
 int xdag_mem_init(size_t size)
 {
-	struct temp_file *tfile_node;
+	struct temp_file *tfile_node = NULL;
 	if (!size) {
 		return 0;
 	}
@@ -94,6 +94,7 @@ int xdag_mem_init(size_t size)
 		size |= MEM_PORTION - 1;
 		size++;
 	}
+
 
 	int wrote = snprintf(tfile_node->tmpfile, PATH_MAX,"%s%s", g_tmpfile_path, TMPFILE_TEMPLATE);
 	if (wrote < 0 || wrote >= PATH_MAX){
