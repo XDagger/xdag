@@ -513,3 +513,23 @@ int validate_ascii(const char *str)
 	return 0;
 }
 
+size_t validate_ascii_safe(const char *str, size_t maxsize)
+{
+	if(str == NULL) {
+		return 0;
+	}
+
+	const char* start = str;
+	const char* stop = str + maxsize;
+
+	for(;start < stop;++str) {
+		if(*str < 32 || *str > 126) {
+			if(*str == '\0') {
+				return str - start;
+			}
+			return 0;
+		}
+	}
+
+	return 0;
+}

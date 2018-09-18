@@ -53,7 +53,6 @@ struct block_internal {
 	xdag_diff_t difficulty;
 	xdag_amount_t amount, linkamount[MAX_LINKS], fee;
 	xdag_time_t time;
-	char * remark;
 	uint64_t storage_pos;
 	union {
 		struct block_internal *ref;
@@ -61,9 +60,9 @@ struct block_internal {
 	};
 	struct block_internal *link[MAX_LINKS];
 	struct block_backrefs *backrefs;
-	uint8_t flags, nlinks, max_diff_link, reserved;
-	uint16_t in_mask;
-	uint16_t n_our_key;
+	char *remark;
+	uint16_t flags, in_mask, n_our_key;
+	uint8_t nlinks:4, max_diff_link:4, reserved;
 };
 
 #define N_BACKREFS      (sizeof(struct block_internal) / sizeof(struct block_internal *) - 1)
@@ -121,7 +120,12 @@ int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, con
 static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
 void remove_orphan(struct block_internal*,int);
 void add_orphan(struct block_internal*,struct xdag_block*);
-
+static inline size_t remark_acceptance(struct block_internal*, xdag_remark_t);
+static int add_remark_bi(struct block_internal*, xdag_remark_t);
+static void add_backref(struct block_internal*, struct block_internal*);
+static inline int get_nfield(struct xdag_block*, int);
+static inline const char* get_remark(struct block_internal*);
+static int load_remark(struct block_internal*);
 
 // convert xdag_amount_t to long double
 long double amount2xdags(xdag_amount_t amount)
@@ -528,35 +532,15 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 				break;
 
 			case XDAG_FIELD_REMARK:
-				if(tmpNodeBlock.remark) {
-					xdag_free(tmpNodeBlock.remark);
-				}
-				tmpNodeBlock.remark = (char *)xdag_malloc(sizeof(xdag_remark_t));
-				if(tmpNodeBlock.remark) {
-					memcpy(tmpNodeBlock.remark, newBlock->field[i].remark, sizeof(xdag_remark_t));
-				} else {
-					xdag_warn("xdag_malloc failed. [add_block_nolock:%d]", __LINE__);
-				}
+				tmpNodeBlock.flags |= BI_REMARK;
 				break;
-
 			case XDAG_FIELD_RESERVE1:
-				break;
-
 			case XDAG_FIELD_RESERVE2:
-				break;
-
 			case XDAG_FIELD_RESERVE3:
-				break;
-
 			case XDAG_FIELD_RESERVE4:
-				break;
-
 			case XDAG_FIELD_RESERVE5:
-				break;
-
 			case XDAG_FIELD_RESERVE6:
 				break;
-
 			default:
 				err = 3;
 				goto end;
@@ -722,12 +706,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		}
 	} else {
 		nodeBlock = xdag_malloc(sizeof(struct block_internal));
-		if(!nodeBlock) {
-			xdag_err("xdag_malloc failed. [add_block_nolock:%d]", __LINE__);
-			err = -1;
-			goto end;
-		}
-		memset(nodeBlock, 0, sizeof(struct block_internal));
 	}
 	if(!nodeBlock) {
 		err = 0xC;
@@ -803,21 +781,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 				tmpNodeBlock.flags & BI_EXTRA ? ORPHAN_REMOVE_EXTRA : ORPHAN_REMOVE_NORMAL);
 
 		if(tmpNodeBlock.linkamount[i]) {
-			blockRef = tmpNodeBlock.link[i];
-			if(!blockRef->backrefs || blockRef->backrefs->backrefs[N_BACKREFS - 1]) {
-				struct block_backrefs *back = xdag_malloc(sizeof(struct block_backrefs));
-				if(!back) {
-					xdag_err("xdag_malloc failed. [add_block_nolock:%d]", __LINE__);
-					continue;
-				}
-				memset(back, 0, sizeof(struct block_backrefs));
-				back->next = blockRef->backrefs;
-				blockRef->backrefs = back;
-			}
-
-			for(j = 0; blockRef->backrefs->backrefs[j]; ++j);
-
-			blockRef->backrefs->backrefs[j] = nodeBlock;
+		        blockRef = tmpNodeBlock.link[i];
+			add_backref(blockRef, nodeBlock);
 		}
 	}
 	
@@ -903,6 +868,9 @@ int xdag_add_block(struct xdag_block *b)
 int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, int hasRemark, xdag_amount_t fee,
 	xdag_time_t send_time, xdag_hash_t newBlockHashResult)
 {
+#ifndef REMARK_ENABLED
+	hasRemark = 0;
+#endif
 	pthread_mutex_lock(&g_create_block_mutex);
 	struct xdag_block block[2];
 	int i, j, res, mining, defkeynum, keysnum[XDAG_BLOCK_FIELDS], nkeys, nkeysnum = 0, outsigkeyind = -1, hasTag = 0;
@@ -945,12 +913,13 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	}
 
 	res0 += mining;
-
+#ifdef REMARK_ENABLED
 	/* reserve field for pool tag in generated main block */
 	if(strlen(g_pool_tag)>0 && strlen(g_pool_tag) < 32) {
 		hasTag = 1;
 	}
 	res0 += hasTag * mining;
+#endif
 
  begin:
 	res = res0;
@@ -1165,11 +1134,16 @@ static void *sync_thread(void *arg)
 
 static void reset_callback(struct ldus_rbtree *node)
 {
-	struct block_internal *b = (struct block_internal *)node;
-	if(b->remark) {
-		xdag_free(b->remark);
+	struct block_internal *bi = (struct block_internal *)node;
+	for(struct block_backrefs *to_free = bi->backrefs; to_free != NULL;){
+		bi->backrefs = to_free->next;
+		xdag_free(to_free);
+		to_free = bi->backrefs;
 	}
-	xdag_free(node);
+	if((bi->flags & BI_REMARK) && bi->remark != NULL) {
+		xdag_free(bi->remark);
+	}
+	xdag_free(bi);
 }
 
 // main thread which works with block
@@ -1563,7 +1537,7 @@ static int bi_compar(const void *l, const void *r)
 // returns string representation for the block state. Ignores BI_OURS flag
 const char* xdag_get_block_state_info(uint8_t flags)
 {
-	const uint8_t flag = flags & ~BI_OURS;
+	const uint8_t flag = flags & ~(BI_OURS | BI_REMARK);
 
 	if(flag == (BI_REF | BI_MAIN_REF | BI_APPLIED | BI_MAIN | BI_MAIN_CHAIN)) { //1F
 		return "Main";
@@ -1599,7 +1573,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "  file pos: %llx\n", (unsigned long long)bi->storage_pos);
 	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 		(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
-	fprintf(out, "    remark: %s\n", bi->remark ? bi->remark : "");
+	fprintf(out, "    remark: %s\n", get_remark(bi));
 	fprintf(out, "difficulty: %llx%016llx\n", xdag_diff_args(bi->difficulty));
 	xdag_hash2address(h, address);
 	fprintf(out, "   balance: %s  %10u.%09u\n", address, pramount(bi->amount));
@@ -1666,7 +1640,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 							xdag_hash2address(ri->hash, address);
 							fprintf(out, "    %6s: %s  %10u.%09u  %s  %s\n",
 								(1 << j & ri->in_mask ? "output" : " input"), address,
-								pramount(ri->linkamount[j]), time_buf, ri->remark ? ri->remark : "");
+								pramount(ri->linkamount[j]), time_buf, get_remark(ri));
 						}
 					}
 				}
@@ -1847,7 +1821,7 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
 	return 0;
 }
 
-int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark_t))
+int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, const xdag_remark_t))
 {
 	struct block_internal *bi = block_by_hash(hash);
 	
@@ -1896,7 +1870,7 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 			struct block_internal *ri = block_array[i];
 			for (int j = 0; j < ri->nlinks; j++) {
 				if(ri->link[j] == bi && ri->linkamount[j]) {
-					if(callback(data, 1 << j & ri->in_mask, ri->flags, ri->hash, ri->linkamount[j], ri->time, ri->remark ? ri->remark : "")) {
+					if(callback(data, 1 << j & ri->in_mask, ri->flags, ri->hash, ri->linkamount[j], ri->time, get_remark(ri))) {
 						free(block_array);
 						return 0;
 					}
@@ -1989,15 +1963,105 @@ void xdag_block_finish()
 	pthread_mutex_lock(&block_mutex);
 }
 
-int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, xdag_remark_t))
+int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, const xdag_remark_t))
 {
 	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
 	pthread_mutex_unlock(&block_mutex);
 
 	if(callback) {
-		return callback(data, bi->flags & ~BI_OURS,  bi->hash, bi->amount, bi->time, bi->remark ? bi->remark : "");
+		return callback(data, bi->flags & ~BI_OURS,  bi->hash, bi->amount, bi->time, get_remark(bi));
 	}
 
 	return 0;
 }
+
+static inline size_t remark_acceptance(struct block_internal* bi, xdag_remark_t origin)
+{
+	size_t size = validate_ascii_safe(origin, sizeof(xdag_remark_t));
+	if(size){
+		return ++size;
+	}
+	bi->flags &= ~BI_REMARK;
+	return 0;
+}
+
+static int add_remark_bi(struct block_internal* bi, xdag_remark_t strbuf)
+{
+	size_t size = remark_acceptance(bi, strbuf);
+	if(!(bi->flags & BI_REMARK)) {
+		return 0;
+	}
+	char *remark_tmp = xdag_malloc(size);
+	if(remark_tmp == NULL) {
+		xdag_err("xdag_malloc failed, [function add_remark_bi]");
+		return 0;
+	}
+	memcpy(remark_tmp, strbuf, size);
+	bi->remark = remark_tmp;
+	return 1;
+}
+
+static void add_backref(struct block_internal* blockRef, struct block_internal* nodeBlock)
+{
+	int i = 0;
+
+	// LIFO list: if the first element doesn't exist or it is full, a new element of the backrefs list will be created
+	// and added as first element of backrefs block list
+	if( blockRef->backrefs == NULL || blockRef->backrefs->backrefs[N_BACKREFS - 1]) {
+		struct block_backrefs *blockRefs_to_insert = xdag_malloc(sizeof(struct block_backrefs));
+		if(blockRefs_to_insert == NULL) {
+			xdag_err("xdag_malloc failed. [function add_backref]");
+			return;
+		}
+		memset(blockRefs_to_insert, 0, sizeof(struct block_backrefs));
+		blockRefs_to_insert->next = blockRef->backrefs;
+		blockRef->backrefs = blockRefs_to_insert;
+	}
+
+	// searching the first free array element
+	for(; blockRef->backrefs->backrefs[i]; ++i);
+	// adding the actual block memory address to the backrefs array
+	blockRef->backrefs->backrefs[i] = nodeBlock;
+}
+
+static inline int get_nfield(struct xdag_block *bref, int field_type)
+{
+	for(int i = 0; i < XDAG_BLOCK_FIELDS; ++i) {
+		if(xdag_type(bref, i) == field_type){
+			return i;
+		}
+	}
+	return -1;
+}
+
+static inline const char* get_remark(struct block_internal *bi){
+	if((bi->flags & BI_REMARK) & ~BI_EXTRA){
+		if(bi->remark != NULL){
+			return bi->remark;
+		} else if(load_remark(bi)){
+			return bi->remark;
+		}
+	}
+	return "";
+}
+
+static int load_remark(struct block_internal* bi) {
+	struct xdag_block buf;
+	struct xdag_block *bref = xdag_storage_load(bi->hash, bi->time, bi->storage_pos, &buf);
+	if(bref == NULL) {
+		if(bi->flags & BI_REF) {
+			bi->flags &= ~BI_REMARK;
+		}
+		return 0;
+	}
+
+	int remark_field = get_nfield(bref, XDAG_FIELD_REMARK);
+	if (remark_field < 0) {
+		xdag_err("Remark field not found [function: load_remark]");
+		bi->flags &= ~BI_REMARK;
+		return 0;
+	}
+	return add_remark_bi(bi, bref->field[remark_field].remark);
+}
+
