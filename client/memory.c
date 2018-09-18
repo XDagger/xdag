@@ -96,8 +96,12 @@ int xdag_mem_init(size_t size)
 	}
 
 	size_t wrote = snprintf(tfile_node->tmpfile, PATH_MAX,"%s%s", g_tmpfile_path, TMPFILE_TEMPLATE);
-	if (wrote < 0){
+	if ((ssize_t)wrote < 0){
 		xdag_fatal("Error: Fail to write tmpfile");
+		free(tfile_node);
+		return -1;
+	} else if (wrote == PATH_MAX){
+		xdag_fatal("Error: Temporary file path exceed the max length that is %d characters", PATH_MAX);
 		free(tfile_node);
 		return -1;
 	}
@@ -135,8 +139,8 @@ void *xdag_malloc(size_t size)
 {
 	uint8_t *res;
 	
-	if (size <= 0) {
-		return 0;
+	if (!size) {
+		return NULL;
 	}
 
 	if (!g_use_tmpfile) {
