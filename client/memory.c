@@ -95,9 +95,13 @@ int xdag_mem_init(size_t size)
 		size++;
 	}
 
-	size_t wrote = snprintf(tfile_node->tmpfile, PATH_MAX,"%s%s", g_tmpfile_path, TMPFILE_TEMPLATE);
+	int wrote = snprintf(tfile_node->tmpfile, PATH_MAX,"%s%s", g_tmpfile_path, TMPFILE_TEMPLATE);
 	if (wrote < 0){
 		xdag_fatal("Error: Fail to write tmpfile");
+		free(tfile_node);
+		return -1;
+	} else if (wrote == PATH_MAX){
+		xdag_fatal("Error: Temporary file path exceed the max length that is %d characters", PATH_MAX);
 		free(tfile_node);
 		return -1;
 	}
