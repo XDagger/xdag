@@ -174,7 +174,7 @@ static struct xconnection *add_connection(int fd, uint32_t ip, uint16_t port, in
 {
 	int rnd = rand() % g_nthreads;
 	if(dnet_connection_open_check && (*dnet_connection_open_check)(ip, port)) {
-		xdag_info("DNET  : failed %s %d.%d.%d.%d:%d, rejected by white list",
+		dnet_info("DNET  : failed %s %d.%d.%d.%d:%d, rejected by white list",
 			(direction ? "from" : "to  "),
 			ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, port);
 		return 0;
@@ -195,7 +195,7 @@ static struct xconnection *add_connection(int fd, uint32_t ip, uint16_t port, in
 			t->fds[nfd].fd = fd;
 			t->nconnections++;
 			pthread_mutex_unlock(&t->mutex);
-			xdag_info("DNET  : opened %s %d.%d.%d.%d:%d, nthread=%d, nfd=%d, fd=%d, conn=%p",
+			dnet_info("DNET  : opened %s %d.%d.%d.%d:%d, nthread=%d, nfd=%d, fd=%d, conn=%p",
 				(direction ? "from" : "to  "),
 				ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, port,
 				nthread, nfd, fd, conn);
@@ -203,7 +203,7 @@ static struct xconnection *add_connection(int fd, uint32_t ip, uint16_t port, in
 		}
 		pthread_mutex_unlock(&t->mutex);
 	}
-	xdag_err("DNET  : failed %s %d.%d.%d.%d:%d, no space in conn table",
+	dnet_err("DNET  : failed %s %d.%d.%d.%d:%d, no space in conn table",
 		(direction ? "from" : "to  "),
 		ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, port);
 	return 0;
@@ -256,7 +256,7 @@ static int close_connection(struct xconnection *conn, int error)
 	conn->out_queue_size = 0;
 	pthread_mutex_unlock(&conn->mutex);
 	while(xs) { xs1 = xs->next; free(xs); xs = xs1; }
-	xdag_info("DNET  : closed with %d.%d.%d.%d:%d, nthread=%d, nfd=%d, fd=%d, conn=%p, "
+	dnet_info("DNET  : closed with %d.%d.%d.%d:%d, nthread=%d, nfd=%d, fd=%d, conn=%p, "
 		"in/out/drop=%ld/%ld/%ld, time=%ld, last_time=%d, err=%x",
 		conn->ip & 0xff, conn->ip >> 8 & 0xff, conn->ip >> 16 & 0xff, conn->ip >> 24 & 0xff, conn->port,
 		nthread, nfd, fd, conn, conn->packets_in, conn->packets_out, conn->dropped_in,
@@ -581,12 +581,12 @@ static int dnet_load_keys(void)
 {
 	FILE *f = xdag_open_file("dnet_keys.bin", "rb");
 	if(!f) {
-		xdag_err("Load dnet keys failed");
+		dnet_err("Load dnet keys failed");
 		return -1;
 	}
 
 	if(fread(&g_xkeys, sizeof(struct xdnet_keys), 1, f) != 1) {
-		xdag_err("Load dnet keys failed");
+		dnet_err("Load dnet keys failed");
 		xdag_close_file(f);
 		return -1;
 	}
@@ -693,14 +693,14 @@ int dnet_execute_command(const char *cmd, void *fileout)
 		fd = open_socket(&peeraddr, str);
 		if(fd < 0) {
 			fprintf(f, "connect: error opening the socket\n");
-			xdag_err("DNET  : failed to   %s, can't open socket", str);
+			dnet_err("DNET  : failed to   %s, can't open socket", str);
 			return -1;
 		}
 		if(connect(fd, (struct sockaddr *)&peeraddr, sizeof(peeraddr))) {
 			close(fd);
 			fprintf(f, "connect: error connecting the socket (ip=%08x, port=%d)\n",
 				htonl(peeraddr.sin_addr.s_addr), htons(peeraddr.sin_port));
-			xdag_info("DNET  : failed to   %s, can't connect", str);
+			dnet_info("DNET  : failed to   %s, can't connect", str);
 			return -1;
 		}
 		if(!add_connection(fd, peeraddr.sin_addr.s_addr, htons(peeraddr.sin_port), 0)) {
