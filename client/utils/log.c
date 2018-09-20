@@ -19,7 +19,6 @@
 
 //#define LOG_PRINT // print log to stdout
 
-#define XDAG_LOG_FILE "%s.log"
 #define RING_BUFFER_SIZE 2048
 #define MAX_POLL_SIZE (RING_BUFFER_SIZE - 4)
 #define SEM_LOG_WRITER "/xdaglogwritersem"
@@ -155,7 +154,7 @@ static void *xdag_log_writer_thread(void* data)
 }
 #endif
 
-int xdag_log(int level, const char *format, ...)
+int xdag_log(const char *logfile, int level, const char *format, ...)
 {	
 #if ASYNC_LOG && (!defined _WIN32 && !defined _WIN64)
 	if (level < 0 || level > XDAG_TRACE) {
@@ -221,7 +220,7 @@ int xdag_log(int level, const char *format, ...)
 	strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
 	
 	pthread_mutex_lock(&log_mutex);
-	sprintf(buf, XDAG_LOG_FILE, g_progname);
+	sprintf(buf, "%s", logfile);
 	
 	f = xdag_open_file(buf, "a");
 	if (!f) {
