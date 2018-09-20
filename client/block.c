@@ -118,6 +118,7 @@ void cache_add(struct xdag_block*, xdag_hash_t);
 int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
 int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
 static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
+int do_mining(struct xdag_block *block, struct block_internal **pretop, xdag_time_t send_time);
 void remove_orphan(struct block_internal*,int);
 void add_orphan(struct block_internal*,struct xdag_block*);
 static inline size_t remark_acceptance(struct block_internal*, xdag_remark_t);
@@ -860,13 +861,13 @@ int xdag_add_block(struct xdag_block *b)
 
 #define pretop_block() (top_main_chain && MAIN_TIME(top_main_chain->time) == MAIN_TIME(send_time) ? pretop_main_chain : top_main_chain)
 
-/* create and publish a block
+/* create a new block
  * The first 'ninput' field 'fields' contains the addresses of the inputs and the corresponding quantity of XDAG,
  * in the following 'noutput' fields similarly - outputs, fee; send_time (time of sending the block);
  * if it is greater than the current one, then the mining is performed to generate the most optimal hash
  */
-int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, int hasRemark, xdag_amount_t fee,
-	xdag_time_t send_time, xdag_hash_t newBlockHashResult)
+struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, int hasRemark,
+	xdag_amount_t fee, xdag_time_t send_time, xdag_hash_t block_hash_result)
 {
 #ifndef REMARK_ENABLED
 	hasRemark = 0;
@@ -884,7 +885,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 		ref = block_by_hash(fields[i].hash);
 		if (!ref || !(ref->flags & BI_OURS)) {
 			pthread_mutex_unlock(&g_create_block_mutex);
-			return -1;
+			return NULL;
 		}
 
 		for (j = 0; j < nkeysnum && ref->n_our_key != keysnum[j]; ++j);
@@ -902,7 +903,7 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 
 	if (res0 > XDAG_BLOCK_FIELDS) {
 		xdag_err("create block failed, exceed max number of fields.");
-		return -1;
+		return NULL;
 	}
 
 	if (!send_time) {
@@ -991,81 +992,100 @@ int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCou
 	pthread_mutex_unlock(&g_create_block_mutex);
 
 	if (mining) {
-		uint64_t taskIndex = g_xdag_pool_task_index + 1;
-		struct xdag_pool_task *task = &g_xdag_pool_task[taskIndex & 1];
-
-		xdag_generate_random_array(block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
-
-		task->task_time = MAIN_TIME(send_time);
-
-		xdag_hash_init(task->ctx0);
-		xdag_hash_update(task->ctx0, block, sizeof(struct xdag_block) - 2 * sizeof(struct xdag_field));
-		xdag_hash_get_state(task->ctx0, task->task[0].data);
-		xdag_hash_update(task->ctx0, block[0].field[XDAG_BLOCK_FIELDS - 2].data, sizeof(struct xdag_field));
-		memcpy(task->ctx, task->ctx0, xdag_hash_ctx_size());
-
-		xdag_hash_update(task->ctx, block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(struct xdag_field) - sizeof(uint64_t));
-		memcpy(task->task[1].data, block[0].field[XDAG_BLOCK_FIELDS - 2].data, sizeof(struct xdag_field));
-		memcpy(task->nonce.data, block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(struct xdag_field));
-		memcpy(task->lastfield.data, block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(struct xdag_field));
-
-		xdag_hash_final(task->ctx, &task->nonce.amount, sizeof(uint64_t), task->minhash.data);
-		g_xdag_pool_task_index = taskIndex;
-
-		while (get_timestamp() <= send_time) {
-			sleep(1);
-			pthread_mutex_lock(&g_create_block_mutex);
-			struct block_internal *pretop_new = pretop_block();
-			pthread_mutex_unlock(&g_create_block_mutex);
-			if (pretop != pretop_new && get_timestamp() < send_time) {
-				pretop = pretop_new;
-				xdag_info("Mining: start from beginning because of pre-top block changed");
-				goto begin;
-			}
+		if(!do_mining(block, &pretop, send_time)) {
+			goto begin;
 		}
-
-		pthread_mutex_lock((pthread_mutex_t*)g_ptr_share_mutex);
-		memcpy(block[0].field[XDAG_BLOCK_FIELDS - 1].data, task->lastfield.data, sizeof(struct xdag_field));
-		pthread_mutex_unlock((pthread_mutex_t*)g_ptr_share_mutex);
 	}
 
 	xdag_hash(block, sizeof(struct xdag_block), newBlockHash);
-	block[0].field[0].transport_header = 1;
+
+	if(mining) {
+		memcpy(g_xdag_mined_hashes[MAIN_TIME(send_time) & (CONFIRMATIONS_COUNT - 1)],
+			newBlockHash, sizeof(xdag_hash_t));
+		memcpy(g_xdag_mined_nonce[MAIN_TIME(send_time) & (CONFIRMATIONS_COUNT - 1)],
+			block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
+	}
 
 	log_block("Create", newBlockHash, block[0].field[0].time, 1);
+	
+	if(block_hash_result != NULL) {
+		memcpy(block_hash_result, newBlockHash, sizeof(xdag_hash_t));
+	}
 
-	res = xdag_add_block(block);
-	if (res > 0) {
-		if (mining) {
-			memcpy(g_xdag_mined_hashes[MAIN_TIME(send_time) & (CONFIRMATIONS_COUNT - 1)],
-				newBlockHash, sizeof(xdag_hash_t));
-			memcpy(g_xdag_mined_nonce[MAIN_TIME(send_time) & (CONFIRMATIONS_COUNT - 1)],
-				block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
-		}
+	struct xdag_block *new_block = (struct xdag_block *)malloc(sizeof(struct xdag_block));
+	if(new_block) {
+		memcpy(new_block, block, sizeof(struct xdag_block));
+	}	
+	return new_block;
+}
 
-		if(g_xdag_pool) { /* append pool created block to list */
-			struct xdag_block * new_block = (struct xdag_block *)malloc(sizeof(struct xdag_block));
-			if(new_block == NULL){
-				xdag_warn("Non-critical error, malloc failed [function: create_block]");
-				xdag_send_new_block(block); /* send pool generated block to network directly */
-			} else {
-				memcpy(new_block, block, sizeof(struct xdag_block));
-				new_block->field[0].transport_header = 0;
-				xdag_append_new_block(new_block);
-			}
-		} else { /* send miner created block to pool directly */
-			xdag_send_new_block_to_pool(block);
-		}
+/* create and publish a block
+* The first 'ninput' field 'fields' contains the addresses of the inputs and the corresponding quantity of XDAG,
+* in the following 'noutput' fields similarly - outputs, fee; send_time (time of sending the block);
+* if it is greater than the current one, then the mining is performed to generate the most optimal hash
+*/
+int xdag_create_and_send_block(struct xdag_field *fields, int inputsCount, int outputsCount, int hasRemark,
+	xdag_amount_t fee, xdag_time_t send_time, xdag_hash_t block_hash_result)
+{
+	struct xdag_block *block = xdag_create_block(fields, inputsCount, outputsCount, hasRemark, fee, send_time, block_hash_result);
+	if(!block) {
+		return 0;
+	}
 
-		if(newBlockHashResult != NULL) {
-			memcpy(newBlockHashResult, newBlockHash, sizeof(xdag_hash_t));
-		}
+	block->field[0].transport_header = 1;
+	int res = xdag_add_block(block);
+	if(res > 0) {
+		xdag_send_new_block(block);
+		res = 1;
+	} else {
 		res = 0;
 	}
+	free(block);
 
 	return res;
 }
 
+int do_mining(struct xdag_block *block, struct block_internal **pretop, xdag_time_t send_time)
+{
+	uint64_t taskIndex = g_xdag_pool_task_index + 1;
+	struct xdag_pool_task *task = &g_xdag_pool_task[taskIndex & 1];
+
+	xdag_generate_random_array(block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
+
+	task->task_time = MAIN_TIME(send_time);
+
+	xdag_hash_init(task->ctx0);
+	xdag_hash_update(task->ctx0, block, sizeof(struct xdag_block) - 2 * sizeof(struct xdag_field));
+	xdag_hash_get_state(task->ctx0, task->task[0].data);
+	xdag_hash_update(task->ctx0, block[0].field[XDAG_BLOCK_FIELDS - 2].data, sizeof(struct xdag_field));
+	memcpy(task->ctx, task->ctx0, xdag_hash_ctx_size());
+
+	xdag_hash_update(task->ctx, block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(struct xdag_field) - sizeof(uint64_t));
+	memcpy(task->task[1].data, block[0].field[XDAG_BLOCK_FIELDS - 2].data, sizeof(struct xdag_field));
+	memcpy(task->nonce.data, block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(struct xdag_field));
+	memcpy(task->lastfield.data, block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(struct xdag_field));
+
+	xdag_hash_final(task->ctx, &task->nonce.amount, sizeof(uint64_t), task->minhash.data);
+	g_xdag_pool_task_index = taskIndex;
+
+	while(get_timestamp() <= send_time) {
+		sleep(1);
+		pthread_mutex_lock(&g_create_block_mutex);
+		struct block_internal *pretop_new = pretop_block();
+		pthread_mutex_unlock(&g_create_block_mutex);
+		if(*pretop != pretop_new && get_timestamp() < send_time) {
+			*pretop = pretop_new;
+			xdag_info("Mining: start from beginning because of pre-top block changed");
+			return 0;
+		}
+	}
+
+	pthread_mutex_lock((pthread_mutex_t*)g_ptr_share_mutex);
+	memcpy(block[0].field[XDAG_BLOCK_FIELDS - 1].data, task->lastfield.data, sizeof(struct xdag_field));
+	pthread_mutex_unlock((pthread_mutex_t*)g_ptr_share_mutex);
+
+	return 1;
+}
 
 static int request_blocks(xdag_time_t t, xdag_time_t dt)
 {
@@ -1214,7 +1234,7 @@ begin:
 			nblk = nblk / 61 + (nblk % 61 > (unsigned)rand() % 61);
 
 			while (nblk--) {
-				xdag_create_block(0, 0, 0, 0, 0, 0, NULL);
+				xdag_create_and_send_block(0, 0, 0, 0, 0, 0, NULL);
 			}
 		}
 
@@ -1314,7 +1334,7 @@ int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address)
 		g_light_mode = 1;
 	}
 
-	if (xdag_mem_init(g_light_mode && !miner_address ? 0 : (((get_timestamp() - XDAG_ERA) >> 10) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal))) {
+	if (xdag_mem_init(g_light_mode && !miner_address ? 0 : (((get_timestamp() - XDAG_ERA) >> 8) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal))) {
 		return -1;
 	}
 
@@ -1344,7 +1364,7 @@ int xdag_get_our_block(xdag_hash_t hash)
 	pthread_mutex_unlock(&block_mutex);
 
 	if (!bi) {
-		xdag_create_block(0, 0, 0, 0, 0, 0, NULL);
+		xdag_create_and_send_block(0, 0, 0, 0, 0, 0, NULL);
 		pthread_mutex_lock(&block_mutex);
 		bi = ourfirst;
 		pthread_mutex_unlock(&block_mutex);

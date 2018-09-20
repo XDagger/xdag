@@ -327,16 +327,11 @@ int xdag_request_sums(xdag_time_t start_time, xdag_time_t end_time, struct xdag_
 /* sends a new block to network */
 int xdag_send_new_block(struct xdag_block *b)
 {
-	dnet_send_xdag_packet(b, (void*)(uintptr_t)NEW_BLOCK_TTL);
-	xdag_send_block_via_pool(b);
-	return 0;
-}
-
-/* sends a new block to pool */
-int xdag_send_new_block_to_pool(struct xdag_block *b)
-{
-//	dnet_send_xdag_packet(b, (void*)(uintptr_t)NEW_BLOCK_TTL);
-	xdag_send_block_via_pool(b);
+	if(!g_is_miner) {
+		dnet_send_xdag_packet(b, (void*)(uintptr_t)NEW_BLOCK_TTL);
+	} else {
+		xdag_send_block_via_pool(b);
+	}
 	return 0;
 }
 
