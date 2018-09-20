@@ -295,7 +295,7 @@ XDAG_COMMAND* find_xdag_command(char *name)
 
 void startCommandProcessing(int transportFlags)
 {
-	char cmd[XDAG_COMMAND_MAX];
+	char cmd[XDAG_COMMAND_MAX] = {0};
 	if(!(transportFlags & XDAG_DAEMON)) printf("Type command, help for example.\n");
 
 	xdag_init_commands();
@@ -317,7 +317,7 @@ void startCommandProcessing(int transportFlags)
 
 int xdag_command(char *cmd, FILE *out)
 {
-	uint32_t pwd[4];
+	uint32_t pwd[4] = {0};
 	char *nextParam;
 	int ispwd = 0;
 
@@ -483,8 +483,8 @@ void processMinersCommand(char *nextParam, FILE *out)
 
 void processNetCommand(char *nextParam, FILE *out)
 {
-	char *cmd;
-	char netcmd[4096];
+	char *cmd = NULL;
+	char netcmd[4096] = {0};
 	*netcmd = 0;
 	while((cmd = strtok_r(nextParam, " \t\r\n", &nextParam))) {
 		strcat(netcmd, cmd);
@@ -513,7 +513,7 @@ void processPoolCommand(char *nextParam, FILE *out)
 {
 	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
 	if(!cmd) {
-		char buf[0x100];
+		char buf[0x100] = {0};
 		cmd = xdag_pool_get_config(buf);
 		if(!cmd) {
 			fprintf(out, "Pool is disabled.\n");
@@ -731,7 +731,7 @@ const char *get_state()
 
 int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key)
 {
-	char address[33];
+	char address[33] = {0};
 	struct account_callback_data *d = (struct account_callback_data *)data;
 	if(!d->count--) {
 		return -1;
@@ -746,7 +746,7 @@ int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_ti
 
 static int make_transaction_block(struct xfer_callback_data *xferData)
 {
-	char address[33];
+	char address[33] = {0};
 
 	if(xferData->fieldsCount != XFER_MAX_IN) {
 		memcpy(xferData->fields + xferData->fieldsCount, xferData->fields + XFER_MAX_IN, sizeof(xdag_hashlow_t));
@@ -774,7 +774,7 @@ static int make_transaction_block(struct xfer_callback_data *xferData)
 
 int xdag_do_xfer(void *outv, const char *amount, const char *address, const char *remark, int isGui)
 {
-	char address_buf[33];
+	char address_buf[33] = {0};
 	struct xfer_callback_data xfer;
 	FILE *out = (FILE *)outv;
 
@@ -882,7 +882,7 @@ int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_
 
 void xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount)
 {
-	char address_from[33], address_to[33];
+	char address_from[33] = {0}, address_to[33] = {0};
 	xdag_hash2address(from, address_from);
 	xdag_hash2address(to, address_to);
 	xdag_mess("Xfer : from %s to %s xfer %.9Lf %s", address_from, address_to, amount2xdags(amount), g_coinname);
@@ -908,7 +908,7 @@ static int out_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amo
 
 static int out_sort_callback(const void *l, const void *r)
 {
-	char address_l[33], address_r[33];
+	char address_l[33] = {0}, address_r[33] = {0};
 	xdag_hash2address(((struct xdag_field *)l)->data, address_l);
 	xdag_hash2address(((struct xdag_field *)r)->data, address_r);
 	return strcmp(address_l, address_r);
@@ -924,7 +924,7 @@ static void *add_block_callback(void *block, void *data)
 
 int out_balances()
 {
-	char address[33];
+	char address[33] = {0};
 	struct out_balances_data d;
 	unsigned i = 0;
 	xdag_set_log_level(0);
@@ -943,7 +943,7 @@ int out_balances()
 
 int xdag_show_state(xdag_hash_t hash)
 {
-	char balance[64], address[64], state[256];
+	char balance[64] = {0}, address[64] = {0}, state[256] = {0};
 	if(!g_xdag_show_state) {
 		return -1;
 	}

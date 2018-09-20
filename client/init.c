@@ -44,7 +44,7 @@ enum xdag_field_type g_block_header_type = XDAG_FIELD_HEAD;
 struct xdag_stats g_xdag_stats;
 struct xdag_ext_stats g_xdag_extstats;
 int g_disable_mining = 0;
-char g_pool_address[50];
+char g_pool_address[50] = {0};
 
 int(*g_xdag_show_state)(const char *state, const char *balance, const char *address) = 0;
 
@@ -54,7 +54,7 @@ int xdag_init(int argc, char **argv, int isGui)
 {
     xdag_init_path(argv[0]);
 
-	const char *addrports[256], *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
+	const char *addrports[256] = {0}, *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
 	int transport_flags = 0, transport_threads = -1, n_addrports = 0, mining_threads_count = 0,
 			is_pool = 0, is_miner = 0, level, is_rpc = 0, rpc_port = 0;
 	
@@ -202,7 +202,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	g_is_miner = is_miner;
 	g_is_pool = is_pool;
 	if (pubaddr && !bindto) {
-		char str[64], *p = strchr(pubaddr, ':');
+		char str[64] = {0}, *p = strchr(pubaddr, ':');
 		if (p) {
 			sprintf(str, "0.0.0.0%s", p);
 			bindto = strdup(str);

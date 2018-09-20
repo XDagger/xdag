@@ -220,6 +220,7 @@ static struct xdag_rpc_connection* create_connection(int fd, const char* req_buf
 	memcpy(req, body, strlen(body));
 	
 	struct xdag_rpc_connection *conn = (struct xdag_rpc_connection*)malloc(sizeof(struct xdag_rpc_connection));
+	memset(conn, 0, sizeof(struct xdag_rpc_connection));
 	conn->buffer = req;
 	conn->buffer_size = len;
 	conn->fd = fd;
@@ -258,7 +259,7 @@ static void* rpc_handle_thread(void *arg)
 static void *rpc_service_thread(void *arg)
 {
 	int rpc_port = *(int*)arg;
-	char req_buffer[BUFFER_SIZE];
+	char req_buffer[BUFFER_SIZE] = {0};
 	
 	struct sockaddr_in peeraddr;
 	socklen_t peeraddr_len = sizeof(peeraddr);

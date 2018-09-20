@@ -470,15 +470,15 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int keysLeng
 static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 {
 	const uint64_t timestamp = get_timestamp();
-	uint64_t sum_in = 0, sum_out = 0, *psum;
+	uint64_t sum_in = 0, sum_out = 0, *psum = NULL;
 	const uint64_t transportHeader = newBlock->field[0].transport_header;
 	struct xdag_public_key public_keys[16], *our_keys = 0;
-	int i, j;
+	int i = 0, j = 0;
 	int keysCount = 0, ourKeysCount = 0;
 	int signInCount = 0, signOutCount = 0;
 	int signinmask = 0, signoutmask = 0;
 	int inmask = 0, outmask = 0;
-	int verified_keys_mask = 0, err, type;
+	int verified_keys_mask = 0, err = 0, type = 0;
 	struct block_internal tmpNodeBlock, *blockRef = NULL, *blockRef0 = NULL;
 	struct block_internal* blockRefs[XDAG_BLOCK_FIELDS-1]= {0};
 	xdag_diff_t diff0, diff;
@@ -812,7 +812,7 @@ end:
 	}
 
 	if(err > 0) {
-		char buf[32];
+		char buf[32] = {0};
 		err |= i << 4;
 		sprintf(buf, "Err %2x", err & 0xff);
 		log_block(buf, tmpNodeBlock.hash, tmpNodeBlock.time, transportHeader);
@@ -1574,8 +1574,8 @@ const char* xdag_get_block_state_info(uint8_t flags)
 /* prints detailed information about block */
 int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 {
-	char time_buf[64];
-	char address[33];
+	char time_buf[64] = {0};
+	char address[33] = {0};
 	int i;
 
 	struct block_internal *bi = block_by_hash(hash);
@@ -1682,8 +1682,8 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 
 static inline void print_block(struct block_internal *block, int print_only_addresses, FILE *out)
 {
-	char address[33];
-	char time_buf[64];
+	char address[33] = {0};
+	char time_buf[64] = {0};
 
 	xdag_hash2address(block->hash, address);
 

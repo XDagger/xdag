@@ -156,8 +156,7 @@ cJSON * invoke_procedure(char *name, cJSON *params, cJSON *id, char *version)
 	cJSON *returned = NULL;
 	int procedure_found = 0;
 	struct xdag_rpc_context ctx;
-	ctx.error_code = 0;
-	ctx.error_message = NULL;
+	memset(&ctx, 0, sizeof(struct xdag_rpc_context));
 	int i = g_procedure_count;
 	while (i--) {
 		if(!strcmp(g_procedures[i].name, name)) {
