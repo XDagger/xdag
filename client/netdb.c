@@ -161,7 +161,7 @@ static int read_database(const char *fname, int flags)
 	uint32_t ips[MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP];
 	uint8_t ips_count[MAX_BLOCKED_IPS * MAX_ALLOWED_FROM_IP];
 	struct host h0;
-	char str[64], *p;
+	char str[64] = {0}, *p = NULL;
 	FILE *f = xdag_open_file(fname, "r");
 	int n = 0, n_ips = 0, n_blocked = 0, i;
 
@@ -249,7 +249,7 @@ static void *monitor_thread(void *arg)
 
 		for (int i = 0; i < MAX_SELECTED_HOSTS; ++i) {
 			struct host *h = random_host(HOST_CONNECTED | HOST_OUR);
-			char str[64];
+			char str[64] = {0};
 
 			if (!h) continue;
 
@@ -295,7 +295,7 @@ static int is_valid_whitelist(char *content)
 		return 0;
 	}
 
-	char buf[0x1000];
+	char buf[0x1000] = {0};
 	int is_valid = 1;
 	char *next;
 	strcpy(buf, content);

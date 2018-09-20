@@ -811,7 +811,7 @@ end:
 	}
 
 	if(err > 0) {
-		char buf[32];
+		char buf[32] = {0};
 		err |= i << 4;
 		sprintf(buf, "Err %2x", err & 0xff);
 		log_block(buf, tmpNodeBlock.hash, tmpNodeBlock.time, transportHeader);
@@ -1554,8 +1554,8 @@ const char* xdag_get_block_state_info(uint8_t flags)
 /* prints detailed information about block */
 int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 {
-	char time_buf[64];
-	char address[33];
+	char time_buf[64] = {0};
+	char address[33] = {0};
 	int i;
 
 	struct block_internal *bi = block_by_hash(hash);

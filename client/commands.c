@@ -483,8 +483,8 @@ void processMinersCommand(char *nextParam, FILE *out)
 
 void processNetCommand(char *nextParam, FILE *out)
 {
-	char *cmd;
-	char netcmd[4096];
+	char *cmd = NULL;
+	char netcmd[4096] = {0};
 	*netcmd = 0;
 	while((cmd = strtok_r(nextParam, " \t\r\n", &nextParam))) {
 		strcat(netcmd, cmd);

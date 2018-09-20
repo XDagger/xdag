@@ -71,7 +71,7 @@ static int correct_storage_sum(const char *path, int pos, const struct xdag_stor
 
 static int correct_storage_sums(xdag_time_t t, const struct xdag_storage_sum *sum, int add)
 {
-	char path[256];
+	char path[256] = {0};
 
 	sprintf(path, STORAGE_DIR3 DELIMITER SUMS_FILE, STORAGE_DIR3_ARGS(t));
 	int res = correct_storage_sum(path, (t >> 16) & 0xff, sum, add);
@@ -96,7 +96,7 @@ static int correct_storage_sums(xdag_time_t t, const struct xdag_storage_sum *su
 int64_t xdag_storage_save(const struct xdag_block *b)
 {
 	struct xdag_storage_sum s;
-	char path[256];
+	char path[256] = {0};
 	int64_t res;
 
 	if (in_adding_all) {
@@ -148,7 +148,7 @@ int64_t xdag_storage_save(const struct xdag_block *b)
 struct xdag_block *xdag_storage_load(xdag_hash_t hash, xdag_time_t time, uint64_t pos, struct xdag_block *buf)
 {
 	xdag_hash_t hash0;
-	char path[256];
+	char path[256] = {0};
 
 	sprintf(path, STORAGE_FILE, STORAGE_FILE_ARGS(time));
 
@@ -197,7 +197,7 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 {
 	struct xdag_block *buf, *pbuf[bufsize];
 	struct xdag_storage_sum s;
-	char path[256];
+	char path[256] = {0};
 	
 	uint64_t sum = 0, pos = 0, mask;
 	int64_t i, j, k, todo;
@@ -289,7 +289,7 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 int xdag_load_sums(xdag_time_t start_time, xdag_time_t end_time, struct xdag_storage_sum sums[16])
 {
 	struct xdag_storage_sum buf[256];
-	char path[256];
+	char path[256] = {0};
 	int i, level;
 
 	end_time -= start_time;

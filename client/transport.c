@@ -239,7 +239,7 @@ int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs
 	}
 
 	if (nthreads >= 0) {
-		char buf[16];
+		char buf[16] = {0};
 		sprintf(buf, "%u", nthreads);
 		argv[argc++] = "-t";
 		argv[argc++] = strdup(buf);

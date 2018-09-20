@@ -202,7 +202,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	g_is_miner = is_miner;
 	g_is_pool = is_pool;
 	if (pubaddr && !bindto) {
-		char str[64], *p = strchr(pubaddr, ':');
+		char str[64] = {0}, *p = strchr(pubaddr, ':');
 		if (p) {
 			sprintf(str, "0.0.0.0%s", p);
 			bindto = strdup(str);
