@@ -275,7 +275,7 @@ int rpc_account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xda
 	struct rpc_account_callback_data *d = (struct rpc_account_callback_data*)data;
 	if(d->count-- <=0) return -1;
 	
-	char address_buf[33];
+	char address_buf[33] = {0};
 	xdag_hash2address(hash, address_buf);
 
 	cJSON *address = cJSON_CreateString(address_buf);
@@ -417,7 +417,7 @@ int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_
 		return -1;
 	}
 
-	char address_buf[33];
+	char address_buf[33] = {0};
 	xdag_hash2address(hash, address_buf);
 	cJSON *json_address = cJSON_CreateString(address_buf);
 	cJSON_AddItemToObject(callback_data, "address", json_address);
@@ -439,7 +439,7 @@ int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_
 	cJSON_AddItemToObject(callback_data, "remark", json_remark);
 
 	struct tm tm;
-	char buf[64], tbuf[64];
+	char buf[64] = {0}, tbuf[64] = {0};
 	time_t t = time >> 10;
 	localtime_r(&t, &tm);
 	strftime(buf, 64, "%Y-%m-%d %H:%M:%S", &tm);
@@ -607,7 +607,7 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
 			g_xdag_xfer_last = time(0);
 			xdag_traverse_our_blocks(&xfer, &xfer_callback);
 
-			char address_buf[33];
+			char address_buf[33] = {0};
 			xdag_hash2address(xfer.transactionBlockHash, address_buf);
 
 			cJSON *ret = NULL;
@@ -661,7 +661,7 @@ int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash,
 	
 	cJSON *json_direction = cJSON_CreateString(type ? "output" : "input");
 	
-	char address_buf[33];
+	char address_buf[33] = {0};
 	xdag_hash2address(hash, address_buf);
 	cJSON *json_address = cJSON_CreateString(address_buf);
 	
@@ -670,7 +670,7 @@ int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash,
 	cJSON *json_amount = cJSON_CreateString(str);
 	
 	struct tm tm;
-	char buf[64], tbuf[64];
+	char buf[64] = {0}, tbuf[64] = {0};
 	time_t t = time >> 10;
 	localtime_r(&t, &tm);
 	strftime(buf, 64, "%Y-%m-%d %H:%M:%S", &tm);

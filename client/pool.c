@@ -258,7 +258,7 @@ void *general_mining_thread(void *arg)
 /* sets pool parameters */
 int xdag_pool_set_config(const char *pool_config)
 {
-	char buf[0x100], *lasts;
+	char buf[0x100] = {0}, *lasts = NULL;
 
 	if(!g_xdag_pool) return -1;
 	strcpy(buf, pool_config);
@@ -369,8 +369,8 @@ static int open_pool_connection(const char *pool_arg)
 	struct sockaddr_in peeraddr;
 	int rcvbufsize = 1024;
 	int reuseaddr = 1;
-	char buf[0x100];
-	char *nextParam;
+	char buf[0x100] = {0};
+	char *nextParam = NULL;
 
 	// Create a socket
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -561,7 +561,7 @@ static void close_connection(connection_list_element *connection, const char *me
 	uint16_t port = conn_data->port;
 
 	if(conn_data->miner) {
-		char address_buf[33];
+		char address_buf[33] = {0};
 		xdag_hash2address(conn_data->miner->id.data, address_buf);
 		xdag_info("Pool: miner %s disconnected from %u.%u.%u.%u:%u by %s", address_buf,
 			ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port), message);
@@ -656,8 +656,8 @@ static int register_new_miner(connection_list_element *connection)
 	xdag_time_t tm;
 	const int64_t position = xdag_get_block_pos((const uint64_t*)conn_data->data, &tm, 0);
 	if(position < 0) {
-		char address_buf[33];
-		char message[100];
+		char address_buf[33] = {0};
+		char message[100] = {0};
 		xdag_hash2address((const uint64_t*)conn_data->data, address_buf);
 		sprintf(message, "Miner's address is unknown (%s)", address_buf);
 		close_connection(connection, message);
@@ -861,7 +861,7 @@ static int receive_data_from_connection(connection_list_element *connection)
 	data_size = read(conn_data->connection_descriptor.fd, (uint8_t*)conn_data->data + conn_data->data_size, data_size);
 
 	if(data_size <= 0) {
-		char message[100];
+		char message[100] = {0};
 		sprintf(message, "read error : %s", strerror(errno));
 		close_connection(connection, message);
 		return 0;
@@ -898,6 +898,7 @@ static int receive_data_from_connection(connection_list_element *connection)
 static int send_data_to_connection(connection_list_element *connection, int *processed)
 {
 	struct xdag_field data[2];
+	memset(data, 0, sizeof(struct xdag_field) * 2);
 	int fields_count = 0;
 	struct connection_pool_data *conn_data = &connection->connection_data;
 
@@ -927,7 +928,7 @@ static int send_data_to_connection(connection_list_element *connection, int *pro
 		size_t length = write(conn_data->connection_descriptor.fd, (void*)data, fields_count * sizeof(struct xdag_field));
 
 		if(length != fields_count * sizeof(struct xdag_field)) {
-			char message[100];
+			char message[100] = {0};
 			sprintf(message, "write error  %s : write %zu bytes of %lu bytes", strerror(errno), length, fields_count * sizeof(struct xdag_field));
 			close_connection(connection, message);
 			return 0;
@@ -1325,7 +1326,7 @@ int pay_miners(xdag_time_t time)
 void remove_inactive_miners(void)
 {
 	miner_list_element *elt, *eltmp;
-	char address[33];
+	char address[33] = {0};
 
 	pthread_mutex_lock(&g_connections_mutex);
 	LL_FOREACH_SAFE(g_miner_list_head, elt, eltmp)
@@ -1369,8 +1370,8 @@ static const char* connection_state_to_string(int connection_state)
 
 static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int print_connections)
 {
-	char ip_port_str[32], in_out_str[64];
-	char address_buf[33];
+	char ip_port_str[32] = {0}, in_out_str[64] = {0};
+	char address_buf[33] = {0};
 	xdag_hash2address(miner->id.data, address_buf);
 
 	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %-13lf  -             %Lf\n", index, address_buf,
@@ -1418,8 +1419,8 @@ static int print_miners(FILE *out)
 
 static void print_connection(FILE *out, int index, struct connection_pool_data *conn_data)
 {
-	char ip_port_str[32], in_out_str[64];
-	char address[50];
+	char ip_port_str[32] = {0}, in_out_str[64] = {0};
+	char address[50] = {0};
 	int ip = conn_data->ip;
 	sprintf(ip_port_str, "%u.%u.%u.%u:%u", ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(conn_data->port));
 	sprintf(in_out_str, "%llu/%llu", (unsigned long long)conn_data->nfield_in * sizeof(struct xdag_field),
@@ -1605,7 +1606,7 @@ long double diff2log(xdag_diff_t diff)
 
 static void miner_print_time_intervals(struct miner_pool_data *miner, int current_interval_index, xdag_time_t current_task_time, FILE *out)
 {
-	char time_buf[60];
+	char time_buf[60] = {0};
 
 	fprintf(out, "----------------------------------------------------------------------\n");
 	fprintf(out, "current  index  start time                difficulty  reward for block\n");
@@ -1643,7 +1644,7 @@ static void connection_print_time_intervals(struct connection_pool_data *conn_da
 
 static void print_connection_stats(struct connection_pool_data *conn_data, int connection_index, int current_interval_index, FILE *out)
 {
-	char time_buf[50];
+	char time_buf[50] = {0};
 	time_to_string(conn_data->connected_time, time_buf);
 	int ip = conn_data->ip;
 
@@ -1675,7 +1676,7 @@ static void print_connection_stats(struct connection_pool_data *conn_data, int c
 
 static void print_miner_stats(struct miner_pool_data *miner, FILE *out)
 {
-	char time_buf[50];
+	char time_buf[50] = {0};
 	time_to_string(miner->registered_time, time_buf);
 
 	const uint64_t task_index = g_xdag_pool_task_index;

@@ -258,7 +258,7 @@ static void* rpc_handle_thread(void *arg)
 static void *rpc_service_thread(void *arg)
 {
 	int rpc_port = *(int*)arg;
-	char req_buffer[BUFFER_SIZE];
+	char req_buffer[BUFFER_SIZE] = {0};
 	
 	struct sockaddr_in peeraddr;
 	socklen_t peeraddr_len = sizeof(peeraddr);

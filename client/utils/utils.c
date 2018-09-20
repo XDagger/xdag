@@ -307,9 +307,9 @@ static char g_xdag_current_path[4096] = {0};
 void xdag_init_path(char *path)
 {
 #ifdef _WIN32
-	char szPath[MAX_PATH];
-	char szBuffer[MAX_PATH];
-	char *pszFile;
+	char szPath[MAX_PATH] = {0};
+	char szBuffer[MAX_PATH] = {0};
+	char *pszFile = NULL;
 
 	GetModuleFileName(NULL, (LPTCH)szPath, sizeof(szPath) / sizeof(*szPath));
 	GetFullPathName((LPTSTR)szPath, sizeof(szBuffer) / sizeof(*szBuffer), (LPTSTR)szBuffer, (LPTSTR*)&pszFile);
@@ -420,7 +420,7 @@ char *xdag_filename(char *_filename)
 void xdag_time_to_string(xdag_time_t time, char *buf)
 {
 	struct tm tm;
-	char tmp[64];
+	char tmp[64] = {0};
 	time_t t = time >> 10;
 	localtime_r(&t, &tm);
 	strftime(tmp, 60, "%Y-%m-%d %H:%M:%S", &tm);
