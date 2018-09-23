@@ -1,4 +1,4 @@
-/* block processing, T13.654-T14.390 $DVS:time$ */
+/* block processing, T13.654-T14.511 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -46,9 +46,9 @@
 
 struct block_backrefs;
 struct orphan_block;
+struct bi_tree_node;
 
 struct block_internal {
-	struct ldus_rbtree node;
 	xdag_hash_t hash;
 	xdag_diff_t difficulty;
 	xdag_amount_t amount, linkamount[MAX_LINKS], fee;
@@ -59,10 +59,14 @@ struct block_internal {
 		struct orphan_block *oref;
 	};
 	struct block_internal *link[MAX_LINKS];
-	struct block_backrefs *backrefs;
+	union {
+		struct block_backrefs *backrefs;
+		struct bi_tree_node *tree_node;
+	};
 	char *remark;
 	uint16_t flags, in_mask, n_our_key;
 	uint8_t nlinks:4, max_diff_link:4, reserved;
+	struct ldus_rbtree node[];
 };
 
 #define N_BACKREFS      (sizeof(struct block_internal) / sizeof(struct block_internal *) - 1)
@@ -74,6 +78,12 @@ struct block_backrefs {
 
 #define ourprev link[MAX_LINKS - 2]
 #define ournext link[MAX_LINKS - 1]
+
+struct bi_tree_node {
+	struct ldus_rbtree node;
+	xdag_hashlow_t hash;
+	struct block_internal *bi;
+};
 
 struct cache_block {
 	struct ldus_rbtree node;
@@ -111,13 +121,15 @@ static pthread_mutex_t rbtree_mutex;
 static int g_light_mode = 0;
 static uint32_t cache_bounded_counter = 0;
 static struct orphan_block *g_orphan_first[ORPHAN_HASH_SIZE], *g_orphan_last[ORPHAN_HASH_SIZE];
+int g_detach_tree = 1;
+extern int g_use_tmpfile;
 
 //functions
 void cache_retarget(int32_t, int32_t);
 void cache_add(struct xdag_block*, xdag_hash_t);
-int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
-int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
-static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
+static int check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
+static int check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
+static int find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
 int do_mining(struct xdag_block *block, struct block_internal **pretop, xdag_time_t send_time);
 void remove_orphan(struct block_internal*,int);
 void add_orphan(struct block_internal*,struct xdag_block*);
@@ -162,23 +174,111 @@ xdag_time_t xdag_start_main_time(void)
 
 static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
 {
+	ssize_t node2hash;
+	if(g_detach_tree){
+		node2hash = offsetof(struct bi_tree_node, hash) - offsetof(struct bi_tree_node, node);
+	} else {
+		node2hash = offsetof(struct block_internal, hash) - offsetof(struct block_internal, node);
+	}
+	return memcmp((void*)((uintptr_t)l + node2hash), (void*)((uintptr_t)r + node2hash), 24) < 0;
+}
+
+static inline int lessthan_cache_tree(struct ldus_rbtree *l, struct ldus_rbtree *r)
+{
 	return memcmp(l + 1, r + 1, 24) < 0;
 }
 
-ldus_rbtree_define_prefix(lessthan, static inline, )
+ldus_rbtree_define_prefix(lessthan, static inline, , )
+ldus_rbtree_define_prefix(lessthan_cache_tree, static inline, _ct, )
 
-static inline struct block_internal *block_by_hash(const xdag_hashlow_t hash)
+static int bi_tree_insert(struct block_internal *bi)
 {
-	struct block_internal *bi;
+	if(bi == NULL){
+		xdag_err("Error: trying to add a NULL reference block [function: bi_tree_insert]");
+		return -2;
+	}
+	int res;
+	if(g_detach_tree){
+		struct bi_tree_node *tmp = malloc(sizeof(struct bi_tree_node));
+		if(tmp == NULL){
+			xdag_err("Error: malloc failed [function: bi_tree_insert]");
+			return -3;
+		}
+		memcpy(tmp->hash, bi->hash, sizeof(xdag_hashlow_t));
+		tmp->bi = bi;
+		tmp->node.right = tmp->node.left = NULL;
+		bi->tree_node = tmp;
+		pthread_mutex_lock(&rbtree_mutex);
+		res = ldus_rbtree_insert(&root, &tmp->node);
+		pthread_mutex_unlock(&rbtree_mutex);
+		if(res < 0){
+			free(tmp);
+		}
+	} else {
+		bi->node->right = bi->node->left = NULL;
+		pthread_mutex_lock(&rbtree_mutex);
+		res = ldus_rbtree_insert(&root, bi->node);
+		pthread_mutex_unlock(&rbtree_mutex);
+	}
+	return res;
+}
+
+static int bi_tree_remove(struct block_internal *bi)
+{
+	if(bi == NULL){
+		xdag_err("Error: bi is NULL [function bi_tree_remove]");
+		return -2;
+	}
+	if(bi->flags & BI_REF){
+		xdag_err("Error: trying to remove a referenced block [function bi_tree_remove]");
+		return -3;
+	}
+	int res;
+	if(g_detach_tree){
+		struct bi_tree_node* tmp = bi->tree_node;
+		if(tmp == NULL){
+			xdag_err("Error: tree node reference is NULL [function bi_tree_remove]");
+			return -4;
+		}
+		pthread_mutex_lock(&rbtree_mutex);
+		res = ldus_rbtree_remove(&root, &tmp->node);
+		pthread_mutex_unlock(&rbtree_mutex);
+		free(tmp);
+        } else {
+		pthread_mutex_lock(&rbtree_mutex);
+		res = ldus_rbtree_remove(&root, bi->node);
+		pthread_mutex_unlock(&rbtree_mutex);
+	}
+	return res;
+}
+
+static struct block_internal *block_by_hash(const xdag_hashlow_t hash)
+{
+	struct ldus_rbtree *node;
+	ssize_t hash2node, node2block;
+	if(g_detach_tree){
+		node2block = - offsetof(struct bi_tree_node, node);
+		hash2node = (- node2block) - offsetof(struct bi_tree_node, hash);
+	} else {
+		node2block = - offsetof(struct block_internal, node);
+		hash2node = (- node2block) - offsetof(struct block_internal, hash);
+	}
 	pthread_mutex_lock(&rbtree_mutex);
-	bi = (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
+	node = ldus_rbtree_find(root, (struct ldus_rbtree *)((uintptr_t)hash + hash2node));
 	pthread_mutex_unlock(&rbtree_mutex);
-	return bi;
+	if (node != NULL) {
+		if(g_detach_tree){
+			return ((struct bi_tree_node*)((uintptr_t)node + node2block))->bi;
+		} else {
+			return (struct block_internal*)((uintptr_t)node + node2block);
+		}
+	}
+	return NULL;
 }
 
 static inline struct cache_block *cache_block_by_hash(const xdag_hashlow_t hash)
 {
-	return (struct cache_block *)ldus_rbtree_find(cache_root, (struct ldus_rbtree *)hash - 1);
+	return (struct cache_block *)ldus_rbtree_find_ct(cache_root, (struct ldus_rbtree *)hash - 1);
 }
 
 
@@ -478,7 +578,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	int signInCount = 0, signOutCount = 0;
 	int signinmask = 0, signoutmask = 0;
 	int inmask = 0, outmask = 0;
-	int verified_keys_mask = 0, err = 0, type = 0;
+	int verified_keys_mask = 0, err = 0, type = 0, res;
 	struct block_internal tmpNodeBlock, *blockRef = NULL, *blockRef0 = NULL;
 	struct block_internal* blockRefs[XDAG_BLOCK_FIELDS-1]= {0};
 	xdag_diff_t diff0, diff;
@@ -627,7 +727,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 			blockRef = blockRefs[i-1];
 			if(1 << i & inmask) {
 				if(newBlock->field[i].amount) {
-					int32_t res = 1;
 					if(CACHE) {
 						res = check_signature_out_cached(blockRef, public_keys, keysCount, &cache_hit, &cache_miss);
 					} else {
@@ -695,9 +794,11 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		/* if too many extra blocks then reuse the oldest */
 		nodeBlock = g_orphan_first[1]->orphan_bi;
 		remove_orphan(nodeBlock, ORPHAN_REMOVE_REUSE);
-		pthread_mutex_lock(&rbtree_mutex);
-		ldus_rbtree_remove(&root, &nodeBlock->node);
-		pthread_mutex_unlock(&rbtree_mutex);
+		res = bi_tree_remove(nodeBlock);
+		if(res < 0){
+			err = 0xD;
+			goto end;
+		}
 		if (g_xdag_stats.nblocks-- == g_xdag_stats.total_nblocks)
 			g_xdag_stats.total_nblocks--;
 		if (nodeBlock->flags & BI_OURS) {
@@ -706,7 +807,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 			*(next ? &next->ourprev : &ourlast) = prev;
 		}
 	} else {
-		nodeBlock = xdag_malloc(sizeof(struct block_internal));
+		nodeBlock = xdag_malloc(sizeof(struct block_internal) + (!g_detach_tree)*sizeof(struct ldus_rbtree));
 	}
 	if(!nodeBlock) {
 		err = 0xC;
@@ -727,9 +828,11 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	memcpy(nodeBlock, &tmpNodeBlock, sizeof(struct block_internal));
-	pthread_mutex_lock(&rbtree_mutex);
-	ldus_rbtree_insert(&root, &nodeBlock->node);
-	pthread_mutex_unlock(&rbtree_mutex);
+	res = bi_tree_insert(nodeBlock);
+	if(res < 0){
+		err = 0xE;
+		goto end;
+	}
 	g_xdag_stats.nblocks++;
 
 	if(g_xdag_stats.nblocks > g_xdag_stats.total_nblocks) {
@@ -1154,7 +1257,20 @@ static void *sync_thread(void *arg)
 
 static void reset_callback(struct ldus_rbtree *node)
 {
-	struct block_internal *bi = (struct block_internal *)node;
+	struct block_internal *bi;
+	ssize_t node2block;
+	if(g_detach_tree){
+		node2block = - offsetof(struct bi_tree_node, node);
+		struct bi_tree_node *tmp = (struct bi_tree_node*)((uintptr_t)node + node2block);
+		bi = tmp->bi;
+		free(tmp);
+		if(g_use_tmpfile) {
+			return;
+		}
+	} else {
+		node2block = - offsetof(struct block_internal, node);
+		bi = (struct block_internal*)((uintptr_t)node + node2block);
+	}
 	for(struct block_backrefs *to_free = bi->backrefs; to_free != NULL;){
 		bi->backrefs = to_free->next;
 		xdag_free(to_free);
@@ -1250,12 +1366,12 @@ begin:
 			}
 
 			pthread_mutex_lock(&block_mutex);
-
-			if (xdag_free_all()) {
+			if(!(g_use_tmpfile && !g_detach_tree)){
 				pthread_mutex_lock(&rbtree_mutex);
 				ldus_rbtree_walk_up(root, reset_callback);
 				pthread_mutex_unlock(&rbtree_mutex);
 			}
+			xdag_free_all();
 			
 			root = 0;
 			g_balance = 0;
@@ -1337,6 +1453,10 @@ int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address)
 	if (xdag_mem_init(g_light_mode && !miner_address ? 0 : (((get_timestamp() - XDAG_ERA) >> 8) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal))) {
 		return -1;
 	}
+	
+	if (!(g_detach_tree && g_use_tmpfile)){
+		g_detach_tree = 0;
+	}
 
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
@@ -1400,7 +1520,15 @@ static void *g_traverse_data;
 
 static void traverse_all_callback(struct ldus_rbtree *node)
 {
-	struct block_internal *bi = (struct block_internal*)node;
+	struct block_internal *bi;
+	ssize_t node2block;
+	if(g_detach_tree){
+		node2block = - offsetof(struct bi_tree_node, node);
+		bi = ((struct bi_tree_node*)((uintptr_t)node + node2block))->bi;
+	} else {
+		node2block = - offsetof(struct block_internal, node);
+		bi = (struct block_internal*)((uintptr_t)node + node2block);
+	}
 
 	(*g_traverse_callback)(g_traverse_data, bi->hash, bi->amount, bi->time);
 }
@@ -1619,6 +1747,10 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, " direction  transaction                                amount       time                     remark                          \n");
 	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
 
+	if(!(bi->flags & BI_REF)){
+		return 0;
+	}
+
 	int N = 0x10000;
 	int n = 0;
 	struct block_internal **ba = malloc(N * sizeof(struct block_internal *));
@@ -1756,7 +1888,7 @@ void cache_retarget(int32_t cache_hit, int32_t cache_miss)
 				if(cache_first == NULL) {
 					cache_last = NULL;
 				}
-				ldus_rbtree_remove(&cache_root, &to_free->node);
+				ldus_rbtree_remove_ct(&cache_root, &to_free->node);
 				free(to_free);
 				g_xdag_extstats.cache_usage--;
 			} else {
@@ -1793,7 +1925,7 @@ void cache_add(struct xdag_block* block, xdag_hash_t hash)
 			if(cache_last != NULL)
 				cache_last->next = cacheBlock;
 			cache_last = cacheBlock;
-			ldus_rbtree_insert(&cache_root, &cacheBlock->node);
+			ldus_rbtree_insert_ct(&cache_root, &cacheBlock->node);
 			g_xdag_extstats.cache_usage++;
 		} else {
 			xdag_warn("cache malloc failed [function: cache_add]");
@@ -1804,7 +1936,7 @@ void cache_add(struct xdag_block* block, xdag_hash_t hash)
 
 }
 
-int32_t check_signature_out_cached(struct block_internal* blockRef, struct xdag_public_key *public_keys, const int keysCount, int32_t *cache_hit, int32_t *cache_miss)
+static int check_signature_out_cached(struct block_internal* blockRef, struct xdag_public_key *public_keys, const int keysCount, int32_t *cache_hit, int32_t *cache_miss)
 {
 	struct cache_block *bref = cache_block_by_hash(blockRef->hash);
 	if(bref != NULL) {
@@ -1816,7 +1948,7 @@ int32_t check_signature_out_cached(struct block_internal* blockRef, struct xdag_
 	}
 }
 
-int32_t check_signature_out(struct block_internal* blockRef, struct xdag_public_key *public_keys, const int keysCount)
+static int check_signature_out(struct block_internal* blockRef, struct xdag_public_key *public_keys, const int keysCount)
 {
 	struct xdag_block buf;
 	struct xdag_block *bref = xdag_storage_load(blockRef->hash, blockRef->time, blockRef->storage_pos, &buf);
@@ -1826,7 +1958,7 @@ int32_t check_signature_out(struct block_internal* blockRef, struct xdag_public_
 	return find_and_verify_signature_out(bref, public_keys, keysCount);
 }
 
-static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xdag_public_key *public_keys, const int keysCount)
+static int find_and_verify_signature_out(struct xdag_block* bref, struct xdag_public_key *public_keys, const int keysCount)
 {
 	int j = 0;
 	for(int k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
@@ -1849,6 +1981,10 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 		return -1;
 	}
 	
+	if (!(bi->flags & BI_REF)) {
+		return 0;
+	}
+
 	int size = 0x10000; 
 	int n = 0;
 	struct block_internal **block_array = malloc(size * sizeof(struct block_internal *));
@@ -1934,6 +2070,7 @@ void remove_orphan(struct block_internal* bi, int remove_action)
 			}
 
 			bi->oref = 0;
+			bi->backrefs = NULL;
 			bi->flags |= BI_REF;
 			free(obt);
 		}

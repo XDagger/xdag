@@ -1,4 +1,4 @@
-/* база хостов, T13.714-T13.841 $DVS:time$ */
+/* база хостов, T13.714-T14.511 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,7 +53,7 @@ static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
 	return lh->ip < rh->ip || (lh->ip == rh->ip && lh->port < rh->port);
 }
 
-ldus_rbtree_define_prefix(lessthan, static inline, )
+ldus_rbtree_define_prefix(lessthan, static inline, , )
 
 static struct ldus_rbtree *root = 0;
 static pthread_mutex_t host_mutex = PTHREAD_MUTEX_INITIALIZER;

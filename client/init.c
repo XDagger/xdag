@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T14.325 $DVS:time$ */
+/* cheatcoin main, T13.654-T14.511 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,6 +37,7 @@ char *g_coinname, *g_progname;
 int g_xdag_state = XDAG_STATE_INIT;
 int g_xdag_testnet = 0;
 int g_is_miner = 0;
+extern int g_detach_tree;
 static int g_is_pool = 0;
 int g_xdag_run = 0;
 time_t g_xdag_xfer_last = 0;
@@ -170,6 +171,8 @@ int xdag_init(int argc, char **argv, int isGui)
 				printUsage(argv[0]);
 				return -1;
 			}
+		} else if(ARG_EQUAL(argv[i], "-D", "")) { /* disable detach tree */
+			g_detach_tree = 0;
 		} else {
 			printUsage(argv[0]);
 			return 0;
@@ -304,5 +307,7 @@ void printUsage(char* appName)
 		"  -threads N     - create N transport layer threads for pool (default is 6)\n"
 		"  -dm            - disable mining on pool (-P option is ignored)\n"
 		"  -tag           - tag for pool to distingush pools. Max length is 31 chars\n"
+		"  -D             - disable block tree detach. Detach tree improve performance while using\n"
+		"                    temp file, note that: tree detach is always disabled while using -z RAM\n"
 		, appName);
 }
