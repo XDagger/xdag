@@ -2068,9 +2068,10 @@ static inline const char* get_remark(struct block_internal *bi){
 
 static int load_remark(struct block_internal* bi) {
 	struct xdag_block buf;
+	int ref = bi->flags & BI_REF;
 	struct xdag_block *bref = xdag_storage_load(bi->hash, bi->time, bi->storage_pos, &buf);
 	if(bref == NULL) {
-		if(bi->flags & BI_REF) {
+		if(ref) {
 			bi->flags &= ~BI_REMARK;
 		}
 		return 0;
