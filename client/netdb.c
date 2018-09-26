@@ -367,7 +367,7 @@ int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port
 	if (!g_xdag_blocked_ips || !g_xdag_white_ips) return -1;
 	
 	if (read_database(DATABASE, HOST_INDB) < 0) {
-		xdag_fatal("Can't find file '%s'\n", DATABASE); return -1;
+		xdag_fatal("Can't find file '%s'", DATABASE);
 	}
 	
 	read_database(DATABASEWHITE, HOST_WHITE);
