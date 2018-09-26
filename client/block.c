@@ -2013,7 +2013,7 @@ static inline size_t remark_acceptance(struct block_internal* bi, xdag_remark_t 
 	memcpy(remark_buf, origin, sizeof(xdag_remark_t));
 	size_t size = validate_remark(remark_buf);
 	if(size){
-		return ++size;
+		return size;
 	}
 	bi->flags &= ~BI_REMARK;
 	return 0;
@@ -2025,13 +2025,13 @@ static int add_remark_bi(struct block_internal* bi, xdag_remark_t strbuf)
 	if(!(bi->flags & BI_REMARK)) {
 		return 0;
 	}
-	char *remark_tmp = xdag_malloc(size);
-	memset(remark_tmp, 0, size);
+	char *remark_tmp = xdag_malloc(size + 1);
+	memset(remark_tmp, 0, size + 1);
 	if(remark_tmp == NULL) {
 		xdag_err("xdag_malloc failed, [function add_remark_bi]");
 		return 0;
 	}
-	memcpy(remark_tmp, strbuf, sizeof(xdag_remark_t));
+	memcpy(remark_tmp, strbuf, size);
 	bi->remark = remark_tmp;
 	return 1;
 }
