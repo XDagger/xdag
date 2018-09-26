@@ -86,7 +86,7 @@ void replace_all_nonprintable_characters(char *string, int length, char symbol);
 int validate_ipv4(const char *str);
 int validate_ipv4_port(const char *str);
 
-int validate_ascii(const char *str);
+size_t validate_remark(const char *str);
 size_t validate_ascii_safe(const char *str, size_t);
 
 #ifdef __cplusplus

@@ -495,22 +495,9 @@ int validate_ipv4_port(const char *str)
 	return 1;
 }
 
-int validate_ascii(const char *str)
+size_t validate_remark(const char *str)
 {
-	if(str == NULL) {
-		return 0;
-	}
-
-	for(;;++str) {
-		if(*str < 32 || *str > 126) {
-			if(*str == '\0') {
-				return 1;
-			}
-			return 0;
-		}
-	}
-
-	return 0;
+	return validate_ascii_safe(str, 33);// sizeof(xdag_remark_t) + 1
 }
 
 size_t validate_ascii_safe(const char *str, size_t maxsize)
@@ -522,7 +509,7 @@ size_t validate_ascii_safe(const char *str, size_t maxsize)
 	const char* start = str;
 	const char* stop = str + maxsize;
 
-	for(;start < stop;++str) {
+	for(;str < stop;++str) {
 		if(*str < 32 || *str > 126) {
 			if(*str == '\0') {
 				return str - start;
