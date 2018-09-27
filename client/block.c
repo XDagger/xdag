@@ -925,11 +925,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 
 #if REMARK_ENABLED
 	/* reserve field for pool tag in generated main block */
-	char pool_tag_buf[33] = {0};
-	memcpy(pool_tag_buf, g_pool_tag, sizeof(xdag_remark_t));
-	if(strlen(pool_tag_buf) > 0 && validate_remark(pool_tag_buf)) {
-		has_pool_tag = 1;
-	}
+	has_pool_tag = g_pool_has_tag;
 	res0 += has_pool_tag * mining;
 #endif
 

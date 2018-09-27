@@ -160,10 +160,9 @@ int xdag_init(int argc, char **argv, int isGui)
 		} else if(ARG_EQUAL(argv[i], "", "-tag")) { /* pool tag */
 			if(i+1 < argc) {
 				if(validate_remark(argv[i+1])) {
-					char pool_tag_buf[33] = {0};
-					strncpy(pool_tag_buf, argv[i+1], sizeof(xdag_remark_t));
-					memcpy(g_pool_tag, pool_tag_buf, sizeof(xdag_remark_t));
-					i++;
+					memcpy(g_pool_tag, argv[i+1], strlen(argv[i+1]));
+					g_pool_has_tag = 1;
+					++i;
 				} else {
 					printf("Pool tag exceeds 32 chars or is invalid ascii.\n");
 					return -1;

@@ -813,8 +813,7 @@ int xdag_do_xfer(void *outv, const char *amount, const char *address, const char
 			}
 			return 1;
 		} else {
-			strncpy(remark_buf, remark, sizeof(xdag_remark_t));
-			memcpy(xfer.remark, remark_buf, sizeof(xdag_remark_t));
+			memcpy(xfer.remark, remark, strlen(remark));
 			xfer.hasRemark = 1;
 		}
 	}
