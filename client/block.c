@@ -1698,15 +1698,15 @@ static inline void print_block(struct block_internal *block, int print_only_addr
 		fprintf(out, "%s\n", address);
 	} else {
 		xdag_time_to_string(block->time, time_buf);
-		fprintf(out, "%s   %s   %s\n", address, time_buf, xdag_get_block_state_info(block->flags));
+		fprintf(out, "%s   %s   %-8s  %-32s\n", address, time_buf, xdag_get_block_state_info(block->flags), get_remark(block));
 	}
 }
 
 static inline void print_header_block_list(FILE *out)
 {
-	fprintf(out, "-----------------------------------------------------------------------\n");
-	fprintf(out, "address                            time                      state     \n");
-	fprintf(out, "-----------------------------------------------------------------------\n");
+	fprintf(out, "---------------------------------------------------------------------------------------------------------\n");
+	fprintf(out, "address                            time                      state     mined by                          \n");
+	fprintf(out, "---------------------------------------------------------------------------------------------------------\n");
 }
 
 // prints list of N last main blocks
