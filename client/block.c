@@ -2026,11 +2026,11 @@ static int add_remark_bi(struct block_internal* bi, xdag_remark_t strbuf)
 		return 0;
 	}
 	char *remark_tmp = xdag_malloc(size + 1);
-	memset(remark_tmp, 0, size + 1);
 	if(remark_tmp == NULL) {
 		xdag_err("xdag_malloc failed, [function add_remark_bi]");
 		return 0;
 	}
+	memset(remark_tmp, 0, size + 1);
 	memcpy(remark_tmp, strbuf, size);
 	bi->remark = remark_tmp;
 	return 1;
