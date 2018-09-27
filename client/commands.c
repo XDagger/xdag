@@ -596,8 +596,8 @@ void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd)
 	}
 
 	char *remark = strtok_r(0, " \t\r\n", &nextParam);
-	if(remark && (strlen(remark) >= 32 || !validate_ascii(remark))) {
-		fprintf(out, "Xfer: tx remark (Transaction ID) exceed max length 31 chars or is invalid ascii.\n");
+	if(remark && !validate_remark(remark)) {
+		fprintf(out, "Xfer: tx remark (Transaction ID) exceeds max length 32 chars or is invalid ascii.\n");
 		return;
 	}
 
@@ -753,7 +753,7 @@ static int make_transaction_block(struct xfer_callback_data *xferData)
 	}
 	xferData->fields[xferData->fieldsCount].amount = xferData->todo;
 
-	if(xferData->hasRemark && strlen(xferData->remark) > 0) {
+	if(xferData->hasRemark) {
 		memcpy(xferData->fields + xferData->fieldsCount + xferData->hasRemark, xferData->remark, sizeof(xdag_remark_t));
 	}
 
@@ -775,6 +775,7 @@ static int make_transaction_block(struct xfer_callback_data *xferData)
 int xdag_do_xfer(void *outv, const char *amount, const char *address, const char *remark, int isGui)
 {
 	char address_buf[33] = {0};
+	char remark_buf[33] = {0};
 	struct xfer_callback_data xfer;
 	FILE *out = (FILE *)outv;
 
@@ -804,17 +805,19 @@ int xdag_do_xfer(void *outv, const char *amount, const char *address, const char
 		return 1;
 	}
 
+#if REMARK_ENABLED
 	if(remark) {
-		if(strlen(remark) >= 32 || !validate_ascii(remark)) {
+		if(!validate_remark(remark)) {
 			if(out) {
-				fprintf(out, "Xfer: transaction remark exceeds max length 31 chars or is invalid ascii.\n");
+				fprintf(out, "Xfer: transaction remark exceeds max length 32 chars or is invalid ascii.\n");
 			}
 			return 1;
-		} else if(strlen(remark) > 0) {
-			strcpy(xfer.remark, remark);
+		} else {
+			memcpy(xfer.remark, remark, strlen(remark));
 			xfer.hasRemark = 1;
 		}
 	}
+#endif
 
 	xdag_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
 	xfer.outsig = 1;

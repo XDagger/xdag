@@ -435,7 +435,9 @@ int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_
 	cJSON *json_state = cJSON_CreateString(str);
 	cJSON_AddItemToObject(callback_data, "state", json_state);
 
-	cJSON *json_remark = cJSON_CreateString(remark);
+	char remark_buf[33] = {0};
+	memcpy(remark_buf, remark, 32);
+	cJSON *json_remark = cJSON_CreateString(remark_buf);
 	cJSON_AddItemToObject(callback_data, "remark", json_remark);
 
 	struct tm tm;
@@ -534,7 +536,7 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
 	
 	char amount[128] = {0};
 	char address[128] = {0};
-	char remark[32] = {0};
+	char remark[33] = {0};
 	
 	if (params) {
 		if (cJSON_IsArray(params) && cJSON_GetArraySize(params) == 1) {
@@ -557,11 +559,11 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
 
 			cJSON *json_remark = cJSON_GetObjectItem(param, "remark");
 			if (cJSON_IsString(json_remark)) {
-				if(strlen(json_remark->valuestring) < 32 && validate_ascii(json_remark->valuestring)) {
+				if(validate_remark(json_remark->valuestring)) {
 					strcpy(remark, json_remark->valuestring);
 				} else {
 					ctx->error_code = 1;
-					ctx->error_message = strdup("Transacion remark exceeds max length 31 chars or is invalid ascii.");
+					ctx->error_message = strdup("Transacion remark exceeds max length 32 chars or is invalid ascii.");
 					return NULL;
 				}
 			}
@@ -598,10 +600,12 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
 			xdag_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
 			xfer.outsig = 1;
 
+#if REMARK_ENABLED
 			if(strlen(remark)>0) {
 				xfer.hasRemark = 1;
-				strcpy(xfer.remark, remark);
+				memcpy(xfer.remark, remark, sizeof(xdag_remark_t));
 			}
+#endif
 
 			g_xdag_state = XDAG_STATE_XFER;
 			g_xdag_xfer_last = time(0);
@@ -677,7 +681,9 @@ int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash,
 	sprintf(tbuf, "%s.%03d UTC", buf, (int)((time & 0x3ff) * 1000) >> 10);
 	cJSON *json_time = cJSON_CreateString(tbuf);
 
-	cJSON *json_remark = cJSON_CreateString(remark);
+	char remark_buf[33] = {0};
+	memcpy(remark_buf, remark, sizeof(xdag_remark_t));
+	cJSON *json_remark = cJSON_CreateString(remark_buf);
 	
 	cJSON *json_item = cJSON_CreateObject();
 	cJSON_AddItemToObject(json_item, "status", json_status);

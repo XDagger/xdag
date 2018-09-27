@@ -155,21 +155,25 @@ int xdag_init(int argc, char **argv, int isGui)
 		} else if(ARG_EQUAL(argv[i], "", "-threads")) { /* number of transport layer threads */
 			if (!(++i < argc && sscanf(argv[i], "%d", &transport_threads) == 1))
 				printf("Number of transport threads is not given.\n");
-		} else if(ARG_EQUAL(argv[i], "", "-dm")) {
+		} else if(ARG_EQUAL(argv[i], "", "-dm")) { /* disable mining */
 			g_disable_mining = 1;
-		} else if(ARG_EQUAL(argv[i], "", "-tag")) {
+		} else if(ARG_EQUAL(argv[i], "", "-tag")) { /* pool tag */
 			if(i+1 < argc) {
-				if(strlen(argv[i+1]) < 32 && validate_ascii(argv[i+1])) {
-					strcpy(g_pool_tag, argv[i+1]);
-					i++;
+				if(validate_remark(argv[i+1])) {
+					memcpy(g_pool_tag, argv[i+1], strlen(argv[i+1]));
+					g_pool_has_tag = 1;
+					++i;
 				} else {
-					printf("Pool tag exceeds max length. Max length 31 chars or is invalid ascii.\n");
+					printf("Pool tag exceeds 32 chars or is invalid ascii.\n");
 					return -1;
 				}
 			} else {
 				printUsage(argv[0]);
 				return -1;
 			}
+		} else if(ARG_EQUAL(argv[i], "", "-disable-refresh")) { /* disable auto refresh white list */
+			++i;
+			g_prevent_auto_refresh = 1;
 		} else {
 			printUsage(argv[0]);
 			return 0;
@@ -303,6 +307,6 @@ void printUsage(char* appName)
 		"  -rpc-port      - set HTTP JSON-RPC port (default is 7677)\n"
 		"  -threads N     - create N transport layer threads for pool (default is 6)\n"
 		"  -dm            - disable mining on pool (-P option is ignored)\n"
-		"  -tag           - tag for pool to distingush pools. Max length is 31 chars\n"
+		"  -tag           - tag for pool to distingush pools. Max length is 32 chars\n"
 		, appName);
 }

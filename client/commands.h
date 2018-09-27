@@ -30,7 +30,7 @@ struct xfer_callback_data {
 	xdag_amount_t todo, done, remains;
 	int fieldsCount, keysCount, outsig, hasRemark;
 	xdag_hash_t transactionBlockHash;
-	char remark[32];
+	xdag_remark_t remark;
 };
 
 void startCommandProcessing(int transportFlags);

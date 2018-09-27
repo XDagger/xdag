@@ -477,7 +477,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	int keysCount = 0, ourKeysCount = 0;
 	int signInCount = 0, signOutCount = 0;
 	int signinmask = 0, signoutmask = 0;
-	int inmask = 0, outmask = 0;
+	int inmask = 0, outmask = 0, remark_index = 0;
 	int verified_keys_mask = 0, err = 0, type = 0;
 	struct block_internal tmpNodeBlock, *blockRef = NULL, *blockRef0 = NULL;
 	struct block_internal* blockRefs[XDAG_BLOCK_FIELDS-1]= {0};
@@ -534,6 +534,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 
 			case XDAG_FIELD_REMARK:
 				tmpNodeBlock.flags |= BI_REMARK;
+				remark_index = i;
 				break;
 			case XDAG_FIELD_RESERVE1:
 			case XDAG_FIELD_RESERVE2:
@@ -556,6 +557,16 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		i = signOutCount;
 		err = 4;
 		goto end;
+	}
+
+	/* check remark */
+	if(tmpNodeBlock.flags & BI_REMARK) {
+		char remark_buf[33] = {0};
+		memcpy(remark_buf, newBlock->field[remark_index].remark, sizeof(xdag_remark_t));
+		if(!validate_remark(remark_buf)) {
+			err = 0xC;
+			goto end;
+		}
 	}
 
 	/* if not read from storage and timestamp is ...ffff and last field is nonce then the block is extra */
@@ -869,12 +880,9 @@ int xdag_add_block(struct xdag_block *b)
 struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, int hasRemark,
 	xdag_amount_t fee, xdag_time_t send_time, xdag_hash_t block_hash_result)
 {
-#ifndef REMARK_ENABLED
-	hasRemark = 0;
-#endif
 	pthread_mutex_lock(&g_create_block_mutex);
 	struct xdag_block block[2];
-	int i, j, res, mining, defkeynum, keysnum[XDAG_BLOCK_FIELDS], nkeys, nkeysnum = 0, outsigkeyind = -1, hasTag = 0;
+	int i, j, res, mining, defkeynum, keysnum[XDAG_BLOCK_FIELDS], nkeys, nkeysnum = 0, outsigkeyind = -1, has_pool_tag = 0;
 	struct xdag_public_key *defkey = xdag_wallet_default_key(&defkeynum), *keys = xdag_wallet_our_keys(&nkeys), *key;
 	xdag_hash_t signatureHash;
 	xdag_hash_t newBlockHash;
@@ -914,12 +922,11 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 	}
 
 	res0 += mining;
-#ifdef REMARK_ENABLED
+
+#if REMARK_ENABLED
 	/* reserve field for pool tag in generated main block */
-	if(strlen(g_pool_tag)>0 && strlen(g_pool_tag) < 32) {
-		hasTag = 1;
-	}
-	res0 += hasTag * mining;
+	has_pool_tag = g_pool_has_tag;
+	res0 += has_pool_tag * mining;
 #endif
 
  begin:
@@ -965,7 +972,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 		setfld(XDAG_FIELD_REMARK, fields + inputsCount + outputsCount, xdag_remark_t);
 	}
 
-	if(mining && hasTag) {
+	if(mining && has_pool_tag) {
 		setfld(XDAG_FIELD_REMARK, g_pool_tag, xdag_remark_t);
 	}
 
@@ -1691,15 +1698,15 @@ static inline void print_block(struct block_internal *block, int print_only_addr
 		fprintf(out, "%s\n", address);
 	} else {
 		xdag_time_to_string(block->time, time_buf);
-		fprintf(out, "%s   %s   %s\n", address, time_buf, xdag_get_block_state_info(block->flags));
+		fprintf(out, "%s   %s   %-8s  %-32s\n", address, time_buf, xdag_get_block_state_info(block->flags), get_remark(block));
 	}
 }
 
 static inline void print_header_block_list(FILE *out)
 {
-	fprintf(out, "-----------------------------------------------------------------------\n");
-	fprintf(out, "address                            time                      state     \n");
-	fprintf(out, "-----------------------------------------------------------------------\n");
+	fprintf(out, "---------------------------------------------------------------------------------------------------------\n");
+	fprintf(out, "address                            time                      state     mined by                          \n");
+	fprintf(out, "---------------------------------------------------------------------------------------------------------\n");
 }
 
 // prints list of N last main blocks
@@ -1998,9 +2005,11 @@ int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int
 
 static inline size_t remark_acceptance(struct block_internal* bi, xdag_remark_t origin)
 {
-	size_t size = validate_ascii_safe(origin, sizeof(xdag_remark_t));
+	char remark_buf[33] = {0};
+	memcpy(remark_buf, origin, sizeof(xdag_remark_t));
+	size_t size = validate_remark(remark_buf);
 	if(size){
-		return ++size;
+		return size;
 	}
 	bi->flags &= ~BI_REMARK;
 	return 0;
@@ -2012,11 +2021,12 @@ static int add_remark_bi(struct block_internal* bi, xdag_remark_t strbuf)
 	if(!(bi->flags & BI_REMARK)) {
 		return 0;
 	}
-	char *remark_tmp = xdag_malloc(size);
+	char *remark_tmp = xdag_malloc(size + 1);
 	if(remark_tmp == NULL) {
 		xdag_err("xdag_malloc failed, [function add_remark_bi]");
 		return 0;
 	}
+	memset(remark_tmp, 0, size + 1);
 	memcpy(remark_tmp, strbuf, size);
 	bi->remark = remark_tmp;
 	return 1;
