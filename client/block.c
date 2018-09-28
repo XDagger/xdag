@@ -127,6 +127,9 @@ static void add_backref(struct block_internal*, struct block_internal*);
 static inline int get_nfield(struct xdag_block*, int);
 static inline const char* get_remark(struct block_internal*);
 static int load_remark(struct block_internal*);
+static void order_ourblocks_by_amount(struct block_internal *bi);
+static inline void add_ourblock(struct block_internal *nodeBlock);
+static inline void remove_ourblock(struct block_internal *nodeBlock);
 
 // convert xdag_amount_t to long double
 long double amount2xdags(xdag_amount_t amount)
@@ -199,26 +202,8 @@ static inline void accept_amount(struct block_internal *bi, xdag_amount_t sum)
 
 	bi->amount += sum;
 	if (bi->flags & BI_OURS) {
-		struct block_internal *ti;
 		g_balance += sum;
-
-		while ((ti = bi->ourprev) && bi->amount > ti->amount) {
-			bi->ourprev = ti->ourprev;
-			ti->ournext = bi->ournext;
-			bi->ournext = ti;
-			ti->ourprev = bi;
-			*(bi->ourprev ? &bi->ourprev->ournext : &ourfirst) = bi;
-			*(ti->ournext ? &ti->ournext->ourprev : &ourlast) = ti;
-		}
-
-		while ((ti = bi->ournext) && bi->amount < ti->amount) {
-			bi->ournext = ti->ournext;
-			ti->ourprev = bi->ourprev;
-			bi->ourprev = ti;
-			ti->ournext = bi;
-			*(bi->ournext ? &bi->ournext->ourprev : &ourlast) = bi;
-			*(ti->ourprev ? &ti->ourprev->ournext : &ourfirst) = ti;
-		}
+		order_ourblocks_by_amount(bi);
 	}
 }
 
@@ -701,9 +686,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		if (g_xdag_stats.nblocks-- == g_xdag_stats.total_nblocks)
 			g_xdag_stats.total_nblocks--;
 		if (nodeBlock->flags & BI_OURS) {
-			struct block_internal *prev = nodeBlock->ourprev, *next = nodeBlock->ournext;
-			*(prev ? &prev->ournext : &ourfirst) = next;
-			*(next ? &next->ourprev : &ourlast) = prev;
+			remove_ourblock(nodeBlock);
 		}
 	} else {
 		nodeBlock = xdag_malloc(sizeof(struct block_internal));
@@ -772,9 +755,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	if(tmpNodeBlock.flags & BI_OURS) {
-		nodeBlock->ourprev = ourlast;
-		*(ourlast ? &ourlast->ournext : &ourfirst) = nodeBlock;
-		ourlast = nodeBlock;
+		add_ourblock(nodeBlock);
 	}
 
 	for(i = 0; i < tmpNodeBlock.nlinks; ++i) {
@@ -2085,3 +2066,36 @@ static int load_remark(struct block_internal* bi) {
 	return add_remark_bi(bi, bref->field[remark_field].remark);
 }
 
+void order_ourblocks_by_amount(struct block_internal *bi)
+{
+	struct block_internal *ti;
+	while ((ti = bi->ourprev) && bi->amount > ti->amount) {
+		bi->ourprev = ti->ourprev;
+		ti->ournext = bi->ournext;
+		bi->ournext = ti;
+		ti->ourprev = bi;
+		*(bi->ourprev ? &bi->ourprev->ournext : &ourfirst) = bi;
+		*(ti->ournext ? &ti->ournext->ourprev : &ourlast) = ti;
+	}
+ 	while ((ti = bi->ournext) && bi->amount < ti->amount) {
+		bi->ournext = ti->ournext;
+		ti->ourprev = bi->ourprev;
+		bi->ourprev = ti;
+		ti->ournext = bi;
+		*(bi->ournext ? &bi->ournext->ourprev : &ourlast) = bi;
+		*(ti->ourprev ? &ti->ourprev->ournext : &ourfirst) = ti;
+	}
+ }
+
+static inline void add_ourblock(struct block_internal *nodeBlock)
+{
+	nodeBlock->ourprev = ourlast;
+	*(ourlast ? &ourlast->ournext : &ourfirst) = nodeBlock;
+	ourlast = nodeBlock;
+}
+
+static inline void remove_ourblock(struct block_internal *nodeBlock){
+	struct block_internal *prev = nodeBlock->ourprev, *next = nodeBlock->ournext;
+	*(prev ? &prev->ournext : &ourfirst) = next;
+	*(next ? &next->ourprev : &ourlast) = prev;
+}
