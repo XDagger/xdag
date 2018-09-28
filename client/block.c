@@ -477,7 +477,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	int keysCount = 0, ourKeysCount = 0;
 	int signInCount = 0, signOutCount = 0;
 	int signinmask = 0, signoutmask = 0;
-	int inmask = 0, outmask = 0, remark_index = 0;
+	int inmask = 0, outmask = 0;
 	int verified_keys_mask = 0, err = 0, type = 0;
 	struct block_internal tmpNodeBlock, *blockRef = NULL, *blockRef0 = NULL;
 	struct block_internal* blockRefs[XDAG_BLOCK_FIELDS-1]= {0};
@@ -534,7 +534,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 
 			case XDAG_FIELD_REMARK:
 				tmpNodeBlock.flags |= BI_REMARK;
-				remark_index = i;
 				break;
 			case XDAG_FIELD_RESERVE1:
 			case XDAG_FIELD_RESERVE2:
@@ -557,16 +556,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		i = signOutCount;
 		err = 4;
 		goto end;
-	}
-
-	/* check remark */
-	if(tmpNodeBlock.flags & BI_REMARK) {
-		char remark_buf[33] = {0};
-		memcpy(remark_buf, newBlock->field[remark_index].remark, sizeof(xdag_remark_t));
-		if(!validate_remark(remark_buf)) {
-			err = 0xC;
-			goto end;
-		}
 	}
 
 	/* if not read from storage and timestamp is ...ffff and last field is nonce then the block is extra */
