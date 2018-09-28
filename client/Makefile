@@ -43,6 +43,7 @@ sources = 							\
 	commands.c						\
 	terminal.c						\
 	network.c						\
+	time.c							\
 	$(dnet)/dnet_crypt.c					\
 	$(dnet)/dnet_xdag.c					\
 	$(dfslib)/dfslib_crypt.c				\
@@ -86,6 +87,7 @@ headers = 							\
 	terminal.h						\
 	types.h							\
 	network.h						\
+	time.h							\
 	$(dnet)/dnet_crypt.h					\
 	$(dnet)/dnet_history.h					\
 	$(dnet)/dnet_main.h					\

@@ -24,16 +24,13 @@
 #include "utils/utils.h"
 #include "utils/moving_statistics/moving_average.h"
 #include "mining_common.h"
+#include "time.h"
 
 #define MAIN_CHAIN_PERIOD       (64 << 10)
 #define MAX_WAITING_MAIN        1
 #define DEF_TIME_LIMIT          0 // (MAIN_CHAIN_PERIOD / 2)
-#define XDAG_TEST_ERA           0x16900000000ll
-#define XDAG_MAIN_ERA           0x16940000000ll
-#define XDAG_ERA                xdag_era
 #define MAIN_START_AMOUNT       (1ll << 42)
 #define MAIN_BIG_PERIOD_LOG     21
-#define MAIN_TIME(t)            ((t) >> 16)
 #define MAX_LINKS               15
 #define MAKE_BLOCK_PERIOD       13
 #define QUERY_RETRIES           2
@@ -146,18 +143,6 @@ xdag_amount_t xdags2amount(const char *str)
 	sum = ldexpl(sum, 32);
 	flr = ceill(sum);
 	return res + (xdag_amount_t)flr;
-}
-
-// returns a time period index, where a period is 64 seconds long
-xdag_time_t xdag_main_time(void)
-{
-	return MAIN_TIME(get_timestamp());
-}
-
-// returns the time period index corresponding to the start of the network
-xdag_time_t xdag_start_main_time(void)
-{
-	return MAIN_TIME(XDAG_ERA);
 }
 
 static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
