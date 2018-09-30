@@ -51,6 +51,7 @@
     <ClCompile Include="..\..\client\storage.c" />
     <ClCompile Include="..\..\client\sync.c" />
     <ClCompile Include="..\..\client\terminal.c" />
+    <ClCompile Include="..\..\client\time.c" />
     <ClCompile Include="..\..\client\transport.c" />
     <ClCompile Include="..\..\client\utils\log.c" />
     <ClCompile Include="..\..\client\utils\moving_statistics\moving_average.c" />
@@ -92,6 +93,7 @@
     <ClInclude Include="..\..\client\sync.h" />
     <ClInclude Include="..\..\client\system.h" />
     <ClInclude Include="..\..\client\terminal.h" />
+    <ClInclude Include="..\..\client\time.h" />
     <ClInclude Include="..\..\client\transport.h" />
     <ClInclude Include="..\..\client\types.h" />
     <ClInclude Include="..\..\client\uthash\uthash.h" />

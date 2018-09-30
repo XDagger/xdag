@@ -165,6 +165,9 @@
     <ClCompile Include="..\..\dnet\dnet_xdag.c">
       <Filter>dnet</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\client\time.c">
+      <Filter>client</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client\address.h">
@@ -338,6 +341,9 @@
     </ClInclude>
     <ClInclude Include="..\..\dnet\dnet_packet.h">
       <Filter>dnet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\time.h">
+      <Filter>client</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
