@@ -1815,7 +1815,7 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
 	return 0;
 }
 
-int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, const xdag_remark_t))
+int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, const char *))
 {
 	struct block_internal *bi = block_by_hash(hash);
 	
@@ -1957,7 +1957,7 @@ void xdag_block_finish()
 	pthread_mutex_lock(&block_mutex);
 }
 
-int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, const xdag_remark_t))
+int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, const char *))
 {
 	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
