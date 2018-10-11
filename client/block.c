@@ -58,7 +58,7 @@ struct block_internal {
 	};
 	struct block_internal *link[MAX_LINKS];
 	struct block_backrefs *backrefs;
-	char *remark;
+	atomic_uintptr_t remark;
 	uint16_t flags, in_mask, n_our_key;
 	uint8_t nlinks:4, max_diff_link:4, reserved;
 };
@@ -1995,8 +1995,8 @@ static int add_remark_bi(struct block_internal* bi, xdag_remark_t strbuf)
 	}
 	memset(remark_tmp, 0, size + 1);
 	memcpy(remark_tmp, strbuf, size);
-	char *expected_value = NULL;
-	if(!atomic_compare_exchange_strong_explicit(&bi->remark, &expected_value, remark_tmp, memory_order_acq_rel, memory_order_relaxed)){
+	uintptr_t expected_value = 0 ;
+	if(!atomic_compare_exchange_strong_explicit(&bi->remark, &expected_value, (uintptr_t)remark_tmp, memory_order_acq_rel, memory_order_relaxed)){
 		free(remark_tmp);		
 	}
 	return 1;
@@ -2037,10 +2037,10 @@ static inline int get_nfield(struct xdag_block *bref, int field_type)
 
 static inline const char* get_remark(struct block_internal *bi){
 	if((bi->flags & BI_REMARK) & ~BI_EXTRA){
-		if(atomic_load_explicit(&bi->remark, memory_order_acquire) != NULL){
-			return bi->remark;
+		if(atomic_load_explicit(&bi->remark, memory_order_acquire)){
+			return (const char*)bi->remark;
 		} else if(load_remark(bi)){
-			return bi->remark;
+			return (const char*)bi->remark;
 		}
 	}
 	return "";
