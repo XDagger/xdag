@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <math.h>
+#include <stdatomic.h>
 #include "system.h"
 #include "../ldus/source/include/ldus/rbtree.h"
 #include "block.h"
@@ -1994,7 +1995,10 @@ static int add_remark_bi(struct block_internal* bi, xdag_remark_t strbuf)
 	}
 	memset(remark_tmp, 0, size + 1);
 	memcpy(remark_tmp, strbuf, size);
-	bi->remark = remark_tmp;
+	char *expected_value = NULL;
+	if(!atomic_compare_exchange_strong_explicit(&bi->remark, &expected_value, remark_tmp, memory_order_acq_rel, memory_order_relaxed)){
+		free(remark_tmp);		
+	}
 	return 1;
 }
 
@@ -2033,7 +2037,7 @@ static inline int get_nfield(struct xdag_block *bref, int field_type)
 
 static inline const char* get_remark(struct block_internal *bi){
 	if((bi->flags & BI_REMARK) & ~BI_EXTRA){
-		if(bi->remark != NULL){
+		if(atomic_load_explicit(&bi->remark, memory_order_acquire) != NULL){
 			return bi->remark;
 		} else if(load_remark(bi)){
 			return bi->remark;
