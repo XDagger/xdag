@@ -1134,8 +1134,8 @@ static void reset_callback(struct ldus_rbtree *node)
 		xdag_free(to_free);
 		to_free = bi->backrefs;
 	}
-	if((bi->flags & BI_REMARK) && bi->remark != NULL) {
-		xdag_free(bi->remark);
+	if((bi->flags & BI_REMARK) && bi->remark != (uintptr_t)NULL) {
+		xdag_free((char*)bi->remark);
 	}
 	xdag_free(bi);
 }

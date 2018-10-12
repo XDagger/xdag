@@ -775,7 +775,6 @@ static int make_transaction_block(struct xfer_callback_data *xferData)
 int xdag_do_xfer(void *outv, const char *amount, const char *address, const char *remark, int isGui)
 {
 	char address_buf[33] = {0};
-	char remark_buf[33] = {0};
 	struct xfer_callback_data xfer;
 	FILE *out = (FILE *)outv;
 
