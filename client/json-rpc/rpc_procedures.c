@@ -59,14 +59,14 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
 cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_get_block_info */
-int rpc_get_block_callback(void *data, int flag, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, const xdag_remark_t remark);
+int rpc_get_block_callback(void *data, int flag, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, const char* remark);
 cJSON * method_xdag_get_block_info(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_do_xfer */
 cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_get_transactions */
-int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, const xdag_remark_t remark);
+int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, const char* remark);
 cJSON * method_xdag_get_transactions(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* version */
@@ -408,7 +408,7 @@ cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJ
  "version":"1.1", "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"2018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
  */
 
-int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, const xdag_remark_t remark)
+int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, const char* remark)
 {
 	cJSON *callback_data = (cJSON *)data;
 
@@ -435,9 +435,10 @@ int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_
 	cJSON *json_state = cJSON_CreateString(str);
 	cJSON_AddItemToObject(callback_data, "state", json_state);
 
-	char remark_buf[33] = {0};
-	memcpy(remark_buf, remark, 32);
-	cJSON *json_remark = cJSON_CreateString(remark_buf);
+//	char remark_buf[33] = {0};
+//	memcpy(remark_buf, remark, 32);
+//	cJSON *json_remark = cJSON_CreateString(remark_buf);
+	cJSON *json_remark = cJSON_CreateString(remark);
 	cJSON_AddItemToObject(callback_data, "remark", json_remark);
 
 	struct tm tm;
@@ -647,7 +648,7 @@ struct rpc_transactions_callback_data {
 	int count;
 };
 
-int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, const xdag_remark_t remark)
+int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, const char* remark)
 {
 	struct rpc_transactions_callback_data *callback_data = (struct rpc_transactions_callback_data*)data;
 	
@@ -661,7 +662,7 @@ int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash,
 		return -1;
 	}
 
-	cJSON *json_status = cJSON_CreateString(xdag_get_block_state_info(flags));
+	cJSON *json_state = cJSON_CreateString(xdag_get_block_state_info(flags));
 	
 	cJSON *json_direction = cJSON_CreateString(type ? "output" : "input");
 	
@@ -681,12 +682,13 @@ int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash,
 	sprintf(tbuf, "%s.%03d UTC", buf, (int)((time & 0x3ff) * 1000) >> 10);
 	cJSON *json_time = cJSON_CreateString(tbuf);
 
-	char remark_buf[33] = {0};
-	memcpy(remark_buf, remark, sizeof(xdag_remark_t));
-	cJSON *json_remark = cJSON_CreateString(remark_buf);
-	
+//	char remark_buf[33] = {0};
+//	memcpy(remark_buf, remark, sizeof(xdag_remark_t));
+//	cJSON *json_remark = cJSON_CreateString(remark_buf);
+	cJSON *json_remark = cJSON_CreateString(remark);
+
 	cJSON *json_item = cJSON_CreateObject();
-	cJSON_AddItemToObject(json_item, "status", json_status);
+	cJSON_AddItemToObject(json_item, "state", json_state);
 	cJSON_AddItemToObject(json_item, "direction", json_direction);
 	cJSON_AddItemToObject(json_item, "address", json_address);
 	cJSON_AddItemToObject(json_item, "amount", json_amount);
