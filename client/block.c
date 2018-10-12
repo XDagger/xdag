@@ -707,6 +707,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	memcpy(nodeBlock, &tmpNodeBlock, sizeof(struct block_internal));
+	if(nodeBlock->flags & BI_REMARK){
+		atomic_init(&nodeBlock->remark, (uintptr_t)NULL);
+	}
 	pthread_mutex_lock(&rbtree_mutex);
 	ldus_rbtree_insert(&root, &nodeBlock->node);
 	pthread_mutex_unlock(&rbtree_mutex);
