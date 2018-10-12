@@ -904,19 +904,20 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 	block[0].field[0].time = send_time;
 	block[0].field[0].amount = fee;
 
-	pthread_mutex_lock(&g_create_block_mutex);
 	if (g_light_mode) {
+		pthread_mutex_lock(&g_create_block_mutex);
 		if (res < XDAG_BLOCK_FIELDS && ourfirst) {
 			setfld(XDAG_FIELD_OUT, ourfirst->hash, xdag_hashlow_t);
 			res++;
 		}
+		pthread_mutex_unlock(&g_create_block_mutex);
 	} else {
+		pthread_mutex_lock(&block_mutex);
 		if (res < XDAG_BLOCK_FIELDS && mining && pretop && pretop->time < send_time) {
 			log_block("Mintop", pretop->hash, pretop->time, pretop->storage_pos);
 			setfld(XDAG_FIELD_OUT, pretop->hash, xdag_hashlow_t);
 			res++;
 		}
-		pthread_mutex_lock(&block_mutex);
 		for (oref = g_orphan_first[0]; oref && res < XDAG_BLOCK_FIELDS; oref = oref->next) {
 			ref = oref->orphan_bi;
 			if (ref->time < send_time) {
@@ -963,7 +964,6 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 		hash_for_signature(block, defkey, signatureHash);
 		xdag_sign(defkey->key, signatureHash, block[0].field[i].data, block[0].field[i + 1].data);
 	}
-	pthread_mutex_unlock(&g_create_block_mutex);
 
 	if (mining) {
 		if(!do_mining(block, &pretop, send_time)) {
