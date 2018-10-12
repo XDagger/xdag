@@ -2037,10 +2037,11 @@ static inline int get_nfield(struct xdag_block *bref, int field_type)
 
 static inline const char* get_remark(struct block_internal *bi){
 	if((bi->flags & BI_REMARK) & ~BI_EXTRA){
-		if(atomic_load_explicit(&bi->remark, memory_order_acquire)){
-			return (const char*)bi->remark;
+		const char* tmp = (const char*)atomic_load_explicit(&bi->remark, memory_order_acquire);
+		if(tmp != NULL){
+			return tmp;
 		} else if(load_remark(bi)){
-			return (const char*)bi->remark;
+			return (const char*)atomic_load_explicit(&bi->remark, memory_order_relaxed);
 		}
 	}
 	return "";
