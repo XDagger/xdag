@@ -57,7 +57,7 @@ struct block_internal {
 		struct orphan_block *oref;
 	};
 	struct block_internal *link[MAX_LINKS];
-	struct block_backrefs *backrefs;
+	atomic_uintptr_t backrefs;
 	atomic_uintptr_t remark;
 	uint16_t flags, in_mask, n_our_key;
 	uint8_t nlinks:4, max_diff_link:4, reserved;
@@ -707,6 +707,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	memcpy(nodeBlock, &tmpNodeBlock, sizeof(struct block_internal));
+	atomic_init(&nodeBlock->backrefs, (uintptr_t)NULL);
 	if(nodeBlock->flags & BI_REMARK){
 		atomic_init(&nodeBlock->remark, (uintptr_t)NULL);
 	}
@@ -1132,10 +1133,11 @@ static void *sync_thread(void *arg)
 static void reset_callback(struct ldus_rbtree *node)
 {
 	struct block_internal *bi = (struct block_internal *)node;
-	for(struct block_backrefs *to_free = bi->backrefs; to_free != NULL;){
-		bi->backrefs = to_free->next;
+	struct block_backrefs *tmp;
+	for(struct block_backrefs *to_free = (struct block_backrefs*)atomic_load_explicit(&bi->backrefs, memory_order_acquire); to_free != NULL;){
+		tmp = to_free->next;
 		xdag_free(to_free);
-		to_free = bi->backrefs;
+		to_free = tmp;
 	}
 	if((bi->flags & BI_REMARK) && bi->remark != (uintptr_t)NULL) {
 		xdag_free((char*)bi->remark);
@@ -1602,7 +1604,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 
 	if (!ba) return -1;
 
-	for (struct block_backrefs *br = bi->backrefs; br; br = br->next) {
+	for (struct block_backrefs *br = (struct block_backrefs*)atomic_load_explicit(&bi->backrefs, memory_order_acquire); br; br = br->next) {
 		for (i = N_BACKREFS; i && !br->backrefs[i - 1]; i--);
 
 		if (!i) {
@@ -1833,7 +1835,7 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 	if (!block_array) return -1;
 	
 	int i;
-	for (struct block_backrefs *br = bi->backrefs; br; br = br->next) {
+	for (struct block_backrefs *br = (struct block_backrefs*)atomic_load_explicit(&bi->backrefs, memory_order_acquire); br; br = br->next) {
 		for (i = N_BACKREFS; i && !br->backrefs[i - 1]; i--);
 		
 		if (!i) {
@@ -2009,23 +2011,25 @@ static void add_backref(struct block_internal* blockRef, struct block_internal* 
 {
 	int i = 0;
 
+	struct block_backrefs *tmp = (struct block_backrefs*)atomic_load_explicit(&blockRef->backrefs, memory_order_acquire);
 	// LIFO list: if the first element doesn't exist or it is full, a new element of the backrefs list will be created
 	// and added as first element of backrefs block list
-	if( blockRef->backrefs == NULL || blockRef->backrefs->backrefs[N_BACKREFS - 1]) {
+	if( tmp == NULL || tmp->backrefs[N_BACKREFS - 1]) {
 		struct block_backrefs *blockRefs_to_insert = xdag_malloc(sizeof(struct block_backrefs));
 		if(blockRefs_to_insert == NULL) {
 			xdag_err("xdag_malloc failed. [function add_backref]");
 			return;
 		}
 		memset(blockRefs_to_insert, 0, sizeof(struct block_backrefs));
-		blockRefs_to_insert->next = blockRef->backrefs;
-		blockRef->backrefs = blockRefs_to_insert;
+		blockRefs_to_insert->next = tmp;
+		atomic_store_explicit(&blockRef->backrefs, (uintptr_t)blockRefs_to_insert, memory_order_release);
+		tmp = blockRefs_to_insert;
 	}
 
 	// searching the first free array element
-	for(; blockRef->backrefs->backrefs[i]; ++i);
+	for(; tmp->backrefs[i]; ++i);
 	// adding the actual block memory address to the backrefs array
-	blockRef->backrefs->backrefs[i] = nodeBlock;
+	tmp->backrefs[i] = nodeBlock;
 }
 
 static inline int get_nfield(struct xdag_block *bref, int field_type)
