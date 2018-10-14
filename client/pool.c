@@ -6,6 +6,7 @@
 #include <math.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <stdatomic.h>
 #if defined(_WIN32) || defined(_WIN64)
 #else
 #include <netinet/in.h>
@@ -99,7 +100,7 @@ struct connection_pool_data {
 	time_t balance_refreshed_time;
 	uint32_t shares_count;
 	time_t last_share_time;
-	int deleted;
+	atomic_int deleted;
 	const char* disconnection_reason;
 	xdag_hash_t last_min_hash;
 	long double mean_log_difficulty;
@@ -534,6 +535,7 @@ void *pool_net_thread(void *arg)
 		new_connection->connection_data.port = peeraddr.sin_port;
 		new_connection->connection_data.connected_time = time(0);
 		new_connection->connection_data.last_share_time = new_connection->connection_data.connected_time; // we set time of last share to the current time in order to avoid immediate disconnection
+		atomic_init(&new_connection->connection_data.deleted, 0);
 
 		LL_APPEND(g_accept_connection_list_head, new_connection);
 		++g_connections_count;
@@ -993,7 +995,7 @@ void *pool_main_thread(void *arg)
 		{
 			struct pollfd *p = g_fds + index++;
 
-			if(elt->connection_data.deleted) {
+			if(atomic_load_explicit(&elt->connection_data.deleted, memory_order_acquire)) {
 				close_connection(elt, elt->connection_data.disconnection_reason);
 				continue;
 			}
@@ -1519,17 +1521,17 @@ void disconnect_connections(enum disconnect_type type, char *value)
 	LL_FOREACH(g_connection_list_head, elt)
 	{
 		if(type == DISCONNECT_ALL) {
-			elt->connection_data.deleted = 1;
 			elt->connection_data.disconnection_reason = "disconnected manually";
+			atomic_store_explicit(&elt->connection_data.deleted, 1, memory_order_release);
 		} else if(type == DISCONNECT_BY_ADRESS) {
 			if(memcmp(elt->connection_data.data, hash, sizeof(xdag_hashlow_t)) == 0) {
-				elt->connection_data.deleted = 1;
 				elt->connection_data.disconnection_reason = "disconnected manually";
+				atomic_store_explicit(&elt->connection_data.deleted, 1, memory_order_release);
 			}
 		} else if(type == DISCONNECT_BY_IP) {
 			if(elt->connection_data.ip == ip) {
-				elt->connection_data.deleted = 1;
 				elt->connection_data.disconnection_reason = "disconnected manually";
+				atomic_store_explicit(&elt->connection_data.deleted, 1, memory_order_release);
 			}
 		}
 	}
@@ -1547,8 +1549,8 @@ void* pool_remove_inactive_connections(void* arg)
 		LL_FOREACH(g_connection_list_head, elt)
 		{
 			if(current_time - elt->connection_data.last_share_time > 300) { //last share is received more than 5 minutes ago
-				elt->connection_data.deleted = 1;
 				elt->connection_data.disconnection_reason = "inactive connection";
+				atomic_store_explicit(&elt->connection_data.deleted, 1, memory_order_release);
 			}
 		}
 		pthread_mutex_unlock(&g_connections_mutex);
