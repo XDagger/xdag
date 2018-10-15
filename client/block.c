@@ -119,7 +119,7 @@ static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_pub
 int do_mining(struct xdag_block *block, struct block_internal **pretop, xdag_time_t send_time);
 void remove_orphan(struct block_internal*,int);
 void add_orphan(struct block_internal*,struct xdag_block*);
-static inline size_t remark_acceptance(struct block_internal*, xdag_remark_t);
+static inline size_t remark_acceptance(xdag_remark_t);
 static int add_remark_bi(struct block_internal*, xdag_remark_t);
 static void add_backref(struct block_internal*, struct block_internal*);
 static inline int get_nfield(struct xdag_block*, int);
@@ -532,9 +532,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 
 	/* check remark */
 	if(tmpNodeBlock.flags & BI_REMARK) {
-		char remark_buf[33] = {0};
-		memcpy(remark_buf, newBlock->field[remark_index].remark, sizeof(xdag_remark_t));
-		if(!validate_remark(remark_buf)) {
+		if(!remark_acceptance(newBlock->field[remark_index].remark)) {
 			err = 0xC;
 			goto end;
 		}
@@ -1975,7 +1973,7 @@ int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int
 	return 0;
 }
 
-static inline size_t remark_acceptance(struct block_internal* bi, xdag_remark_t origin)
+static inline size_t remark_acceptance(xdag_remark_t origin)
 {
 	char remark_buf[33] = {0};
 	memcpy(remark_buf, origin, sizeof(xdag_remark_t));
@@ -1983,13 +1981,12 @@ static inline size_t remark_acceptance(struct block_internal* bi, xdag_remark_t 
 	if(size){
 		return size;
 	}
-	bi->flags &= ~BI_REMARK;
 	return 0;
 }
 
 static int add_remark_bi(struct block_internal* bi, xdag_remark_t strbuf)
 {
-	size_t size = remark_acceptance(bi, strbuf);
+	size_t size = remark_acceptance(strbuf);
 	if(!(bi->flags & BI_REMARK)) {
 		return 0;
 	}
@@ -2056,19 +2053,17 @@ static inline const char* get_remark(struct block_internal *bi){
 
 static int load_remark(struct block_internal* bi) {
 	struct xdag_block buf;
-	int ref = bi->flags & BI_REF;
 	struct xdag_block *bref = xdag_storage_load(bi->hash, bi->time, bi->storage_pos, &buf);
 	if(bref == NULL) {
-		if(ref) {
-			bi->flags &= ~BI_REMARK;
-		}
 		return 0;
 	}
 
 	int remark_field = get_nfield(bref, XDAG_FIELD_REMARK);
 	if (remark_field < 0) {
 		xdag_err("Remark field not found [function: load_remark]");
+		pthread_mutex_lock(&block_mutex);
 		bi->flags &= ~BI_REMARK;
+		pthread_mutex_unlock(&block_mutex);
 		return 0;
 	}
 	return add_remark_bi(bi, bref->field[remark_field].remark);
