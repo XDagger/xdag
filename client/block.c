@@ -1578,8 +1578,14 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "                               block as transaction: details\n");
 	fprintf(out, " direction  address                                    amount\n");
 	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
-	if((bi->flags & BI_REF) && bi->ref != NULL) {
-		xdag_hash2address(bi->ref->hash, address);
+	int flags;
+	struct block_internal *ref;
+	pthread_mutex_lock(&block_mutex);
+	ref = bi->ref;
+	flags = bi->flags;
+	pthread_mutex_unlock(&block_mutex);
+	if((flags & BI_REF) && ref != NULL) {
+		xdag_hash2address(ref->hash, address);
 	} else {
 		strcpy(address, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 	}
