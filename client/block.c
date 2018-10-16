@@ -1987,9 +1987,6 @@ static inline size_t remark_acceptance(xdag_remark_t origin)
 static int add_remark_bi(struct block_internal* bi, xdag_remark_t strbuf)
 {
 	size_t size = remark_acceptance(strbuf);
-	if(!(bi->flags & BI_REMARK)) {
-		return 0;
-	}
 	char *remark_tmp = xdag_malloc(size + 1);
 	if(remark_tmp == NULL) {
 		xdag_err("xdag_malloc failed, [function add_remark_bi]");
