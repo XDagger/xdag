@@ -18,7 +18,14 @@ enum xdag_field_type {
 	XDAG_FIELD_SIGN_OUT,     //5
 	XDAG_FIELD_PUBLIC_KEY_0, //6
 	XDAG_FIELD_PUBLIC_KEY_1, //7
-	XDAG_FIELD_HEAD_TEST     //8
+	XDAG_FIELD_HEAD_TEST,    //8
+	XDAG_FIELD_RESERVE0,     //9
+	XDAG_FIELD_RESERVE1,     //10
+	XDAG_FIELD_RESERVE2,     //11
+	XDAG_FIELD_RESERVE3,     //12
+	XDAG_FIELD_RESERVE4,     //13
+	XDAG_FIELD_RESERVE5,     //14
+	XDAG_FIELD_RESERVE6      //15
 };
 
 enum xdag_message_type {
@@ -86,9 +93,13 @@ extern int xdag_traverse_our_blocks(void *data,
 extern int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag_hash_t hash,
 	xdag_amount_t amount, xdag_time_t time));
 
+// create a new block
+extern struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, xdag_amount_t fee,
+	xdag_time_t send_time, xdag_hash_t block_hash_result);
+
 // create and publish a block
-extern int xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, xdag_amount_t fee, 
-	xdag_time_t send_time, xdag_hash_t newBlockHashResult);
+extern int xdag_create_and_send_block(struct xdag_field *fields, int inputsCount, int outputsCount, xdag_amount_t fee,
+	xdag_time_t send_time, xdag_hash_t block_hash_result);
 
 // returns current balance for specified address or balance for all addresses if hash == 0
 extern xdag_amount_t xdag_get_balance(xdag_hash_t hash);

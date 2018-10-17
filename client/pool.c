@@ -147,12 +147,15 @@ static pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int pay_miners(xdag_time_t time);
 void remove_inactive_miners(void);
+void block_queue_append_new(struct xdag_block *b);
+struct xdag_block *block_queue_first(void);
 
 void *general_mining_thread(void *arg);
 void *pool_net_thread(void *arg);
 void *pool_main_thread(void *arg);
 void *pool_block_thread(void *arg);
 void *pool_remove_inactive_connections(void *arg);
+void *pool_payment_thread(void *arg);
 
 void update_mean_log_diff(struct connection_pool_data *, struct xdag_pool_task *, xdag_hash_t);
 
@@ -218,6 +221,18 @@ int xdag_initialize_pool(const char *pool_arg)
 		return -1;
 	}
 
+	err = pthread_create(&th, 0, pool_payment_thread, 0);
+	if(err != 0) {
+		printf("create pool_payment_thread failed: %s\n", strerror(err));
+		return -1;
+	}
+
+	err = pthread_detach(th);
+	if(err != 0) {
+		printf("detach pool_payment_thread failed: %s\n", strerror(err));
+		return -1;
+	}
+
 	xdag_mess("Starting general mining thread...");
 
 	g_stop_general_mining = 0;
@@ -244,7 +259,7 @@ void *general_mining_thread(void *arg)
 	}
 
 	while(!g_stop_general_mining) {
-		xdag_create_block(0, 0, 0, 0, xdag_main_time() << 16 | 0xffff, NULL);
+		xdag_create_and_send_block(0, 0, 0, 0, xdag_main_time() << 16 | 0xffff, NULL);
 	}
 
 	xdag_mess("Stopping general mining thread...");
@@ -761,17 +776,7 @@ static int is_block_data_received(connection_list_element *connection)
 
 			if(crc == crc_of_array((uint8_t*)conn_data->block, sizeof(struct xdag_block))) {
 				conn_data->block->field[0].transport_header = 0;
-
-				pthread_mutex_lock(&g_pool_mutex);
-
-				if(!g_firstb) {
-					g_firstb = g_lastb = conn_data->block;
-				} else {
-					g_lastb->field[0].transport_header = (uintptr_t)conn_data->block;
-					g_lastb = conn_data->block;
-				}
-
-				pthread_mutex_unlock(&g_pool_mutex);
+				block_queue_append_new(conn_data->block);
 			} else {
 				free(conn_data->block);
 			}
@@ -1027,9 +1032,35 @@ void *pool_main_thread(void *arg)
 
 void *pool_block_thread(void *arg)
 {
+	while(!g_xdag_sync_on) {
+		sleep(1);
+	}
+
+	for(;;) {
+		int processed = 0;
+
+		struct xdag_block *b = block_queue_first();
+
+		if(b) {
+			processed = 1;
+			b->field[0].transport_header = 2;
+
+			int res = xdag_add_block(b);
+			if(res > 0) {
+				xdag_send_new_block(b);
+			}
+			free(b);
+		}
+
+		if(!processed) sleep(1);
+	}
+
+	return 0;
+}
+
+void *pool_payment_thread(void *arg)
+{
 	xdag_time_t prev_task_time = 0;
-	struct xdag_block *b;
-	int res;
 
 	while(!g_xdag_sync_on) {
 		sleep(1);
@@ -1047,33 +1078,11 @@ void *pool_block_thread(void *arg)
 			processed = 1;
 			prev_task_time = current_task_time;
 
-			res = pay_miners(current_task_time - CONFIRMATIONS_COUNT + 1);
+			int res = pay_miners(current_task_time - CONFIRMATIONS_COUNT + 1);
 			remove_inactive_miners();
 
 			xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
 				hash[3], hash[2], hash[1], hash[0], (current_task_time - CONFIRMATIONS_COUNT + 1) << 16 | 0xffff, res);
-		}
-
-		pthread_mutex_lock(&g_pool_mutex);
-
-		if(g_firstb) {
-			b = g_firstb;
-			g_firstb = (struct xdag_block *)(uintptr_t)b->field[0].transport_header;
-			if(!g_firstb) g_lastb = 0;
-		} else {
-			b = 0;
-		}
-
-		pthread_mutex_unlock(&g_pool_mutex);
-
-		if(b) {
-			processed = 1;
-			b->field[0].transport_header = 2;
-
-			res = xdag_add_block(b);
-			if(res > 0) {
-				xdag_send_new_block(b);
-			}
 		}
 
 		if(!processed) sleep(1);
@@ -1229,7 +1238,9 @@ static void transfer_payment(struct miner_pool_data *miner, xdag_amount_t paymen
 	xdag_log_xfer(fields[0].data, fields[*field_index].data, payment_sum);
 
 	if(++*field_index == payments_per_block) {
-		xdag_create_block(fields, 1, *field_index - 1, 0, 0, NULL);
+		struct xdag_block *payment_block = xdag_create_block(fields, 1, *field_index - 1, 0, 0, NULL);
+		block_queue_append_new(payment_block);
+
 		*field_index = 1;
 		fields[0].amount = 0;
 	}
@@ -1273,7 +1284,8 @@ static void do_payments(uint64_t *hash, int payments_per_block, struct payment_d
 	}
 
 	if(field_index > 1) {
-		xdag_create_block(fields, 1, field_index - 1, 0, 0, NULL);
+		struct xdag_block *payment_block = xdag_create_block(fields, 1, field_index - 1, 0, 0, NULL);
+		block_queue_append_new(payment_block);
 	}
 }
 
@@ -1535,6 +1547,42 @@ void* pool_remove_inactive_connections(void* arg)
 	}
 
 	return NULL;
+}
+
+/* append new generated block and new blocks received from miner to list */
+void block_queue_append_new(struct xdag_block *b)
+{
+	if(!b) return;
+
+	pthread_mutex_lock(&g_pool_mutex);
+
+	if(!g_firstb) {
+		g_firstb = g_lastb = b;
+	} else {
+		g_lastb->field[0].transport_header = (uint64_t)(uintptr_t)b;
+		g_lastb = b;
+	}
+
+	pthread_mutex_unlock(&g_pool_mutex);
+}
+
+/* get the first new block in list */
+struct xdag_block *block_queue_first(void)
+{
+	struct xdag_block *b = 0;
+	pthread_mutex_lock(&g_pool_mutex);
+
+	if(g_firstb) {
+		b = g_firstb;
+		g_firstb = (struct xdag_block *)(uintptr_t)b->field[0].transport_header;
+		if(!g_firstb) g_lastb = 0;
+	} else {
+		b = 0;
+	}
+
+	pthread_mutex_unlock(&g_pool_mutex);
+
+	return b;
 }
 
 void update_mean_log_diff(struct connection_pool_data *conn_data, struct xdag_pool_task *task, xdag_hash_t hash)

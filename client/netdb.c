@@ -26,7 +26,7 @@
 #define whitelist_url_testnet    "https://raw.githubusercontent.com/XDagger/xdag/master/client/netdb-white-testnet.txt"
 #define WHITE_URL                (g_xdag_testnet ? whitelist_url_testnet : whitelist_url)
 
-#define PREVENT_AUTO_REFRESH 0 //for test purposes
+int g_prevent_auto_refresh = 0;
 
 pthread_mutex_t g_white_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -332,25 +332,27 @@ static void *refresh_thread(void *arg)
 
 	for (;;) {
 		time_t prev_time = time(0);
-		
-		xdag_mess("try to refresh white-list...");
-		
-		char *resp = http_get(WHITE_URL);
-		if(resp) {
-			if(is_valid_whitelist(resp)) {
-				pthread_mutex_lock(&g_white_list_mutex);
-				FILE *f = xdag_open_file(DATABASEWHITE, "w");
-				if(f) {
-					fwrite(resp, 1, strlen(resp), f);
-					fclose(f);
-				}
-				pthread_mutex_unlock(&g_white_list_mutex);
-			} else {
-				xdag_err("white-list format is incorrect. \n%s", resp);
-			}
 
-			xdag_info("\n%s", resp);
-			free(resp);
+		if(!g_prevent_auto_refresh) {
+			xdag_mess("try to refresh white-list...");
+
+			char *resp = http_get(WHITE_URL);
+			if(resp) {
+				if(is_valid_whitelist(resp)) {
+					pthread_mutex_lock(&g_white_list_mutex);
+					FILE *f = xdag_open_file(DATABASEWHITE, "w");
+					if(f) {
+						fwrite(resp, 1, strlen(resp), f);
+						fclose(f);
+					}
+					pthread_mutex_unlock(&g_white_list_mutex);
+				} else {
+					xdag_err("white-list format is incorrect. \n%s", resp);
+				}
+
+				xdag_info("\n%s", resp);
+				free(resp);
+			}
 		}
 		
 		while (time(0) - prev_time < 900) { // refresh every 15 minutes
@@ -394,7 +396,6 @@ int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port
 		xdag_err("detach moniter_thread failed.");
 	}
 
-#if !PREVENT_AUTO_REFRESH
 	if(pthread_create(&t, 0, refresh_thread, 0)) {
 		xdag_fatal("Can't start refresh white-list netdb thread\n");
 		return -1;
@@ -402,8 +403,7 @@ int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port
 	if(pthread_detach(t)) {
 		xdag_err("detach refresh_thread failed.");
 	}
-#endif
-	
+
 	return 0;
 }
 

@@ -13,6 +13,9 @@
 #include "pool.h"
 #include "version.h"
 #include "../dnet/dnet_main.h"
+#include "uthash/utlist.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 #define NEW_BLOCK_TTL   5
 #define REQUEST_WAIT    64
@@ -310,7 +313,7 @@ int xdag_transport_start(int flags, const char *bindto, int npairs, const char *
 		version = strchr(XDAG_VERSION, '-');
 		if (version) dnet_set_self_version(version + 1);
 	}
-	
+
 	return res;
 }
 
@@ -380,7 +383,6 @@ int xdag_send_new_block(struct xdag_block *b)
 {
 	dnet_send_xdag_packet(b, (void*)(uintptr_t)NEW_BLOCK_TTL);
 	xdag_send_block_via_pool(b);
-
 	return 0;
 }
 
