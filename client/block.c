@@ -26,6 +26,7 @@
 #include "utils/moving_statistics/moving_average.h"
 #include "mining_common.h"
 #include "time.h"
+#include "math.h"
 
 #define MAIN_CHAIN_PERIOD       (64 << 10)
 #define MAX_WAITING_MAIN        1
@@ -128,26 +129,6 @@ static int load_remark(struct block_internal*);
 static void order_ourblocks_by_amount(struct block_internal *bi);
 static inline void add_ourblock(struct block_internal *nodeBlock);
 static inline void remove_ourblock(struct block_internal *nodeBlock);
-
-// convert xdag_amount_t to long double
-long double amount2xdags(xdag_amount_t amount)
-{
-	return xdag_amount2xdag(amount) + (long double)xdag_amount2cheato(amount) / 1000000000;
-}
-
-xdag_amount_t xdags2amount(const char *str)
-{
-	long double sum;
-	if(sscanf(str, "%Lf", &sum) != 1 || sum <= 0) {
-		return 0;
-	}
-	long double flr = floorl(sum);
-	xdag_amount_t res = (xdag_amount_t)flr << 32;
-	sum -= flr;
-	sum = ldexpl(sum, 32);
-	flr = ceill(sum);
-	return res + (xdag_amount_t)flr;
-}
 
 static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
 {
