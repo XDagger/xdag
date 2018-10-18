@@ -79,7 +79,4 @@ extern int(*g_xdag_show_state)(const char *state, const char *balance, const cha
 };
 #endif
 
-#define xdag_amount2xdag(amount) ((unsigned)((amount) >> 32))
-#define xdag_amount2cheato(amount) ((unsigned)(((uint64_t)(unsigned)(amount) * 1000000000) >> 32))
-
 #endif

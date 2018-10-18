@@ -90,12 +90,6 @@ struct xdag_block {
 #ifdef __cplusplus
 extern "C" {
 #endif
-	
-// convert cheato to xdag
-extern long double amount2xdags(xdag_amount_t amount);
-
-// contert xdag to cheato
-extern xdag_amount_t xdags2amount(const char *str);
 
 // start of regular block processing
 extern int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address);
