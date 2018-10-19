@@ -1,4 +1,4 @@
-/* синхронизация, T13.738-T13.764 $DVS:time$ */
+/* синхронизация, T13.738-T14.582 $DVS:time$ */
 
 #ifndef XDAG_SYNC_H
 #define XDAG_SYNC_H
@@ -8,6 +8,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern int g_xdag_sync_on;
 	
 /* checks a block and includes it in the database with synchronization, ruturs non-zero value in case of error */
 extern int xdag_sync_add_block(struct xdag_block *b, void *conn);
@@ -17,8 +19,6 @@ extern int xdag_sync_pop_block(struct xdag_block *b);
 
 /* initialized block synchronization */
 extern int xdag_sync_init(void);
-
-extern int g_xdag_sync_on;
 	
 #ifdef __cplusplus
 };

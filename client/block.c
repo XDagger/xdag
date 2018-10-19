@@ -1,4 +1,4 @@
-/* block processing, T13.654-T14.390 $DVS:time$ */
+/* block processing, T13.654-T14.582 $DVS:time$ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -28,14 +28,11 @@
 #include "time.h"
 #include "math.h"
 
-#define MAIN_CHAIN_PERIOD       (64 << 10)
 #define MAX_WAITING_MAIN        1
-#define DEF_TIME_LIMIT          0 // (MAIN_CHAIN_PERIOD / 2)
 #define MAIN_START_AMOUNT       (1ll << 42)
 #define MAIN_BIG_PERIOD_LOG     21
 #define MAX_LINKS               15
 #define MAKE_BLOCK_PERIOD       13
-#define QUERY_RETRIES           2
 
 #define CACHE			1
 #define CACHE_MAX_SIZE		600000
@@ -99,7 +96,7 @@ enum orphan_remove_actions {
 static pthread_mutex_t g_create_block_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static xdag_amount_t g_balance = 0;
-static xdag_time_t time_limit = DEF_TIME_LIMIT, xdag_era = XDAG_MAIN_ERA;
+extern xdag_time_t g_time_limit;
 static struct ldus_rbtree *root = 0, *cache_root = 0;
 static struct block_internal *volatile top_main_chain = 0, *volatile pretop_main_chain = 0;
 static struct block_internal *ourfirst = 0, *ourlast = 0;
@@ -129,6 +126,8 @@ static int load_remark(struct block_internal*);
 static void order_ourblocks_by_amount(struct block_internal *bi);
 static inline void add_ourblock(struct block_internal *nodeBlock);
 static inline void remove_ourblock(struct block_internal *nodeBlock);
+void *add_block_callback(void *block, void *data);
+extern void *sync_thread(void *arg);
 
 static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
 {
@@ -782,7 +781,7 @@ end:
 	return -err;
 }
 
-static void *add_block_callback(void *block, void *data)
+void *add_block_callback(void *block, void *data)
 {
 	struct xdag_block *b = (struct xdag_block *)block;
 	xdag_time_t *t = (xdag_time_t*)data;
@@ -809,7 +808,7 @@ static void *add_block_callback(void *block, void *data)
 int xdag_add_block(struct xdag_block *b)
 {
 	pthread_mutex_lock(&block_mutex);
-	int res = add_block_nolock(b, time_limit);
+	int res = add_block_nolock(b, g_time_limit);
 	pthread_mutex_unlock(&block_mutex);
 
 	return res;
@@ -1044,71 +1043,6 @@ int do_mining(struct xdag_block *block, struct block_internal **pretop, xdag_tim
 	return 1;
 }
 
-static int request_blocks(xdag_time_t t, xdag_time_t dt)
-{
-	int i, res = 0;
-
-	if (!g_xdag_sync_on) return -1;
-
-	if (dt <= REQUEST_BLOCKS_MAX_TIME) {
-		xdag_time_t t0 = time_limit;
-
-		for (i = 0;
-			xdag_info("QueryB: t=%llx dt=%llx", t, dt),
-			i < QUERY_RETRIES && (res = xdag_request_blocks(t, t + dt, &t0, add_block_callback)) < 0;
-			++i);
-
-		if (res <= 0) {
-			return -1;
-		}
-	} else {
-		struct xdag_storage_sum lsums[16], rsums[16];
-		if (xdag_load_sums(t, t + dt, lsums) <= 0) {
-			return -1;
-		}
-
-		xdag_debug("Local : [%s]", xdag_log_array(lsums, 16 * sizeof(struct xdag_storage_sum)));
-
-		for (i = 0;
-			xdag_info("QueryS: t=%llx dt=%llx", t, dt),
-			i < QUERY_RETRIES && (res = xdag_request_sums(t, t + dt, rsums)) < 0;
-			++i);
-
-		if (res <= 0) {
-			return -1;
-		}
-
-		dt >>= 4;
-
-		xdag_debug("Remote: [%s]", xdag_log_array(rsums, 16 * sizeof(struct xdag_storage_sum)));
-
-		for (i = 0; i < 16; ++i) {
-			if (lsums[i].size != rsums[i].size || lsums[i].sum != rsums[i].sum) {
-				request_blocks(t + i * dt, dt);
-			}
-		}
-	}
-
-	return 0;
-}
-
-/* a long procedure of synchronization */
-static void *sync_thread(void *arg)
-{
-	xdag_time_t t = 0;
-
-	for (;;) {
-		xdag_time_t st = get_timestamp();
-		if (st - t >= MAIN_CHAIN_PERIOD) {
-			t = st;
-			request_blocks(0, 1ll << 48);
-		}
-		sleep(1);
-	}
-
-	return 0;
-}
-
 static void reset_callback(struct ldus_rbtree *node)
 {
 	struct block_internal *bi = (struct block_internal *)node;
@@ -1283,10 +1217,6 @@ int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address)
 {
 	pthread_mutexattr_t attr;
 	pthread_t th;
-
-	if (g_xdag_testnet) {
-		xdag_era = XDAG_TEST_ERA;
-	}
 
 	if (!is_pool) {
 		g_light_mode = 1;

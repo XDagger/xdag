@@ -1,9 +1,10 @@
-/* basic variables, T13.714-T14.297 $DVS:time$ */
+/* basic variables, T13.714-T14.582 $DVS:time$ */
 
 #ifndef XDAG_MAIN_H
 #define XDAG_MAIN_H
 
 #include <time.h>
+#include "time.h"
 #include "block.h"
 #include "system.h"
 
@@ -14,9 +15,6 @@ enum xdag_states
 #undef xdag_state
 };
 
-/* the maximum period of time for which blocks are requested, not their amounts */
-#define REQUEST_BLOCKS_MAX_TIME	(1 << 20)
-
 extern struct xdag_stats
 {
     xdag_diff_t difficulty, max_difficulty;
@@ -24,8 +22,6 @@ extern struct xdag_stats
     uint64_t nmain, total_nmain;
     uint32_t nhosts, total_nhosts, reserved1, reserved2;
 } g_xdag_stats;
-
-#define HASHRATE_LAST_MAX_TIME	(64 * 4) // numbers of main blocks in about 4H, to calculate the pool and network mean hashrate
 
 extern struct xdag_ext_stats
 {
