@@ -48,6 +48,7 @@
 		38A15E9920544F3F00598EC2 /* terminal.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6C20544F3F00598EC2 /* terminal.c */; };
 		38A15E9A20544F3F00598EC2 /* transport.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E6E20544F3F00598EC2 /* transport.c */; };
 		38A15E9B20544F3F00598EC2 /* wallet.c in Sources */ = {isa = PBXBuildFile; fileRef = 38A15E7120544F3F00598EC2 /* wallet.c */; };
+		38B1CF512178E1A50014E30F /* math.c in Sources */ = {isa = PBXBuildFile; fileRef = 38B1CF502178E1A50014E30F /* math.c */; };
 		38B395182056D68E004DD3EA /* x86_64cpuid-mac.s in Sources */ = {isa = PBXBuildFile; fileRef = 38B395162056D68E004DD3EA /* x86_64cpuid-mac.s */; };
 		38B395192056D68E004DD3EA /* sha256-mb-x86_64-mac.s in Sources */ = {isa = PBXBuildFile; fileRef = 38B395172056D68E004DD3EA /* sha256-mb-x86_64-mac.s */; };
 		38B3951A2056DE70004DD3EA /* netdb-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 38A15E5A20544F3F00598EC2 /* netdb-testnet.txt */; };
@@ -178,6 +179,8 @@
 		38A15E7020544F3F00598EC2 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
 		38A15E7120544F3F00598EC2 /* wallet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = wallet.c; sourceTree = "<group>"; };
 		38A15E7220544F3F00598EC2 /* wallet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wallet.h; sourceTree = "<group>"; };
+		38B1CF4F2178E1A50014E30F /* math.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = math.h; sourceTree = "<group>"; };
+		38B1CF502178E1A50014E30F /* math.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = math.c; sourceTree = "<group>"; };
 		38B395162056D68E004DD3EA /* x86_64cpuid-mac.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = "x86_64cpuid-mac.s"; sourceTree = "<group>"; };
 		38B395172056D68E004DD3EA /* sha256-mb-x86_64-mac.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = "sha256-mb-x86_64-mac.s"; sourceTree = "<group>"; };
 		418AAFF5213BB3A900E96520 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = lib/openssl/lib/libcrypto.a; sourceTree = "<group>"; };
@@ -434,6 +437,8 @@
 		38A15E4220544F3F00598EC2 /* client */ = {
 			isa = PBXGroup;
 			children = (
+				38B1CF502178E1A50014E30F /* math.c */,
+				38B1CF4F2178E1A50014E30F /* math.h */,
 				389AD6EC216BB67B007BA2ED /* time.c */,
 				389AD6ED216BB67B007BA2ED /* time.h */,
 				3883C70D20EA651300041D3A /* network.c */,
@@ -605,6 +610,7 @@
 				38439AFB206BF6D100D563A8 /* mining_common.c in Sources */,
 				38B395182056D68E004DD3EA /* x86_64cpuid-mac.s in Sources */,
 				385827B620737CC6009C83CB /* cJSON.c in Sources */,
+				38B1CF512178E1A50014E30F /* math.c in Sources */,
 				38A15E8B20544F3F00598EC2 /* crypt.c in Sources */,
 				38A15E8620544F3F00598EC2 /* address.c in Sources */,
 				383256BB206BF099006CAE67 /* miner.c in Sources */,
