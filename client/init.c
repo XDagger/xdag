@@ -1,4 +1,4 @@
-/* cheatcoin main, T13.654-T14.325 $DVS:time$ */
+/* cheatcoin main, T13.654-T14.582 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -178,6 +178,11 @@ int xdag_init(int argc, char **argv, int isGui)
 			printUsage(argv[0]);
 			return 0;
 		}
+	}
+
+	if(!xdag_time_init()) {
+		printf("Cannot initialize time module\n");
+		return -1;
 	}
 
 	if(!xdag_network_init()) {
