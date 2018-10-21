@@ -1913,7 +1913,7 @@ static int add_remark_bi(struct block_internal* bi, xdag_remark_t strbuf)
 	memcpy(remark_tmp, strbuf, size);
 	uintptr_t expected_value = 0 ;
 	if(!atomic_compare_exchange_strong_explicit(&bi->remark, &expected_value, (uintptr_t)remark_tmp, memory_order_acq_rel, memory_order_relaxed)){
-		free(remark_tmp);		
+		free(remark_tmp);
 	}
 	return 1;
 }

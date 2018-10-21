@@ -41,6 +41,7 @@
     <ClCompile Include="..\..\client\json-rpc\rpc_procedures.c" />
     <ClCompile Include="..\..\client\json-rpc\rpc_service.c" />
     <ClCompile Include="..\..\client\json-rpc\rpc_wrapper.c" />
+    <ClCompile Include="..\..\client\math.c" />
     <ClCompile Include="..\..\client\memory.c" />
     <ClCompile Include="..\..\client\miner.c" />
     <ClCompile Include="..\..\client\mining_common.c" />
@@ -64,6 +65,7 @@
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_random.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_string.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\lib\dfsrsa.c" />
+    <ClCompile Include="..\stdatomic.c" />
     <ClCompile Include="..\system.c" />
   </ItemGroup>
   <ItemGroup>
@@ -81,6 +83,7 @@
     <ClInclude Include="..\..\client\json-rpc\rpc_procedures.h" />
     <ClInclude Include="..\..\client\json-rpc\rpc_service.h" />
     <ClInclude Include="..\..\client\json-rpc\rpc_wrapper.h" />
+    <ClInclude Include="..\..\client\math.h" />
     <ClInclude Include="..\..\client\memory.h" />
     <ClInclude Include="..\..\client\miner.h" />
     <ClInclude Include="..\..\client\mining_common.h" />
@@ -120,6 +123,7 @@
     <ClInclude Include="..\arpa\inet.h" />
     <ClInclude Include="..\netdb.h" />
     <ClInclude Include="..\netinet\in.h" />
+    <ClInclude Include="..\stdatomic.h" />
     <ClInclude Include="..\sys\ioctl.h" />
     <ClInclude Include="..\sys\resource.h" />
     <ClInclude Include="..\sys\socket.h" />
