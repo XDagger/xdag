@@ -531,8 +531,8 @@ void *pool_net_thread(void *arg)
 		new_connection->connection_data.connection_descriptor.fd = fd;
 		new_connection->connection_data.connection_descriptor.events = POLLIN | POLLOUT;
 		new_connection->connection_data.connection_descriptor.revents = 0;
-		int ip = new_connection->connection_data.ip = peeraddr.sin_addr.s_addr;
-		new_connection->connection_data.port = peeraddr.sin_port;
+		uint32_t ip = new_connection->connection_data.ip = peeraddr.sin_addr.s_addr;
+		uint16_t port = new_connection->connection_data.port = peeraddr.sin_port;
 		new_connection->connection_data.connected_time = time(0);
 		new_connection->connection_data.last_share_time = new_connection->connection_data.connected_time; // we set time of last share to the current time in order to avoid immediate disconnection
 		atomic_init(&new_connection->connection_data.deleted, 0);
@@ -542,7 +542,7 @@ void *pool_net_thread(void *arg)
 		pthread_mutex_unlock(&g_connections_mutex);
 
 		xdag_info("Pool  : miner %d connected from %u.%u.%u.%u:%u", g_connections_count,
-			ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(new_connection->connection_data.port));
+			ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port));
 	}
 
 	return 0;
