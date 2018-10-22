@@ -1178,7 +1178,7 @@ static double countpay(struct miner_pool_data *miner, int confirmation_index, do
 	return diff2pay(sum, diff_count);
 }
 
-static int precalculate_payments(uint64_t *hash, int confirmation_index, struct payment_data *data, double *diff, double *prev_diff, uint64_t *nonce)
+static double precalculate_payments(uint64_t *hash, int confirmation_index, struct payment_data *data, double *diff, double *prev_diff, uint64_t *nonce)
 {
 	miner_list_element *elt;
 
@@ -1347,9 +1347,10 @@ int pay_miners(xdag_time_t time)
 
 	double *diff = malloc(2 * miners_count * sizeof(double));
 	if(!diff) return -8;
-	double *prev_diff = diff + miners_count;
 
-	if(!precalculate_payments(hash, confirmation_index, &data, diff, prev_diff, nonce)) {
+	double *prev_diff = diff + miners_count;
+	double prev_sum = precalculate_payments(hash, confirmation_index, &data, diff, prev_diff, nonce);
+	if(prev_sum == 0) {
 		free(diff);
 		return -9;
 	}
