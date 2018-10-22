@@ -22,6 +22,6 @@ typedef volatile uintptr_t atomic_uintptr_t;
 #define atomic_load_explicit(ptr, memory_order) *(ptr)
 
 extern int atomic_compare_exchange_strong(atomic_int *ptr, int *expected, int desired);
-#define atomic_compare_exchange_strong_explicit(ptr, expected, desired, memory_order_expected, memory_order_desired) atomic_compare_exchange_strong(ptr, expected, desired)
+#define atomic_compare_exchange_strong_explicit(ptr, expected, desired, memory_order_success, memory_order_failure) atomic_compare_exchange_strong(ptr, expected, desired)
 
 #endif
