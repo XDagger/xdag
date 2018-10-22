@@ -568,6 +568,15 @@ static void angelize(void)
 				abort();
 			}
 		}
+		
+		if (WIFEXITED(stat)) {
+			dnet_err("exited, status=%d\n", WEXITSTATUS(stat));
+		} else if (WIFSIGNALED(stat)) {
+			dnet_err("killed by signal %d\n", WTERMSIG(stat));
+		} else if (WIFSTOPPED(stat)) {
+			dnet_err("stopped by signal %d\n", WSTOPSIG(stat));
+		}
+
 		if(stat >= 0 && stat <= 5) {
 			exit(stat);
 		}
