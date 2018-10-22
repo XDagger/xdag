@@ -11,7 +11,7 @@ typedef enum memory_order {
 } memory_order;
 
 typedef int atomic_int;
-typedef uintptr_t atomic_uintptr_t;
+typedef volatile uintptr_t atomic_uintptr_t;
 
 #define atomic_init(ptr, value) (void)(*(ptr) = (value))
 
