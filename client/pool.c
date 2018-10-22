@@ -551,6 +551,8 @@ void *pool_net_thread(void *arg)
 static void close_connection(connection_list_element *connection, const char *message)
 {
 	struct connection_pool_data *conn_data = &connection->connection_data;
+	struct xdag_field id;
+	enum miner_state state = MINER_UNKNOWN;
 
 	pthread_mutex_lock(&g_connections_mutex);
 	LL_DELETE(g_connection_list_head, connection);
@@ -569,8 +571,11 @@ static void close_connection(connection_list_element *connection, const char *me
 	if(conn_data->miner) {
 		--conn_data->miner->connections_count;
 		if(conn_data->miner->connections_count == 0) {
-			conn_data->miner->state = MINER_ARCHIVE;
-		}
+			state = conn_data->miner->state = MINER_ARCHIVE;
+			id = conn_data->miner->id;
+		} else {
+			state = conn_data->miner->state;
+		}	
 	}
 	pthread_mutex_unlock(&g_connections_mutex);
 
@@ -579,7 +584,7 @@ static void close_connection(connection_list_element *connection, const char *me
 
 	if(conn_data->miner) {
 		char address_buf[33] = {0};
-		xdag_hash2address(conn_data->miner->id.data, address_buf);
+		xdag_hash2address((state == MINER_ARCHIVE ? id.data : conn_data->miner->id.data), address_buf);
 		xdag_info("Pool: miner %s disconnected from %u.%u.%u.%u:%u by %s", address_buf,
 			ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port), message);
 	} else {
