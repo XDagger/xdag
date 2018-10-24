@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <stdatomic.h>
+#include <float.h>
 #if defined(_WIN32) || defined(_WIN64)
 #else
 #include <netinet/in.h>
@@ -1350,7 +1351,7 @@ int pay_miners(xdag_time_t time)
 
 	double *prev_diff = diff + miners_count;
 	double prev_sum = precalculate_payments(hash, confirmation_index, &data, diff, prev_diff, nonce);
-	if(prev_sum == 0) {
+	if(prev_sum <= DBL_EPSILON) {
 		free(diff);
 		return -9;
 	}
