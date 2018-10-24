@@ -1,4 +1,4 @@
-/* локальное хранилище, T13.663-T13.825 $DVS:time$ */
+/* локальное хранилище, T13.663-T14.596 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -246,7 +246,10 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 
 		for (i = 0; i < k; ++i) {
 			pbuf[i]->field[0].transport_header = pos0 + ((uint8_t*)pbuf[i] - (uint8_t*)buf);
-			if (callback(pbuf[i], data)) return sum;
+			if (callback(pbuf[i], data)) {
+				free(buf);
+				return sum;
+			}
 			sum++;
 		}
 
