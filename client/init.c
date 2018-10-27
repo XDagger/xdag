@@ -110,8 +110,12 @@ int xdag_init(int argc, char **argv, int isGui)
 			return 0;
 		} else if(ARG_EQUAL(argv[i], "-i", "")) { /* interactive mode */
 			return terminal();
-		} else if(ARG_EQUAL(argv[i], "-l", "")) { /* list balance */
-			return out_balances();
+		} else if(ARG_EQUAL(argv[i], "-z", "")) { /* memory map  */
+			if (++i < argc)
+				xdag_mem_tempfile_path(argv[i]);
+		} else if(ARG_EQUAL(argv[i], "-t", "")) { /* connect test net */
+			g_xdag_testnet = 1;
+			g_block_header_type = XDAG_FIELD_HEAD_TEST; //block header has the different type in the test network
 		} else if(ARG_EQUAL(argv[i], "-m", "")) { /* mining thread number */
 			if (++i < argc) {
 				sscanf(argv[i], "%d", &mining_threads_count);
@@ -131,8 +135,6 @@ int xdag_init(int argc, char **argv, int isGui)
 		} else if(ARG_EQUAL(argv[i], "-s", "")) { /* address of this node */
 			if (++i < argc)
 				bindto = argv[i];
-		} else if(ARG_EQUAL(argv[i], "-t", "")) { /* connect test net */
-			g_xdag_testnet = 1;
 		} else if(ARG_EQUAL(argv[i], "-v", "")) { /* log level */
 			if (++i < argc && sscanf(argv[i], "%d", &level) == 1) {
 				xdag_set_log_level(level);
@@ -140,9 +142,6 @@ int xdag_init(int argc, char **argv, int isGui)
 				printf("Illevel use of option -v\n");
 				return -1;
 			}
-		} else if(ARG_EQUAL(argv[i], "-z", "")) { /* memory map  */
-			if (++i < argc)
-				xdag_mem_tempfile_path(argv[i]);
 		} else if(ARG_EQUAL(argv[i], "", "-rpc-enable")) { /* enable JSON-RPC service */
 			is_rpc = 1;
 		} else if(ARG_EQUAL(argv[i], "", "-rpc-port")) { /* set JSON-RPC service port */
@@ -174,6 +173,8 @@ int xdag_init(int argc, char **argv, int isGui)
 		} else if(ARG_EQUAL(argv[i], "", "-disable-refresh")) { /* disable auto refresh white list */
 			++i;
 			g_prevent_auto_refresh = 1;
+		} else if(ARG_EQUAL(argv[i], "-l", "")) { /* list balance */
+			return out_balances();
 		} else {
 			printUsage(argv[0]);
 			return 0;
@@ -218,9 +219,6 @@ int xdag_init(int argc, char **argv, int isGui)
 		}
 	}
 
-	if(g_xdag_testnet) {
-		g_block_header_type = XDAG_FIELD_HEAD_TEST; //block header has the different type in the test network
-	}
 	if(g_disable_mining && g_is_miner) {
 		g_disable_mining = 0;   // this option is only for pools
 	}
