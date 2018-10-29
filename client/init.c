@@ -171,7 +171,6 @@ int xdag_init(int argc, char **argv, int isGui)
 				return -1;
 			}
 		} else if(ARG_EQUAL(argv[i], "", "-disable-refresh")) { /* disable auto refresh white list */
-			++i;
 			g_prevent_auto_refresh = 1;
 		} else if(ARG_EQUAL(argv[i], "-l", "")) { /* list balance */
 			return out_balances();
