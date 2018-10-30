@@ -25,6 +25,7 @@
 #include "log.h"
 #include "../system.h"
 #include "math.h"
+#include <math.h>
 
 static pthread_mutex_t g_detect_mutex = PTHREAD_MUTEX_INITIALIZER;
 
