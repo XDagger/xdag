@@ -241,7 +241,7 @@ int dnet_test_connection(void *connection)
 
 static int close_connection(struct xconnection *conn, int error, const char *mess)
 {
-	int nconn = conn - g_connections, nthread = nconn / MAX_CONNECTIONS_PER_THREAD, nfd, fd, nconns;
+	int nconn = conn - g_connections, nthread = nconn / MAX_CONNECTIONS_PER_THREAD, nfd, fd;
 	struct xsector *xs, *xs1;
 	struct xthread *t = g_threads + nthread;
 	if(nconn < 0 || nconn >= g_nthreads * MAX_CONNECTIONS_PER_THREAD || conn != g_connections + nconn) {
@@ -252,7 +252,7 @@ static int close_connection(struct xconnection *conn, int error, const char *mes
 		return -1;
 	}
 	pthread_mutex_lock(&t->mutex);
-	nconns = t->nconnections;
+	int nconns = t->nconnections;
 	if(nfd >= nconns) {
 		pthread_mutex_unlock(&t->mutex);
 		return -1;
@@ -261,7 +261,8 @@ static int close_connection(struct xconnection *conn, int error, const char *mes
 		(*dnet_connection_close_notify)(conn);
 	}
 	fd = t->fds[nfd].fd;
-	t->nconnections--; nconns--;
+	t->nconnections--; 
+	nconns--;
 	if(nconns) {
 		t->fds[nfd].fd = t->fds[nconns].fd;
 		t->fds[nfd].revents = t->fds[nconns].revents;
@@ -319,12 +320,15 @@ void *dnet_send_xdag_packet(void *block, void *connection_to)
 			}
 			n %= sum;
 			if(n >= g_threads[i].nconnections) {
-				n -= g_threads[i].nconnections; i++;
+				n -= g_threads[i].nconnections; 
+				i++;
 				continue;
 			}
 			conn = g_threads[i].conn[n];
 			if(conn->out_queue_size >= MAX_OUT_QUEUE_SIZE || conn->packets_out < FIRST_NSECTORS) {
-				n++; steps++; continue;
+				n++; 
+				steps++; 
+				continue;
 			}
 			break;
 		}
@@ -395,7 +399,7 @@ static void *xthread_main(void *arg)
 			struct xconnection *conn = t->conn[n];
 			if(t->fds[n].revents & ~(POLLIN | POLLOUT)
 				|| (conn->packets_in <= conn->dropped_in + FIRST_NSECTORS
-				&& time(0) > conn->created + BAD_CONN_TIMEOUT_SEC)) {
+					&& time(0) > conn->created + BAD_CONN_TIMEOUT_SEC)) {
 
 				char mess[128] = {0};
 				if(t->fds[n].revents & ~(POLLIN | POLLOUT)) {
@@ -403,7 +407,7 @@ static void *xthread_main(void *arg)
 						int error = 0;
 						socklen_t errlen = sizeof(error);
 						getsockopt(t->fds[n].fd, SOL_SOCKET, SO_ERROR, (void *)&error, &errlen);
-						sprintf(mess, "%s", strerror(error));
+						snprintf(mess, 127, "%s", strerror(error));
 					} else if(t->fds[n].revents & POLLHUP) {
 						sprintf(mess, "%s", "hang up");
 					} else {
@@ -492,7 +496,8 @@ close:
 							}
 							conn->crypt->last_sent = time(0);
 						}
-					} else {
+					}
+					if(conn->crypt) {
 						memcpy((struct xsector *)conn->crypt + conn->packets_in, xs, SECTOR_SIZE);
 						if(conn->packets_in == FIRST_NSECTORS - 1) {
 							dfsrsa_crypt(conn->crypt->sect0.word, SECTOR_SIZE / sizeof(dfsrsa_t),
@@ -594,7 +599,8 @@ skip_in:
 						if(res > 0 && conn->part) {
 							continue;
 						}
-						err = res << 4 | 8; goto close;
+						err = res << 4 | 8; 
+						goto close;
 					}
 				}
 				if(conn->crypt) {
@@ -703,7 +709,7 @@ static void angelize(void)
 				abort();
 			}
 		}
-		
+
 		if (WIFEXITED(stat)) {
 			dnet_err("exited, status=%d\n", WEXITSTATUS(stat));
 		} else if (WIFSIGNALED(stat)) {
