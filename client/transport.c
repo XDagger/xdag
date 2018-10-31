@@ -341,7 +341,10 @@ static int do_request(int type, xdag_time_t start_time, xdag_time_t end_time, vo
 	
 	if (type == XDAG_MESSAGE_SUMS_REQUEST) {
 		reply_connection = dnet_send_xdag_packet(&b, 0);
-		if (!reply_connection) return 0;
+		if (!reply_connection) {
+			pthread_mutex_unlock(&g_process_mutex);
+			return 0;
+		}
 	} else {
 		dnet_send_xdag_packet(&b, reply_connection);
 	}
