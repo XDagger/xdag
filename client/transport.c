@@ -1,8 +1,10 @@
-/* транспорт, T13.654-T14.390 $DVS:time$ */
+/* транспорт, T13.654-T14.596 $DVS:time$ */
 
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdatomic.h>
+#include <errno.h> 
 #include "transport.h"
 #include "storage.h"
 #include "block.h"
@@ -13,18 +15,26 @@
 #include "pool.h"
 #include "version.h"
 #include "../dnet/dnet_main.h"
+#include "utils/log.h"
 
-#define NEW_BLOCK_TTL   5
-#define REQUEST_WAIT    64
+#define NEW_BLOCK_TTL     5
+#define REQUEST_WAIT      64
+#define REPLY_ID_PVT_TTL  60
 
-pthread_mutex_t g_transport_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t g_transport_mutex      = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t g_process_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t g_process_cond   = PTHREAD_COND_INITIALIZER;
 
 time_t g_xdag_last_received = 0;
 static void *reply_data;
 static void *(*reply_callback)(void *block, void *data) = 0;
 static void *reply_connection;
-static xdag_hash_t reply_id;
+static atomic_uint_least64_t reply_id;
+static uint64_t last_reply_id;
+static int reply_rcvd;
+static uint64_t reply_id_private;
 static int64_t reply_result;
+static void *xdag_update_rip_thread(void *);
 
 struct xdag_send_data {
 	struct xdag_block b;
@@ -113,10 +123,18 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 
 		case XDAG_MESSAGE_BLOCKS_REPLY:
 		{
-			if(!memcmp(received_block->field[1].hash, reply_id, sizeof(xdag_hash_t))) {
+			if(atomic_compare_exchange_strong_explicit(&reply_id, (uint64_t*)received_block->field[1].hash, reply_id_private, memory_order_relaxed, memory_order_relaxed)) {
+				pthread_mutex_lock(&g_process_mutex);
+				if(last_reply_id != *(uint64_t*)received_block->field[1].hash){
+					pthread_mutex_unlock(&g_process_mutex);
+					break;
+				}
 				reply_callback = 0;
 				reply_data = 0;
+				reply_rcvd = 1;
 				reply_result = received_block->field[0].time;
+				pthread_cond_signal(&g_process_cond);
+				pthread_mutex_unlock(&g_process_mutex);
 			}
 			break;
 		}
@@ -139,12 +157,20 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 
 		case XDAG_MESSAGE_SUMS_REPLY:
 		{
-			if(!memcmp(received_block->field[1].hash, reply_id, sizeof(xdag_hash_t))) {
+			if(atomic_compare_exchange_strong_explicit(&reply_id, (uint64_t*)received_block->field[1].hash, reply_id_private, memory_order_relaxed, memory_order_relaxed)) {
+				pthread_mutex_lock(&g_process_mutex);
+				if(last_reply_id != *(uint64_t*)received_block->field[1].hash){
+					pthread_mutex_unlock(&g_process_mutex);
+					break;
+				}
 				if(reply_data) {
 					memcpy(reply_data, &received_block->field[8], sizeof(struct xdag_storage_sum) * 16);
 					reply_data = 0;
 				}
+				reply_rcvd = 1;
 				reply_result = received_block->field[0].time;
+				pthread_cond_signal(&g_process_cond);
+				pthread_mutex_unlock(&g_process_mutex);
 			}
 			break;
 		}
@@ -260,6 +286,19 @@ int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs
 		if (version) dnet_set_self_version(version + 1);
 	}
 
+	pthread_t t;
+	int err = pthread_create(&t, 0, xdag_update_rip_thread, NULL);
+	if(err != 0) {
+		printf("create xdag_update_rip_thread failed, error : %s\n", strerror(err));
+		return -1;
+	}
+
+	err = pthread_detach(t);
+	if(err != 0) {
+		printf("detach xdag_update_rip_thread failed, error : %s\n", strerror(err));
+		return -1;
+	}
+
 	return res;
 }
 
@@ -273,20 +312,29 @@ static int do_request(int type, xdag_time_t start_time, xdag_time_t end_time, vo
 					  void *(*callback)(void *block, void *data))
 {
 	struct xdag_block b;
-	time_t t;
+	time_t actual_time;
+	struct timespec expire_time;
+	int res;
+	uint64_t id;
 
 	b.field[0].type = type << 4 | XDAG_FIELD_NONCE;
 	b.field[0].time = start_time;
 	b.field[0].end_time = end_time;
 	
-	xdag_generate_random_array(&b.field[1], sizeof(struct xdag_field));
-	
-	memcpy(&reply_id, &b.field[1], sizeof(struct xdag_field));
+	xdag_generate_random_array(&id, sizeof(uint64_t));
+
+	memset(&b.field[1], 0,  sizeof(struct xdag_field));
+	*(uint64_t*)b.field[1].hash = id;
+	atomic_exchange_explicit(&reply_id, id, memory_order_acq_rel);
+
 	memcpy(&b.field[2], &g_xdag_stats, sizeof(g_xdag_stats));
 	
 	xdag_netdb_send((uint8_t*)&b.field[2] + sizeof(struct xdag_stats),
 						 14 * sizeof(struct xdag_field) - sizeof(struct xdag_stats));
-	
+
+	pthread_mutex_lock(&g_process_mutex);
+	last_reply_id = id;
+	reply_rcvd = 0;
 	reply_result = -1ll;
 	reply_data = data;
 	reply_callback = callback;
@@ -298,11 +346,25 @@ static int do_request(int type, xdag_time_t start_time, xdag_time_t end_time, vo
 		dnet_send_xdag_packet(&b, reply_connection);
 	}
 
-	for (t = time(0); reply_result < 0 && time(0) - t < REQUEST_WAIT; ) {
-		sleep(1);
+	time(&actual_time);
+	expire_time.tv_sec = actual_time + REQUEST_WAIT;
+
+	while(!reply_rcvd){
+		if(pthread_cond_timedwait(&g_process_cond, &g_process_mutex, &expire_time)) {
+			last_reply_id = reply_id_private;
+			reply_data = NULL;
+			reply_callback = NULL;
+			if(errno != EAGAIN || errno != ETIMEDOUT) {
+				xdag_err("pthread_cond_timedwait failed [function: do_request]");
+			}
+			break;
+		}
 	}
-	
-	return (int)reply_result;
+
+	res = (int)reply_result;
+	pthread_mutex_unlock(&g_process_mutex);
+
+	return res;
 }
 
 /* requests all blocks from the remote host, that are in specified time interval;
@@ -381,3 +443,18 @@ int xdag_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned 
 {
 	return dnet_user_crypt_action(data, data_id, size, action);
 }
+
+/* thread to change reply_id_private after REPLY_ID_PVT_TTL */
+static void *xdag_update_rip_thread(void *arg)
+{
+	time_t last_change_time = 0;
+	while(1) {
+		if (time(NULL) - last_change_time > REPLY_ID_PVT_TTL) {
+			time(&last_change_time);
+			xdag_generate_random_array(&reply_id_private, sizeof(uint64_t));
+		}
+		sleep(60);
+	}
+	return 0;
+}
+
