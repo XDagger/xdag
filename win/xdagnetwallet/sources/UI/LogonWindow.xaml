@@ -1,0 +1,14 @@
+﻿<Window x:Class="XDagNetWallet.UI.LogonWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XDagNetWallet.UI"
+        mc:Ignorable="d"
+        Title="Welcome to XDAG Wallet" Height="138.666" Width="382.666" ResizeMode="NoResize" Loaded="Window_Loaded">
+    <Grid>
+        <Button x:Name="btnConnectAccount" Content="Connect Wallet" Margin="26,30,32.333,0" VerticalAlignment="Top" Height="49" FontFamily="Franklin Gothic Heavy" FontSize="16" Click="btnConnectAccount_Click"/>
+        <Button x:Name="btnRegisterAccount" Content="Create New XDAG Wallet Account" Margin="26,30,32.333,0" VerticalAlignment="Top" Height="49" FontFamily="Franklin Gothic Heavy" FontSize="16" Click="btnRegisterAccount_Click"/>
+
+    </Grid>
+</Window>

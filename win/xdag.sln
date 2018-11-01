@@ -20,6 +20,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xdaglib", "xdaglib\xdaglib.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "secp256k1", "secp256k1\secp256k1\secp256k1.vcxproj", "{76685A91-5D47-423A-BB5D-0D180029DA22}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xdagnetwalletCLI", "xdagnetwalletCLI\xdagnetwalletCLI.vcxproj", "{237579B0-457E-494B-93D0-F44080945A95}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "xdagnetwallet", "xdagnetwallet\xdagnetwallet.csproj", "{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -94,6 +98,40 @@ Global
 		{76685A91-5D47-423A-BB5D-0D180029DA22}.Release|x64.Build.0 = Release|x64
 		{76685A91-5D47-423A-BB5D-0D180029DA22}.Release|x86.ActiveCfg = Release|Win32
 		{76685A91-5D47-423A-BB5D-0D180029DA22}.Release|x86.Build.0 = Release|Win32
+		{237579B0-457E-494B-93D0-F44080945A95}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{237579B0-457E-494B-93D0-F44080945A95}.Debug|x64.ActiveCfg = Debug|x64
+		{237579B0-457E-494B-93D0-F44080945A95}.Debug|x64.Build.0 = Debug|x64
+		{237579B0-457E-494B-93D0-F44080945A95}.Debug|x86.ActiveCfg = Debug|Win32
+		{237579B0-457E-494B-93D0-F44080945A95}.Debug|x86.Build.0 = Debug|Win32
+		{237579B0-457E-494B-93D0-F44080945A95}.Release_profiling|Any CPU.ActiveCfg = Release|x64
+		{237579B0-457E-494B-93D0-F44080945A95}.Release_profiling|Any CPU.Build.0 = Release|x64
+		{237579B0-457E-494B-93D0-F44080945A95}.Release_profiling|x64.ActiveCfg = Release|x64
+		{237579B0-457E-494B-93D0-F44080945A95}.Release_profiling|x64.Build.0 = Release|x64
+		{237579B0-457E-494B-93D0-F44080945A95}.Release_profiling|x86.ActiveCfg = Release|Win32
+		{237579B0-457E-494B-93D0-F44080945A95}.Release_profiling|x86.Build.0 = Release|Win32
+		{237579B0-457E-494B-93D0-F44080945A95}.Release|Any CPU.ActiveCfg = Release|Win32
+		{237579B0-457E-494B-93D0-F44080945A95}.Release|x64.ActiveCfg = Release|x64
+		{237579B0-457E-494B-93D0-F44080945A95}.Release|x64.Build.0 = Release|x64
+		{237579B0-457E-494B-93D0-F44080945A95}.Release|x86.ActiveCfg = Release|Win32
+		{237579B0-457E-494B-93D0-F44080945A95}.Release|x86.Build.0 = Release|Win32
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Debug|x64.Build.0 = Debug|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Debug|x86.Build.0 = Debug|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Release_profiling|Any CPU.ActiveCfg = Release|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Release_profiling|Any CPU.Build.0 = Release|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Release_profiling|x64.ActiveCfg = Release|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Release_profiling|x64.Build.0 = Release|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Release_profiling|x86.ActiveCfg = Release|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Release_profiling|x86.Build.0 = Release|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Release|x64.ActiveCfg = Release|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Release|x64.Build.0 = Release|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Release|x86.ActiveCfg = Release|Any CPU
+		{3A8D3961-2C28-4D2E-92E4-36F05963BBBA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

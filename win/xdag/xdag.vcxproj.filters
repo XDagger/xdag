@@ -6,6 +6,8 @@
   <ItemGroup>
     <ClInclude Include="version.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="xdag_runtime.h" />
+    <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="version.rc" />
