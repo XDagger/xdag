@@ -1,4 +1,4 @@
-/* pool logic, T14.191-T14.390 $DVS:time$ */
+/* pool logic, T14.191-T14.618 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,6 +27,7 @@
 #include "transport.h"
 #include "wallet.h"
 #include "system.h"
+#include "math.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
@@ -1415,7 +1416,7 @@ static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int 
 	xdag_hash2address(miner->id.data, address_buf);
 
 	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %-13lf  -             %Lf\n", index, address_buf,
-		miner_state_to_string(miner->state), "-", "-", miner_calculate_unpaid_shares(miner), log_difficulty2hashrate(miner->mean_log_difficulty));
+		miner_state_to_string(miner->state), "-", "-", miner_calculate_unpaid_shares(miner), xdag_log_difficulty2hashrate(miner->mean_log_difficulty));
 
 	if(print_connections) {
 		connection_list_element *elt;
@@ -1432,7 +1433,7 @@ static int print_miner(FILE *out, int index, struct miner_pool_data *miner, int 
 				//TODO: fix that logic
 				fprintf(out, " C%d. -                                 -        %-21s  %-16s  %-13lf  %-12s  %Lf\n", ++conn_index,
 					ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data),
-					conn_data->worker_name ? conn_data->worker_name : "-", log_difficulty2hashrate(conn_data->mean_log_difficulty));
+					conn_data->worker_name ? conn_data->worker_name : "-", xdag_log_difficulty2hashrate(conn_data->mean_log_difficulty));
 			}
 		}
 	}
@@ -1475,7 +1476,7 @@ static void print_connection(FILE *out, int index, struct connection_pool_data *
 	//TODO: fix that logic
 	fprintf(out, "%3d. %s  %s  %-21s  %-16s  %-13lf  %-12s  %Lf\n", index, address,
 		connection_state_to_string(conn_data->state), ip_port_str, in_out_str, connection_calculate_unpaid_shares(conn_data),
-		conn_data->worker_name ? conn_data->worker_name : "-", log_difficulty2hashrate(conn_data->mean_log_difficulty));
+		conn_data->worker_name ? conn_data->worker_name : "-", xdag_log_difficulty2hashrate(conn_data->mean_log_difficulty));
 }
 
 static int print_connections(FILE *out)
@@ -1611,7 +1612,7 @@ void update_mean_log_diff(struct connection_pool_data *conn_data, struct xdag_po
 	if(conn_data->task_time < task_time) {
 		if(conn_data->task_time != 0) {
 			conn_data->mean_log_difficulty =
-				moving_average(conn_data->mean_log_difficulty, diff2log(xdag_hash_difficulty(conn_data->last_min_hash)), conn_data->bounded_task_counter);
+				moving_average(conn_data->mean_log_difficulty, xdag_diff2log(xdag_hash_difficulty(conn_data->last_min_hash)), conn_data->bounded_task_counter);
 			if(conn_data->bounded_task_counter < NSAMPLES_MAX) {
 				++conn_data->bounded_task_counter;
 			}
@@ -1624,7 +1625,7 @@ void update_mean_log_diff(struct connection_pool_data *conn_data, struct xdag_po
 	if(conn_data->miner->task_time < task_time) {
 		if(conn_data->miner->task_time != 0) {
 			conn_data->miner->mean_log_difficulty =
-				moving_average(conn_data->miner->mean_log_difficulty, diff2log(xdag_hash_difficulty(conn_data->miner->last_min_hash)), conn_data->miner->bounded_task_counter);
+				moving_average(conn_data->miner->mean_log_difficulty, xdag_diff2log(xdag_hash_difficulty(conn_data->miner->last_min_hash)), conn_data->miner->bounded_task_counter);
 			if(conn_data->miner->bounded_task_counter < NSAMPLES_MAX) {
 				++conn_data->miner->bounded_task_counter;
 			}
@@ -1633,17 +1634,6 @@ void update_mean_log_diff(struct connection_pool_data *conn_data, struct xdag_po
 	} else if(xdag_cmphash(hash, conn_data->miner->last_min_hash) < 0) {
 		memcpy(conn_data->miner->last_min_hash, hash, sizeof(xdag_hash_t));
 	}
-}
-
-long double diff2log(xdag_diff_t diff)
-{
-	long double res = (long double)xdag_diff_to64(diff);
-	xdag_diff_shr32(&diff);
-	xdag_diff_shr32(&diff);
-	if(xdag_diff_to64(diff)) {
-		res += ldexpl((long double)xdag_diff_to64(diff), 64);
-	}
-	return (res > 0 ? logl(res) : 0);
 }
 
 static void miner_print_time_intervals(struct miner_pool_data *miner, int current_interval_index, xdag_time_t current_task_time, FILE *out)
@@ -1699,7 +1689,7 @@ static void print_connection_stats(struct connection_pool_data *conn_data, int c
 		fprintf(out, "Worker name: %s\n", conn_data->worker_name);
 	}
 	fprintf(out, "Unpaid shares rate: %lf\n", connection_calculate_unpaid_shares(conn_data));
-	fprintf(out, "Approximate hashrate: %Lf\n", log_difficulty2hashrate(conn_data->mean_log_difficulty));
+	fprintf(out, "Approximate hashrate: %Lf\n", xdag_log_difficulty2hashrate(conn_data->mean_log_difficulty));
 	if(conn_data->prev_diff_count > 0) {
 		fprintf(out, "Outdated shares (indirect contribution):\n");
 		fprintf(out, "Summ of difficulties: %lf\n", conn_data->prev_diff);
@@ -1732,7 +1722,7 @@ static void print_miner_stats(struct miner_pool_data *miner, FILE *out)
 	fprintf(out, "Registered at: %s\n", time_buf);
 	fprintf(out, "State: %s\n", miner_state_to_string(miner->state));
 	fprintf(out, "Unpaid shares rate: %lf\n", miner_calculate_unpaid_shares(miner));
-	fprintf(out, "Approximate hashrate: %Lf\n", log_difficulty2hashrate(miner->mean_log_difficulty));
+	fprintf(out, "Approximate hashrate: %Lf\n", xdag_log_difficulty2hashrate(miner->mean_log_difficulty));
 	if(miner->prev_diff_count > 0) {
 		fprintf(out, "Outdated shares (indirect contribution):\n");
 		fprintf(out, "Summ of difficulties: %lf\n", miner->prev_diff);

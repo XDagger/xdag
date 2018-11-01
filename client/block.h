@@ -1,4 +1,4 @@
-/* block processing, T13.654-T14.390 $DVS:time$ */
+/* block processing, T13.654-T14.618 $DVS:time$ */
 
 #ifndef XDAG_BLOCK_H
 #define XDAG_BLOCK_H
@@ -151,9 +151,6 @@ extern void xdag_list_main_blocks(int count, int print_only_addresses, FILE *out
 
 // prints list of N last blocks mined by current pool
 extern void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out);
-
-// calculate difficulty from hash
-xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash);
 
 // get all transactions of specified address, and return total number of transactions
 extern int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, const char*));
