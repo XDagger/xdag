@@ -145,11 +145,9 @@ int xdag_init(int argc, char **argv, int isGui)
 		} else if(ARG_EQUAL(argv[i], "", "-rpc-enable")) { /* enable JSON-RPC service */
 			is_rpc = 1;
 		} else if(ARG_EQUAL(argv[i], "", "-rpc-port")) { /* set JSON-RPC service port */
-			if(++i < argc && sscanf(argv[i], "%d", &rpc_port) == 1) {
-				if(rpc_port < 0 || rpc_port > 65535) {
-					printf("RPC port is invalid, set to default.\n");
-					rpc_port = 0;
-				}
+			if(!(++i < argc && sscanf(argv[i], "%d", &rpc_port) == 1)) {
+				printf("rpc port not specified.\n");
+				return -1;
 			}
 		} else if(ARG_EQUAL(argv[i], "", "-threads")) { /* number of transport layer threads */
 			if (!(++i < argc && sscanf(argv[i], "%d", &transport_threads) == 1))
@@ -246,7 +244,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	if (xdag_address_init()) return -1;
 	if(is_rpc) {
 		xdag_mess("Initializing RPC service...");
-		if(!!xdag_rpc_service_init(rpc_port)) return -1;
+		if(!!xdag_rpc_service_start(rpc_port)) return -1;
 	}
 	xdag_mess("Starting blocks engine...");
 	if (xdag_blocks_start(g_is_pool, mining_threads_count, !!miner_address)) return -1;

@@ -11,6 +11,7 @@
 
 #include "cJSON.h"
 #include "cJSON_Utils.h"
+#include <stdio.h>
 
 struct xdag_rpc_connection {
 	int fd;
@@ -22,15 +23,18 @@ struct xdag_rpc_connection {
 #ifdef __cplusplus
 extern "C" {
 #endif
-	
+
+extern int g_rpc_stop;
+extern int g_rpc_port;
+
 /* init xdag rpc */
-extern int xdag_rpc_service_init(int port);
+extern int xdag_rpc_service_start(int port);
 
 /* stop xdag rpc */
 extern int xdag_rpc_service_stop(void);
 
 /* rpc white address config */
-extern int rpc_white_command(void *out, char *type, const char *address);
+extern int xdag_rpc_command(const char *cmd, FILE *out);
 
 
 	

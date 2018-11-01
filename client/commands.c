@@ -71,7 +71,7 @@ void processMinedBlocksCommand(char *nextParam, FILE *out);
 void processOrphanBlocksCommand(char *nextParam, FILE *out);
 void processHelpCommand(FILE *out);
 void processDisconnectCommand(char *nextParam, FILE *out);
-void processRpcWhiteListCommand(char *nextParam, FILE *out);
+void processRPCCommand(char *nextParam, FILE *out);
 void processAutoRefreshCommand(char *nextParam, FILE *out);
 void processReloadCommand(char *nextParam, FILE *out);
 
@@ -97,7 +97,7 @@ int xdag_com_run(char *, FILE*);
 int xdag_com_terminate(char *, FILE*);
 int xdag_com_exit(char *, FILE*);
 int xdag_com_disconnect(char *, FILE*);
-int xdag_com_white_list(char *, FILE*);
+int xdag_com_rpc(char *, FILE*);
 int xdag_com_autorefresh(char *, FILE*);
 int xdag_com_reload(char *, FILE*);
 
@@ -127,7 +127,7 @@ XDAG_COMMAND commands[] = {
 	{ "xfer"        , 0, (xdag_com_func_t)NULL},
 	{ "help"        , 0, xdag_com_help},
 	{ "disconnect"  , 2, xdag_com_disconnect },
-	{ "rpc-white"   , 2, xdag_com_white_list },
+	{ "rpc"         , 0, xdag_com_rpc},
 	{ "autorefresh" , 2, xdag_com_autorefresh },
 	{ "reload"      , 2, xdag_com_reload },
 	{ (char *)NULL  , 0, (xdag_com_func_t)NULL}
@@ -266,9 +266,9 @@ int xdag_com_disconnect(char *args, FILE *out)
 	return 0;
 }
 
-int xdag_com_white_list(char* args, FILE* out)
+int xdag_com_rpc(char* args, FILE* out)
 {
-	processRpcWhiteListCommand(args, out);
+	processRPCCommand(args, out);
 	return 0;
 }
 
@@ -494,20 +494,18 @@ void processNetCommand(char *nextParam, FILE *out)
 	xdag_net_command(netcmd, out);
 }
 
-void processRpcWhiteListCommand(char *nextParam, FILE *out)
+void processRPCCommand(char *nextParam, FILE *out)
 {
-	char *method = strtok_r(nextParam, " \t\r\n", &nextParam);
-	if(!method) {
-		fprintf(out, "white: method is not given.\n");
-		return;
-	}
-	char *address = strtok_r(0, " \t\r\n", &nextParam);
-	if(!address && 0 != strcmp(method, "-l")) {
-		fprintf(out, "white: address not given.\n");
-		return;
+	char *cmd = NULL;
+	char rpccmd[4096] = {0};
+	*rpccmd = 0;
+	while((cmd = strtok_r(nextParam, " \t\r\n", &nextParam))) {
+		strcat(rpccmd, cmd);
+		strcat(rpccmd, " ");
 	}
 
-	rpc_white_command(out, method, address);
+	xdag_rpc_command(rpccmd, out);
+	return;
 }
 
 void processPoolCommand(char *nextParam, FILE *out)
@@ -985,12 +983,9 @@ void processHelpCommand(FILE *out)
 		"                          O is option, can be all, address or ip\n"
 		"                          A is the miners' address\n"
 		"                          IP is the miners' IP\n"
-		"  rpc-white [-a|-l|-d][IP] - rpc white list manager\n"
-		"                          -a add a IP address to white list\n"
-		"                          -l list all IP addresses in  white list\n"
-		"                          -d delete a exist IP address\n"
-		"  mainblocks [N]          - print list of N (20 by default) main blocks\n"
-		"  minedblocks [N]         - print list of N (20 by default) main blocks mined by current pool\n"
+		"  rpc [command]        - rpc commands, try 'rpc help'\n"
+		"  mainblocks [N]       - print list of N (20 by default) main blocks\n"
+		"  minedblocks [N]      - print list of N (20 by default) main blocks mined by current pool\n"
 		, g_coinname);
 }
 
