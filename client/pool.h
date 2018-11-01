@@ -1,4 +1,4 @@
-/* pool logic, T14.191-T14.347 $DVS:time$ */
+/* pool logic, T14.191-T14.618 $DVS:time$ */
 
 #ifndef XDAG_POOL_H
 #define XDAG_POOL_H
@@ -50,7 +50,5 @@ void xdag_pool_finish(void);
 #ifdef __cplusplus
 };
 #endif
-
-long double diff2log(xdag_diff_t diff);
 
 #endif

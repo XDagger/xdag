@@ -1,4 +1,4 @@
-/* commands processing, T13.920-T14.423 $DVS:time$ */
+/* commands processing, T13.920-T14.618 $DVS:time$ */
 
 #include "commands.h"
 #include <string.h>
@@ -550,7 +550,7 @@ void processStatsCommand(FILE *out)
 			xdag_diff_args(g_xdag_stats.max_difficulty), g_coinname,
 			amount2xdags(xdag_get_supply(g_xdag_stats.nmain)),
 			amount2xdags(xdag_get_supply(g_xdag_stats.total_nmain)),
-			hashrate(g_xdag_extstats.hashrate_ours), hashrate(g_xdag_extstats.hashrate_total)
+			xdag_hashrate(g_xdag_extstats.hashrate_ours), xdag_hashrate(g_xdag_extstats.hashrate_total)
 		);
 	}
 }
@@ -708,16 +708,6 @@ void processAutoRefreshCommand(char *nextParam, FILE *out)
 void processReloadCommand(char *nextParam, FILE *out)
 {
 	g_xdag_state = XDAG_STATE_REST;
-}
-
-long double hashrate(xdag_diff_t *diff)
-{
-	long double sum = 0;
-	for(int i = 0; i < HASHRATE_LAST_MAX_TIME; ++i) {
-		sum += diff2log(diff[i]);
-	}
-	sum /= HASHRATE_LAST_MAX_TIME;
-	return ldexpl(expl(sum), -58); //shown pool and network hashrate seems to be around 35% higher than real, to consider *(0.65) about correction. Deeper study is needed.
 }
 
 const char *get_state()
