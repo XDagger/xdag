@@ -881,13 +881,16 @@ static int receive_data_from_connection(connection_list_element *connection)
 #endif
 
 	struct connection_pool_data *conn_data = &connection->connection_data;
-	size_t data_size = sizeof(struct xdag_field) - conn_data->data_size;
+	ssize_t data_size = sizeof(struct xdag_field) - conn_data->data_size;
 	data_size = read(conn_data->connection_descriptor.fd, (uint8_t*)conn_data->data + conn_data->data_size, data_size);
 
-	if(data_size <= 0) {
+	if(data_size < 0) {
 		char message[100] = {0};
 		sprintf(message, "read error : %s", strerror(errno));
 		close_connection(connection, message);
+		return 0;
+	} else if(data_size == 0) {
+		// fixme: read 0
 		return 0;
 	}
 
