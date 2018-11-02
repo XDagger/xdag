@@ -531,7 +531,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		check_new_main();
 	}
 
-
 	if(signOutCount) {
 		our_keys = xdag_wallet_our_keys(&ourKeysCount);
 	}

@@ -54,6 +54,7 @@
     <ClCompile Include="..\..\client\terminal.c" />
     <ClCompile Include="..\..\client\time.c" />
     <ClCompile Include="..\..\client\transport.c" />
+    <ClCompile Include="..\..\client\utils\atomic.c" />
     <ClCompile Include="..\..\client\utils\log.c" />
     <ClCompile Include="..\..\client\utils\moving_statistics\moving_average.c" />
     <ClCompile Include="..\..\client\utils\utils.c" />
@@ -65,7 +66,6 @@
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_random.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_string.c" />
     <ClCompile Include="..\..\dus\programs\dfstools\source\lib\dfsrsa.c" />
-    <ClCompile Include="..\stdatomic.c" />
     <ClCompile Include="..\system.c" />
   </ItemGroup>
   <ItemGroup>
@@ -101,6 +101,7 @@
     <ClInclude Include="..\..\client\types.h" />
     <ClInclude Include="..\..\client\uthash\uthash.h" />
     <ClInclude Include="..\..\client\uthash\utlist.h" />
+    <ClInclude Include="..\..\client\utils\atomic.h" />
     <ClInclude Include="..\..\client\utils\log.h" />
     <ClInclude Include="..\..\client\utils\moving_statistics\moving_average.h" />
     <ClInclude Include="..\..\client\utils\utils.h" />
@@ -123,7 +124,6 @@
     <ClInclude Include="..\arpa\inet.h" />
     <ClInclude Include="..\netdb.h" />
     <ClInclude Include="..\netinet\in.h" />
-    <ClInclude Include="..\stdatomic.h" />
     <ClInclude Include="..\sys\ioctl.h" />
     <ClInclude Include="..\sys\resource.h" />
     <ClInclude Include="..\sys\socket.h" />
