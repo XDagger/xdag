@@ -1,0 +1,49 @@
+﻿<Window x:Class="XDagNetWallet.UI.Windows.WalletWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XDagNetWallet.UI.Windows"
+        mc:Ignorable="d"
+        Title="WalletWindow" Height="459.333" Width="800" Loaded="Window_Loaded">
+    <Grid>
+        <Ellipse x:Name="ellPortrait" Fill="#FFF4F4F5" HorizontalAlignment="Left" Height="109" Margin="27,25,0,0" Stroke="Black" VerticalAlignment="Top" Width="110"/>
+        <Label x:Name="lblUserName" Content="[UserName]" HorizontalAlignment="Left" Margin="165,25,0,0" VerticalAlignment="Top" Width="163" Height="42" FontSize="18" FontWeight="Bold"/>
+        <Label x:Name="lblWalletBalance" Content="0.000000000" Margin="465,25,20.333,0" VerticalAlignment="Top" Height="42" FontSize="24" FontWeight="Bold" FontFamily="Arial Black"/>
+        <Label Content="Wallet Address: " HorizontalAlignment="Left" Margin="165,72,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.974,0.603" Width="108" FontSize="14"/>
+        <Label x:Name="lblWalletAddress" Content="" Margin="291,72,37.333,0" VerticalAlignment="Top" RenderTransformOrigin="-0.974,0.603" FontSize="14"/>
+        <Label Content="Balance:" HorizontalAlignment="Left" Margin="375,25,0,0" VerticalAlignment="Top" Width="85" Height="42" FontSize="18" FontWeight="Bold"/>
+        <TabControl Margin="20,159,20.333,42">
+            <TabItem Header="Status">
+                <Grid Background="#FFE5E5E5">
+                    <Label Content="Pool Address:" HorizontalAlignment="Left" Margin="25,26,0,0" VerticalAlignment="Top" Width="95"/>
+                    <Label Content="Connected Time: " HorizontalAlignment="Left" Margin="25,57,0,0" VerticalAlignment="Top" Width="112"/>
+
+                </Grid>
+            </TabItem>
+            <TabItem Header="Transaction History">
+                <Grid Background="#FFE5E5E5">
+                    <DataGrid Margin="10,48,10.333,10"/>
+                    <Button x:Name="btnSearchTransactioin" Content="Search" Margin="0,10,10.333,0" VerticalAlignment="Top" Height="24" HorizontalAlignment="Right" Width="113"/>
+                    <TextBox HorizontalAlignment="Left" Height="24" Margin="103,10,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="152"/>
+                    <TextBox HorizontalAlignment="Left" Height="24" Margin="316,10,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="152"/>
+
+
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <StatusBar Margin="1,0,-0.667,1" RenderTransformOrigin="0.5,0.5" Height="29" VerticalAlignment="Bottom">
+            <StatusBar.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <SkewTransform AngleX="0.374"/>
+                    <RotateTransform/>
+                    <TranslateTransform X="0.327"/>
+                </TransformGroup>
+            </StatusBar.RenderTransform>
+        </StatusBar>
+        <Label Content="Status: " HorizontalAlignment="Left" Margin="165,100,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.974,0.603" Width="108" FontSize="14"/>
+        <Label x:Name="lblWalletStatus" Content="" Margin="291,101,37.333,0" VerticalAlignment="Top" RenderTransformOrigin="-0.974,0.603" FontSize="14"/>
+
+    </Grid>
+</Window>

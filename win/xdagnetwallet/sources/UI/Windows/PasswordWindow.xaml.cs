@@ -12,7 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace XDagNetWallet.UI
+namespace XDagNetWallet.UI.Windows
 {
     /// <summary>
     /// Interaction logic for PasswordWindow.xaml
