@@ -32,8 +32,11 @@
 #define RPC_PARSE_ERROR -32700
 #define RPC_INVALID_REQUEST -32600
 #define RPC_METHOD_NOT_FOUND -32601
-#define RPC_INVALID_PARAMS -32603
-#define RPC_INTERNAL_ERROR -32693
+#define RPC_INVALID_PARAMS -32602
+#define RPC_INTERNAL_ERROR -32603
+
+#define RPC_SERVER_NOT_ALLOW -32000
+#define RPC_SERVER_MAX_CONNECTION -32001
 
 static struct xdag_rpc_procedure *g_procedures;
 static int g_procedure_count = 0;

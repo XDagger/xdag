@@ -16,7 +16,7 @@
 #include "netdb.h"
 #include "memory.h"
 #include "crypt.h"
-#include "json-rpc/rpc_service.h"
+#include "json-rpc/rpc_commands.h"
 #include "math.h"
 #if !defined(_WIN32) && !defined(_WIN64)
 #include "utils/linenoise.h"

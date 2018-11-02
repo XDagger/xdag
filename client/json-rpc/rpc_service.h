@@ -26,9 +26,6 @@ extern int xdag_rpc_service_start(int port);
 /* stop xdag rpc */
 extern int xdag_rpc_service_stop(void);
 
-/* rpc commands */
-extern int xdag_rpc_command(const char *cmd, FILE *out);
-
 #ifdef __cplusplus
 };
 #endif
