@@ -6,7 +6,6 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <math.h>
-#include <stdatomic.h>
 #include "system.h"
 #include "../ldus/source/include/ldus/rbtree.h"
 #include "block.h"
@@ -27,6 +26,7 @@
 #include "mining_common.h"
 #include "time.h"
 #include "math.h"
+#include "utils/atomic.h"
 
 #define MAX_WAITING_MAIN        1
 #define MAIN_START_AMOUNT       (1ll << 42)
@@ -669,9 +669,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	}
 
 	memcpy(nodeBlock, &tmpNodeBlock, sizeof(struct block_internal));
-	atomic_init(&nodeBlock->backrefs, (uintptr_t)NULL);
+	atomic_init_uintptr(&nodeBlock->backrefs, (uintptr_t)NULL);
 	if(nodeBlock->flags & BI_REMARK){
-		atomic_init(&nodeBlock->remark, (uintptr_t)NULL);
+		atomic_init_uintptr(&nodeBlock->remark, (uintptr_t)NULL);
 	}
 	pthread_mutex_lock(&rbtree_mutex);
 	ldus_rbtree_insert(&root, &nodeBlock->node);
@@ -1031,7 +1031,7 @@ static void reset_callback(struct ldus_rbtree *node)
 {
 	struct block_internal *bi = (struct block_internal *)node;
 	struct block_backrefs *tmp;
-	for(struct block_backrefs *to_free = (struct block_backrefs*)atomic_load_explicit(&bi->backrefs, memory_order_acquire); to_free != NULL;){
+	for(struct block_backrefs *to_free = (struct block_backrefs*)atomic_load_explicit_uintptr(&bi->backrefs, memory_order_acquire); to_free != NULL;){
 		tmp = to_free->next;
 		xdag_free(to_free);
 		to_free = tmp;
@@ -1503,7 +1503,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 
 	if (!ba) return -1;
 
-	for (struct block_backrefs *br = (struct block_backrefs*)atomic_load_explicit(&bi->backrefs, memory_order_acquire); br; br = br->next) {
+	for (struct block_backrefs *br = (struct block_backrefs*)atomic_load_explicit_uintptr(&bi->backrefs, memory_order_acquire); br; br = br->next) {
 		for (i = N_BACKREFS; i && !br->backrefs[i - 1]; i--);
 
 		if (!i) {
@@ -1734,7 +1734,7 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 	if (!block_array) return -1;
 	
 	int i;
-	for (struct block_backrefs *br = (struct block_backrefs*)atomic_load_explicit(&bi->backrefs, memory_order_acquire); br; br = br->next) {
+	for (struct block_backrefs *br = (struct block_backrefs*)atomic_load_explicit_uintptr(&bi->backrefs, memory_order_acquire); br; br = br->next) {
 		for (i = N_BACKREFS; i && !br->backrefs[i - 1]; i--);
 		
 		if (!i) {
@@ -1896,7 +1896,7 @@ static int add_remark_bi(struct block_internal* bi, xdag_remark_t strbuf)
 	memset(remark_tmp, 0, size + 1);
 	memcpy(remark_tmp, strbuf, size);
 	uintptr_t expected_value = 0 ;
-	if(!atomic_compare_exchange_strong_explicit(&bi->remark, &expected_value, (uintptr_t)remark_tmp, memory_order_acq_rel, memory_order_relaxed)){
+	if(!atomic_compare_exchange_strong_explicit_uintptr(&bi->remark, &expected_value, (uintptr_t)remark_tmp, memory_order_acq_rel, memory_order_relaxed)){
 		free(remark_tmp);
 	}
 	return 1;
@@ -1906,7 +1906,7 @@ static void add_backref(struct block_internal* blockRef, struct block_internal* 
 {
 	int i = 0;
 
-	struct block_backrefs *tmp = (struct block_backrefs*)atomic_load_explicit(&blockRef->backrefs, memory_order_acquire);
+	struct block_backrefs *tmp = (struct block_backrefs*)atomic_load_explicit_uintptr(&blockRef->backrefs, memory_order_acquire);
 	// LIFO list: if the first element doesn't exist or it is full, a new element of the backrefs list will be created
 	// and added as first element of backrefs block list
 	if( tmp == NULL || tmp->backrefs[N_BACKREFS - 1]) {
@@ -1917,7 +1917,7 @@ static void add_backref(struct block_internal* blockRef, struct block_internal* 
 		}
 		memset(blockRefs_to_insert, 0, sizeof(struct block_backrefs));
 		blockRefs_to_insert->next = tmp;
-		atomic_store_explicit(&blockRef->backrefs, (uintptr_t)blockRefs_to_insert, memory_order_release);
+		atomic_store_explicit_uintptr(&blockRef->backrefs, (uintptr_t)blockRefs_to_insert, memory_order_release);
 		tmp = blockRefs_to_insert;
 	}
 
@@ -1939,11 +1939,11 @@ static inline int get_nfield(struct xdag_block *bref, int field_type)
 
 static inline const char* get_remark(struct block_internal *bi){
 	if((bi->flags & BI_REMARK) & ~BI_EXTRA){
-		const char* tmp = (const char*)atomic_load_explicit(&bi->remark, memory_order_acquire);
+		const char* tmp = (const char*)atomic_load_explicit_uintptr(&bi->remark, memory_order_acquire);
 		if(tmp != NULL){
 			return tmp;
 		} else if(load_remark(bi)){
-			return (const char*)atomic_load_explicit(&bi->remark, memory_order_relaxed);
+			return (const char*)atomic_load_explicit_uintptr(&bi->remark, memory_order_relaxed);
 		}
 	}
 	return "";

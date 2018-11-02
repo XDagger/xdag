@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdatomic.h>
 #include <errno.h> 
 #include "transport.h"
 #include "storage.h"
@@ -16,6 +15,7 @@
 #include "version.h"
 #include "../dnet/dnet_main.h"
 #include "utils/log.h"
+#include "utils/atomic.h"
 
 #define NEW_BLOCK_TTL     5
 #define REQUEST_WAIT      64
@@ -123,7 +123,7 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 
 		case XDAG_MESSAGE_BLOCKS_REPLY:
 		{
-			if(atomic_compare_exchange_strong_explicit(&reply_id, (uint64_t*)received_block->field[1].hash, reply_id_private, memory_order_relaxed, memory_order_relaxed)) {
+			if(atomic_compare_exchange_strong_explicit_uint_least64(&reply_id, (uint64_t*)received_block->field[1].hash, reply_id_private, memory_order_relaxed, memory_order_relaxed)) {
 				pthread_mutex_lock(&g_process_mutex);
 				if(last_reply_id != *(uint64_t*)received_block->field[1].hash){
 					pthread_mutex_unlock(&g_process_mutex);
@@ -157,7 +157,7 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 
 		case XDAG_MESSAGE_SUMS_REPLY:
 		{
-			if(atomic_compare_exchange_strong_explicit(&reply_id, (uint64_t*)received_block->field[1].hash, reply_id_private, memory_order_relaxed, memory_order_relaxed)) {
+			if(atomic_compare_exchange_strong_explicit_uint_least64(&reply_id, (uint64_t*)received_block->field[1].hash, reply_id_private, memory_order_relaxed, memory_order_relaxed)) {
 				pthread_mutex_lock(&g_process_mutex);
 				if(last_reply_id != *(uint64_t*)received_block->field[1].hash){
 					pthread_mutex_unlock(&g_process_mutex);
@@ -325,7 +325,7 @@ static int do_request(int type, xdag_time_t start_time, xdag_time_t end_time, vo
 
 	memset(&b.field[1], 0,  sizeof(struct xdag_field));
 	*(uint64_t*)b.field[1].hash = id;
-	atomic_exchange_explicit(&reply_id, id, memory_order_acq_rel);
+	atomic_exchange_explicit_uint_least64(&reply_id, id, memory_order_acq_rel);
 
 	memcpy(&b.field[2], &g_xdag_stats, sizeof(g_xdag_stats));
 	
