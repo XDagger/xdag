@@ -27,7 +27,7 @@ xdag_amount_t xdags2amount(const char *str)
 	return res + (xdag_amount_t)flr;
 }
 
-inline xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash)
+xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash)
 {
 	xdag_diff_t res = ((xdag_diff_t*)hash)[1];
 	xdag_diff_t max = xdag_diff_max;
@@ -43,7 +43,7 @@ inline xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash)
 	return xdag_diff_div(max, res);
 }
 
-inline long double xdag_diff2log(xdag_diff_t diff)
+long double xdag_diff2log(xdag_diff_t diff)
 {
 	long double res = (long double)xdag_diff_to64(diff);
 	xdag_diff_shr32(&diff);
@@ -54,7 +54,7 @@ inline long double xdag_diff2log(xdag_diff_t diff)
 	return (res > 0 ? logl(res) : 0);
 }
 
-inline long double xdag_log_difficulty2hashrate(long double log_diff)
+long double xdag_log_difficulty2hashrate(long double log_diff)
 {
 	return ldexpl(expl(log_diff), -58)*(0.65);
 }

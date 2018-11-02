@@ -171,8 +171,8 @@
     <ClCompile Include="..\..\client\math.c">
       <Filter>client</Filter>
     </ClCompile>
-    <ClCompile Include="..\stdatomic.c">
-      <Filter>win</Filter>
+    <ClCompile Include="..\..\client\utils\atomic.c">
+      <Filter>client\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -351,11 +351,11 @@
     <ClInclude Include="..\..\client\time.h">
       <Filter>client</Filter>
     </ClInclude>
-    <ClInclude Include="..\stdatomic.h">
-      <Filter>win</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\client\math.h">
       <Filter>client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\utils\atomic.h">
+      <Filter>client\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

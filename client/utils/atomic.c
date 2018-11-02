@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <intrin.h>
-#include <windows.h>
+#include <stdint.h>
 #include "atomic.h"
+#include "log.h"
 
 #define atomic_exchange_switch_max64(object, desired) \
 switch(sizeof(*object)) { \
@@ -13,7 +14,7 @@ switch(sizeof(*object)) { \
 	case 4: \
 		return _InterlockedExchange((volatile long*)object, desired); \
 	case 8: \
-		return InterlockedExchange64((volatile LONG64*)object, desired); \
+		return _InterlockedExchange64((volatile long long*)object, desired); \
 	default: \
 		xdag_err("This atomic data size %d is not supported on windows", sizeof(*object)); \
 		return 0; \
