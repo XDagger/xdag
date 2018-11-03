@@ -34,7 +34,7 @@ extern int xdag_send_new_block(struct xdag_block *b);
  * calls callback() for each block, callback received the block and data as paramenters;
  * return -1 in case of error
  */
-extern int xdag_request_blocks(xdag_time_t start_time, xdag_time_t end_time, void *data,
+extern int xdag_request_blocks(xtime_t start_time, xtime_t end_time, void *data,
 									void *(*callback)(void *, void *));
 
 /* requests a block by hash from another host */
@@ -44,7 +44,7 @@ extern int xdag_request_block(xdag_hash_t hash, void *conn);
  * blocks are filtered by interval from start_time to end_time, splitted to 16 parts;
  * end - start should be in form 16^k
  * (original russian comment is unclear too) */
-extern int xdag_request_sums(xdag_time_t start_time, xdag_time_t end_time, struct xdag_storage_sum sums[16]);
+extern int xdag_request_sums(xtime_t start_time, xtime_t end_time, struct xdag_storage_sum sums[16]);
 
 /* executes transport level command, out - stream to display the result of the command execution */
 extern int xdag_net_command(const char *cmd, void *out);

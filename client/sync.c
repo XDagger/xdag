@@ -32,7 +32,7 @@ struct sync_block {
 static struct sync_block **g_sync_hash, **g_sync_hash_r;
 static pthread_mutex_t g_sync_hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 int g_xdag_sync_on = 0;
-extern xdag_time_t g_time_limit;
+extern xtime_t g_time_limit;
 
 //functions
 int xdag_sync_add_block_nolock(struct xdag_block*, void*);
@@ -190,14 +190,14 @@ int xdag_sync_init(void)
 }
 
 // request all blocks between t and t + dt
-static int request_blocks(xdag_time_t t, xdag_time_t dt)
+static int request_blocks(xtime_t t, xtime_t dt)
 {
 	int i, res = 0;
 
 	if (!g_xdag_sync_on) return -1;
 
 	if (dt <= REQUEST_BLOCKS_MAX_TIME) {
-		xdag_time_t t0 = g_time_limit;
+		xtime_t t0 = g_time_limit;
 
 		for (i = 0;
 			xdag_info("QueryB: t=%llx dt=%llx", t, dt),
@@ -241,10 +241,10 @@ static int request_blocks(xdag_time_t t, xdag_time_t dt)
 /* a long procedure of synchronization */
 void *sync_thread(void *arg)
 {
-	xdag_time_t t = 0;
+	xtime_t t = 0;
 
 	for (;;) {
-		xdag_time_t st = get_timestamp();
+		xtime_t st = xdag_get_xtimestamp();
 		if (st - t >= MAIN_CHAIN_PERIOD) {
 			t = st;
 			request_blocks(0, 1ll << 48);

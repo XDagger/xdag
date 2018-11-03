@@ -147,7 +147,7 @@ void *miner_net_thread(void *arg)
 	const char *pool_address = (const char*)arg;
 	const char *mess = NULL;
 	int res = 0;
-	xdag_time_t t;
+	xtime_t t;
 	struct miner *m = &g_local_miner;
 
 	while(!g_xdag_sync_on) {

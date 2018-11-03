@@ -49,7 +49,7 @@ typedef struct {
 extern int g_use_tmpfile;
 
 // Function declarations
-int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
+int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, int n_our_key);
 
 void processAccountCommand(char *nextParam, FILE *out);
 void processBalanceCommand(char *nextParam, FILE *out);
@@ -720,7 +720,7 @@ const char *get_state()
 	return states[g_xdag_state];
 }
 
-int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key)
+int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, int n_our_key)
 {
 	char address[33] = {0};
 	struct account_callback_data *d = (struct account_callback_data *)data;
@@ -823,7 +823,7 @@ int xdag_do_xfer(void *outv, const char *amount, const char *address, const char
 	return 0;
 }
 
-int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key)
+int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, int n_our_key)
 {
 	struct xfer_callback_data *xferData = (struct xfer_callback_data*)data;
 	xdag_amount_t todo = xferData->remains;
@@ -881,7 +881,7 @@ void xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount)
 	xdag_mess("Xfer : from %s to %s xfer %.9Lf %s", address_from, address_to, amount2xdags(amount), g_coinname);
 }
 
-static int out_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time)
+static int out_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time)
 {
 	struct out_balances_data *d = (struct out_balances_data *)data;
 	struct xdag_field f;
