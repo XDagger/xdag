@@ -1866,7 +1866,7 @@ int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int
 	struct block_internal *bi = block_by_hash(hash);
 	pthread_mutex_unlock(&block_mutex);
 
-	if(callback) {
+	if(callback && bi) {
 		return callback(data, bi->flags & ~BI_OURS,  bi->hash, bi->amount, bi->time, get_remark(bi));
 	}
 
