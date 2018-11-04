@@ -23,6 +23,7 @@
 		385827BA20737CC6009C83CB /* rpc_wrapper.c in Sources */ = {isa = PBXBuildFile; fileRef = 385827B220737CC6009C83CB /* rpc_wrapper.c */; };
 		3878725920E0084B00107FAE /* rpc_procedure.c in Sources */ = {isa = PBXBuildFile; fileRef = 3878725820E0084B00107FAE /* rpc_procedure.c */; };
 		3883C71220EA651400041D3A /* network.c in Sources */ = {isa = PBXBuildFile; fileRef = 3883C70D20EA651300041D3A /* network.c */; };
+		3884C5B7218C7B1400447101 /* rpc_commands.c in Sources */ = {isa = PBXBuildFile; fileRef = 3884C5B6218C7B1400447101 /* rpc_commands.c */; };
 		388E850120D402D0009E01C1 /* moving_average.c in Sources */ = {isa = PBXBuildFile; fileRef = 388E84FF20D402D0009E01C1 /* moving_average.c */; };
 		38931ED720B8599D00FDD32F /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = 38931ED320B8599D00FDD32F /* http.c */; };
 		38931ED820B8599D00FDD32F /* url.c in Sources */ = {isa = PBXBuildFile; fileRef = 38931ED520B8599D00FDD32F /* url.c */; };
@@ -114,6 +115,8 @@
 		3883C70F20EA651400041D3A /* types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
 		3883C71020EA651400041D3A /* pools.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = pools.txt; sourceTree = "<group>"; };
 		3883C71120EA651400041D3A /* pools-testnet.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "pools-testnet.txt"; sourceTree = "<group>"; };
+		3884C5B5218C7B1400447101 /* rpc_commands.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = rpc_commands.h; sourceTree = "<group>"; };
+		3884C5B6218C7B1400447101 /* rpc_commands.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = rpc_commands.c; sourceTree = "<group>"; };
 		388CB2CC208E328B00F2AA96 /* uthash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uthash.h; sourceTree = "<group>"; };
 		388CB2CD208E328B00F2AA96 /* utlist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utlist.h; sourceTree = "<group>"; };
 		388E84FF20D402D0009E01C1 /* moving_average.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = moving_average.c; sourceTree = "<group>"; };
@@ -247,6 +250,8 @@
 				385827B120737CC6009C83CB /* rpc_service.h */,
 				385827B220737CC6009C83CB /* rpc_wrapper.c */,
 				385827B320737CC6009C83CB /* rpc_wrapper.h */,
+				3884C5B5218C7B1400447101 /* rpc_commands.h */,
+				3884C5B6218C7B1400447101 /* rpc_commands.c */,
 			);
 			path = "json-rpc";
 			sourceTree = "<group>";
@@ -589,6 +594,7 @@
 				3878725920E0084B00107FAE /* rpc_procedure.c in Sources */,
 				38A15E8D20544F3F00598EC2 /* init.c in Sources */,
 				385827B920737CC6009C83CB /* rpc_service.c in Sources */,
+				3884C5B7218C7B1400447101 /* rpc_commands.c in Sources */,
 				38A15E9720544F3F00598EC2 /* storage.c in Sources */,
 				389AD6EE216BB67B007BA2ED /* time.c in Sources */,
 				38983A9920BEF8B1000EE509 /* linenoise.c in Sources */,

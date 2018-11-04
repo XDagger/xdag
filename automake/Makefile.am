@@ -37,9 +37,9 @@ sources = \
 	$(client)/wallet.c                              \
 	$(client)/commands.c                            \
 	$(client)/terminal.c                            \
-	$(client)/network.c	                        \
+	$(client)/network.c                             \
 	$(dnet)/dnet_crypt.c                            \
-	$(dnet)/dnet_xdag.c                          	\
+	$(dnet)/dnet_xdag.c                             \
 	$(dfslib)/dfslib_crypt.c                        \
 	$(dfslib)/dfslib_random.c                       \
 	$(dfslib)/dfslib_string.c                       \
@@ -48,7 +48,7 @@ sources = \
 	$(utils)/log.c                                  \
 	$(utils)/utils.c                                \
 	$(utils)/linenoise.c                            \
-	$(utils)/dirname.c 	                        \
+	$(utils)/dirname.c                              \
 	$(moving_statistics)/moving_average.c           \
 	$(jsonrpc)/cJSON.c                              \
 	$(jsonrpc)/cJSON_Utils.c                        \
@@ -56,6 +56,7 @@ sources = \
 	$(jsonrpc)/rpc_procedure.c                      \
 	$(jsonrpc)/rpc_service.c                        \
 	$(jsonrpc)/rpc_wrapper.c                        \
+	$(jsonrpc)/rpc_commands.c                       \
 	$(http)/url.c                                   \
 	$(http)/http.c                                  \
 	$(secp256k1)/src/secp256k1.c
@@ -111,6 +112,7 @@ headers = \
 	$(jsonrpc)/rpc_procedure.h                      \
 	$(jsonrpc)/rpc_service.h                        \
 	$(jsonrpc)/rpc_wrapper.h                        \
+	$(jsonrpc)/rpc_commands.h                       \
 	$(http)/url.h                                   \
 	$(http)/http.h                                  
 

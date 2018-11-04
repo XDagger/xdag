@@ -11,29 +11,23 @@
 
 #include "cJSON.h"
 #include "cJSON_Utils.h"
-
-struct xdag_rpc_connection {
-	int fd;
-	int pos;
-	size_t buffer_size;
-	char * buffer;
-};
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-	
+
+extern int g_rpc_stop;
+extern int g_rpc_port;
+extern int g_rpc_xfer_enable;
+extern int g_rpc_white_enable;
+
 /* init xdag rpc */
-extern int xdag_rpc_service_init(int port);
+extern int xdag_rpc_service_start(int port);
 
 /* stop xdag rpc */
 extern int xdag_rpc_service_stop(void);
 
-/* rpc white address config */
-extern int rpc_white_command(void *out, char *type, const char *address);
-
-
-	
 #ifdef __cplusplus
 };
 #endif
