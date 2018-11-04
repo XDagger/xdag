@@ -22,6 +22,9 @@ extern "C" {
 	extern int xdag_rpc_command_host_del(const char *);
 	extern void xdag_rpc_command_host_clear(void);
 	extern void xdag_rpc_command_host_query(char *);
+	extern void xdag_rpc_command_list_methods(char *);
+	extern void xdag_rpc_command_disable_xfer(void);
+	extern void xdag_rpc_command_enable_xfer(void);
 	extern void xdag_rpc_command_help(FILE *);
 
 #ifdef __cplusplus

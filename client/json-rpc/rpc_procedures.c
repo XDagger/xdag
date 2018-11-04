@@ -27,6 +27,7 @@
 
 #include "rpc_wrapper.h"
 #include "rpc_procedure.h"
+#include "rpc_service.h"
 #include "../version.h"
 #include "../init.h"
 #include "../address.h"
@@ -809,7 +810,11 @@ int xdag_rpc_init_procedures(void)
 	rpc_register_func(xdag_get_account);
 	rpc_register_func(xdag_get_balance);
 	rpc_register_func(xdag_get_block_info);
-	rpc_register_func(xdag_do_xfer);
+
+	if(g_rpc_xfer_enable) {
+		rpc_register_func(xdag_do_xfer);
+	}
+
 	rpc_register_func(xdag_get_transactions);
 	return 0;
 }

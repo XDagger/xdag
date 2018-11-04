@@ -498,7 +498,6 @@ void processRPCCommand(char *nextParam, FILE *out)
 {
 	char *cmd = NULL;
 	char rpccmd[4096] = {0};
-	*rpccmd = 0;
 	while((cmd = strtok_r(nextParam, " \t\r\n", &nextParam))) {
 		strcat(rpccmd, cmd);
 		strcat(rpccmd, " ");

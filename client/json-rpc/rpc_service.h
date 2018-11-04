@@ -19,6 +19,8 @@ extern "C" {
 
 extern int g_rpc_stop;
 extern int g_rpc_port;
+extern int g_rpc_xfer_enable;
+extern int g_rpc_white_enable;
 
 /* init xdag rpc */
 extern int xdag_rpc_service_start(int port);
