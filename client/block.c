@@ -42,9 +42,15 @@
 
 struct block_backrefs;
 struct orphan_block;
+struct block_internal_index;
+
+int g_bi_index_enable = 1;
 
 struct block_internal {
-	struct ldus_rbtree node;
+	union {
+		struct ldus_rbtree node;
+		struct block_internal_index *index;
+	};
 	xdag_hash_t hash;
 	xdag_diff_t difficulty;
 	xdag_amount_t amount, linkamount[MAX_LINKS], fee;
@@ -59,6 +65,12 @@ struct block_internal {
 	atomic_uintptr_t remark;
 	uint16_t flags, in_mask, n_our_key;
 	uint8_t nlinks:4, max_diff_link:4, reserved;
+};
+
+struct block_internal_index {
+	struct ldus_rbtree node;
+	xdag_hash_t hash;
+	struct block_internal *bi;
 };
 
 #define N_BACKREFS      (sizeof(struct block_internal) / sizeof(struct block_internal *) - 1)
@@ -138,11 +150,19 @@ ldus_rbtree_define_prefix(lessthan, static inline, )
 
 static inline struct block_internal *block_by_hash(const xdag_hashlow_t hash)
 {
-	struct block_internal *bi;
-	pthread_mutex_lock(&rbtree_mutex);
-	bi = (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
-	pthread_mutex_unlock(&rbtree_mutex);
-	return bi;
+	if(g_bi_index_enable) {
+		struct block_internal_index *index;
+		pthread_mutex_lock(&rbtree_mutex);
+		index = (struct block_internal_index *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
+		pthread_mutex_unlock(&rbtree_mutex);
+		return index ? index->bi : NULL;
+	} else {
+		struct block_internal *bi;
+		pthread_mutex_lock(&rbtree_mutex);
+		bi = (struct block_internal *)ldus_rbtree_find(root, (struct ldus_rbtree *)hash - 1);
+		pthread_mutex_unlock(&rbtree_mutex);
+		return bi;
+	}
 }
 
 static inline struct cache_block *cache_block_by_hash(const xdag_hashlow_t hash)
@@ -388,6 +408,44 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int keysLeng
 	}
 
 	return -1;
+}
+
+static int remove_index(struct block_internal *bi)
+{
+	if(g_bi_index_enable) {
+		pthread_mutex_lock(&rbtree_mutex);
+		ldus_rbtree_remove(&root, &bi->index->node);
+		pthread_mutex_unlock(&rbtree_mutex);
+	} else {
+		pthread_mutex_lock(&rbtree_mutex);
+		ldus_rbtree_remove(&root, &bi->node);
+		pthread_mutex_unlock(&rbtree_mutex);
+	}
+	return 0;
+}
+
+static int insert_index(struct block_internal *bi)
+{
+	if(g_bi_index_enable) {
+		struct block_internal_index *index = (struct block_internal_index *)malloc(sizeof(struct block_internal_index));
+		if(!index) {
+			xdag_err("block index malloc failed. [func: add_block_nolock]");
+			return -1;
+		}
+		bzero(index, sizeof(struct block_internal_index));
+		memcpy(index->hash, bi->hash, sizeof(xdag_hash_t));
+		index->bi = bi;
+		bi->index = index;
+
+		pthread_mutex_lock(&rbtree_mutex);
+		ldus_rbtree_insert(&root, &index->node);
+		pthread_mutex_unlock(&rbtree_mutex);
+	} else {
+		pthread_mutex_lock(&rbtree_mutex);
+		ldus_rbtree_insert(&root, &bi->node);
+		pthread_mutex_unlock(&rbtree_mutex);
+	}
+	return 0;
 }
 
 #define set_pretop(b) if ((b) && MAIN_TIME((b)->time) < MAIN_TIME(timestamp) && \
@@ -638,9 +696,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		/* if too many extra blocks then reuse the oldest */
 		nodeBlock = g_orphan_first[1]->orphan_bi;
 		remove_orphan(nodeBlock, ORPHAN_REMOVE_REUSE);
-		pthread_mutex_lock(&rbtree_mutex);
-		ldus_rbtree_remove(&root, &nodeBlock->node);
-		pthread_mutex_unlock(&rbtree_mutex);
+		remove_index(nodeBlock);
 		if (g_xdag_stats.nblocks-- == g_xdag_stats.total_nblocks)
 			g_xdag_stats.total_nblocks--;
 		if (nodeBlock->flags & BI_OURS) {
@@ -672,10 +728,13 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 	if(nodeBlock->flags & BI_REMARK){
 		atomic_init_uintptr(&nodeBlock->remark, (uintptr_t)NULL);
 	}
-	pthread_mutex_lock(&rbtree_mutex);
-	ldus_rbtree_insert(&root, &nodeBlock->node);
-	pthread_mutex_unlock(&rbtree_mutex);
-	g_xdag_stats.nblocks++;
+
+	if(!insert_index(nodeBlock)) {
+		g_xdag_stats.nblocks++;
+	} else {
+		err = 0xC;
+		goto err;
+	}
 
 	if(g_xdag_stats.nblocks > g_xdag_stats.total_nblocks) {
 		g_xdag_stats.total_nblocks = g_xdag_stats.nblocks;
@@ -725,7 +784,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 				tmpNodeBlock.flags & BI_EXTRA ? ORPHAN_REMOVE_EXTRA : ORPHAN_REMOVE_NORMAL);
 
 		if(tmpNodeBlock.linkamount[i]) {
-		        blockRef = tmpNodeBlock.link[i];
+			blockRef = tmpNodeBlock.link[i];
 			add_backref(blockRef, nodeBlock);
 		}
 	}
@@ -1028,7 +1087,15 @@ int do_mining(struct xdag_block *block, struct block_internal **pretop, xdag_tim
 
 static void reset_callback(struct ldus_rbtree *node)
 {
-	struct block_internal *bi = (struct block_internal *)node;
+	struct block_internal *bi = 0;
+
+	if(g_bi_index_enable) {
+		struct block_internal_index *index = (struct block_internal_index *)node;
+		bi = index->bi;
+	} else {
+		bi = (struct block_internal *)node;
+	}
+
 	struct block_backrefs *tmp;
 	for(struct block_backrefs *to_free = (struct block_backrefs*)atomic_load_explicit_uintptr(&bi->backrefs, memory_order_acquire); to_free != NULL;){
 		tmp = to_free->next;
@@ -1039,6 +1106,10 @@ static void reset_callback(struct ldus_rbtree *node)
 		xdag_free((char*)bi->remark);
 	}
 	xdag_free(bi);
+
+	if(g_bi_index_enable) {
+		free(node);
+	}
 }
 
 // main thread which works with block
@@ -1271,7 +1342,13 @@ static void *g_traverse_data;
 
 static void traverse_all_callback(struct ldus_rbtree *node)
 {
-	struct block_internal *bi = (struct block_internal*)node;
+	struct block_internal *bi = 0;
+	if(g_bi_index_enable) {
+		struct block_internal_index *index = (struct block_internal_index *)node;
+		bi = index->bi;
+	} else {
+		bi = (struct block_internal *)node;
+	}
 
 	(*g_traverse_callback)(g_traverse_data, bi->hash, bi->amount, bi->time);
 }

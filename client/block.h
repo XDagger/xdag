@@ -91,6 +91,8 @@ struct xdag_block {
 extern "C" {
 #endif
 
+extern int g_bi_index_enable;
+
 // start of regular block processing
 extern int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address);
 

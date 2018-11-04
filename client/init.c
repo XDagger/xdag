@@ -111,8 +111,12 @@ int xdag_init(int argc, char **argv, int isGui)
 		} else if(ARG_EQUAL(argv[i], "-i", "")) { /* interactive mode */
 			return terminal();
 		} else if(ARG_EQUAL(argv[i], "-z", "")) { /* memory map  */
-			if (++i < argc)
+			if (++i < argc) {
 				xdag_mem_tempfile_path(argv[i]);
+				if(!strcmp(argv[i], "RAM")) {
+					g_bi_index_enable = 0; /* disable bi index when use RAM */
+				}
+			}
 		} else if(ARG_EQUAL(argv[i], "-t", "")) { /* connect test net */
 			g_xdag_testnet = 1;
 			g_block_header_type = XDAG_FIELD_HEAD_TEST; //block header has the different type in the test network
