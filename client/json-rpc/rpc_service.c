@@ -62,14 +62,22 @@ int g_rpc_white_enable = 1; // 0 disable white list, 1 enable white list
 static struct pollfd *g_fds = NULL;
 struct xdag_rpc_connection {
 	struct pollfd fd;
+	int is_http;
 	int pos;
 };
 
+static void wrap_http(int fd)
+{
+	write(fd, "HTTP/1.1 200 OK\r\n", 17);
+	write(fd, "Content-Type: application/json\r\n\r\n", 34);
+}
+
 static int send_response(struct xdag_rpc_connection * conn,const char *response) {
 	int fd = conn->fd.fd;
-	write(fd, "\r\n", 2);// fix http issue
+	if(conn->is_http) {
+		wrap_http(fd);
+	}
 	write(fd, response, strlen(response));
-	write(fd, "\n", 1);
 	return 0;
 }
 
@@ -105,6 +113,7 @@ static void* rpc_handle_thread(void *arg)
 
 	char *body = strstr(req_buffer, "\r\n\r\n");
 	if(body) {
+		conn->is_http = 1;
 		body += 4;
 	} else {
 		body = req_buffer;
