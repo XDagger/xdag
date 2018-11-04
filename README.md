@@ -28,6 +28,7 @@ HOW-TO:
 
 Docs:  
 ----------
+- [Wiki](https://github.com/XDagger/xdag/wiki)
 - [Whitepaper](https://github.com/XDagger/xdag/blob/master/WhitePaper.md)  [中文版](https://github.com/XDagger/xdag/blob/master/WhitePaper%20zh-cn.md)  
 - [Protocol](https://github.com/XDagger/xdag/blob/master/Protocol.md)  [中文版](https://github.com/XDagger/xdag/blob/master/Protocol-cn.md)  
 - [License](https://github.com/XDagger/xdag/blob/master/LICENSE)  
