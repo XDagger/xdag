@@ -48,7 +48,7 @@ struct block_internal {
 	xdag_hash_t hash;
 	xdag_diff_t difficulty;
 	xdag_amount_t amount, linkamount[MAX_LINKS], fee;
-	xdag_time_t time;
+	xtime_t time;
 	uint64_t storage_pos;
 	union {
 		struct block_internal *ref;
@@ -96,7 +96,7 @@ enum orphan_remove_actions {
 static pthread_mutex_t g_create_block_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static xdag_amount_t g_balance = 0;
-extern xdag_time_t g_time_limit;
+extern xtime_t g_time_limit;
 static struct ldus_rbtree *root = 0, *cache_root = 0;
 static struct block_internal *volatile top_main_chain = 0, *volatile pretop_main_chain = 0;
 static struct block_internal *ourfirst = 0, *ourlast = 0;
@@ -114,7 +114,7 @@ void cache_add(struct xdag_block*, xdag_hash_t);
 int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
 int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
 static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
-int do_mining(struct xdag_block *block, struct block_internal **pretop, xdag_time_t send_time);
+int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t send_time);
 void remove_orphan(struct block_internal*,int);
 void add_orphan(struct block_internal*,struct xdag_block*);
 static inline size_t remark_acceptance(xdag_remark_t);
@@ -151,7 +151,7 @@ static inline struct cache_block *cache_block_by_hash(const xdag_hashlow_t hash)
 }
 
 
-static void log_block(const char *mess, xdag_hash_t h, xdag_time_t t, uint64_t pos)
+static void log_block(const char *mess, xdag_hash_t h, xtime_t t, uint64_t pos)
 {
 	/* Do not log blocks as we are loading from local storage */
 	if(g_xdag_state != XDAG_STATE_LOAD) {
@@ -318,7 +318,7 @@ static void check_new_main(void)
 		}
 	}
 
-	if (p && (p->flags & BI_REF) && i > MAX_WAITING_MAIN && get_timestamp() >= p->time + 2 * 1024) {
+	if (p && (p->flags & BI_REF) && i > MAX_WAITING_MAIN && xdag_get_xtimestamp() >= p->time + 2 * 1024) {
 		set_main(p);
 	}
 }
@@ -402,9 +402,9 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int keysLeng
  *		0  = block exists
  *		<0 = error
  */
-static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
+static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 {
-	const uint64_t timestamp = get_timestamp();
+	const xtime_t timestamp = xdag_get_xtimestamp();
 	uint64_t sum_in = 0, sum_out = 0, *psum = NULL;
 	const uint64_t transportHeader = newBlock->field[0].transport_header;
 	struct xdag_public_key public_keys[16], *our_keys = 0;
@@ -767,7 +767,7 @@ end:
 void *add_block_callback(void *block, void *data)
 {
 	struct xdag_block *b = (struct xdag_block *)block;
-	xdag_time_t *t = (xdag_time_t*)data;
+	xtime_t *t = (xtime_t*)data;
 	int res;
 
 	pthread_mutex_lock(&block_mutex);
@@ -810,7 +810,7 @@ int xdag_add_block(struct xdag_block *b)
  * if it is greater than the current one, then the mining is performed to generate the most optimal hash
  */
 struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, int hasRemark,
-	xdag_amount_t fee, xdag_time_t send_time, xdag_hash_t block_hash_result)
+	xdag_amount_t fee, xtime_t send_time, xdag_hash_t block_hash_result)
 {
 	pthread_mutex_lock(&g_create_block_mutex);
 	struct xdag_block block[2];
@@ -847,10 +847,10 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 	}
 
 	if (!send_time) {
-		send_time = get_timestamp();
+		send_time = xdag_get_xtimestamp();
 		mining = 0;
 	} else {
-		mining = (send_time > get_timestamp() && res0 + 1 <= XDAG_BLOCK_FIELDS);
+		mining = (send_time > xdag_get_xtimestamp() && res0 + 1 <= XDAG_BLOCK_FIELDS);
 	}
 
 	res0 += mining;
@@ -964,7 +964,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 * if it is greater than the current one, then the mining is performed to generate the most optimal hash
 */
 int xdag_create_and_send_block(struct xdag_field *fields, int inputsCount, int outputsCount, int hasRemark,
-	xdag_amount_t fee, xdag_time_t send_time, xdag_hash_t block_hash_result)
+	xdag_amount_t fee, xtime_t send_time, xdag_hash_t block_hash_result)
 {
 	struct xdag_block *block = xdag_create_block(fields, inputsCount, outputsCount, hasRemark, fee, send_time, block_hash_result);
 	if(!block) {
@@ -984,7 +984,7 @@ int xdag_create_and_send_block(struct xdag_field *fields, int inputsCount, int o
 	return res;
 }
 
-int do_mining(struct xdag_block *block, struct block_internal **pretop, xdag_time_t send_time)
+int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t send_time)
 {
 	uint64_t taskIndex = g_xdag_pool_task_index + 1;
 	struct xdag_pool_task *task = &g_xdag_pool_task[taskIndex & 1];
@@ -1007,12 +1007,12 @@ int do_mining(struct xdag_block *block, struct block_internal **pretop, xdag_tim
 	xdag_hash_final(task->ctx, &task->nonce.amount, sizeof(uint64_t), task->minhash.data);
 	g_xdag_pool_task_index = taskIndex;
 
-	while(get_timestamp() <= send_time) {
+	while(xdag_get_xtimestamp() <= send_time) {
 		sleep(1);
 		pthread_mutex_lock(&g_create_block_mutex);
 		struct block_internal *pretop_new = pretop_block();
 		pthread_mutex_unlock(&g_create_block_mutex);
-		if(*pretop != pretop_new && get_timestamp() < send_time) {
+		if(*pretop != pretop_new && xdag_get_xtimestamp() < send_time) {
 			*pretop = pretop_new;
 			xdag_info("Mining: start from beginning because of pre-top block changed");
 			return 0;
@@ -1044,7 +1044,7 @@ static void reset_callback(struct ldus_rbtree *node)
 // main thread which works with block
 static void *work_thread(void *arg)
 {
-	xdag_time_t t = XDAG_ERA, conn_time = 0, sync_time = 0, t0;
+	xtime_t t = XDAG_ERA, conn_time = 0, sync_time = 0, t0;
 	int n_mining_threads = (int)(unsigned)(uintptr_t)arg, sync_thread_running = 0;
 	uint64_t nhashes0 = 0, nhashes = 0;
 	pthread_t th;
@@ -1054,12 +1054,12 @@ begin:
 	g_xdag_state = XDAG_STATE_LOAD;
 	xdag_mess("Loading blocks from local storage...");
 
-	uint64_t start = get_timestamp();
+	xtime_t start = xdag_get_xtimestamp();
 	xdag_show_state(0);
 
-	xdag_load_blocks(t, get_timestamp(), &t, &add_block_callback);
+	xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback);
 
-	xdag_mess("Finish loading blocks, time cost %ldms", get_timestamp() - start);
+	xdag_mess("Finish loading blocks, time cost %ldms", xdag_get_xtimestamp() - start);
 
 	// waiting for command "run"
 	while (!g_xdag_run) {
@@ -1097,7 +1097,7 @@ begin:
 		unsigned nblk;
 
 		t0 = t;
-		t = get_timestamp();
+		t = xdag_get_xtimestamp();
 		nhashes0 = nhashes;
 		nhashes = g_xdag_extstats.nhashes;
 
@@ -1120,7 +1120,7 @@ begin:
 			pthread_mutex_unlock(&block_mutex);
 			xdag_mining_start(0);
 
-			while (get_timestamp() - t < MAIN_CHAIN_PERIOD + (3 << 10)) {
+			while (xdag_get_xtimestamp() - t < MAIN_CHAIN_PERIOD + (3 << 10)) {
 				sleep(1);
 			}
 
@@ -1183,7 +1183,7 @@ begin:
 		pthread_mutex_unlock(&block_mutex);
 		xdag_show_state(ours ? ours->hash : 0);
 
-		while (get_timestamp() - t < 1024) {
+		while (xdag_get_xtimestamp() - t < 1024) {
 			sleep(1);
 		}
 	}
@@ -1205,7 +1205,7 @@ int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address)
 		g_light_mode = 1;
 	}
 
-	if (xdag_mem_init(g_light_mode && !miner_address ? 0 : (((get_timestamp() - XDAG_ERA) >> 10) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal))) {
+	if (xdag_mem_init(g_light_mode && !miner_address ? 0 : (((xdag_get_xtimestamp() - XDAG_ERA) >> 10) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal))) {
 		return -1;
 	}
 
@@ -1251,7 +1251,7 @@ int xdag_get_our_block(xdag_hash_t hash)
 
 /* calls callback for each own block */
 int xdag_traverse_our_blocks(void *data,
-    int (*callback)(void*, xdag_hash_t, xdag_amount_t, xdag_time_t, int))
+    int (*callback)(void*, xdag_hash_t, xdag_amount_t, xtime_t, int))
 {
 	int res = 0;
 
@@ -1266,7 +1266,7 @@ int xdag_traverse_our_blocks(void *data,
 	return res;
 }
 
-static int (*g_traverse_callback)(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time);
+static int (*g_traverse_callback)(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time);
 static void *g_traverse_data;
 
 static void traverse_all_callback(struct ldus_rbtree *node)
@@ -1278,7 +1278,7 @@ static void traverse_all_callback(struct ldus_rbtree *node)
 
 /* calls callback for each block */
 int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag_hash_t hash,
-	xdag_amount_t amount, xdag_time_t time))
+	xdag_amount_t amount, xtime_t time))
 {
 	pthread_mutex_lock(&block_mutex);
 	g_traverse_callback = callback;
@@ -1369,7 +1369,7 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 }
 
 // returns position and time of block by hash; if block is extra and block != 0 also returns the whole block
-int64_t xdag_get_block_pos(const xdag_hash_t hash, xdag_time_t *t, struct xdag_block *block)
+int64_t xdag_get_block_pos(const xdag_hash_t hash, xtime_t *t, struct xdag_block *block)
 {
 	if (block) pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
@@ -1420,7 +1420,7 @@ int xdag_blocks_reset(void)
 
 static int bi_compar(const void *l, const void *r)
 {
-	xdag_time_t tl = (*(struct block_internal **)l)->time, tr = (*(struct block_internal **)r)->time;
+	xtime_t tl = (*(struct block_internal **)l)->time, tr = (*(struct block_internal **)r)->time;
 
 	return (tl < tr) - (tl > tr);
 }
@@ -1456,7 +1456,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	}
 
 	uint64_t *h = bi->hash;
-	xdag_time_to_string(bi->time, time_buf);
+	xdag_xtime_to_string(bi->time, time_buf);
 	fprintf(out, "      time: %s\n", time_buf);
 	fprintf(out, " timestamp: %llx\n", (unsigned long long)bi->time);
 	fprintf(out, "     flags: %x\n", bi->flags & ~BI_OURS);
@@ -1533,7 +1533,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 				if (ri->flags & BI_APPLIED) {
 					for (int j = 0; j < ri->nlinks; j++) {
 						if(ri->link[j] == bi && ri->linkamount[j]) {
-							xdag_time_to_string(ri->time, time_buf);
+							xdag_xtime_to_string(ri->time, time_buf);
 							xdag_hash2address(ri->hash, address);
 							fprintf(out, "    %6s: %s  %10u.%09u  %s  %s\n",
 								(1 << j & ri->in_mask ? "output" : " input"), address,
@@ -1567,7 +1567,7 @@ static inline void print_block(struct block_internal *block, int print_only_addr
 	if(print_only_addresses) {
 		fprintf(out, "%s\n", address);
 	} else {
-		xdag_time_to_string(block->time, time_buf);
+		xdag_xtime_to_string(block->time, time_buf);
 		fprintf(out, "%s   %s   %-8s  %-32s\n", address, time_buf, xdag_get_block_state_info(block->flags), get_remark(block));
 	}
 }
@@ -1718,7 +1718,7 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
 	return 0;
 }
 
-int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xdag_time_t, const char *))
+int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xtime_t, const char *))
 {
 	struct block_internal *bi = block_by_hash(hash);
 	
@@ -1860,7 +1860,7 @@ void xdag_block_finish()
 	pthread_mutex_lock(&block_mutex);
 }
 
-int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xdag_time_t, const char *))
+int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xtime_t, const char *))
 {
 	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);

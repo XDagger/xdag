@@ -64,8 +64,8 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 {
 	struct xdag_stats *stats = (struct xdag_stats *)&received_block->field[2];
 	struct xdag_stats *g = &g_xdag_stats;
-	xdag_time_t start_time = xdag_start_main_time();
-	xdag_time_t current_time = xdag_main_time();
+	xtime_t start_time = xdag_start_main_time();
+	xtime_t current_time = xdag_main_time();
 
 	if(current_time < start_time || stats->total_nmain > current_time - start_time + 2) return -1;
 
@@ -178,7 +178,7 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 		case XDAG_MESSAGE_BLOCK_REQUEST:
 		{
 			struct xdag_block buf, *blk;
-			xdag_time_t t;
+			xtime_t t;
 			int64_t pos = xdag_get_block_pos(received_block->field[1].hash, &t, &buf);
 
 			if (pos == -2l) {
@@ -308,7 +308,7 @@ int xdag_generate_random_array(void *array, unsigned long size)
 	return dnet_generate_random_array(array, size);
 }
 
-static int do_request(int type, xdag_time_t start_time, xdag_time_t end_time, void *data,
+static int do_request(int type, xtime_t start_time, xtime_t end_time, void *data,
 					  void *(*callback)(void *block, void *data))
 {
 	struct xdag_block b;
@@ -374,7 +374,7 @@ static int do_request(int type, xdag_time_t start_time, xdag_time_t end_time, vo
 * calls callback() for each block, callback received the block and data as paramenters;
 * return -1 in case of error
 */
-int xdag_request_blocks(xdag_time_t start_time, xdag_time_t end_time, void *data,
+int xdag_request_blocks(xtime_t start_time, xtime_t end_time, void *data,
 							 void *(*callback)(void *block, void *data))
 {
 	return do_request(XDAG_MESSAGE_BLOCKS_REQUEST, start_time, end_time, data, callback);
@@ -384,7 +384,7 @@ int xdag_request_blocks(xdag_time_t start_time, xdag_time_t end_time, void *data
 * blocks are filtered by interval from start_time to end_time, splitted to 16 parts;
 * end - start should be in form 16^k
 * (original russian comment is unclear too) */
-int xdag_request_sums(xdag_time_t start_time, xdag_time_t end_time, struct xdag_storage_sum sums[16])
+int xdag_request_sums(xtime_t start_time, xtime_t end_time, struct xdag_storage_sum sums[16])
 {
 	return do_request(XDAG_MESSAGE_SUMS_REQUEST, start_time, end_time, sums, 0);
 }

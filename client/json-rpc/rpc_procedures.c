@@ -52,21 +52,21 @@ cJSON * method_xdag_state(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id
 cJSON * method_xdag_stats(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_get_account */
-int rpc_account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
+int rpc_account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, int n_our_key);
 cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_get_balance */
 cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_get_block_info */
-int rpc_get_block_callback(void *data, int flag, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, const char* remark);
+int rpc_get_block_callback(void *data, int flag, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, const char* remark);
 cJSON * method_xdag_get_block_info(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_do_xfer */
 cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_get_transactions */
-int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, const char* remark);
+int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, const char* remark);
 cJSON * method_xdag_get_transactions(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* version */
@@ -270,7 +270,7 @@ struct rpc_account_callback_data {
 	int count;
 };
 
-int rpc_account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key)
+int rpc_account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, int n_our_key)
 {
 	struct rpc_account_callback_data *d = (struct rpc_account_callback_data*)data;
 	if(d->count-- <=0) return -1;
@@ -408,7 +408,7 @@ cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJ
  "version":"1.1", "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"2018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
  */
 
-int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, const char* remark)
+int rpc_get_block_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, const char* remark)
 {
 	cJSON *callback_data = (cJSON *)data;
 
@@ -648,7 +648,7 @@ struct rpc_transactions_callback_data {
 	int count;
 };
 
-int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, const char* remark)
+int rpc_transactions_callback(void *data, int type, int flags, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, const char* remark)
 {
 	struct rpc_transactions_callback_data *callback_data = (struct rpc_transactions_callback_data*)data;
 	

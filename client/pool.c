@@ -34,6 +34,7 @@
 #include "uthash/utlist.h"
 #include "uthash/uthash.h"
 #include "utils/atomic.h"
+#include "time.h"
 
 //TODO: why do we need these two definitions?
 #define START_MINERS_COUNT     256
@@ -58,7 +59,7 @@ enum miner_state {
 
 struct miner_pool_data {
 	struct xdag_field id;
-	xdag_time_t task_time;
+	xtime_t task_time;
 	double prev_diff;
 	uint32_t prev_diff_count;
 	double maxdiff[CONFIRMATIONS_COUNT];
@@ -83,7 +84,7 @@ enum connection_state {
 };
 
 struct connection_pool_data {
-	xdag_time_t task_time;
+	xtime_t task_time;
 	double prev_diff;
 	uint32_t prev_diff_count;
 	double maxdiff[CONFIRMATIONS_COUNT];
@@ -151,7 +152,7 @@ static uint32_t g_connection_changed = 0;
 static pthread_mutex_t g_connections_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int pay_miners(xdag_time_t time);
+int pay_miners(xtime_t time);
 void remove_inactive_miners(void);
 void block_queue_append_new(struct xdag_block *b);
 struct xdag_block *block_queue_first(void);
@@ -609,7 +610,7 @@ static void close_connection(connection_list_element *connection, const char *me
 
 static void calculate_nopaid_shares(struct connection_pool_data *conn_data, struct xdag_pool_task *task, xdag_hash_t hash)
 {
-	const xdag_time_t task_time = task->task_time;
+	const xtime_t task_time = task->task_time;
 
 	if(conn_data->task_time <= task_time) { // At the beginning conn_data->task_time=0. conn_data->task_time > task_time isn't accepted.
 		double diff = ((uint64_t*)hash)[2];
@@ -677,7 +678,7 @@ static int register_new_miner(connection_list_element *connection)
 	miner_list_element *elt;
 	struct connection_pool_data *conn_data = &connection->connection_data;
 
-	xdag_time_t tm;
+	xtime_t tm;
 	const int64_t position = xdag_get_block_pos((const uint64_t*)conn_data->data, &tm, 0);
 	if(position < 0) {
 		char address_buf[33] = {0};
@@ -1078,7 +1079,7 @@ void *pool_block_thread(void *arg)
 
 void *pool_payment_thread(void *arg)
 {
-	xdag_time_t prev_task_time = 0;
+	xtime_t prev_task_time = 0;
 
 	while(!g_xdag_sync_on) {
 		sleep(1);
@@ -1088,7 +1089,7 @@ void *pool_payment_thread(void *arg)
 		int processed = 0;
 		const uint64_t task_index = g_xdag_pool_task_index;
 		struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
-		const xdag_time_t current_task_time = task->task_time;
+		const xtime_t current_task_time = task->task_time;
 
 		if(current_task_time > prev_task_time) {
 			uint64_t *hash = g_xdag_mined_hashes[(current_task_time - CONFIRMATIONS_COUNT + 1) & (CONFIRMATIONS_COUNT - 1)];
@@ -1192,7 +1193,7 @@ static double precalculate_payments(uint64_t *hash, int confirmation_index, stru
 
 	if(g_pool_fund) {
 		if(g_fund_miner.state == MINER_UNKNOWN) {
-			xdag_time_t t;
+			xtime_t t;
 			if(!xdag_address2hash(FUND_ADDRESS, g_fund_miner.id.hash) && xdag_get_block_pos(g_fund_miner.id.hash, &t, 0) >= 0) {
 				g_fund_miner.state = MINER_SERVICE;
 			}
@@ -1307,7 +1308,7 @@ static void do_payments(uint64_t *hash, int payments_per_block, struct payment_d
 	}
 }
 
-int pay_miners(xdag_time_t time)
+int pay_miners(xtime_t time)
 {
 	int defkey;
 	struct payment_data data;
@@ -1610,7 +1611,7 @@ struct xdag_block *block_queue_first(void)
 
 void update_mean_log_diff(struct connection_pool_data *conn_data, struct xdag_pool_task *task, xdag_hash_t hash)
 {
-	const xdag_time_t task_time = task->task_time;
+	const xtime_t task_time = task->task_time;
 
 	if(conn_data->task_time < task_time) {
 		if(conn_data->task_time != 0) {
@@ -1652,13 +1653,13 @@ static void miner_print_time_intervals(struct miner_pool_data *miner, int curren
 		int is_reward = memcmp(g_xdag_mined_nonce[i], miner->id.data, sizeof(xdag_hashlow_t)) == 0;
 
 		// here we calculate time offset for interval of time
-		xdag_time_t task_time = current_task_time << 16 | 0xffff;
+		xtime_t task_time = current_task_time << 16 | 0xffff;
 		if(i < current_interval_index) {
 			task_time = task_time - (2 << 15) * (current_interval_index - i);	// 2 << 15 - 64 seconds
 		} else if(i > current_interval_index) {
 			task_time = task_time - (2 << 15) * (current_interval_index + CONFIRMATIONS_COUNT - i);
 		}
-		xdag_time_to_string(task_time, time_buf);
+		xdag_xtime_to_string(task_time, time_buf);
 
 		fprintf(out, "      %s  %2d     %s  %10lf         %s\n",
 			i == current_interval_index ? ">" : " ", i + 1, time_buf, miner->maxdiff[i], is_reward ? "+" : " ");
@@ -1680,7 +1681,7 @@ static void connection_print_time_intervals(struct connection_pool_data *conn_da
 static void print_connection_stats(struct connection_pool_data *conn_data, int connection_index, int current_interval_index, FILE *out)
 {
 	char time_buf[50] = {0};
-	time_to_string(conn_data->connected_time, time_buf);
+	xdag_time_to_string(conn_data->connected_time, time_buf);
 	int ip = conn_data->ip;
 
 	fprintf(out, "\nConnection %d\n", connection_index);
@@ -1712,11 +1713,11 @@ static void print_connection_stats(struct connection_pool_data *conn_data, int c
 static void print_miner_stats(struct miner_pool_data *miner, FILE *out)
 {
 	char time_buf[50] = {0};
-	time_to_string(miner->registered_time, time_buf);
+	xdag_time_to_string(miner->registered_time, time_buf);
 
 	const uint64_t task_index = g_xdag_pool_task_index;
 	struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
-	const xdag_time_t current_task_time = task->task_time;
+	const xtime_t current_task_time = task->task_time;
 	const int current_interval_index = current_task_time & (CONFIRMATIONS_COUNT - 1);
 
 	uint64_t *h = miner->id.data;

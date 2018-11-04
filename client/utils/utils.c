@@ -285,24 +285,6 @@ void test_deadlock(void)
 	check_deadlock();
 }
 
-uint64_t get_timestamp(void)
-{
-	struct timeval tp;
-
-	gettimeofday(&tp, 0);
-
-	return (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
-}
-
-uint64_t get_time_ms(void)
-{
-	struct timeval tp;
-
-	gettimeofday(&tp, 0);
-
-	return (uint64_t)(unsigned long)tp.tv_sec * 1000 + tp.tv_usec / 1000;
-}
-
 static char g_xdag_current_path[4096] = {0};
 
 void xdag_init_path(char *path)
@@ -409,27 +391,6 @@ char *xdag_filename(char *_filename)
 	}
 
 	return filename;
-}
-
-// convert time to string representation
-// minimal length of string buffer `buf` should be 60
-void xdag_time_to_string(xdag_time_t time, char *buf)
-{
-	struct tm tm;
-	char tmp[64] = {0};
-	time_t t = time >> 10;
-	localtime_r(&t, &tm);
-	strftime(tmp, 60, "%Y-%m-%d %H:%M:%S", &tm);
-	sprintf(buf, "%s.%03d", tmp, (int)((time & 0x3ff) * 1000) >> 10);
-}
-
-// convert time to string representation
-// minimal length of string buffer `buf` should be 50
-void time_to_string(time_t time, char* buf)
-{
-	struct tm tm;
-	localtime_r(&time, &tm);
-	strftime(buf, 50, "%Y-%m-%d %H:%M:%S", &tm);
 }
 
 // replaces all occurences of non-printable characters (code < 33 || code > 126) in `string` with specified `symbol`
