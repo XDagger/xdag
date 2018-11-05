@@ -53,7 +53,7 @@
 
 #define BUFFER_SIZE 2048
 #define MAX_OPEN 128
-#define DEFAULT_RPC_PORT 7667 //default http json-rpc port 7677
+#define DEFAULT_RPC_PORT 7667 //default http json-rpc port 7667
 int g_rpc_stop = 1; // 0 running, 1 stopped, 2 stopping in progress
 int g_rpc_port = DEFAULT_RPC_PORT;
 int g_rpc_xfer_enable = 0; // 0 disable xfer, 1 enable xfer
