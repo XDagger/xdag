@@ -19,6 +19,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <string.h>
 
 #define RPC_WHITE_ADDR_LEN          64
 #define RPC_WHITE_MAX               16
