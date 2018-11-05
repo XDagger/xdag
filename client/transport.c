@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <errno.h> 
+#include <errno.h>
 #include "transport.h"
 #include "storage.h"
 #include "block.h"
@@ -313,8 +313,8 @@ static int do_request(int type, xtime_t start_time, xtime_t end_time, void *data
 {
 	struct xdag_block b;
 	time_t actual_time;
-	struct timespec expire_time;
-	int res;
+	struct timespec expire_time = {0};
+	int res, ret;
 	uint64_t id;
 
 	b.field[0].type = type << 4 | XDAG_FIELD_NONCE;
@@ -353,12 +353,12 @@ static int do_request(int type, xtime_t start_time, xtime_t end_time, void *data
 	expire_time.tv_sec = actual_time + REQUEST_WAIT;
 
 	while(!reply_rcvd){
-		if(pthread_cond_timedwait(&g_process_cond, &g_process_mutex, &expire_time)) {
+		if((ret = pthread_cond_timedwait(&g_process_cond, &g_process_mutex, &expire_time))) {
 			last_reply_id = reply_id_private;
 			reply_data = NULL;
 			reply_callback = NULL;
-			if(errno != EAGAIN || errno != ETIMEDOUT) {
-				xdag_err("pthread_cond_timedwait failed [function: do_request]");
+			if(ret != EAGAIN && ret != ETIMEDOUT) {
+				xdag_err("pthread_cond_timedwait failed [function: do_request, ret = %d]", ret);
 			}
 			break;
 		}
