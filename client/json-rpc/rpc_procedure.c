@@ -134,6 +134,7 @@ int xdag_rpc_service_unregister_procedure(char *name)
 		if(!strcmp(name, elem->procedure.name)) {
 			xdag_rpc_service_procedure_destroy(&(elem->procedure));
 			LL_DELETE(g_procedures, elem);
+			free(elem);
 			found = 1;
 		}
 	}
@@ -164,6 +165,7 @@ int xdag_rpc_service_clear_procedures(void)
 	{
 		xdag_rpc_service_procedure_destroy(&(elem->procedure));
 		LL_DELETE(g_procedures, elem);
+		free(elem);
 	}
 	return 0;
 }
