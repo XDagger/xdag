@@ -2,6 +2,7 @@
 
 #include <sys/time.h>
 #include "time.h"
+#include "system.h"
 #include "utils/utils.h"
 
 xtime_t g_time_limit = DEF_TIME_LIMIT, g_xdag_era = XDAG_MAIN_ERA;

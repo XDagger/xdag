@@ -23,7 +23,11 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#if defined(_WIN32) || defined(_WIN64)
+#define poll WSAPoll
+#else
 #include <poll.h>
+#endif
 #include <pthread.h>
 
 #include "../utils/log.h"
@@ -138,7 +142,7 @@ static void *rpc_service_thread(void *arg)
 	int rpc_port = *(int*)arg;
 	struct sockaddr_in peeraddr;
 	socklen_t peeraddr_len = sizeof(peeraddr);
-	bzero(&peeraddr, sizeof(struct sockaddr_in));
+	memset(&peeraddr, 0, sizeof(struct sockaddr_in));
 	peeraddr.sin_family = AF_INET;
 	peeraddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	peeraddr.sin_port = htons(rpc_port);
@@ -171,7 +175,7 @@ static void *rpc_service_thread(void *arg)
 	}
 
 	g_fds = malloc((MAX_OPEN + 1) * sizeof(struct pollfd));
-	bzero(g_fds, (MAX_OPEN + 1) * sizeof(struct pollfd));
+	memset(g_fds, 0, (MAX_OPEN + 1) * sizeof(struct pollfd));
 	g_fds[0].fd = sock;
 	g_fds[0].events = POLLIN | POLLERR;
 	int i = 0;

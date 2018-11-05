@@ -37,6 +37,7 @@
     <ClCompile Include="..\..\client\init.c" />
     <ClCompile Include="..\..\client\json-rpc\cJSON.c" />
     <ClCompile Include="..\..\client\json-rpc\cJSON_Utils.c" />
+    <ClCompile Include="..\..\client\json-rpc\rpc_commands.c" />
     <ClCompile Include="..\..\client\json-rpc\rpc_procedure.c" />
     <ClCompile Include="..\..\client\json-rpc\rpc_procedures.c" />
     <ClCompile Include="..\..\client\json-rpc\rpc_service.c" />
@@ -79,6 +80,7 @@
     <ClInclude Include="..\..\client\init.h" />
     <ClInclude Include="..\..\client\json-rpc\cJSON.h" />
     <ClInclude Include="..\..\client\json-rpc\cJSON_Utils.h" />
+    <ClInclude Include="..\..\client\json-rpc\rpc_commands.h" />
     <ClInclude Include="..\..\client\json-rpc\rpc_procedure.h" />
     <ClInclude Include="..\..\client\json-rpc\rpc_procedures.h" />
     <ClInclude Include="..\..\client\json-rpc\rpc_service.h" />
