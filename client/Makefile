@@ -1,15 +1,15 @@
 # cheatcoin: Makefile; T13.656-T14.335; $DVS:time$
 
-SRCROOT         = ..
-dnet            = ../dnet
-dfstools        = ../dus/programs/dfstools/source
-dfslib          = $(dfstools)/dfslib
-dar             = ../dus/programs/dar/source
-ldusinc         = ../ldus/source/include/ldus
-utils           = ./utils
-moving_statistics   = ./utils/moving_statistics
-secp256k1               = ../secp256k1
-OS          := $(shell uname)
+SRCROOT              = ..
+dnet                 = ../dnet
+dfstools             = ../dus/programs/dfstools/source
+dfslib               = $(dfstools)/dfslib
+dar                  = ../dus/programs/dar/source
+ldusinc              = ../ldus/source/include/ldus
+utils                = ./utils
+moving_statistics    = ./utils/moving_statistics
+secp256k1            = ../secp256k1
+OS                  := $(shell uname)
 use_openssl_ec      := $(shell if grep --quiet -e 'define USE_OPTIMIZED_EC 1' -e 'define USE_OPTIMIZED_EC 2' crypt.h; then echo false; else echo true; fi)
 lgmp_installed      := $(shell if cc -lgmp 2>&1 | grep --quiet main; then echo true; else echo false; fi)
 
@@ -116,8 +116,8 @@ headers =                                   \
     ./json-rpc/rpc_service.h                \
     ./json-rpc/rpc_wrapper.h                \
     ./json-rpc/rpc_commands.h               \
-    ./http/url.h                        \
-    ./http/http.h                       \
+    ./http/url.h                            \
+    ./http/http.h                           \
 
 
 
@@ -151,34 +151,34 @@ endif
 all: secp256k1 xdag
 
 xdag: $(sources) $(headers) Makefile
-    cc -o xdag $(secp256k1_i) $(sources) $(asm_src) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) $(flags)
+	cc -o xdag $(secp256k1_i) $(sources) $(asm_src) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) $(flags)
 
 secp256k1:
 ifneq ($(OS), Darwin)
  ifeq ($(use_openssl_ec), false)
   ifeq ($(lgmp_installed), false)
-    @echo "\033[0;31mPlease install libgmp-dev to have better performance\033[0m";
+	@echo "\033[0;31mPlease install libgmp-dev to have better performance\033[0m";
   endif
   ifeq ($(secp256k1_full_compile), true)
-    cd $(secp256k1) && ./autogen.sh && ./configure && $(GNUmake);                                       \
-    cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c $(include_gmp)
+	cd $(secp256k1) && ./autogen.sh && ./configure && $(GNUmake);                                       \
+	cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c $(include_gmp)
   else
-    if ! cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c $(include_gmp); then         \
-        cd $(secp256k1) && ./autogen.sh && ./configure && $(GNUmake);                                   \
-        cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c $(include_gmp);   \
-    fi
+	if ! cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c $(include_gmp); then         \
+		cd $(secp256k1) && ./autogen.sh && ./configure && $(GNUmake);                                   \
+		cd ../client && cc -O3 -DHAVE_CONFIG_H -I$(secp256k1)/src/ -I$(secp256k1) -c $(secp256k1)/src/secp256k1.c $(include_gmp);   \
+	fi
   endif
  else
-    @rm -f secp256k1.o
+	@rm -f secp256k1.o
  endif
 else
-    @rm -f secp256k1.o
+	@rm -f secp256k1.o
 endif
 
 clean:
-    rm -f xdag
-    rm -f secp256k1.o
+	rm -f xdag
+	rm -f secp256k1.o
 
 install: xdag
-    sudo cp xdag /usr/local/bin/xdag
-    sudo cp xdag /usr/local/sbin/xdag
+	sudo cp xdag /usr/local/bin/xdag
+	sudo cp xdag /usr/local/sbin/xdag

@@ -14,6 +14,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+	struct sockaddr_in;
+
 	/* rpc commands */
 	extern int xdag_rpc_command(const char *, FILE *);
 
