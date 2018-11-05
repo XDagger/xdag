@@ -4,11 +4,7 @@
 #include <pthread.h>
 #include "block.h"
 #if defined(_WIN32) || defined(_WIN64)
-#if defined(_WIN64)
 #define poll WSAPoll
-#else
-#define poll(a, b, c) ((a)->revents = (a)->events, (b))
-#endif
 #else
 #include <poll.h>
 #endif

@@ -434,7 +434,7 @@ static int insert_index(struct block_internal *bi)
 			xdag_err("block index malloc failed. [func: add_block_nolock]");
 			return -1;
 		}
-		bzero(index, sizeof(struct block_internal_index));
+		memset(index, 0, sizeof(struct block_internal_index));
 		memcpy(index->hash, bi->hash, sizeof(xdag_hash_t));
 		index->bi = bi;
 		bi->index = index;
