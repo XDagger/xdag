@@ -305,7 +305,7 @@ void printUsage(char* appName)
 		"  -z <path>      - path to temp-file folder\n"
 		"  -z RAM         - use RAM instead of temp-files\n"
 		"  -rpc-enable    - enable JSON-RPC service\n"
-		"  -rpc-port      - set HTTP JSON-RPC port (default is 7677)\n"
+		"  -rpc-port      - set HTTP JSON-RPC port (default is 7667)\n"
 		"  -threads N     - create N transport layer threads for pool (default is 6)\n"
 		"  -dm            - disable mining on pool (-P option is ignored)\n"
 		"  -tag           - tag for pool to distingush pools. Max length is 32 chars\n"
