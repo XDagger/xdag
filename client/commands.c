@@ -46,8 +46,6 @@ typedef struct {
 	xdag_com_func_t func;		/* command function */
 } XDAG_COMMAND;
 
-extern int g_use_tmpfile;
-
 // Function declarations
 int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
 

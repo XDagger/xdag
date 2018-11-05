@@ -416,6 +416,8 @@ static int remove_index(struct block_internal *bi)
 		pthread_mutex_lock(&rbtree_mutex);
 		ldus_rbtree_remove(&root, &bi->index->node);
 		pthread_mutex_unlock(&rbtree_mutex);
+		free(bi->index);
+		bi->index = NULL;
 	} else {
 		pthread_mutex_lock(&rbtree_mutex);
 		ldus_rbtree_remove(&root, &bi->node);
@@ -733,7 +735,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xdag_time_t limit)
 		g_xdag_stats.nblocks++;
 	} else {
 		err = 0xC;
-		goto err;
+		goto end;
 	}
 
 	if(g_xdag_stats.nblocks > g_xdag_stats.total_nblocks) {
@@ -1279,6 +1281,8 @@ int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address)
 	if (xdag_mem_init(g_light_mode && !miner_address ? 0 : (((get_timestamp() - XDAG_ERA) >> 10) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal))) {
 		return -1;
 	}
+
+	g_bi_index_enable = g_use_tmpfile;
 
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
