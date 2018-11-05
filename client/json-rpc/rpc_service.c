@@ -97,7 +97,8 @@ static struct xdag_rpc_connection* create_connection(struct pollfd *fd)
 /* close xdag connection */
 static void close_connection(struct xdag_rpc_connection* conn)
 {
-	shutdown(conn->fd.fd, SHUT_RDWR);
+	shutdown(conn->fd.fd, SHUT_WR);
+	recv(conn->fd.fd, NULL, 0, 0);
 	close(conn->fd.fd);
 	free(conn);
 }
