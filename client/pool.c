@@ -139,7 +139,7 @@ static uint32_t g_connections_count = 0;
 static double g_pool_fee = 0, g_pool_reward = 0, g_pool_direct = 0, g_pool_fund = 0;
 static struct xdag_block *g_firstb = 0, *g_lastb = 0;
 
-static int g_stop_general_mining = 1;
+int g_stop_general_mining = 1;
 
 static struct miner_pool_data g_pool_miner;
 static struct miner_pool_data g_fund_miner;
@@ -240,10 +240,6 @@ int xdag_initialize_pool(const char *pool_arg)
 		return -1;
 	}
 
-	xdag_mess("Starting general mining thread...");
-
-	g_stop_general_mining = 0;
-
 	err = pthread_create(&th, 0, general_mining_thread, 0);
 	if(err != 0) {
 		printf("create general_mining_thread failed, error : %s\n", strerror(err));
@@ -264,6 +260,8 @@ void *general_mining_thread(void *arg)
 	while(!g_xdag_sync_on && !g_stop_general_mining) {
 		sleep(1);
 	}
+
+	xdag_mess("Starting main blocks creation...");
 
 	while(!g_stop_general_mining) {
 		xdag_create_and_send_block(0, 0, 0, 0, 0, xdag_main_time() << 16 | 0xffff, NULL);
