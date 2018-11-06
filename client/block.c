@@ -107,7 +107,6 @@ int g_bi_index_enable = 1, g_block_production_on;
 static pthread_mutex_t g_create_block_mutex = PTHREAD_MUTEX_INITIALIZER;
 static xdag_amount_t g_balance = 0;
 extern xtime_t g_time_limit;
-extern int g_stop_general_mining;
 static struct ldus_rbtree *root = 0, *cache_root = 0;
 static struct block_internal *volatile top_main_chain = 0, *volatile pretop_main_chain = 0;
 static struct block_internal *ourfirst = 0, *ourlast = 0;
@@ -1198,9 +1197,6 @@ begin:
 
 			if (g_block_production_on) {
 				xdag_mess("Starting refer blocks creation...");
-
-				// start main blocks creation
-				g_stop_general_mining = 0;
 
 				// start mining threads
 				xdag_mess("Starting mining threads...");

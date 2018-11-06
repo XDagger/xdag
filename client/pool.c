@@ -140,6 +140,7 @@ static double g_pool_fee = 0, g_pool_reward = 0, g_pool_direct = 0, g_pool_fund 
 static struct xdag_block *g_firstb = 0, *g_lastb = 0;
 
 int g_stop_general_mining = 1;
+extern int g_block_production_on;
 
 static struct miner_pool_data g_pool_miner;
 static struct miner_pool_data g_fund_miner;
@@ -240,6 +241,8 @@ int xdag_initialize_pool(const char *pool_arg)
 		return -1;
 	}
 
+	g_stop_general_mining = 0;
+
 	err = pthread_create(&th, 0, general_mining_thread, 0);
 	if(err != 0) {
 		printf("create general_mining_thread failed, error : %s\n", strerror(err));
@@ -257,7 +260,7 @@ int xdag_initialize_pool(const char *pool_arg)
 
 void *general_mining_thread(void *arg)
 {
-	while(!g_xdag_sync_on && !g_stop_general_mining) {
+	while(!g_block_production_on && !g_stop_general_mining) {
 		sleep(1);
 	}
 
@@ -492,9 +495,11 @@ void *pool_net_thread(void *arg)
 	socklen_t peeraddr_len = sizeof(peeraddr);
 	int rcvbufsize = 1024;
 
-	while(!g_xdag_sync_on) {
+	while(!g_block_production_on) {
 		sleep(1);
 	}
+
+        xdag_mess("Pool starts to accept connections...");
 
 	int sock = open_pool_connection(pool_arg);
 	if(sock == INVALID_SOCKET) {
