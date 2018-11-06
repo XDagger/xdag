@@ -280,7 +280,7 @@ int xdag_pool_set_config(const char *pool_config)
 	char buf[0x100] = {0}, *lasts = NULL;
 
 	if(!g_xdag_pool) return -1;
-	strcpy(buf, pool_config);
+	strncpy(buf, pool_config, 0xff);
 
 	pool_config = strtok_r(buf, " \t\r\n:", &lasts);
 
@@ -408,7 +408,7 @@ static int open_pool_connection(const char *pool_arg)
 
 	// Resolve the server address (convert from symbolic name to IP number)
 	if(pool_arg != NULL){
-		strcpy(buf, pool_arg);
+		strncpy(buf, pool_arg, 0xff);
 	}
 	pool_arg = strtok_r(buf, " \t\r\n:", &nextParam);
 	if(!pool_arg) {
@@ -1474,7 +1474,7 @@ static void print_connection(FILE *out, int index, struct connection_pool_data *
 	if(conn_data->miner) {
 		xdag_hash2address(conn_data->miner->id.data, address);
 	} else {
-		strcpy(address, "-                               ");
+		strncpy(address, "-                               ", 49);
 	}
 
 	//TODO: fix that logic

@@ -434,7 +434,7 @@ int xdag_pick_pool(char *pool_address)
 		int socket = xdag_connect_pool(addresses[index], &error_message);
 		if(socket != INVALID_SOCKET) {
 			xdag_connection_close(socket);
-			strcpy(pool_address, addresses[index]);
+			strncpy(pool_address, addresses[index], 49);
 			return 1;
 		} else {
 			++index;
