@@ -15,17 +15,15 @@
 #include "version.h"
 #include "../dnet/dnet_main.h"
 #include "utils/log.h"
-#include "utils/atomic.h"
 
 #define NEW_BLOCK_TTL     5
 #define REQUEST_WAIT      64
 #define REPLY_ID_PVT_TTL  60
 
-pthread_mutex_t g_transport_mutex      = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_process_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_process_cond   = PTHREAD_COND_INITIALIZER;
 
-time_t g_xdag_last_received = 0;
+atomic_uint_least64_t g_xdag_last_received;
 static void *reply_data;
 static void *(*reply_callback)(void *block, void *data) = 0;
 static void *reply_connection;
@@ -81,9 +79,7 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 	if(stats->total_nhosts > g->total_nhosts)
 		g->total_nhosts = stats->total_nhosts;
 
-	pthread_mutex_lock(&g_transport_mutex);
-	g_xdag_last_received = time(0);
-	pthread_mutex_unlock(&g_transport_mutex);
+	atomic_store_explicit_uint_least64(&g_xdag_last_received, time(NULL), memory_order_relaxed);
 
 	xdag_netdb_receive((uint8_t*)&received_block->field[2] + sizeof(struct xdag_stats),
 		(xdag_type(received_block, 1) == XDAG_MESSAGE_SUMS_REPLY ? 6 : 14) * sizeof(struct xdag_field)
