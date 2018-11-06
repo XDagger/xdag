@@ -17,10 +17,14 @@ enum xdag_states
 
 extern struct xdag_stats
 {
-    xdag_diff_t difficulty, max_difficulty;
-    uint64_t nblocks, total_nblocks;
-    uint64_t nmain, total_nmain;
-    uint32_t nhosts, total_nhosts, reserved1, reserved2;
+	xdag_diff_t difficulty, max_difficulty;
+	uint64_t nblocks, total_nblocks;
+	uint64_t nmain, total_nmain;
+	uint32_t nhosts, total_nhosts;
+	union {
+		uint32_t reserved[2];
+		uint64_t main_time;
+	};
 } g_xdag_stats;
 
 extern struct xdag_ext_stats
