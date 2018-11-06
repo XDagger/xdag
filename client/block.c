@@ -1850,7 +1850,7 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 				if(ri->link[j] == bi && ri->linkamount[j]) {
 					if(callback(data, 1 << j & ri->in_mask, ri->flags, ri->hash, ri->linkamount[j], ri->time, get_remark(ri))) {
 						free(block_array);
-						return 0;
+						return n;
 					}
 				}
 			}
@@ -1941,16 +1941,36 @@ void xdag_block_finish()
 	pthread_mutex_lock(&block_mutex);
 }
 
-int xdag_get_block_info(xdag_hash_t hash, void *data, int (*callback)(void*, int, xdag_hash_t, xdag_amount_t, xtime_t, const char *))
+int xdag_get_block_info(xdag_hash_t hash, void *info, int (*info_callback)(void*, int, xdag_hash_t, xdag_amount_t, xtime_t, const char *),
+						void *links, int (*links_callback)(void*, const char *, xdag_hash_t, xdag_amount_t))
 {
 	pthread_mutex_lock(&block_mutex);
 	struct block_internal *bi = block_by_hash(hash);
 	pthread_mutex_unlock(&block_mutex);
 
-	if(callback && bi) {
-		return callback(data, bi->flags & ~BI_OURS,  bi->hash, bi->amount, bi->time, get_remark(bi));
+	if(info_callback && bi) {
+		info_callback(info, bi->flags & ~BI_OURS,  bi->hash, bi->amount, bi->time, get_remark(bi));
 	}
 
+	if(links_callback && bi) {
+		int flags;
+		struct block_internal *ref;
+		pthread_mutex_lock(&block_mutex);
+		ref = bi->ref;
+		flags = bi->flags;
+		pthread_mutex_unlock(&block_mutex);
+
+		xdag_hash_t link_hash;
+		memset(link_hash, 0, sizeof(xdag_hash_t));
+		if((flags & BI_REF) && ref != NULL) {
+			memcpy(link_hash, ref->hash, sizeof(xdag_hash_t));
+		}
+		links_callback(links, "fee", link_hash, bi->fee);
+
+		for (int i = 0; i < bi->nlinks; ++i) {
+			links_callback(links, (1 << i & bi->in_mask ? " input" : "output"), bi->link[i]->hash, bi->linkamount[i]);
+		}
+	}
 	return 0;
 }
 
