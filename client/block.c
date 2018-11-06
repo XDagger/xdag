@@ -44,8 +44,6 @@ struct block_backrefs;
 struct orphan_block;
 struct block_internal_index;
 
-int g_bi_index_enable = 1;
-
 struct block_internal {
 	union {
 		struct ldus_rbtree node;
@@ -105,10 +103,11 @@ enum orphan_remove_actions {
 
 #define get_orphan_index(bi)      (!!((bi)->flags & BI_EXTRA))
 
+int g_bi_index_enable = 1, g_block_production_on;
 static pthread_mutex_t g_create_block_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 static xdag_amount_t g_balance = 0;
 extern xtime_t g_time_limit;
+extern int g_stop_general_mining;
 static struct ldus_rbtree *root = 0, *cache_root = 0;
 static struct block_internal *volatile top_main_chain = 0, *volatile pretop_main_chain = 0;
 static struct block_internal *ourfirst = 0, *ourlast = 0;
@@ -1121,6 +1120,8 @@ static void *work_thread(void *arg)
 	int n_mining_threads = (int)(unsigned)(uintptr_t)arg, sync_thread_running = 0;
 	uint64_t nhashes0 = 0, nhashes = 0;
 	pthread_t th;
+	uint64_t last_nmain = 0, nmain;
+	time_t last_time_nmain_unequal = time(NULL);
 
 begin:
 	// loading block from the local storage
@@ -1159,9 +1160,11 @@ begin:
 		}
 	}
 
-	// start mining threads
-	xdag_mess("Starting mining threads...");
-	xdag_mining_start(n_mining_threads);
+	if (g_light_mode) {
+		// start mining threads
+		xdag_mess("Starting mining threads...");
+		xdag_mining_start(n_mining_threads);
+	}
 
 	// periodic generation of blocks and determination of the main block
 	xdag_mess("Entering main cycle...");
@@ -1173,12 +1176,41 @@ begin:
 		t = xdag_get_xtimestamp();
 		nhashes0 = nhashes;
 		nhashes = g_xdag_extstats.nhashes;
+		nmain = g_xdag_stats.nmain;
 
 		if (t > t0) {
 			g_xdag_extstats.hashrate_s = ((double)(nhashes - nhashes0) * 1024) / (t - t0);
 		}
 
-		if (!g_light_mode && (nblk = (unsigned)g_xdag_extstats.nnoref / (XDAG_BLOCK_FIELDS - 5))) {
+		if (!g_block_production_on && !g_light_mode &&
+				(g_xdag_state == XDAG_STATE_WAIT || g_xdag_state == XDAG_STATE_WTST ||
+				g_xdag_state == XDAG_STATE_SYNC || g_xdag_state == XDAG_STATE_STST || 
+				g_xdag_state == XDAG_STATE_CONN || g_xdag_state == XDAG_STATE_CTST)) {
+			if (g_xdag_state == XDAG_STATE_SYNC || g_xdag_state == XDAG_STATE_STST || 
+					g_xdag_stats.nmain >= (MAIN_TIME(t) - xdag_start_main_time())) {
+				g_block_production_on = 1;
+			} else if (last_nmain != nmain) {
+				last_nmain = nmain;
+				last_time_nmain_unequal = time(NULL);
+			} else if (time(NULL) - last_time_nmain_unequal > MAX_TIME_NMAIN_STALLED) {
+				g_block_production_on = 1;
+			}
+
+			if (g_block_production_on) {
+				xdag_mess("Starting refer blocks creation...");
+
+				// start main blocks creation
+				g_stop_general_mining = 0;
+
+				// start mining threads
+				xdag_mess("Starting mining threads...");
+				xdag_mining_start(n_mining_threads);
+			}
+
+		}
+
+		if (g_block_production_on && 
+				(nblk = (unsigned)g_xdag_extstats.nnoref / (XDAG_BLOCK_FIELDS - 5))) {
 			nblk = nblk / 61 + (nblk % 61 > (unsigned)rand() % 61);
 
 			while (nblk--) {
