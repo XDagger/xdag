@@ -121,7 +121,7 @@ static void* rpc_handle_thread(void *arg)
 	}
 	
 	cJSON * result = xdag_rpc_handle_request(body);
-	char *response = cJSON_Print(result);
+	char *response = cJSON_PrintUnformatted(result);
 	send_response(conn, response);
 	free(response);
 	
