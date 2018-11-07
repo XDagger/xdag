@@ -1967,8 +1967,22 @@ int xdag_get_block_info(xdag_hash_t hash, void *info, int (*info_callback)(void*
 		}
 		links_callback(links, "fee", link_hash, bi->fee);
 
-		for (int i = 0; i < bi->nlinks; ++i) {
-			links_callback(links, (1 << i & bi->in_mask ? " input" : "output"), bi->link[i]->hash, bi->linkamount[i]);
+		struct block_internal *links[MAX_LINKS] = {0};
+		int nlinks = 0;
+
+		if(flags & BI_EXTRA) {
+			pthread_mutex_lock(&block_mutex);
+		}
+
+		nlinks = bi->nlinks;
+		memcpy(links, bi->link, nlinks * sizeof(struct block_internal *));
+
+		if(flags & BI_EXTRA) {
+			pthread_mutex_unlock(&block_mutex);
+		}
+
+		for (int i = 0; i < nlinks; ++i) {
+			links_callback(links, (1 << i & bi->in_mask ? " input" : "output"), links[i]->hash, bi->linkamount[i]);
 		}
 	}
 	return 0;
