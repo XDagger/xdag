@@ -41,6 +41,8 @@ struct xdag_send_data {
 	void *connection;
 };
 
+#define add_main_timestamp(a)   ((a)->main_time = xdag_main_time())
+
 static void *xdag_send_thread(void *arg)
 {
 	struct xdag_send_data *d = (struct xdag_send_data *)arg;
@@ -49,7 +51,8 @@ static void *xdag_send_thread(void *arg)
 	d->b.field[0].type = XDAG_FIELD_NONCE | XDAG_MESSAGE_BLOCKS_REPLY << 4;
 
 	memcpy(&d->b.field[2], &g_xdag_stats, sizeof(g_xdag_stats));
-	
+	add_main_timestamp((struct xdag_stats*)&d->b.field[2]);
+
 	xdag_netdb_send((uint8_t*)&d->b.field[2] + sizeof(struct xdag_stats),
 						 14 * sizeof(struct xdag_field) - sizeof(struct xdag_stats));
 	
@@ -67,19 +70,21 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 	xtime_t start_time = xdag_start_main_time();
 	xtime_t current_time = xdag_main_time();
 
-	if(current_time < start_time || stats->total_nmain > current_time - start_time + 2) return -1;
+	if(current_time >= start_time && stats->total_nmain <= current_time - start_time + 2) {
+		if(stats->main_time <= current_time + 2) {
+			if(xdag_diff_gt(stats->max_difficulty, g->max_difficulty))
+				g->max_difficulty = stats->max_difficulty;
 
-	if(xdag_diff_gt(stats->max_difficulty, g->max_difficulty))
-		g->max_difficulty = stats->max_difficulty;
+			if(stats->total_nblocks > g->total_nblocks)
+				g->total_nblocks = stats->total_nblocks;
 
-	if(stats->total_nblocks > g->total_nblocks)
-		g->total_nblocks = stats->total_nblocks;
+			if(stats->total_nmain > g->total_nmain)
+				g->total_nmain = stats->total_nmain;
 
-	if(stats->total_nmain > g->total_nmain)
-		g->total_nmain = stats->total_nmain;
-
-	if(stats->total_nhosts > g->total_nhosts)
-		g->total_nhosts = stats->total_nhosts;
+			if(stats->total_nhosts > g->total_nhosts)
+				g->total_nhosts = stats->total_nhosts;
+		}
+	}
 
 	pthread_mutex_lock(&g_transport_mutex);
 	g_xdag_last_received = time(0);
@@ -328,7 +333,8 @@ static int do_request(int type, xtime_t start_time, xtime_t end_time, void *data
 	atomic_exchange_explicit_uint_least64(&reply_id, id, memory_order_acq_rel);
 
 	memcpy(&b.field[2], &g_xdag_stats, sizeof(g_xdag_stats));
-	
+	add_main_timestamp((struct xdag_stats*)&b.field[2]);
+
 	xdag_netdb_send((uint8_t*)&b.field[2] + sizeof(struct xdag_stats),
 						 14 * sizeof(struct xdag_field) - sizeof(struct xdag_stats));
 
@@ -428,7 +434,8 @@ int xdag_request_block(xdag_hash_t hash, void *conn)
 
 	memcpy(&b.field[1], hash, sizeof(xdag_hash_t));
 	memcpy(&b.field[2], &g_xdag_stats, sizeof(g_xdag_stats));
-	
+	add_main_timestamp((struct xdag_stats*)&b.field[2]);
+
 	xdag_netdb_send((uint8_t*)&b.field[2] + sizeof(struct xdag_stats),
 						 14 * sizeof(struct xdag_field) - sizeof(struct xdag_stats));
 	
