@@ -131,7 +131,7 @@ struct payment_data {
 xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT];
 xdag_hash_t g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
 xdag_remark_t g_pool_tag = {0};
-int g_pool_has_tag = 0;
+static int g_pool_has_tag = 0;
 
 static uint32_t g_max_connections_count = START_MINERS_COUNT, g_max_miner_ip_count = START_MINERS_IP_COUNT;
 static uint32_t g_connections_per_miner_limit = DEFAUL_CONNECTIONS_PER_MINER_LIMIT;
@@ -499,7 +499,7 @@ void *pool_net_thread(void *arg)
 		sleep(1);
 	}
 
-        xdag_mess("Pool starts to accept connections...");
+	xdag_mess("Pool starts to accept connections...");
 
 	int sock = open_pool_connection(pool_arg);
 	if(sock == INVALID_SOCKET) {
