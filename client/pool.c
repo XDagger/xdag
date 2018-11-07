@@ -131,7 +131,7 @@ struct payment_data {
 xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT];
 xdag_hash_t g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
 xdag_remark_t g_pool_tag = {0};
-static int g_pool_has_tag = 0;
+int g_pool_has_tag = 0;
 
 static uint32_t g_max_connections_count = START_MINERS_COUNT, g_max_miner_ip_count = START_MINERS_IP_COUNT;
 static uint32_t g_connections_per_miner_limit = DEFAUL_CONNECTIONS_PER_MINER_LIMIT;
@@ -139,7 +139,7 @@ static uint32_t g_connections_count = 0;
 static double g_pool_fee = 0, g_pool_reward = 0, g_pool_direct = 0, g_pool_fund = 0;
 static struct xdag_block *g_firstb = 0, *g_lastb = 0;
 
-int g_stop_general_mining = 1;
+static int g_stop_general_mining = 1;
 extern int g_block_production_on;
 
 static struct miner_pool_data g_pool_miner;
