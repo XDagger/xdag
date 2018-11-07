@@ -111,7 +111,7 @@ XDAG_COMMAND commands[] = {
 	{ "mainblocks"  , 2, xdag_com_mainblocks },
 	{ "minedblocks" , 2, xdag_com_minedblocks },
 	{ "orphanblocks", 2, xdag_com_orphanblocks },
-	{ "keyGen"      , 0, xdag_com_keyGen },
+	{ "keygen"      , 0, xdag_com_keyGen },
 	{ "level"       , 0, xdag_com_level },
 	{ "miner"       , 2, xdag_com_miner },
 	{ "miners"      , 2, xdag_com_miners },
