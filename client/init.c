@@ -189,6 +189,8 @@ int xdag_init(int argc, char **argv, int isGui)
 		return -1;
 	}
 
+	g_xdag_auto_pick_pool = !mining_threads_count ? 1 : (!is_pool && pool_arg == NULL); /* auto pick pool */
+
 	if(!is_pool && pool_arg == NULL) {
 		if(!xdag_pick_pool(g_pool_address)) {
 			return -1;

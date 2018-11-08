@@ -33,6 +33,8 @@
 #define SEND_PERIOD            10                                  /* share period of sending shares */
 #define POOL_LIST_FILE         (g_xdag_testnet ? "pools-testnet.txt" : "pools.txt")
 
+int g_xdag_auto_pick_pool = 0;
+
 struct miner {
 	struct xdag_field id;
 	uint64_t nfield_in;
@@ -144,7 +146,8 @@ void *miner_net_thread(void *arg)
 	struct xdag_block b;
 	struct xdag_field data[2];
 	xdag_hash_t hash;
-	const char *pool_address = (const char*)arg;
+	char pool_address[50] = {0};
+	strncpy(pool_address, (const char*)arg, 49);
 	const char *mess = NULL;
 	int res = 0;
 	xtime_t t;
@@ -191,7 +194,16 @@ begin:
 	g_socket = xdag_connect_pool(pool_address, &mess);
 	if(g_socket == INVALID_SOCKET) {
 		pthread_mutex_unlock(&g_miner_mutex);
+		if(g_xdag_auto_pick_pool) {
+			if(!xdag_pick_pool(pool_address)) {
+				mess = "no active pool available";
+			}
+		} else {
+			mess = "connect pool failed.";
+		}
 		goto err;
+	} else {
+		xdag_mess("connected to pool %s", pool_address);
 	}
 
 	if(send_to_pool(b.field, XDAG_BLOCK_FIELDS) < 0) {
@@ -319,7 +331,7 @@ err:
 
 	pthread_mutex_unlock(&g_miner_mutex);
 
-	sleep(5);
+	sleep(10);
 
 	goto begin;
 }
