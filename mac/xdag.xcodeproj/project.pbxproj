@@ -9,6 +9,12 @@
 /* Begin PBXBuildFile section */
 		380AAA94211B6DA50090A5A4 /* dnet_crypt.c in Sources */ = {isa = PBXBuildFile; fileRef = 380AAA8A211B6DA40090A5A4 /* dnet_crypt.c */; };
 		380AAA96211B6DA50090A5A4 /* dnet_xdag.c in Sources */ = {isa = PBXBuildFile; fileRef = 380AAA90211B6DA40090A5A4 /* dnet_xdag.c */; };
+		382A4FF621DE73C900209951 /* netdb-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3845ABB221D2BD9F00252F71 /* netdb-testnet.txt */; };
+		382A4FF721DE73C900209951 /* netdb-white-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3845ABB321D2BD9F00252F71 /* netdb-white-testnet.txt */; };
+		382A4FF821DE73C900209951 /* netdb-white.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3845ABB421D2BD9F00252F71 /* netdb-white.txt */; };
+		382A4FF921DE73C900209951 /* netdb.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3845ABB721D2BD9F00252F71 /* netdb.txt */; };
+		382A4FFA21DE73C900209951 /* pools-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3845ABBC21D2BD9F00252F71 /* pools-testnet.txt */; };
+		382A4FFB21DE73C900209951 /* pools.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3845ABBD21D2BD9F00252F71 /* pools.txt */; };
 		384457BC21233982008BBBBD /* dnet_keys.bin in CopyFiles */ = {isa = PBXBuildFile; fileRef = 380AAA8D211B6DA40090A5A4 /* dnet_keys.bin */; };
 		3845AB5F21D2BC1000252F71 /* dfslib_crypt.c in Sources */ = {isa = PBXBuildFile; fileRef = 3845AB5621D2BC1000252F71 /* dfslib_crypt.c */; };
 		3845AB6021D2BC1000252F71 /* dfslib_random.c in Sources */ = {isa = PBXBuildFile; fileRef = 3845AB5821D2BC1000252F71 /* dfslib_random.c */; };
@@ -76,6 +82,12 @@
 			dstPath = .;
 			dstSubfolderSpec = 6;
 			files = (
+				382A4FF621DE73C900209951 /* netdb-testnet.txt in CopyFiles */,
+				382A4FF721DE73C900209951 /* netdb-white-testnet.txt in CopyFiles */,
+				382A4FF821DE73C900209951 /* netdb-white.txt in CopyFiles */,
+				382A4FF921DE73C900209951 /* netdb.txt in CopyFiles */,
+				382A4FFA21DE73C900209951 /* pools-testnet.txt in CopyFiles */,
+				382A4FFB21DE73C900209951 /* pools.txt in CopyFiles */,
 				384457BC21233982008BBBBD /* dnet_keys.bin in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

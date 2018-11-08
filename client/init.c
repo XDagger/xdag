@@ -292,6 +292,7 @@ int setup_miner(struct startup_parameters *parameters)
 {
 	static char pool_address_buf[50] = { 0 };
 	if(parameters->pool_address == NULL) {
+        g_xdag_auto_swith_pool = 1; /* auto switch pool when pool is not available */
 		if(!xdag_pick_pool(pool_address_buf)) {
 			return -1;
 		}
