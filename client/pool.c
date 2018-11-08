@@ -35,6 +35,7 @@
 #include "uthash/uthash.h"
 #include "utils/atomic.h"
 #include "time.h"
+#include "init.h"
 
 //TODO: why do we need these two definitions?
 #define START_MINERS_COUNT     256
@@ -156,6 +157,7 @@ int pay_miners(xtime_t time);
 void remove_inactive_miners(void);
 void block_queue_append_new(struct xdag_block *b);
 struct xdag_block *block_queue_first(void);
+int pool_is_operational(void);
 
 void *general_mining_thread(void *arg);
 void *pool_net_thread(void *arg);
@@ -494,6 +496,7 @@ void *pool_net_thread(void *arg)
 	socklen_t peeraddr_len = sizeof(peeraddr);
 	int rcvbufsize = 1024;
 
+begin:
 	while(!g_xdag_sync_on) {
 		sleep(1);
 	}
@@ -518,6 +521,16 @@ void *pool_net_thread(void *arg)
 		if(fd < 0) {
 			xdag_err("pool: cannot accept connection");
 			return 0;
+		}
+
+		if(!pool_is_operational()) {
+			uint32_t ip = peeraddr.sin_addr.s_addr;
+			uint16_t port = peeraddr.sin_port;
+			xdag_info("Disconnect %u.%u.%u.%u:%u due to pool is not operational", ip & 0xff, ip >> 8 & 0xff, ip >> 16 & 0xff, ip >> 24 & 0xff, ntohs(port));
+			close(fd);
+			close(sock);
+			sleep(32);
+			goto begin;
 		}
 
 		pthread_mutex_lock(&g_connections_mutex);
@@ -975,6 +988,23 @@ void *pool_main_thread(void *arg)
 	connection_list_element *elt, *eltmp;
 
 	for(;;) {
+		if(!pool_is_operational()) {
+			pthread_mutex_lock(&g_connections_mutex);
+			LL_FOREACH_SAFE(g_accept_connection_list_head, elt, eltmp)
+			{
+				close_connection(elt, "Pool is not operational");
+			}
+
+			pthread_mutex_unlock(&g_connections_mutex);
+			LL_FOREACH_SAFE(g_connection_list_head, elt, eltmp)
+			{
+				close_connection(elt, "Pool is not operational");
+			}
+
+			sleep(1);
+			continue;
+		}
+
 		pthread_mutex_lock(&g_connections_mutex);
 
 		// move accept connection to g_connection_list_head.
@@ -1047,6 +1077,17 @@ void *pool_main_thread(void *arg)
 	}
 
 	return 0;
+}
+
+int pool_is_operational(void)
+{
+	int ret = g_xdag_state == XDAG_STATE_MTST
+	|| g_xdag_state == XDAG_STATE_MINE
+	|| g_xdag_state == XDAG_STATE_STST
+	|| g_xdag_state == XDAG_STATE_SYNC
+	|| g_xdag_state == XDAG_STATE_XFER;
+
+	return ret;
 }
 
 void *pool_block_thread(void *arg)
