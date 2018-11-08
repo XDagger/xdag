@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <float.h>
+#include <sched.h>
 #if defined(_WIN32) || defined(_WIN64)
 #else
 #include <netinet/in.h>
@@ -55,6 +56,12 @@ enum miner_state {
 	MINER_ACTIVE = 1,
 	MINER_ARCHIVE = 2,
 	MINER_SERVICE = 3
+};
+
+enum thread_state {
+	THREAD_INIT,
+	THREAD_CANCELLABLE,
+	THREAD_STOP,
 };
 
 struct miner_pool_data {
@@ -152,11 +159,17 @@ static miner_list_element *g_miner_list_head = NULL;
 static uint32_t g_connection_changed = 0;
 static pthread_mutex_t g_connections_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t g_pool_thread_status_mutex = PTHREAD_MUTEX_INITIALIZER;
+static atomic_int g_pool_main_thread_status;
+static atomic_int g_pool_payment_thread_status;
+static pthread_t g_pool_main_thread;
+static pthread_t g_pool_payment_thread;
 
 int pay_miners(xtime_t time);
 void remove_inactive_miners(void);
 void block_queue_append_new(struct xdag_block *b);
 struct xdag_block *block_queue_first(void);
+static inline void thread_finish_routine(void *);
 
 void *general_mining_thread(void *arg);
 void *pool_net_thread(void *arg);
@@ -193,13 +206,13 @@ int xdag_initialize_pool(const char *pool_arg)
 		return -1;
 	}
 
-	err = pthread_create(&th, 0, pool_main_thread, 0);
+	err = pthread_create(&g_pool_main_thread, 0, pool_main_thread, 0);
 	if(err != 0) {
 		printf("create pool_main_thread failed, error : %s\n", strerror(err));
 		return -1;
 	}
 
-	err = pthread_detach(th);
+	err = pthread_detach(g_pool_main_thread);
 	if(err != 0) {
 		printf("detach pool_main_thread failed, error : %s\n", strerror(err));
 		return -1;
@@ -229,13 +242,13 @@ int xdag_initialize_pool(const char *pool_arg)
 		return -1;
 	}
 
-	err = pthread_create(&th, 0, pool_payment_thread, 0);
+	err = pthread_create(&g_pool_payment_thread, 0, pool_payment_thread, 0);
 	if(err != 0) {
 		printf("create pool_payment_thread failed: %s\n", strerror(err));
 		return -1;
 	}
 
-	err = pthread_detach(th);
+	err = pthread_detach(g_pool_payment_thread);
 	if(err != 0) {
 		printf("detach pool_payment_thread failed: %s\n", strerror(err));
 		return -1;
@@ -971,6 +984,13 @@ static int send_data_to_connection(connection_list_element *connection, int *pro
 
 void *pool_main_thread(void *arg)
 {
+	pthread_cleanup_push(thread_finish_routine, &g_pool_main_thread_status);
+	pthread_mutex_lock(&g_pool_thread_status_mutex);
+	atomic_store_explicit_int(&g_pool_main_thread_status, THREAD_CANCELLABLE, memory_order_relaxed);
+	pthread_mutex_unlock(&g_pool_thread_status_mutex);
+	int old_state_type;
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &old_state_type);
+
 	while(!g_xdag_sync_on) {
 		sleep(1);
 	}
@@ -978,6 +998,7 @@ void *pool_main_thread(void *arg)
 	connection_list_element *elt, *eltmp;
 
 	for(;;) {
+		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state_type);
 		pthread_mutex_lock(&g_connections_mutex);
 
 		// move accept connection to g_connection_list_head.
@@ -1001,10 +1022,12 @@ void *pool_main_thread(void *arg)
 		pthread_mutex_unlock(&g_connections_mutex);
 
 		int res = poll(g_fds, connections_count, 1000);
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old_state_type);
 		if(!res) continue;
 
 		index = 0;
 		int processed = 0;
+		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state_type);
 		LL_FOREACH_SAFE(g_connection_list_head, elt, eltmp)
 		{
 			struct pollfd *p = g_fds + index++;
@@ -1044,11 +1067,13 @@ void *pool_main_thread(void *arg)
 			}
 		}
 
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old_state_type);
 		if(!processed) {
 			sleep(1);
 		}
 	}
 
+	pthread_cleanup_pop(1);
 	return 0;
 }
 
@@ -1082,6 +1107,13 @@ void *pool_block_thread(void *arg)
 
 void *pool_payment_thread(void *arg)
 {
+	pthread_cleanup_push(thread_finish_routine, &g_pool_payment_thread_status);
+	pthread_mutex_lock(&g_pool_thread_status_mutex);
+	atomic_store_explicit_int(&g_pool_main_thread_status, THREAD_CANCELLABLE, memory_order_relaxed);
+	pthread_mutex_unlock(&g_pool_thread_status_mutex);
+	int old_state_type;
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &old_state_type);
+
 	xtime_t prev_task_time = 0;
 
 	while(!g_xdag_sync_on) {
@@ -1100,8 +1132,10 @@ void *pool_payment_thread(void *arg)
 			processed = 1;
 			prev_task_time = current_task_time;
 
+			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state_type);
 			int res = pay_miners(current_task_time - CONFIRMATIONS_COUNT + 1);
 			remove_inactive_miners();
+			pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old_state_type);
 
 			xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
 				hash[3], hash[2], hash[1], hash[0], (current_task_time - CONFIRMATIONS_COUNT + 1) << 16 | 0xffff, res);
@@ -1110,6 +1144,7 @@ void *pool_payment_thread(void *arg)
 		if(!processed) sleep(1);
 	}
 
+	pthread_cleanup_pop(1);
 	return 0;
 }
 
@@ -1778,4 +1813,26 @@ int xdag_print_miner_stats(const char* address, FILE *out)
 	pthread_mutex_unlock(&g_connections_mutex);
 
 	return exists;
+}
+
+static inline void thread_finish_routine(void *arg)
+{
+        atomic_store_explicit_int((atomic_int*)arg, THREAD_STOP, memory_order_release);
+}
+
+void xdag_pool_finish()
+{
+	pthread_mutex_lock(&g_pool_thread_status_mutex);
+	pthread_cancel(g_pool_main_thread);
+	pthread_cancel(g_pool_payment_thread);
+	for (enum thread_state ts = atomic_load_explicit_int(&g_pool_main_thread_status, memory_order_relaxed);
+			ts == THREAD_CANCELLABLE;
+			ts = atomic_load_explicit_int(&g_pool_main_thread_status, memory_order_relaxed)) {
+		sched_yield();
+	}
+	for (enum thread_state ts = atomic_load_explicit_int(&g_pool_payment_thread_status, memory_order_relaxed);
+			ts == THREAD_CANCELLABLE; 
+			ts = atomic_load_explicit_int(&g_pool_payment_thread_status, memory_order_relaxed)) {
+		sched_yield();
+	}
 }
