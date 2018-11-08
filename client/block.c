@@ -1246,8 +1246,9 @@ begin:
 
 			goto begin;
 		} else {
-			pthread_mutex_lock(&g_transport_mutex);
-			if (t > (g_xdag_last_received << 10) && t - (g_xdag_last_received << 10) > 3 * MAIN_CHAIN_PERIOD) {
+			time_t last_received = atomic_load_explicit_uint_least64(&g_xdag_last_received, memory_order_relaxed);
+
+			if (t > (last_received << 10) && t - (last_received << 10) > 3 * MAIN_CHAIN_PERIOD) {
 				g_xdag_state = (g_light_mode ? (g_xdag_testnet ? XDAG_STATE_TTST : XDAG_STATE_TRYP)
 					: (g_xdag_testnet ? XDAG_STATE_WTST : XDAG_STATE_WAIT));
 				conn_time = sync_time = 0;
@@ -1273,7 +1274,6 @@ begin:
 					g_xdag_state = (g_xdag_testnet ? XDAG_STATE_STST : XDAG_STATE_SYNC);
 				}
 			}
-			pthread_mutex_unlock(&g_transport_mutex);
 		}
 
 		if (!g_light_mode) {

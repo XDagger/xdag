@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include "block.h"
 #include "storage.h"
+#include "utils/atomic.h"
 
 enum xdag_transport_flags {
 	XDAG_DAEMON = 1,
@@ -56,7 +57,7 @@ extern int xdag_send_packet(struct xdag_block *b, void *conn);
 extern int xdag_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action);
 
 extern pthread_mutex_t g_transport_mutex;
-extern time_t g_xdag_last_received;
+extern atomic_uint_least64_t g_xdag_last_received;
 	
 #ifdef __cplusplus
 };
