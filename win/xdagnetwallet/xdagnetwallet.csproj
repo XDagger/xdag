@@ -56,23 +56,18 @@
     </ApplicationDefinition>
     <Compile Include="sources\Components\WalletOptions.cs" />
     <Compile Include="sources\Components\WalletState.cs" />
-    <Compile Include="sources\UI\Async\BackgroundResult.cs" />
-    <Compile Include="sources\UI\Async\BackgroundWork.cs" />
-    <Compile Include="sources\UI\Windows\LogonWindow.xaml.cs">
+    <Compile Include="sources\UI\LogonWindow.xaml.cs">
       <DependentUpon>LogonWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="sources\UI\Windows\PasswordWindow.xaml.cs">
+    <Compile Include="sources\UI\PasswordWindow.xaml.cs">
       <DependentUpon>PasswordWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="sources\Components\XDagWallet.cs" />
-    <Compile Include="sources\UI\Windows\WalletWindow.xaml.cs">
-      <DependentUpon>WalletWindow.xaml</DependentUpon>
-    </Compile>
-    <Page Include="sources\UI\Windows\LogonWindow.xaml">
+    <Compile Include="sources\Components\XDaggerWallet.cs" />
+    <Page Include="sources\UI\LogonWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="sources\UI\Windows\MainWindow.xaml">
+    <Page Include="sources\UI\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -80,15 +75,11 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="sources\UI\Windows\MainWindow.xaml.cs">
+    <Compile Include="sources\UI\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="sources\UI\Windows\PasswordWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="sources\UI\Windows\WalletWindow.xaml">
+    <Page Include="sources\UI\PasswordWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

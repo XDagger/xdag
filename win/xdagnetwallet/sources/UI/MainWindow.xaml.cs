@@ -15,7 +15,7 @@ using System.Windows.Shapes;
 using XDagNetWallet.Components;
 using XDagNetWalletCLI;
 
-namespace XDagNetWallet.UI.Windows
+namespace XDagNetWallet.UI
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml

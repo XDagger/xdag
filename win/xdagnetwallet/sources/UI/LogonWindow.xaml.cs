@@ -12,10 +12,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using XDagNetWallet.Components;
-using XDagNetWallet.UI.Async;
 using XDagNetWalletCLI;
 
-namespace XDagNetWallet.UI.Windows
+namespace XDagNetWallet.UI
 {
     /// <summary>
     /// Interaction logic for LogonWindow.xaml
@@ -66,14 +65,6 @@ namespace XDagNetWallet.UI.Windows
                 });
             });
 
-            xDagWallet.SetStateChangedAction((state) =>
-            {
-                this.Dispatcher.Invoke(() =>
-                {
-                    UpdateState(state);
-                });
-            });
-
             if (!runtime.HasExistingAccount())
             {
                 btnRegisterAccount.Visibility = Visibility.Visible;
@@ -85,7 +76,7 @@ namespace XDagNetWallet.UI.Windows
                 btnRegisterAccount.Visibility = Visibility.Hidden;
             }
         }
-        
+
         private void btnRegisterAccount_Click(object sender, RoutedEventArgs e)
         {
             RegisterAccount();
@@ -98,35 +89,13 @@ namespace XDagNetWallet.UI.Windows
 
         private void RegisterAccount()
         {
-            if (runtime == null || logonStatus != LogonStatus.None)
+            if (runtime == null)
             {
                 return;
             }
-            
-            BackgroundWork.CreateWork(
-                this,
-                () => {
-                    ShowStatus("Initialzing Account...");
-                },
-                () => {
-                    logonStatus = LogonStatus.Registering;
-                    runtime.Start();
 
-                    return 0;
-                },
-                (taskResult) => {
-
-                    if (taskResult.HasError)
-                    {
-                        MessageBox.Show("Initializing Failed: " + taskResult.Exception.Message);
-                        
-                        HideStatus();
-                        return;
-                    }
-
-                    HideStatus();
-                }
-            ).Execute();
+            logonStatus = LogonStatus.Registering;
+            runtime.Start();
         }
 
         private void ConnectAccount()
@@ -136,30 +105,8 @@ namespace XDagNetWallet.UI.Windows
                 return;
             }
 
-            BackgroundWork.CreateWork(
-                this,
-                () => {
-                    ShowStatus("Connecting Account...");
-                },
-                () => {
-                    logonStatus = LogonStatus.Connecting;
-                    runtime.Start();
-
-                    return 0;
-                },
-                (taskResult) => {
-
-                    if (taskResult.HasError)
-                    {
-                        MessageBox.Show("Connecting Failed: " + taskResult.Exception.Message);
-
-                        HideStatus();
-                        return;
-                    }
-
-                    // HideStatus();
-                }
-            ).Execute();
+            logonStatus = LogonStatus.Connecting;
+            runtime.Start();
         }
 
         private String InputPassword(String promptMessage, uint passwordSize)
@@ -224,41 +171,11 @@ namespace XDagNetWallet.UI.Windows
 
         private int UpdateState(String state, String balance, String address)
         {
-            /// MessageBox.Show(string.Format("Get State Update: State=[{0}], Balance=[{1}], Address=[{2}]", state, balance, address));
+            MessageBox.Show(string.Format("Get State Update: State=[{0}], Balance=[{1}], Address=[{2}]", state, balance, address));
             
 
             return 0;
         }
 
-        private void UpdateState(WalletState state)
-        {
-            ShowStatus(state.ToString());
-
-            if (state == WalletState.ConnectedPool)
-            {
-                xDagWallet.State = state;
-
-                WalletWindow walletWindow = new WalletWindow(xDagWallet);
-                walletWindow.Show();
-
-                this.Close();
-            }
-        }
-
-        private void ShowStatus(string message)
-        {
-            this.lblWalletStatus.Visibility = Visibility.Visible;
-            this.lblWalletStatus.Content = message;
-
-            this.prbProgress.Visibility = Visibility.Visible;
-            this.prbProgress.IsIndeterminate = true;
-        }
-
-        private void HideStatus()
-        {
-            this.lblWalletStatus.Visibility = Visibility.Hidden;
-            this.prbProgress.Visibility = Visibility.Hidden;
-            this.prbProgress.IsIndeterminate = false;
-        }
     }
 }
