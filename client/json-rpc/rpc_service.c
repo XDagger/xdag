@@ -85,7 +85,8 @@ static void wrap_http(int fd, const char *content)
 	write(fd, "Connection: close\r\n",19);
 	write(fd, lbuf, strlen(lbuf));
 	write(fd, tbuf, strlen(tbuf));
-	write(fd, "Content-Type: application/json\r\n\r\n", 34);
+	write(fd, "Content-Type: application/json\r\n", 32);
+	write(fd, "Access-Control-Allow-Origin: *\r\n\r\n", 34);
 }
 
 static int send_response(struct xdag_rpc_connection * conn,const char *response) {
