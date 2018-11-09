@@ -6,20 +6,20 @@
 //  Copyright © 2018 xrdavies. All rights reserved.
 //
 
+#include <stdlib.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <string.h>
+
 #include "rpc_commands.h"
 #include "rpc_procedure.h"
 #include "../uthash/utlist.h"
 #include "../utils/log.h"
 #include "../utils/utils.h"
 #include "rpc_service.h"
-
-#include <stdlib.h>
-#include <strings.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <string.h>
+#include "../system.h"
 
 #define RPC_WHITE_ADDR_LEN          64
 #define RPC_WHITE_MAX               16

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <errno.h> 
+#include <errno.h>
 #include "transport.h"
 #include "storage.h"
 #include "block.h"
@@ -15,17 +15,15 @@
 #include "version.h"
 #include "../dnet/dnet_main.h"
 #include "utils/log.h"
-#include "utils/atomic.h"
 
 #define NEW_BLOCK_TTL     5
 #define REQUEST_WAIT      64
 #define REPLY_ID_PVT_TTL  60
 
-pthread_mutex_t g_transport_mutex      = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_process_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_process_cond   = PTHREAD_COND_INITIALIZER;
 
-time_t g_xdag_last_received = 0;
+atomic_uint_least64_t g_xdag_last_received;
 static void *reply_data;
 static void *(*reply_callback)(void *block, void *data) = 0;
 static void *reply_connection;
@@ -41,6 +39,8 @@ struct xdag_send_data {
 	void *connection;
 };
 
+#define add_main_timestamp(a)   ((a)->main_time = xdag_main_time())
+
 static void *xdag_send_thread(void *arg)
 {
 	struct xdag_send_data *d = (struct xdag_send_data *)arg;
@@ -49,7 +49,8 @@ static void *xdag_send_thread(void *arg)
 	d->b.field[0].type = XDAG_FIELD_NONCE | XDAG_MESSAGE_BLOCKS_REPLY << 4;
 
 	memcpy(&d->b.field[2], &g_xdag_stats, sizeof(g_xdag_stats));
-	
+	add_main_timestamp((struct xdag_stats*)&d->b.field[2]);
+
 	xdag_netdb_send((uint8_t*)&d->b.field[2] + sizeof(struct xdag_stats),
 						 14 * sizeof(struct xdag_field) - sizeof(struct xdag_stats));
 	
@@ -67,23 +68,23 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 	xtime_t start_time = xdag_start_main_time();
 	xtime_t current_time = xdag_main_time();
 
-	if(current_time < start_time || stats->total_nmain > current_time - start_time + 2) return -1;
+	if(current_time >= start_time && stats->total_nmain <= current_time - start_time + 2) {
+		if(stats->main_time <= current_time + 2) {
+			if(xdag_diff_gt(stats->max_difficulty, g->max_difficulty))
+				g->max_difficulty = stats->max_difficulty;
 
-	if(xdag_diff_gt(stats->max_difficulty, g->max_difficulty))
-		g->max_difficulty = stats->max_difficulty;
+			if(stats->total_nblocks > g->total_nblocks)
+				g->total_nblocks = stats->total_nblocks;
 
-	if(stats->total_nblocks > g->total_nblocks)
-		g->total_nblocks = stats->total_nblocks;
+			if(stats->total_nmain > g->total_nmain)
+				g->total_nmain = stats->total_nmain;
 
-	if(stats->total_nmain > g->total_nmain)
-		g->total_nmain = stats->total_nmain;
+			if(stats->total_nhosts > g->total_nhosts)
+				g->total_nhosts = stats->total_nhosts;
+		}
+	}
 
-	if(stats->total_nhosts > g->total_nhosts)
-		g->total_nhosts = stats->total_nhosts;
-
-	pthread_mutex_lock(&g_transport_mutex);
-	g_xdag_last_received = time(0);
-	pthread_mutex_unlock(&g_transport_mutex);
+	atomic_store_explicit_uint_least64(&g_xdag_last_received, time(NULL), memory_order_relaxed);
 
 	xdag_netdb_receive((uint8_t*)&received_block->field[2] + sizeof(struct xdag_stats),
 		(xdag_type(received_block, 1) == XDAG_MESSAGE_SUMS_REPLY ? 6 : 14) * sizeof(struct xdag_field)
@@ -313,8 +314,8 @@ static int do_request(int type, xtime_t start_time, xtime_t end_time, void *data
 {
 	struct xdag_block b;
 	time_t actual_time;
-	struct timespec expire_time;
-	int res;
+	struct timespec expire_time = {0};
+	int res, ret;
 	uint64_t id;
 
 	b.field[0].type = type << 4 | XDAG_FIELD_NONCE;
@@ -328,7 +329,8 @@ static int do_request(int type, xtime_t start_time, xtime_t end_time, void *data
 	atomic_exchange_explicit_uint_least64(&reply_id, id, memory_order_acq_rel);
 
 	memcpy(&b.field[2], &g_xdag_stats, sizeof(g_xdag_stats));
-	
+	add_main_timestamp((struct xdag_stats*)&b.field[2]);
+
 	xdag_netdb_send((uint8_t*)&b.field[2] + sizeof(struct xdag_stats),
 						 14 * sizeof(struct xdag_field) - sizeof(struct xdag_stats));
 
@@ -353,12 +355,12 @@ static int do_request(int type, xtime_t start_time, xtime_t end_time, void *data
 	expire_time.tv_sec = actual_time + REQUEST_WAIT;
 
 	while(!reply_rcvd){
-		if(pthread_cond_timedwait(&g_process_cond, &g_process_mutex, &expire_time)) {
+		if((ret = pthread_cond_timedwait(&g_process_cond, &g_process_mutex, &expire_time))) {
 			last_reply_id = reply_id_private;
 			reply_data = NULL;
 			reply_callback = NULL;
-			if(errno != EAGAIN || errno != ETIMEDOUT) {
-				xdag_err("pthread_cond_timedwait failed [function: do_request]");
+			if(ret != EAGAIN && ret != ETIMEDOUT) {
+				xdag_err("pthread_cond_timedwait failed [function: do_request, ret = %d]", ret);
 			}
 			break;
 		}
@@ -428,7 +430,8 @@ int xdag_request_block(xdag_hash_t hash, void *conn)
 
 	memcpy(&b.field[1], hash, sizeof(xdag_hash_t));
 	memcpy(&b.field[2], &g_xdag_stats, sizeof(g_xdag_stats));
-	
+	add_main_timestamp((struct xdag_stats*)&b.field[2]);
+
 	xdag_netdb_send((uint8_t*)&b.field[2] + sizeof(struct xdag_stats),
 						 14 * sizeof(struct xdag_field) - sizeof(struct xdag_stats));
 	

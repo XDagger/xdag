@@ -260,9 +260,7 @@ begin:
 				if(!memcmp(last->data, hash, sizeof(xdag_hashlow_t))) {
 					xdag_set_balance(hash, last->amount);
 
-					pthread_mutex_lock(&g_transport_mutex);
-					g_xdag_last_received = current_time;
-					pthread_mutex_unlock(&g_transport_mutex);
+					atomic_store_explicit_uint_least64(&g_xdag_last_received, current_time, memory_order_relaxed);
 
 					ndata = 0;
 

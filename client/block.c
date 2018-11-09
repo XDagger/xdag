@@ -44,8 +44,6 @@ struct block_backrefs;
 struct orphan_block;
 struct block_internal_index;
 
-int g_bi_index_enable = 1;
-
 struct block_internal {
 	union {
 		struct ldus_rbtree node;
@@ -105,8 +103,8 @@ enum orphan_remove_actions {
 
 #define get_orphan_index(bi)      (!!((bi)->flags & BI_EXTRA))
 
+int g_bi_index_enable = 1, g_block_production_on;
 static pthread_mutex_t g_create_block_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 static xdag_amount_t g_balance = 0;
 extern xtime_t g_time_limit;
 static struct ldus_rbtree *root = 0, *cache_root = 0;
@@ -434,7 +432,7 @@ static int insert_index(struct block_internal *bi)
 			xdag_err("block index malloc failed. [func: add_block_nolock]");
 			return -1;
 		}
-		bzero(index, sizeof(struct block_internal_index));
+		memset(index, 0, sizeof(struct block_internal_index));
 		memcpy(index->hash, bi->hash, sizeof(xdag_hash_t));
 		index->bi = bi;
 		bi->index = index;
@@ -1121,6 +1119,8 @@ static void *work_thread(void *arg)
 	int n_mining_threads = (int)(unsigned)(uintptr_t)arg, sync_thread_running = 0;
 	uint64_t nhashes0 = 0, nhashes = 0;
 	pthread_t th;
+	uint64_t last_nmain = 0, nmain;
+	time_t last_time_nmain_unequal = time(NULL);
 
 begin:
 	// loading block from the local storage
@@ -1159,9 +1159,11 @@ begin:
 		}
 	}
 
-	// start mining threads
-	xdag_mess("Starting mining threads...");
-	xdag_mining_start(n_mining_threads);
+	if (g_light_mode) {
+		// start mining threads
+		xdag_mess("Starting mining threads...");
+		xdag_mining_start(n_mining_threads);
+	}
 
 	// periodic generation of blocks and determination of the main block
 	xdag_mess("Entering main cycle...");
@@ -1173,12 +1175,38 @@ begin:
 		t = xdag_get_xtimestamp();
 		nhashes0 = nhashes;
 		nhashes = g_xdag_extstats.nhashes;
+		nmain = g_xdag_stats.nmain;
 
 		if (t > t0) {
 			g_xdag_extstats.hashrate_s = ((double)(nhashes - nhashes0) * 1024) / (t - t0);
 		}
 
-		if (!g_light_mode && (nblk = (unsigned)g_xdag_extstats.nnoref / (XDAG_BLOCK_FIELDS - 5))) {
+		if (!g_block_production_on && !g_light_mode &&
+				(g_xdag_state == XDAG_STATE_WAIT || g_xdag_state == XDAG_STATE_WTST ||
+				g_xdag_state == XDAG_STATE_SYNC || g_xdag_state == XDAG_STATE_STST || 
+				g_xdag_state == XDAG_STATE_CONN || g_xdag_state == XDAG_STATE_CTST)) {
+			if (g_xdag_state == XDAG_STATE_SYNC || g_xdag_state == XDAG_STATE_STST || 
+					g_xdag_stats.nmain >= (MAIN_TIME(t) - xdag_start_main_time())) {
+				g_block_production_on = 1;
+			} else if (last_nmain != nmain) {
+				last_nmain = nmain;
+				last_time_nmain_unequal = time(NULL);
+			} else if (time(NULL) - last_time_nmain_unequal > MAX_TIME_NMAIN_STALLED) {
+				g_block_production_on = 1;
+			}
+
+			if (g_block_production_on) {
+				xdag_mess("Starting refer blocks creation...");
+
+				// start mining threads
+				xdag_mess("Starting mining threads...");
+				xdag_mining_start(n_mining_threads);
+			}
+
+		}
+
+		if (g_block_production_on && 
+				(nblk = (unsigned)g_xdag_extstats.nnoref / (XDAG_BLOCK_FIELDS - 5))) {
 			nblk = nblk / 61 + (nblk % 61 > (unsigned)rand() % 61);
 
 			while (nblk--) {
@@ -1218,8 +1246,9 @@ begin:
 
 			goto begin;
 		} else {
-			pthread_mutex_lock(&g_transport_mutex);
-			if (t > (g_xdag_last_received << 10) && t - (g_xdag_last_received << 10) > 3 * MAIN_CHAIN_PERIOD) {
+			time_t last_received = atomic_load_explicit_uint_least64(&g_xdag_last_received, memory_order_relaxed);
+
+			if (t > (last_received << 10) && t - (last_received << 10) > 3 * MAIN_CHAIN_PERIOD) {
 				g_xdag_state = (g_light_mode ? (g_xdag_testnet ? XDAG_STATE_TTST : XDAG_STATE_TRYP)
 					: (g_xdag_testnet ? XDAG_STATE_WTST : XDAG_STATE_WAIT));
 				conn_time = sync_time = 0;
@@ -1245,7 +1274,6 @@ begin:
 					g_xdag_state = (g_xdag_testnet ? XDAG_STATE_STST : XDAG_STATE_SYNC);
 				}
 			}
-			pthread_mutex_unlock(&g_transport_mutex);
 		}
 
 		if (!g_light_mode) {
@@ -1566,8 +1594,14 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	}
 	fprintf(out, "       fee: %s  %10u.%09u\n", address, pramount(bi->fee));
 
-	for (i = 0; i < bi->nlinks; ++i) {
-		xdag_hash2address(bi->link[i]->hash, address);
+ 	if(flags & BI_EXTRA) pthread_mutex_lock(&block_mutex);
+ 	int nlinks = bi->nlinks;
+	struct block_internal *link[MAX_LINKS];
+	memcpy(link, bi->link, nlinks * sizeof(struct block_internal*));
+	if(flags & BI_EXTRA) pthread_mutex_unlock(&block_mutex);
+
+ 	for (i = 0; i < nlinks; ++i) {
+		xdag_hash2address(link[i]->hash, address);
 		fprintf(out, "    %6s: %s  %10u.%09u\n", (1 << i & bi->in_mask ? " input" : "output"),
 			address, pramount(bi->linkamount[i]));
 	}

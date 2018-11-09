@@ -16,6 +16,7 @@
 #define XDAG_TEST_ERA           0x16900000000ll
 #define XDAG_MAIN_ERA           0x16940000000ll
 #define XDAG_ERA                g_xdag_era
+#define MAX_TIME_NMAIN_STALLED  (1 << 10)
 
 #ifdef __cplusplus
 extern "C" {

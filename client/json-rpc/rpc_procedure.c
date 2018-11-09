@@ -117,7 +117,7 @@ int xdag_rpc_service_register_procedure(xdag_rpc_function function_pointer, char
 		xdag_err("rpc server : malloc failed!");
 		return -1;
 	}
-	bzero(new_elem, sizeof(struct rpc_procedure_element));
+	memset(new_elem, 0, sizeof(struct rpc_procedure_element));
 	new_elem->procedure.name = strdup(name);
 	new_elem->procedure.function = function_pointer;
 	new_elem->procedure.data = data;

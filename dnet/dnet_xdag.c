@@ -20,11 +20,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #if defined(_WIN32) || defined(_WIN64)
-#if defined(_WIN64)
 #define poll WSAPoll
-#else
-#define poll(a,b,c) ((a)->revents = (a)->events, (b))
-#endif
 #else
 #include <signal.h>
 #include <unistd.h>
