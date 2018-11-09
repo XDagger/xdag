@@ -6,7 +6,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-	
+extern int g_use_tmpfile;
+
 extern void xdag_mem_tempfile_path(const char *tempfile_path);
 
 extern int xdag_mem_init(size_t size);

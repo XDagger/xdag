@@ -1,4 +1,4 @@
-/* пул и майнер, T13.744-T13.895 $DVS:time$ */
+/* пул и майнер, T13.744-T14.390 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -159,7 +159,7 @@ void *miner_net_thread(void *arg)
 	const char *pool_address = (const char*)arg;
 	const char *mess = NULL;
 	int res = 0;
-	xdag_time_t t;
+	xtime_t t;
 	struct miner *m = &g_local_miner;
 
 	while(!g_xdag_sync_on) {
@@ -184,18 +184,20 @@ begin:
 		goto err;
 	}
 
-	const int64_t pos = xdag_get_block_pos(hash, &t);
-	if(pos < 0) {
+	const int64_t pos = xdag_get_block_pos(hash, &t, &b);
+	if (pos == -2l) {
+		;
+	} else if (pos < 0) {
 		mess = "can't find the block";
 		goto err;
+	} else {
+		struct xdag_block *blk = xdag_storage_load(hash, t, pos, &b);
+		if(!blk) {
+			mess = "can't load the block";
+			goto err;
+		}
+		if(blk != &b) memcpy(&b, blk, sizeof(struct xdag_block));
 	}
-
-	struct xdag_block *blk = xdag_storage_load(hash, t, pos, &b);
-	if(!blk) {
-		mess = "can't load the block";
-		goto err;
-	}
-	if(blk != &b) memcpy(&b, blk, sizeof(struct xdag_block));
 
 	pthread_mutex_lock(&g_miner_mutex);
 	g_socket = xdag_connect_pool(pool_address, &mess);
@@ -258,9 +260,7 @@ begin:
 				if(!memcmp(last->data, hash, sizeof(xdag_hashlow_t))) {
 					xdag_set_balance(hash, last->amount);
 
-					pthread_mutex_lock(&g_transport_mutex);
-					g_xdag_last_received = current_time;
-					pthread_mutex_unlock(&g_transport_mutex);
+					atomic_store_explicit_uint_least64(&g_xdag_last_received, current_time, memory_order_relaxed);
 
 					ndata = 0;
 
@@ -421,7 +421,7 @@ int xdag_send_block_via_pool(struct xdag_block *b)
 /* picks random pool from the list of pools */
 int xdag_pick_pool(char *pool_address)
 {
-	char addresses[30][50];
+	char addresses[30][50] = {0};
 	const char *error_message;
 	srand(time(NULL));
 	
@@ -444,7 +444,7 @@ int xdag_pick_pool(char *pool_address)
 		int socket = xdag_connect_pool(addresses[index], &error_message);
 		if(socket != INVALID_SOCKET) {
 			xdag_connection_close(socket);
-			strcpy(pool_address, addresses[index]);
+			strncpy(pool_address, addresses[index], 49);
 			return 1;
 		} else {
 			++index;

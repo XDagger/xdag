@@ -125,7 +125,7 @@ char *tcpRead(connection *c)
 	const int readSize = 1023;
 	char *rc = NULL;
 	size_t received = 0, count = 0;
-	char buffer[1024];
+	char buffer[1024] = {0};
 	
 	if(c) {
 		while(1) {

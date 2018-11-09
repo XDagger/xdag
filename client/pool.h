@@ -1,4 +1,4 @@
-/* pool logic */
+/* pool logic, T14.191-T14.618 $DVS:time$ */
 
 #ifndef XDAG_POOL_H
 #define XDAG_POOL_H
@@ -17,6 +17,8 @@ enum disconnect_type
 
 extern xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT];
 extern xdag_hash_t g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
+extern xdag_remark_t g_pool_tag;
+extern int g_pool_has_tag;
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,11 +43,12 @@ extern int xdag_print_miner_stats(const char* address, FILE *out);
 // condition type: all, ip or address
 // value: address of ip depending on type
 extern void disconnect_connections(enum disconnect_type type, char *value);
+
+// completes global mining thread
+void xdag_pool_finish(void);
 	
 #ifdef __cplusplus
 };
 #endif
-
-long double diff2log(xdag_diff_t diff);
 
 #endif
