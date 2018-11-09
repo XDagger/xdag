@@ -70,16 +70,29 @@ struct xdag_rpc_connection {
 	int pos;
 };
 
-static void wrap_http(int fd)
+static void wrap_http(int fd, const char *content)
 {
+	struct tm tm;
+	char buf[64] = {0}, tbuf[64] = {0}, lbuf[64] = {0};
+
+	time_t t = time(NULL);
+	localtime_r(&t, &tm);
+	strftime(buf, 64, "%a, %d %b %Y %H:%M:%S %Z", &tm);
+	sprintf(tbuf, "Date: %s\r\n", buf);
+	sprintf(lbuf, "Content-Length: %lu\r\n", strlen(content));
+
 	write(fd, "HTTP/1.1 200 OK\r\n", 17);
-	write(fd, "Content-Type: application/json\r\n\r\n", 34);
+	write(fd, "Connection: close\r\n",19);
+	write(fd, lbuf, strlen(lbuf));
+	write(fd, tbuf, strlen(tbuf));
+	write(fd, "Content-Type: application/json\r\n", 32);
+	write(fd, "Access-Control-Allow-Origin: *\r\n\r\n", 34);
 }
 
 static int send_response(struct xdag_rpc_connection * conn,const char *response) {
 	int fd = conn->fd.fd;
 	if(conn->is_http) {
-		wrap_http(fd);
+		wrap_http(fd, response);
 	}
 	write(fd, response, strlen(response));
 	return 0;
