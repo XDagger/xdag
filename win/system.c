@@ -1,8 +1,16 @@
 #define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#include <stdio.h>
+
+#if !defined(_WIN32) && !defined(_WIN64)
 #include <sys/time.h>
 #include <termios.h>
+#else
+#include <Windows.h>
+#include "../win/xdaglib/unistd.h"
+#include <WinSock2.h>
+
+#endif
+
+#include <stdio.h>
 
 int gettimeofday(struct timeval * tp, struct timezone * tzp)
 {
@@ -33,8 +41,11 @@ int tcgetattr(int fd, struct termios *tio)
 {
 	if(fd) return -1;
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+
+#if !defined(_WIN32) && !defined(_WIN64)
 	GetConsoleMode(hStdin, &tio->mode);
 	tio->c_lflag = (tio->mode & ENABLE_ECHO_INPUT ? ECHO : 0);
+#endif
 	return 0;
 }
 
@@ -42,8 +53,11 @@ int tcsetattr(int fd, int flags, struct termios *tio)
 {
 	if(fd || flags) return -1;
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+
+#if !defined(_WIN32) && !defined(_WIN64)
 	tio->mode = (tio->mode & ~ENABLE_ECHO_INPUT) | (tio->c_lflag & ECHO ? ENABLE_ECHO_INPUT : 0);
 	SetConsoleMode(hStdin, tio->mode);
+#endif
 	return 0;
 }
 

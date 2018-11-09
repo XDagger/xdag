@@ -142,6 +142,8 @@
     <ClInclude Include="..\sys\time.h" />
     <ClInclude Include="..\termios.h" />
     <ClInclude Include="..\unistd.h" />
+    <ClInclude Include="getopt.h" />
+    <ClInclude Include="unistd.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\client\netdb-testnet.txt" />

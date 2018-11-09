@@ -3,8 +3,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#if !defined(_WIN32) && !defined(_WIN64)
 #include <unistd.h>
 #include <termios.h>
+#else
+#include "../win/xdaglib/unistd.h"
+#endif
 #include "system.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_random.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
@@ -55,6 +59,9 @@ int dnet_limited_version = 0;
 static int g_keylen = 0;
 
 static int input_password(const char *prompt, char *buf, unsigned len) {
+
+#if !defined(_WIN32) && !defined(_WIN64)
+
 	struct termios t[1];
 	int noecho = !!strstr(prompt, "assword");
 	printf("%s: ", prompt); fflush(stdout);
@@ -69,6 +76,8 @@ static int input_password(const char *prompt, char *buf, unsigned len) {
 		tcsetattr(0, TCSANOW, t);
 		printf("\n");
 	}
+#endif
+
 	len = strlen(buf);
 	if (len && buf[len - 1] == '\n') buf[len - 1] = 0;
 	return 0;

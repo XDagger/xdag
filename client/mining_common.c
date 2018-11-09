@@ -1,7 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+
+#if !defined(_WIN32) && !defined(_WIN64)
 #include <sys/socket.h>
+#else
+#include <WinSock2.h>
+#endif
+
 #include "mining_common.h"
 #include "miner.h"
 #include "pool.h"

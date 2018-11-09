@@ -4,9 +4,10 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include <Windows.h>
 #include <pthread.h>
+#include "../win/xdaglib/unistd.h"
+
 #define inline __inline
 #define __attribute__(x) 
-typedef long ssize_t;
 #define fcntl(a,b,c) 0
 #define close closesocket
 #ifdef _WIN32
@@ -25,6 +26,8 @@ static pthread_t pthread_invalid;
 #define SHUT_RDWR SD_BOTH
 #endif
 #else
+typedef long ssize_t;
+
 #define pthread_invalid -1
 #define INVALID_SOCKET	-1
 #endif

@@ -1,8 +1,15 @@
 /* hash-function, T13.654-T13.864 $DVS:time$ */
 
+
 #include <string.h>
 #ifdef SHA256_OPENSSL_MBLOCK
+
+#if !defined(_WIN32) && !defined(_WIN64)
 #include <arpa/inet.h>
+#else
+#include <WinSock2.h>
+#endif
+
 #endif
 #include "sha256.h"
 #include "hash.h"

@@ -16,11 +16,20 @@
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#else
+
+#include <WinSock2.h>
+#include <windows.h>
+#include <WS2tcpip.h>
+
+#define SHUT_RDWR 0
+
 #endif
 
 #include <fcntl.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <pthread.h>
 
 #include "../commands.h"

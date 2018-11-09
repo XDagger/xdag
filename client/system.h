@@ -3,6 +3,7 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <Windows.h>
+#include "../win/xdaglib/unistd.h"
 #define inline              __inline
 #include "../dus/programs/dfstools/source/include/dfsrsa.h"
 
@@ -49,6 +50,10 @@ static inline xdag_diff_t xdag_diff_div(xdag_diff_t p, xdag_diff_t q)
 #define xOPENSSL_ia32_cpuid     OPENSSL_ia32_cpuid
 #define xOPENSSL_ia32cap_P      OPENSSL_ia32cap_P
 #define xsha256_multi_block     sha256_multi_block
+
+#if !defined(_WIN32) && !defined(_WIN64)
+typedef long ssize_t;
+#endif
 
 #else
 

@@ -192,6 +192,7 @@
     <ClCompile Include="..\..\client\network.c">
       <Filter>client</Filter>
     </ClCompile>
+    <ClCompile Include="getopt.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client\address.h">
@@ -393,6 +394,8 @@
       <Filter>client</Filter>
     </ClInclude>
     <ClInclude Include="..\..\client\version.h" />
+    <ClInclude Include="unistd.h" />
+    <ClInclude Include="getopt.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\client\netdb-testnet.txt">

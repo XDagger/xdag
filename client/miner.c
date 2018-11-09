@@ -6,12 +6,24 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <pthread.h>
-#include <unistd.h>
+
+#if !defined(_WIN32) && !defined(_WIN64)
+
 #include <sys/socket.h>
-#include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netdb.h>
+#include <unistd.h>
+
+#else
+
+#include <WinSock2.h>
+#include <windows.h>
+#include <WS2tcpip.h>
+#include "../win/xdaglib/unistd.h"
+
+#endif
+
+
 #include "system.h"
 #include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
 #include "../dus/programs/dar/source/include/crc.h"
