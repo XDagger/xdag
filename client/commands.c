@@ -74,6 +74,7 @@ void processDisconnectCommand(char *nextParam, FILE *out);
 void processRPCCommand(char *nextParam, FILE *out);
 void processAutoRefreshCommand(char *nextParam, FILE *out);
 void processReloadCommand(char *nextParam, FILE *out);
+void processOperationalCommand(char *nextParam, FILE *out);
 
 int xdag_com_account(char *, FILE*);
 int xdag_com_balance(char *, FILE*);
@@ -100,6 +101,7 @@ int xdag_com_disconnect(char *, FILE*);
 int xdag_com_rpc(char *, FILE*);
 int xdag_com_autorefresh(char *, FILE*);
 int xdag_com_reload(char *, FILE*);
+int xdag_com_operational(char *, FILE*);
 
 XDAG_COMMAND* find_xdag_command(char*);
 
@@ -130,6 +132,7 @@ XDAG_COMMAND commands[] = {
 	{ "rpc"         , 0, xdag_com_rpc},
 	{ "autorefresh" , 2, xdag_com_autorefresh },
 	{ "reload"      , 2, xdag_com_reload },
+	{ "opt"         , 2, xdag_com_operational },
 	{ (char *)NULL  , 0, (xdag_com_func_t)NULL}
 };
 
@@ -281,6 +284,12 @@ int xdag_com_autorefresh(char *args, FILE *out)
 int xdag_com_reload(char *args, FILE *out)
 {
 	processReloadCommand(args, out);
+	return 0;
+}
+
+int xdag_com_operational(char *args, FILE *out)
+{
+	processOperationalCommand(args, out);
 	return 0;
 }
 
@@ -711,6 +720,23 @@ void processReloadCommand(char *nextParam, FILE *out)
 	g_xdag_state = XDAG_STATE_REST;
 }
 
+void processOperationalCommand(char *nextParam, FILE *out)
+{
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+
+	if(!cmd) {
+		fprintf(out, g_pool_operational ? "Operational.\n" : "Miners blocked.\n");
+	} else {
+		if(strcmp(cmd, "block") == 0) {
+			g_pool_operational = 0;
+		} else if(strcmp(cmd, "unblock") == 0) {
+			g_pool_operational = 1;
+		} else {
+			fprintf(out, "Invalid parameters.\n");
+		}
+	}
+}
+
 const char *get_state()
 {
 	static const char *states[] = {
@@ -989,6 +1015,7 @@ void processHelpCommand(FILE *out)
 		"  rpc [command]        - rpc commands, try 'rpc help'\n"
 		"  mainblocks [N]       - print list of N (20 by default) main blocks\n"
 		"  minedblocks [N]      - print list of N (20 by default) main blocks mined by current pool\n"
+		"  opt [block|unblock]  - block miners, empty means query current operational status\n"
 		, g_coinname);
 }
 

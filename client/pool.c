@@ -133,6 +133,7 @@ xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT];
 xdag_hash_t g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
 xdag_remark_t g_pool_tag = {0};
 int g_pool_has_tag = 0;
+int g_pool_operational = 1;
 
 static uint32_t g_max_connections_count = START_MINERS_COUNT, g_max_miner_ip_count = START_MINERS_IP_COUNT;
 static uint32_t g_connections_per_miner_limit = DEFAUL_CONNECTIONS_PER_MINER_LIMIT;
@@ -1084,13 +1085,7 @@ void *pool_main_thread(void *arg)
 
 int pool_is_operational(void)
 {
-	int ret = g_xdag_state == XDAG_STATE_MTST
-	|| g_xdag_state == XDAG_STATE_MINE
-	|| g_xdag_state == XDAG_STATE_STST
-	|| g_xdag_state == XDAG_STATE_SYNC
-	|| g_xdag_state == XDAG_STATE_XFER;
-
-	return ret;
+	return g_pool_operational;
 }
 
 void *pool_block_thread(void *arg)

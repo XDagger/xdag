@@ -19,6 +19,7 @@ extern xdag_hash_t g_xdag_mined_hashes[CONFIRMATIONS_COUNT];
 extern xdag_hash_t g_xdag_mined_nonce[CONFIRMATIONS_COUNT];
 extern xdag_remark_t g_pool_tag;
 extern int g_pool_has_tag;
+extern int g_pool_operational;
 
 #ifdef __cplusplus
 extern "C" {
