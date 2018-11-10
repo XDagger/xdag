@@ -2001,22 +2001,22 @@ int xdag_get_block_info(xdag_hash_t hash, void *info, int (*info_callback)(void*
 		}
 		links_callback(links, "fee", link_hash, bi->fee);
 
-		struct block_internal *links[MAX_LINKS] = {0};
-		int nlinks = 0;
+		struct block_internal *bi_links[MAX_LINKS] = {0};
+		int bi_nlinks = 0;
 
 		if(flags & BI_EXTRA) {
 			pthread_mutex_lock(&block_mutex);
 		}
 
-		nlinks = bi->nlinks;
-		memcpy(links, bi->link, nlinks * sizeof(struct block_internal *));
+		bi_nlinks = bi->nlinks;
+		memcpy(bi_links, bi->link, bi_nlinks * sizeof(struct block_internal *));
 
 		if(flags & BI_EXTRA) {
 			pthread_mutex_unlock(&block_mutex);
 		}
 
-		for (int i = 0; i < nlinks; ++i) {
-			links_callback(links, (1 << i & bi->in_mask ? " input" : "output"), links[i]->hash, bi->linkamount[i]);
+		for (int i = 0; i < bi_nlinks; ++i) {
+			links_callback(links, (1 << i & bi->in_mask ? " input" : "output"), bi_links[i]->hash, bi->linkamount[i]);
 		}
 	}
 	return 0;
