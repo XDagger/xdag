@@ -9,7 +9,7 @@
 #include <sys/un.h>
 #include <errno.h>
 
-#if defined (_MACOS) || defined (_APPLE)
+#if defined (__APPLE__)
 #define SIGPOLL SIGIO
 #endif
 
