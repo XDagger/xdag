@@ -2016,7 +2016,7 @@ int xdag_get_block_info(xdag_hash_t hash, void *info, int (*info_callback)(void*
 		}
 
 		for (int i = 0; i < nlinks; ++i) {
-			links_callback(links, (1 << i & bi->in_mask ? " input" : "output"), links[i]->hash, bi->linkamount[i]);
+			links_callback(links, (1 << i & bi->in_mask ? "input" : "output"), links[i]->hash, bi->linkamount[i]);
 		}
 	}
 	return 0;
