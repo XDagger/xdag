@@ -545,7 +545,8 @@ void processStatsCommand(FILE *out)
 			(long long)g_xdag_extstats.nnoref,
 			g_xdag_extstats.nwaitsync,
 			xdag_diff_args(g_xdag_stats.difficulty), xdag_diff_args(g_xdag_stats.max_difficulty),
-			g_coinname, amount2xdags(xdag_get_supply(g_xdag_stats.nmain)), amount2xdags(xdag_get_supply(g_xdag_stats.total_nmain)),
+			g_coinname, 
+			amount2xdags(xdag_get_supply(g_xdag_stats.nmain)), amount2xdags(xdag_get_supply(g_xdag_stats.total_nmain)),
 			xdag_hashrate(g_xdag_extstats.hashrate_ours), xdag_hashrate(g_xdag_extstats.hashrate_total)
 		);
 	}
