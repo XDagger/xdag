@@ -840,8 +840,8 @@ int dnet_execute_command(const char *cmd, void *fileout)
 			conn = g_threads[i].conn[j];
 			sprintf(buf, "%d.%d.%d.%d:%d", conn->ip & 0xFF, conn->ip >> 8 & 0xFF, conn->ip >> 16 & 0xFF, conn->ip >> 24 & 0xFF, conn->port);
 			len = strlen(buf);
-			fprintf(f, " %2d. %s%*d sec, %lld/%lld in/out bytes, %lld/%lld packets, %lld/%lld dropped\n",
-				count++, buf, 28 - len, (int)(time(0) - conn->created),
+			fprintf(f, " %2d. %s%*s%d sec, %lld/%lld in/out bytes, %lld/%lld packets, %lld/%lld dropped\n",
+				count++, buf, 24 - len, "", (int)(time(0) - conn->created),
 				(long long)conn->packets_in << 9, (long long)conn->packets_out << 9,
 				(long long)conn->packets_in, (long long)conn->packets_out, (long long)conn->dropped_in, 0ll);
 		}
