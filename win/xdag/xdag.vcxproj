@@ -195,7 +195,8 @@ copy $(SolutionDir)..\client\netdb-testnet.txt "$(OutDir)netdb-testnet.txt" /Y
 copy $(SolutionDir)..\client\netdb-white.txt "$(OutDir)netdb-white.txt" /Y
 copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testnet.txt" /Y
 copy $(SolutionDir)..\client\pools.txt "$(OutDir)pools.txt" /Y
-copy $(SolutionDir)..\client\pools-testnet.txt "$(OutDir)pools-testnet.txt" /Y</Command>
+copy $(SolutionDir)..\client\pools-testnet.txt "$(OutDir)pools-testnet.txt" /Y
+copy $(SolutionDir)..\dnet\dnet_keys.bin "$(OutDir)dnet_keys.bin" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -283,7 +284,8 @@ copy $(SolutionDir)..\client\netdb-testnet.txt "$(OutDir)netdb-testnet.txt" /Y
 copy $(SolutionDir)..\client\netdb-white.txt "$(OutDir)netdb-white.txt" /Y
 copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testnet.txt" /Y
 copy $(SolutionDir)..\client\pools.txt "$(OutDir)pools.txt" /Y
-copy $(SolutionDir)..\client\pools-testnet.txt "$(OutDir)pools-testnet.txt" /Y</Command>
+copy $(SolutionDir)..\client\pools-testnet.txt "$(OutDir)pools-testnet.txt" /Y
+copy $(SolutionDir)..\dnet\dnet_keys.bin "$(OutDir)dnet_keys.bin" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_profiling|x64'">
@@ -315,7 +317,8 @@ copy $(SolutionDir)..\client\netdb-testnet.txt "$(OutDir)netdb-testnet.txt" /Y
 copy $(SolutionDir)..\client\netdb-white.txt "$(OutDir)netdb-white.txt" /Y
 copy $(SolutionDir)..\client\netdb-white-testnet.txt "$(OutDir)netdb-white-testnet.txt" /Y
 copy $(SolutionDir)..\client\pools.txt "$(OutDir)pools.txt" /Y
-copy $(SolutionDir)..\client\pools-testnet.txt "$(OutDir)pools-testnet.txt" /Y</Command>
+copy $(SolutionDir)..\client\pools-testnet.txt "$(OutDir)pools-testnet.txt" /Y
+copy $(SolutionDir)..\dnet\dnet_keys.bin "$(OutDir)dnet_keys.bin" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

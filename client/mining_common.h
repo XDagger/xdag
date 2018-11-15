@@ -4,11 +4,7 @@
 #include <pthread.h>
 #include "block.h"
 #if defined(_WIN32) || defined(_WIN64)
-#if defined(_WIN64)
 #define poll WSAPoll
-#else
-#define poll(a, b, c) ((a)->revents = (a)->events, (b))
-#endif
 #else
 #include <poll.h>
 #endif
@@ -18,7 +14,7 @@
 
 struct xdag_pool_task {
 	struct xdag_field task[2], lastfield, minhash, nonce;
-	xdag_time_t task_time;
+	xtime_t task_time;
 	void *ctx0, *ctx;
 };
 

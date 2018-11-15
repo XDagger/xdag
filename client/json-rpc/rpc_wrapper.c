@@ -39,7 +39,7 @@ const uint32_t APPLICATION_DOMAIN_PORT = 7676;
 void rpc_call_dnet_command(const char *method, const char *params, char **result)
 {
 	int sock;
-	char cmd[XDAG_COMMAND_MAX];
+	char cmd[XDAG_COMMAND_MAX] = {0};
 	sprintf(cmd, "%s %s", method, params);
 
 #if !defined(_WIN32) && !defined(_WIN64)

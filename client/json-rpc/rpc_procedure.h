@@ -31,12 +31,17 @@ struct xdag_rpc_procedure {
 #ifdef __cplusplus
 extern "C" {
 #endif
-	
 /* register procedure */
 extern int xdag_rpc_service_register_procedure(xdag_rpc_function function_pointer, char *name, void *data);
 
 /* unregister procedure */
 extern int xdag_rpc_service_unregister_procedure(char *name);
+
+/* list registerd procedures */
+extern int xdag_rpc_service_list_procedures(char *);
+
+/* unregister all procedures */
+extern int xdag_rpc_service_clear_procedures(void);
 
 /* handle rpc request */
 extern cJSON *xdag_rpc_handle_request(char* buffer);
