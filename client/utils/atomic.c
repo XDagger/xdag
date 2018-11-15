@@ -25,9 +25,9 @@ uint_least64_t atomic_exchange_uint_least64(atomic_uint_least64_t *object, uint_
 #ifndef _WIN64
 	xdag_fatal("Atomic functions are not supported in x86 version. Contact support.");
 	exit(0);
-#endif // !_WIN64
-
+#else
 	atomic_exchange_switch_max64(object, desired);
+#endif
 }
 
 #define atomic_compare_exchange_strong_switch_max64(object, expected, desired) \
@@ -78,8 +78,9 @@ int atomic_compare_exchange_strong_uintptr(atomic_uintptr_t *ptr, uintptr_t *exp
 #ifndef _WIN64
 	xdag_fatal("Atomic functions are not supported in x86 version. Contact support.");
 	exit(0);
-#endif // !_WIN64
+#else
 	atomic_compare_exchange_strong_switch_max64(ptr, expected, desired);
+#endif
 }
 
 int atomic_compare_exchange_strong_uint_least64(atomic_uint_least64_t *ptr, uint_least64_t *expected, uint_least64_t desired)
@@ -87,6 +88,7 @@ int atomic_compare_exchange_strong_uint_least64(atomic_uint_least64_t *ptr, uint
 #ifndef _WIN64
 	xdag_fatal("Atomic functions are not supported in x86 version. Contact support.");
 	exit(0);
-#endif // !_WIN64
+#else
 	atomic_compare_exchange_strong_switch_max64(ptr, expected, desired);
+#endif
 }
