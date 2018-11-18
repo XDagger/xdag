@@ -23,12 +23,15 @@ set(DAGGER_SOURCES
 
   client/json-rpc/cJSON_Utils.c
   client/json-rpc/cJSON.c
+  client/json-rpc/rpc_commands.c
   client/json-rpc/rpc_procedure.c
   client/json-rpc/rpc_procedures.c
   client/json-rpc/rpc_service.c
   client/json-rpc/rpc_wrapper.c
 
   client/utils/moving_statistics/moving_average.c
+  client/utils/atomic.c
+  client/utils/dirname.c
   client/utils/linenoise.c
   client/utils/log.c
   client/utils/utils.c
@@ -37,9 +40,11 @@ set(DAGGER_SOURCES
   client/block.c
   client/commands.c
   client/crypt.c
+  #client/dvstime.c
   client/hash.c
   client/init.c
   client/main.c
+  client/math.c
   client/memory.c
   client/miner.c
   client/mining_common.c
@@ -50,20 +55,12 @@ set(DAGGER_SOURCES
   client/storage.c
   client/sync.c
   client/terminal.c
+  client/time.c
   client/transport.c
   client/wallet.c
 
   dnet/dnet_crypt.c
-  dnet/dnet_database.c
-  dnet/dnet_main.c
-  dnet/dnet_threads.c
-  dnet/dnet_connection.c
-  dnet/dnet_stream.c
-  dnet/dnet_packet.c
-  dnet/dnet_command.c
-  dnet/dnet_log.c
-  dnet/dnet_files.c
-  dnet/dnet_tap.c
+  dnet/dnet_xdag.c
 
   dus/programs/dfstools/source/dfslib/dfslib_crypt.c
   dus/programs/dfstools/source/dfslib/dfslib_random.c
@@ -78,6 +75,7 @@ set(DAGGER_HEADERS
 
   client/json-rpc/cJSON_Utils.h
   client/json-rpc/cJSON.h
+  client/json-rpc/rpc_commands.h
   client/json-rpc/rpc_procedure.h
   client/json-rpc/rpc_procedures.h
   client/json-rpc/rpc_service.h
@@ -87,6 +85,8 @@ set(DAGGER_HEADERS
   client/uthash/utlist.h
 
   client/utils/moving_statistics/moving_average.h
+  client/utils/atomic.h
+  client/utils/dirname.h
   client/utils/linenoise.h
   client/utils/log.h
   client/utils/utils.h
@@ -97,6 +97,7 @@ set(DAGGER_HEADERS
   client/crypt.h
   client/hash.h
   client/init.h
+  client/math.h
   client/memory.h
   client/miner.h
   client/mining_common.h
@@ -109,23 +110,17 @@ set(DAGGER_HEADERS
   client/sync.h
   client/system.h
   client/terminal.h
+  client/time.h
   client/transport.h
   client/types.h
   client/version.h
   client/wallet.h
 
   dnet/dnet_crypt.h
-  dnet/dnet_database.h
   dnet/dnet_history.h
-  dnet/dnet_threads.h
-  dnet/dnet_connection.h
-  dnet/dnet_stream.h
+  dnet/dnet_main.h
   dnet/dnet_packet.h
-  dnet/dnet_command.h
-  dnet/dnet_log.h
-  dnet/dnet_files.h
-  dnet/dnet_tap.h
-  dnet/dthread.h
+  dnet/system.h
 
   dus/programs/dfstools/source/dfslib/dfslib_crypt.h
   dus/programs/dfstools/source/dfslib/dfslib_random.h
