@@ -1,6 +1,12 @@
 #include <stdio.h>
 #include <string.h>
-#include <intrin.h>
+
+#ifdef __APPLE__
+	#include <pmmintrin.h>
+#else
+	#include <intrin.h>
+#endif
+
 #include <stdint.h>
 #include "atomic.h"
 #include "log.h"
