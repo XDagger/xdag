@@ -28,6 +28,7 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "json-rpc/rpc_service.h"
+#include "xdag_config.h"
 
 char *g_coinname, *g_progname;
 #define coinname   g_coinname
@@ -50,11 +51,15 @@ int(*g_xdag_show_state)(const char *state, const char *balance, const char *addr
 
 void printUsage(char* appName);
 
+
+
+
+
 int xdag_init(int argc, char **argv, int isGui)
 {
     xdag_init_path(argv[0]);
 
-	const char *addrports[256] = {0}, *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
+	const char *addrports[256] = {0}, *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0,*config_path = 0;
 	int transport_flags = 0, transport_threads = -1, n_addrports = 0, mining_threads_count = 0,
 			is_pool = 0, is_miner = 0, level, is_rpc = 0, rpc_port = 0;
 	
@@ -95,8 +100,10 @@ int xdag_init(int argc, char **argv, int isGui)
 			}
 			continue;
 		}
-		
-		if (ARG_EQUAL(argv[i], "-a", "")) { /* miner address */
+		if (ARG_EQUAL(argv[i], "-f", "")){ /* configuration file */
+			if (++i < argc) config_path = argv[i];
+			pool_arg = get_pool_config(config_path);
+		}else if (ARG_EQUAL(argv[i], "-a", "")) { /* miner address */
 			if (++i < argc) miner_address = argv[i];
 		} else if(ARG_EQUAL(argv[i], "-c", "")) { /* another full node address */
 			if (++i < argc && n_addrports < 256)
@@ -285,6 +292,7 @@ void printUsage(char* appName)
 		"  -a address     - specify your address to use in the miner\n"
 		"  -c ip:port     - address of another xdag full node to connect\n"
 		"  -d             - run as daemon (default is interactive mode)\n"
+		"  -f             - configuration file path(pool)\n"
 		"  -h             - print this help\n"
 		"  -i             - run as interactive terminal for daemon running in this folder\n"
 		"  -l             - output non zero balances of all accounts\n"
@@ -311,3 +319,6 @@ void printUsage(char* appName)
 		"  -tag           - tag for pool to distingush pools. Max length is 32 chars\n"
 		, appName);
 }
+
+
+
