@@ -30,7 +30,6 @@ set(DAGGER_SOURCES
   client/json-rpc/rpc_wrapper.c
 
   client/utils/moving_statistics/moving_average.c
-  client/utils/atomic.c
   client/utils/dirname.c
   client/utils/linenoise.c
   client/utils/log.c
