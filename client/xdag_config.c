@@ -99,7 +99,7 @@ static char *readline(FILE *fp)
         strcpy(line+line_len, buf);
         line_len += buf_len;
 
-        c = buf[sizeof(buf)-2];
+        c = buf[sizeof(buf)-1];
         if(c == '\0' || c == '\n')
         {
             break;
