@@ -226,8 +226,7 @@ static void xdag_config_free(CFG *cfg)
 
 static NODE *xdag_get_node(CFG *config, const char *node_name)
 {
-    int i;
-    for(i=0; i<config->number_nodes; i++)
+    for(int i=0; i<config->number_nodes; i++)
     {
         if(strkscmp(node_name, config->nodes[i]->name) == 0)
         {
@@ -282,7 +281,7 @@ static char *xdag_config_read_node_name(FILE *fp)
         {
             int len = (int)strlen(line);
             char *name = (char *)malloc(len-2+1);
-            memset(name, 0, len-2+1);
+            memset(name, 0, len-1);
             strncpy(name, line+1, len-2);
             free(line);
             return name;
@@ -306,7 +305,7 @@ static char *xdag_config_read_node_name(FILE *fp)
 
 bool isEmpty(const char *s)
 {
-    return (s == NULL) || (strlen(s) == 0);
+    return (s == NULL) || (*s == 0);
 }
 
 
