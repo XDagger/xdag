@@ -3,33 +3,33 @@
 #include <openssl/sha.h>
 #include "sha256.h"
 
-inline uint32_t bswap_32(uint32_t x)
+static uint32_t inline bswap_32(uint32_t x)
 {
 	return (((x & 0xff000000U) >> 24) | ((x & 0x00ff0000U) >> 8) |
 		((x & 0x0000ff00U) << 8) | ((x & 0x000000ffU) << 24));
 }
 
-uint32_t static inline ReadBE32(const unsigned char* ptr)
+static uint32_t inline ReadBE32(const unsigned char* ptr)
 {
 	return bswap_32(*(uint32_t*)ptr);
 }
 
-void static inline WriteBE32(uint32_t* ptr, uint32_t x)
+static void inline WriteBE32(uint32_t* ptr, uint32_t x)
 {
 	*ptr = bswap_32(x);
 }
 
 #ifndef SHA256_USE_OPENSSL_TXFM
 
-uint32_t inline Ch(uint32_t x, uint32_t y, uint32_t z) { return z ^ (x & (y ^ z)); }
-uint32_t inline Maj(uint32_t x, uint32_t y, uint32_t z) { return (x & y) | (z & (x | y)); }
-uint32_t inline Sigma0(uint32_t x) { return (x >> 2 | x << 30) ^ (x >> 13 | x << 19) ^ (x >> 22 | x << 10); }
-uint32_t inline Sigma1(uint32_t x) { return (x >> 6 | x << 26) ^ (x >> 11 | x << 21) ^ (x >> 25 | x << 7); }
-uint32_t inline sigma0(uint32_t x) { return (x >> 7 | x << 25) ^ (x >> 18 | x << 14) ^ (x >> 3); }
-uint32_t inline sigma1(uint32_t x) { return (x >> 17 | x << 15) ^ (x >> 19 | x << 13) ^ (x >> 10); }
+static uint32_t inline Ch(uint32_t x, uint32_t y, uint32_t z) { return z ^ (x & (y ^ z)); }
+static uint32_t inline Maj(uint32_t x, uint32_t y, uint32_t z) { return (x & y) | (z & (x | y)); }
+static uint32_t inline Sigma0(uint32_t x) { return (x >> 2 | x << 30) ^ (x >> 13 | x << 19) ^ (x >> 22 | x << 10); }
+static uint32_t inline Sigma1(uint32_t x) { return (x >> 6 | x << 26) ^ (x >> 11 | x << 21) ^ (x >> 25 | x << 7); }
+static uint32_t inline sigma0(uint32_t x) { return (x >> 7 | x << 25) ^ (x >> 18 | x << 14) ^ (x >> 3); }
+static uint32_t inline sigma1(uint32_t x) { return (x >> 17 | x << 15) ^ (x >> 19 | x << 13) ^ (x >> 10); }
 
 /** One round of SHA-256. */
-void inline Round(uint32_t a, uint32_t b, uint32_t c, uint32_t *d, uint32_t e, uint32_t f, uint32_t g, uint32_t *h, uint32_t k, uint32_t w)
+static void inline Round(uint32_t a, uint32_t b, uint32_t c, uint32_t *d, uint32_t e, uint32_t f, uint32_t g, uint32_t *h, uint32_t k, uint32_t w)
 {
 	uint32_t t1 = *h + Sigma1(e) + Ch(e, f, g) + k + w;
 	uint32_t t2 = Sigma0(a) + Maj(a, b, c);
@@ -174,7 +174,7 @@ void sha256_final(SHA256REF_CTX *ctx, uint8_t *hash)
 	} else {
 		cdata[tmp_len++] = 0x80;
 		memset(cdata + tmp_len, 0, 56 - tmp_len);
-		SHA256_Transform(ctx, cdata);
+		sha256_transform(ctx, cdata);
 		memset(cdata, 0, 56);
 	}
 
@@ -182,7 +182,7 @@ void sha256_final(SHA256REF_CTX *ctx, uint8_t *hash)
 	ctx->bitlen += ctx->datalen << 3;
 	*((uint32_t*)(cdata + 60)) = bswap_32((uint32_t)ctx->bitlen);
 	*((uint32_t*)(cdata + 56)) = bswap_32((uint32_t)(ctx->bitlenH));	//TODO: ctx->bitlenH is always zero. Do we need it?
-	SHA256_Transform(ctx, cdata);
+	sha256_transform(ctx, cdata);
 
 	WriteBE32((uint32_t*)hash, ctx->state[0]);
 	WriteBE32((uint32_t*)(hash + 4), ctx->state[1]);
