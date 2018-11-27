@@ -2,13 +2,14 @@
 #define _XDAG_CONFIG_H_
 
 typedef int bool;
+
 /**
  * get xdag pool config.
- * @param <pool_arg> pool arg.
+ * @param <buf> pool arg.
  * @param <path> configuration file path.
  * @return (none).
  */
-char * get_pool_config(const char *path);
+int get_pool_config(const char *path,char *buf);
 
 bool isEmpty(const char *str);
 

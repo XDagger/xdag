@@ -99,7 +99,9 @@ int xdag_init(int argc, char **argv, int isGui)
 		if (ARG_EQUAL(argv[i], "-f", "")){ /* configuration file */
 			if (++i < argc) {
 				if(argv[i]!=NULL&&argv[i][0]!='-'&&pool_arg==NULL){
-					pool_arg = get_pool_config(argv[i]);
+					char buf[80];
+					if(get_pool_config(argv[i],buf)) return -1;
+					pool_arg = buf;
 				}
 			}
 		}else if (ARG_EQUAL(argv[i], "-a", "")) { /* miner address */

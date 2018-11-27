@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-//#include <errno.h>
 #include "xdag_config.h"
 
 
@@ -96,6 +95,10 @@ static char *readline(FILE *fp)
         fgets(buf, sizeof(buf), fp);
         buf_len = strlen(buf);
         line = (char *)realloc(line, line_len+buf_len+1);
+        if(line == NULL){
+			printf("Configuration:read line memory initialization failed\n");
+			return NULL;
+		}
         strcpy(line+line_len, buf);
         line_len += buf_len;
 
@@ -124,12 +127,11 @@ static int strn(const char *p, const char chr)
 
 static CFG_CONTENT_TYPE xdag_get_content_type(const char *line)
 {
-    int i;
     if(line[0] == '\0')
     {
         return TYPE_EMPTYLINE;
     }
-    for(i=0; i<sizeof(COMMENT_MARK); i++)
+    for(int i=0; i<sizeof(COMMENT_MARK); i++)
     {
         if(line[0] == COMMENT_MARK[i])
         {
@@ -144,6 +146,7 @@ static CFG_CONTENT_TYPE xdag_get_content_type(const char *line)
     {
         return TYPE_KEY;
     }
+    printf("Configuration:unknown node type\n");
     return TYPE_UNKNOW;
 }
 
@@ -280,7 +283,11 @@ static char *xdag_config_read_node_name(FILE *fp)
         if(type == TYPE_NODE)
         {
             int len = (int)strlen(line);
-            char *name = (char *)malloc(len-2+1);
+            char *name = (char *)malloc(len-1);
+            if(name == NULL){
+				printf("Configuration node name memory initialization failed\n");
+				return NULL;
+			}
             memset(name, 0, len-1);
             strncpy(name, line+1, len-2);
             free(line);
@@ -310,11 +317,19 @@ bool isEmpty(const char *s)
 
 
 
-static void xdag_config_add_node(CFG *config, NODE *s)
+static int xdag_config_add_node(CFG *config, NODE *s)
 {
 	config->number_nodes++;
 	config->nodes = (NODE **)realloc(config->nodes, config->number_nodes * sizeof(NODE *));
+	if(config->nodes == NULL){
+		printf("Configuration:nodes memory initialization failed\n");
+		return -1;
+	}
 	config->node_names = (char **)realloc(config->node_names,config->number_nodes * sizeof(char *));
+	if(config->nodes == NULL){
+		printf("Configuration:node names memory initialization failed\n");
+		return -1;
+	}
     if(!isEmpty(s->name))
     {
     	config->nodes[config->number_nodes-1] = s;
@@ -331,11 +346,16 @@ static void xdag_config_add_node(CFG *config, NODE *s)
         config->nodes[0] = s;
         config->node_names[0] = strdup(s->name);
     }
+    return 0;
 }
 
 static NODE *xdag_add_node(const char *name)
 {
 	NODE *node = (NODE *)malloc(sizeof(NODE));
+	if(node == NULL){
+		printf("Configuration:add node memory initialization failed\n");
+		return NULL;
+	}
 	node->name = strdup(name);
 	node->number_keys = 0;
     node->keys = NULL;
@@ -347,17 +367,30 @@ static NODE *xdag_add_node(const char *name)
 static KEY *xdag_add_key(const char *name)
 {
     KEY *k = (KEY *)malloc(sizeof(KEY));
+    if(k == NULL){
+		printf("Configuration:add key memory initialization failed\n");
+		return NULL;
+	}
     k->name = strdup(name);
     k->value = NULL;
     return k;
 }
-static void xdag_config_add_key(NODE *node, KEY *key)
+static int xdag_config_add_key(NODE *node, KEY *key)
 {
 	node->number_keys++;
 	node->keys = (KEY **)realloc(node->keys, node->number_keys * sizeof(KEY *));
+	if(node->keys == NULL){
+		printf("Configuration:add keys memory initialization failed\n");
+		return -1;
+	}
 	node->keys[node->number_keys-1] = key;
 	node->key_names = (char **)realloc(node->key_names, node->number_keys * sizeof(char *));
+	if(node->key_names == NULL){
+		printf("Configuration:add key names memory initialization failed\n");
+		return -1;
+	}
 	node->key_names[node->number_keys-1] = strdup(key->name);
+	return 0;
 }
 
 static KEY *xdag_config_read_key(FILE *fp)
@@ -377,6 +410,9 @@ static KEY *xdag_config_read_key(FILE *fp)
             *p = '\0';
             key_name = trim(line);
             key = xdag_add_key(key_name);
+            if(key == NULL){
+            	return NULL;
+            }
             key->value = trim(strdup(p+1));
             free(line);
             return key;
@@ -407,6 +443,9 @@ static NODE *xdag_config_read_node(FILE *fp)
     if(node_name != NULL)
     {
     	node = xdag_add_node(node_name);
+    	if(node == NULL){
+    		return NULL;
+    	}
         free(node_name);
 
         while((key = xdag_config_read_key(fp)) != NULL)
@@ -418,7 +457,7 @@ static NODE *xdag_config_read_node(FILE *fp)
             }
             else
             {
-            	xdag_config_add_key(node,key);
+            	if(xdag_config_add_key(node,key)) return NULL;
             }
         }
         return node;
@@ -427,7 +466,7 @@ static NODE *xdag_config_read_node(FILE *fp)
 }
 
 
-static void xdag_config_read(CFG *config, FILE *fp)
+static int xdag_config_read(CFG *config, FILE *fp)
 {
     NODE *node = NULL, *existNode;
 
@@ -440,15 +479,19 @@ static void xdag_config_read(CFG *config, FILE *fp)
         }
         else
         {
-        	xdag_config_add_node(config, node);
+        	if(xdag_config_add_node(config, node)) return -1;
         }
     }
+    return 0;
 }
 
 static CFG *xdag_config_init(const char *path)
 {
     CFG *cfg = (CFG *)malloc(sizeof(CFG));
-
+    if(cfg == NULL){
+    	printf("Configuration:cfg memory initialization failed\n");
+    	return NULL;
+    }
     if(path != NULL)
     {
     	cfg->path = strdup(path);
@@ -467,6 +510,9 @@ static CFG *xdag_config_init(const char *path)
 static void* xdag_config_open(const char *path)
 {
     CFG *cfg = xdag_config_init(path);
+    if(cfg == NULL){
+    	return NULL;
+    }
     FILE *fp;
 
     if(cfg->path != NULL)
@@ -474,7 +520,7 @@ static void* xdag_config_open(const char *path)
         fp = fopen(cfg->path, "r");
         if(fp != NULL)
         {
-        	xdag_config_read(cfg, fp);
+        	if(xdag_config_read(cfg, fp)) return NULL;
             fclose(fp);
         }
     }
@@ -490,44 +536,43 @@ static void xdag_config_close(void *cfg)
 
 
 
-char * get_pool_config(const char *path){
-	static char result[80];
+int get_pool_config(const char *path,char *buf){
 	if(path) {
 		void *cfg = xdag_config_open(path);
 
+		if(cfg == NULL){
+			return -1;
+		}
 		const char *str = xdag_config_get_value(cfg, "POOL", "ip", "");
-		strcpy(result, str);
-		strncat(result, ":",strlen(":"));
+		strcpy(buf, str);
+		strcat(buf, ":");
 		str = xdag_config_get_value(cfg, "POOL", "port", "");
-		strncat(result, str,strlen(str));
-		strncat(result, ":",strlen(":"));
+		strcat(buf, str);
+		strcat(buf, ":");
 		str = xdag_config_get_value(cfg, "POOL", "max_connection_count_input", "");
-		strncat(result, str,strlen(str));
-		strncat(result, ":",strlen(":"));
+		strcat(buf, str);
+		strcat(buf, ":");
 		str = xdag_config_get_value(cfg, "POOL", "max_miner_ip_count", "");
-		strncat(result, str,strlen(str));
-		strncat(result, ":",strlen(":"));
+		strcat(buf, str);
+		strcat(buf, ":");
 		str = xdag_config_get_value(cfg, "POOL", "connections_per_miner_limit", "");
-		strncat(result, str,strlen(str));
-		strncat(result, ":",strlen(":"));
+		strcat(buf, str);
+		strcat(buf, ":");
 		str = xdag_config_get_value(cfg, "POOL", "pool_fee", "");
-		strncat(result, str,strlen(str));
-		strncat(result, ":",strlen(":"));
+		strcat(buf, str);
+		strcat(buf, ":");
 		str = xdag_config_get_value(cfg, "POOL", "pool_reward", "");
-		strncat(result, str,strlen(str));
-		strncat(result, ":",strlen(":"));
+		strcat(buf, str);
+		strcat(buf, ":");
 		str = xdag_config_get_value(cfg, "POOL", "pool_direct", "");
-		strncat(result, str,strlen(str));
-		strncat(result, ":",strlen(":"));
+		strcat(buf, str);
+		strcat(buf, ":");
 		str = xdag_config_get_value(cfg, "POOL", "pool_fund", "");
-		strncat(result, str,strlen(str));
-
+		strcat(buf, str);
 		xdag_config_close(cfg);
-
-		return result;
 	}
 
-	return NULL;
+	return 0;
 }
 
 
