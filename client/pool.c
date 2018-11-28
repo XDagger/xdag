@@ -504,6 +504,7 @@ void *pool_net_thread(void *arg)
 	int sock = open_pool_connection(pool_arg);
 	if(sock == INVALID_SOCKET) {
 		xdag_err("Pool: open connection error!");
+		exit(1);
 		return 0;
 	}
 
@@ -511,6 +512,7 @@ void *pool_net_thread(void *arg)
 	int res = listen(sock, MAX_CONNECTIONS_COUNT);    // "1" is the maximal length of the queue
 	if(res) {
 		xdag_err("pool: cannot listen");
+		exit(1);
 		return 0;
 	}
 
