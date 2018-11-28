@@ -47,7 +47,14 @@ tracker (we use multiple repositories). No issue is too small.
 The main issues for bug reporting are as follows:  
 - [xdag/issues](https://github.com/XDagger/xdag/issues) - Issues related to xdag.  
 - [DaggerGpuMiner/issues](https://github.com/XDagger/DaggerGpuMiner/issues) - Issues related to DaggerGpuMiner.  
+- [xDagWallet/issues](https://github.com/XDagger/xDagWallet/issues) - Issues related to xdag wallet C lib.   
+- [xdag-ios/issues](https://github.com/XDagger/xdag-ios/issues) - Issues related to xdag iOS wallet.   
+- [android-wallet/issues](https://github.com/XDagger/android-wallet/issues) - Issues related to xdag Android wallet.   
+- [XDagWalletforMac/issues](https://github.com/XDagger/XDagWalletforMac/issues) - Issues related to xdag Mac wallet.   
 - [QtXdagWallet/issues](https://github.com/XDagger/QtXdagWallet/issues) - Issues related to QtXdagWallet.  
+- [openxdagpool-scripts/issues](https://github.com/XDagger/openxdagpool-scripts/issues) - Issues related to scripts to open pool.  
+- [openxdagpool/issues](https://github.com/XDagger/openxdagpool/issues) - Issues related to xdag pool website.  
+- [XDagger.github.io/issues](https://github.com/XDagger/XDagger.github.io/issues) - Issues related to xdag.io website.    
 - [explorer/issues](https://github.com/XDagger/explorer/issues) - Issues related to block explorer.  
 
 The [xdag](https://github.com/XDagger/xdag) issues use a template that will guide you through the process of reporting a bug. We will be adding this kind of issue template to other repositories as bug reports become more common.
