@@ -102,7 +102,7 @@ static char *readline(FILE *fp)
         strcpy(line+line_len, buf);
         line_len += buf_len;
 
-        c = buf[sizeof(buf)-1];
+        c = buf[sizeof(buf)-2];
         if(c == '\0' || c == '\n')
         {
             break;
@@ -536,7 +536,9 @@ static void xdag_config_close(void *cfg)
 
 
 
-int get_pool_config(const char *path,char *buf){
+int get_pool_config(const char *path,char *buf,int buflen){
+
+	char *key[9] = {"ip","port","max_connection_count_input", "max_miner_ip_count","connections_per_miner_limit","pool_fee","pool_reward","pool_direct","pool_fund"};
 	if(path) {
 		void *cfg = xdag_config_open(path);
 
@@ -544,31 +546,33 @@ int get_pool_config(const char *path,char *buf){
 			return -1;
 		}
 		const char *str = xdag_config_get_value(cfg, "POOL", "ip", "");
-		strcpy(buf, str);
-		strcat(buf, ":");
-		str = xdag_config_get_value(cfg, "POOL", "port", "");
-		strcat(buf, str);
-		strcat(buf, ":");
-		str = xdag_config_get_value(cfg, "POOL", "max_connection_count_input", "");
-		strcat(buf, str);
-		strcat(buf, ":");
-		str = xdag_config_get_value(cfg, "POOL", "max_miner_ip_count", "");
-		strcat(buf, str);
-		strcat(buf, ":");
-		str = xdag_config_get_value(cfg, "POOL", "connections_per_miner_limit", "");
-		strcat(buf, str);
-		strcat(buf, ":");
-		str = xdag_config_get_value(cfg, "POOL", "pool_fee", "");
-		strcat(buf, str);
-		strcat(buf, ":");
-		str = xdag_config_get_value(cfg, "POOL", "pool_reward", "");
-		strcat(buf, str);
-		strcat(buf, ":");
-		str = xdag_config_get_value(cfg, "POOL", "pool_direct", "");
-		strcat(buf, str);
-		strcat(buf, ":");
-		str = xdag_config_get_value(cfg, "POOL", "pool_fund", "");
-		strcat(buf, str);
+
+		for(int i=0;i<9;i++){
+			int len = 0;
+			str = xdag_config_get_value(cfg, "POOL", key[i], "");
+			if(strlen(str)==0){
+				printf("Configuration parameter cannot be empty\n");
+				return -1;
+			}
+			if(i==0){
+				len = strlen(str)+1;
+			}else{
+				len = strlen(str)+strlen(buf)+1;
+			}
+			if(len>buflen){
+				printf("Configuration parameter error\n");
+				return -1;
+			}
+			if(i==0){
+				strcpy(buf, str);
+			}else{
+				strcat(buf, str);
+			}
+			if(i<9-1){
+				strcat(buf, ":");
+			}
+
+		}
 		xdag_config_close(cfg);
 	}
 

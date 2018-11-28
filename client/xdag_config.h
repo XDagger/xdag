@@ -9,7 +9,7 @@ typedef int bool;
  * @param <path> configuration file path.
  * @return (none).
  */
-int get_pool_config(const char *path,char *buf);
+int get_pool_config(const char *path,char *buf,int buflen);
 
 bool isEmpty(const char *str);
 

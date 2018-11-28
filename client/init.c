@@ -100,7 +100,7 @@ int xdag_init(int argc, char **argv, int isGui)
 			if (++i < argc) {
 				if(argv[i]!=NULL&&argv[i][0]!='-'&&pool_arg==NULL){
 					char buf[80];
-					if(get_pool_config(argv[i],buf)) return -1;
+					if(get_pool_config(argv[i],buf,sizeof(buf))) return -1;
 					pool_arg = buf;
 				}
 			}
