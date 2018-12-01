@@ -70,8 +70,8 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 	xtime_t start_time = xdag_start_main_time();
 	xtime_t current_time = xdag_main_time();
 
-	if(current_time >= start_time && stats->total_nmain <= current_time - start_time + 2) {
-		if(stats->main_time <= current_time + 2) {
+	if(current_time >= start_time && stats->total_nmain <= current_time - start_time + 1) {
+		if(stats->main_time <= current_time + 1) {
 			if(xdag_diff_gt(stats->max_difficulty, g->max_difficulty))
 				g->max_difficulty = stats->max_difficulty;
 
