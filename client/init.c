@@ -49,6 +49,7 @@ char g_pool_address[50] = {0};
 int(*g_xdag_show_state)(const char *state, const char *balance, const char *address) = 0;
 
 void printUsage(char* appName);
+void set_xdag_name();
 
 int xdag_init(int argc, char **argv, int isGui)
 {
@@ -56,7 +57,7 @@ int xdag_init(int argc, char **argv, int isGui)
 
 	const char *addrports[256] = {0}, *bindto = 0, *pubaddr = 0, *pool_arg = 0, *miner_address = 0;
 	int transport_flags = 0, transport_threads = -1, n_addrports = 0, mining_threads_count = 0,
-			is_pool = 0, is_miner = 0, level, is_rpc = 0, rpc_port = 0;
+		is_pool = 0, is_miner = 0, level, is_rpc = 0, rpc_port = 0;
 	
 	memset(addrports, 0, 256);
 	
@@ -68,14 +69,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	signal(SIGTERM, SIG_IGN);
 #endif
 
-	char *filename = xdag_filename(argv[0]);
-
-	g_progname = strdup(filename);
-	g_coinname = strdup(filename);
-	free(filename);
-
-	xdag_str_toupper(g_coinname);
-	xdag_str_tolower(g_progname);
+	set_xdag_name();
 
 	if (!isGui) {
 		printf("%s client/server, version %s.\n", g_progname, XDAG_VERSION);
@@ -270,6 +264,12 @@ int xdag_init(int argc, char **argv, int isGui)
 	}
 
 	return 0;
+}
+
+void set_xdag_name()
+{
+	g_progname = "xdag";
+	g_coinname = "XDAG";
 }
 
 int xdag_set_password_callback(int(*callback)(const char *prompt, char *buf, unsigned size))
