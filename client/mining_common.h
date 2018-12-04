@@ -14,7 +14,7 @@
 
 struct xdag_pool_task {
 	struct xdag_field task[2], lastfield, minhash, nonce;
-	xtime_t task_time;
+	xdag_frame_t task_time;
 	void *ctx0, *ctx;
 };
 

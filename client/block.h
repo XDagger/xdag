@@ -133,12 +133,6 @@ extern int64_t xdag_get_block_pos(const xdag_hash_t hash, xtime_t *time, struct 
 // return state info string
 extern const char* xdag_get_block_state_info(uint8_t flag);
 
-// returns a number of the current period, period is 64 seconds
-extern xtime_t xdag_main_time(void);
-
-// returns the number of the time period corresponding to the start of the network
-extern xtime_t xdag_start_main_time(void);
-
 // returns a number of key by hash of block or -1 if block is not ours
 extern int xdag_get_key(xdag_hash_t hash);
 

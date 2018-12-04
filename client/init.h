@@ -23,7 +23,7 @@ extern struct xdag_stats
 	uint32_t nhosts, total_nhosts;
 	union {
 		uint32_t reserved[2];
-		uint64_t main_time;
+		xdag_frame_t main_time;
 	};
 } g_xdag_stats;
 
