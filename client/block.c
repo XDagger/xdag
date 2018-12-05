@@ -839,7 +839,7 @@ void *add_block_callback(void *block, void *data)
 
 	pthread_mutex_unlock(&block_mutex);
 
-	if(res >= 0) {
+	if(res >= 0 && g_xdag_pool) {
 		xdag_sync_pop_block(b);
 	}
 
@@ -1194,15 +1194,6 @@ begin:
 			} else if (time(NULL) - last_time_nmain_unequal > MAX_TIME_NMAIN_STALLED) {
 				g_block_production_on = 1;
 			}
-
-			if (g_block_production_on) {
-				xdag_mess("Starting refer blocks creation...");
-
-				// start mining threads
-				xdag_mess("Starting mining threads...");
-				xdag_mining_start(n_mining_threads);
-			}
-
 		}
 
 		if (g_block_production_on && 

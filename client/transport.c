@@ -248,11 +248,10 @@ static void conn_close_notify(void *conn)
 */
 int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs, const char **addr_port_pairs)
 {
-	const char **argv = malloc((npairs + 7) * sizeof(char *)), *version;
-	int argc = 0, i, res;
-
+	const char **argv = malloc((npairs + 7) * sizeof(char *));
 	if (!argv) return -1;
 
+	int argc = 0;
 	argv[argc++] = "dnet";
 #if !defined(_WIN32) && !defined(_WIN64)
 	if (flags & XDAG_DAEMON) {
@@ -272,7 +271,7 @@ int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs
 		argv[argc++] = strdup(buf);
 	}
 
-	for (i = 0; i < npairs; ++i) {
+	for (int i = 0; i < npairs; ++i) {
 		argv[argc++] = addr_port_pairs[i];
 	}
 	argv[argc] = 0;
@@ -281,9 +280,9 @@ int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs
 	dnet_connection_open_check = &conn_open_check;
 	dnet_connection_close_notify = &conn_close_notify;
 
-	res = dnet_init(argc, (char**)argv);
+	int res = dnet_init(argc, (char**)argv);
 	if (!res) {
-		version = strchr(XDAG_VERSION, '-');
+		char *version = strchr(XDAG_VERSION, '-');
 		if (version) dnet_set_self_version(version + 1);
 	}
 
