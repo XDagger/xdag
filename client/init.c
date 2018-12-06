@@ -257,8 +257,18 @@ int pre_init()
 	}
 	if(xdag_log_init()) return -1;
 
+	xdag_mess("Initializing addresses...");
+	if(xdag_address_init()) return -1;
+
 	memset(&g_xdag_stats, 0, sizeof(g_xdag_stats));
 	memset(&g_xdag_extstats, 0, sizeof(g_xdag_extstats));
+
+	//TODO: future xdag.wallet
+	xdag_mess("Reading wallet...");
+	if(dnet_key_init() < 0) return -1;
+	xdag_mess("Initializing cryptography...");
+	if(xdag_crypt_init(1)) return -1;
+	if(xdag_wallet_init()) return -1;
 
 	return 0;
 }
@@ -273,16 +283,7 @@ int setup_miner(struct startup_parameters *parameters)
 		parameters->pool_arg = pool_address_buf;
 	}
 
-	xdag_mess("Initializing cryptography...");
-	if(dnet_key_init() < 0) return -1;
-	if(xdag_crypt_init(1)) return -1;
-
-	xdag_mess("Reading wallet...");
-	if(xdag_wallet_init()) return -1;
-
-	xdag_mess("Initializing addresses...");
-	if(xdag_address_init()) return -1;
-
+	//TODO: think of combining the logic with pool-initialization functions (after decision what to do with xdag_blocks_start)
 	if(parameters->is_rpc) {
 		xdag_mess("Initializing RPC service...");
 		if(!!xdag_rpc_service_start(parameters->rpc_port)) return -1;
@@ -308,16 +309,6 @@ int setup_pool(struct startup_parameters *parameters)
 			parameters->bind_to = strdup(str);
 		}
 	}
-
-	xdag_mess("Initializing cryptography...");
-	if(dnet_key_init() < 0) return -1;
-	if(xdag_crypt_init(1)) return -1;
-
-	xdag_mess("Reading wallet...");
-	if(xdag_wallet_init()) return -1;
-
-	xdag_mess("Initializing addresses...");
-	if(xdag_address_init()) return -1;
 
 	xdag_mess("Starting synchonization engine...");
 	if(xdag_sync_init()) return -1;

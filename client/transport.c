@@ -305,6 +305,7 @@ int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs
 /* generates an array with random data */
 int xdag_generate_random_array(void *array, unsigned long size)
 {
+	//TODO: do we need to generate random array based on DNET key?
 	return dnet_generate_random_array(array, size);
 }
 
