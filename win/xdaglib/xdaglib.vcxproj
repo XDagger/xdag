@@ -60,6 +60,7 @@
     <ClCompile Include="..\..\client\utils\moving_statistics\moving_average.c" />
     <ClCompile Include="..\..\client\utils\utils.c" />
     <ClCompile Include="..\..\client\wallet.c" />
+    <ClCompile Include="..\..\client\xdag_config.c" />
     <ClCompile Include="..\..\dnet\dnet_crypt.c" />
     <ClCompile Include="..\..\dnet\dnet_xdag.c" />
     <ClCompile Include="..\..\dus\programs\dar\source\lib\crc_c.c" />
@@ -109,6 +110,7 @@
     <ClInclude Include="..\..\client\utils\utils.h" />
     <ClInclude Include="..\..\client\version.h" />
     <ClInclude Include="..\..\client\wallet.h" />
+    <ClInclude Include="..\..\client\xdag_config.h" />
     <ClInclude Include="..\..\dnet\dnet_crypt.h" />
     <ClInclude Include="..\..\dnet\dnet_history.h" />
     <ClInclude Include="..\..\dnet\dnet_main.h" />

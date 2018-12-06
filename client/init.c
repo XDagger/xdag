@@ -28,6 +28,7 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "json-rpc/rpc_service.h"
+#include "xdag_config.h"
 
 char *g_coinname, *g_progname;
 #define coinname   g_coinname
@@ -66,6 +67,7 @@ int(*g_xdag_show_state)(const char *state, const char *balance, const char *addr
 int parse_startup_parameters(int argc, char **argv, struct startup_parameters *parameters);
 int setup_miner(struct startup_parameters *parameters);
 void printUsage(char* appName);
+void set_xdag_name();
 
 int xdag_init(int argc, char **argv, int isGui)
 {
@@ -79,14 +81,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	signal(SIGTERM, SIG_IGN);
 #endif
 
-	char *filename = xdag_filename(argv[0]);
-
-	g_progname = strdup(filename);
-	g_coinname = strdup(filename);
-	free(filename);
-
-	xdag_str_toupper(g_coinname);
-	xdag_str_tolower(g_progname);
+	set_xdag_name();
 
 	if (!isGui) {
 		printf("%s client/server, version %s.\n", g_progname, XDAG_VERSION);
@@ -166,8 +161,15 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 			}
 			continue;
 		}
-
-		if(ARG_EQUAL(argv[i], "-a", "")) { /* miner address */
+		if (ARG_EQUAL(argv[i], "-f", "")){ /* configuration file */
+			if (++i < argc) {
+				if(argv[i] != NULL && argv[i][0] != '-' && parameters->pool_arg == NULL) {
+					char buf[80];
+					if(get_pool_config(argv[i], buf, sizeof(buf))) return -1;
+					parameters->pool_arg = buf;
+				}
+			}
+		} else if(ARG_EQUAL(argv[i], "-a", "")) { /* miner address */
 			if(++i < argc) {
 				parameters->miner_address = argv[i];
 			}
@@ -363,6 +365,12 @@ int dnet_key_init()
 	return 0;
 }
 
+void set_xdag_name()
+{
+	g_progname = "xdag";
+	g_coinname = "XDAG";
+}
+
 int xdag_set_password_callback(int(*callback)(const char *prompt, char *buf, unsigned size))
 {
     return xdag_user_crypt_action((uint32_t *)(void *)callback, 0, 0, 6);
@@ -376,6 +384,7 @@ void printUsage(char* appName)
 		"  -a address     - specify your address to use in the miner\n"
 		"  -c ip:port     - address of another xdag full node to connect\n"
 		"  -d             - run as daemon (default is interactive mode)\n"
+		"  -f             - configuration file path(pools only)\n"
 		"  -h             - print this help\n"
 		"  -i             - run as interactive terminal for daemon running in this folder\n"
 		"  -l             - output non zero balances of all accounts\n"
@@ -402,3 +411,6 @@ void printUsage(char* appName)
 		"  -tag           - tag for pool to distingush pools. Max length is 32 chars\n"
 		, appName);
 }
+
+
+

@@ -177,6 +177,9 @@
     <ClCompile Include="..\..\client\json-rpc\rpc_commands.c">
       <Filter>client\json-rpc</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\client\xdag_config.c">
+      <Filter>client</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client\address.h">
@@ -362,6 +365,9 @@
     </ClInclude>
     <ClInclude Include="..\..\client\json-rpc\rpc_commands.h">
       <Filter>client\json-rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\xdag_config.h">
+      <Filter>client</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
