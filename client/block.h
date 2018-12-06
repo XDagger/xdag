@@ -94,7 +94,7 @@ extern "C" {
 extern int g_bi_index_enable;
 
 // start of regular block processing
-extern int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address);
+extern int xdag_blocks_start(int mining_threads_count, int miner_address);
 
 // checks and adds block to the storage. Returns non-zero value in case of error.
 extern int xdag_add_block(struct xdag_block *b);

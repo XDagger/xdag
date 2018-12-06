@@ -18,14 +18,6 @@
 #define PWDLEN	    64
 #define KEYLEN_MIN	(DNET_KEYLEN / 4)
 
-#if !defined(_WIN32) && !defined(_WIN64)
-extern int gethostname(char *name, size_t namelen);
-extern int getlogin_r(char *name, size_t namesize);
-#else
-#define gethostname(n, l) strncpy(n, "localhost", l)
-#define getlogin_r(n, l) strncpy(n, "Administrator", l)
-#endif
-
 struct dnet_keys {
 	struct dnet_key priv;
 	struct dnet_key pub;

@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include "crypt.h"
 #include "wallet.h"
-#include "init.h"
+#include "global.h"
 #include "transport.h"
 #include "utils/log.h"
 #include "utils/utils.h"

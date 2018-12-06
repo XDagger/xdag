@@ -29,7 +29,7 @@
 #include "rpc_procedure.h"
 #include "rpc_service.h"
 #include "../version.h"
-#include "../init.h"
+#include "../global.h"
 #include "../address.h"
 #include "../commands.h"
 #include "../wallet.h"
@@ -188,7 +188,7 @@ cJSON * method_xdag_stats(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id
 	cJSON *item = cJSON_CreateObject();
 
 	char buf[128] = {0};
-	if(g_is_miner) {
+	if(g_xdag_type == XDAG_WALLET) {
 		sprintf(buf, "%.2lf MHs", xdagGetHashRate());
 		cJSON *json_hashrate = cJSON_CreateString(buf);
 		cJSON_AddItemToObject(item, "hashrate", json_hashrate);
@@ -301,7 +301,7 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
 {
 	xdag_debug("rpc call method get_account, version %s",version);
 	struct rpc_account_callback_data cbdata;
-	cbdata.count = (g_is_miner ? 1 : 20);
+	cbdata.count = (g_xdag_type == XDAG_WALLET ? 1 : 20);
 	if (params) {
 		if (cJSON_IsArray(params)) {
 			size_t size = cJSON_GetArraySize(params);

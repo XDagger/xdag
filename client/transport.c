@@ -8,7 +8,7 @@
 #include "storage.h"
 #include "block.h"
 #include "netdb.h"
-#include "init.h"
+#include "global.h"
 #include "sync.h"
 #include "miner.h"
 #include "pool.h"
@@ -393,7 +393,7 @@ int xdag_request_sums(xtime_t start_time, xtime_t end_time, struct xdag_storage_
 /* sends a new block to network */
 int xdag_send_new_block(struct xdag_block *b)
 {
-	if(!g_is_miner) {
+	if(g_xdag_type == XDAG_POOL) {
 		dnet_send_xdag_packet(b, (void*)(uintptr_t)NEW_BLOCK_TTL);
 	} else {
 		xdag_send_block_via_pool(b);

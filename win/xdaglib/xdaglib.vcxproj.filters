@@ -180,6 +180,9 @@
     <ClCompile Include="..\..\client\xdag_config.c">
       <Filter>client</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\client\global.c">
+      <Filter>client</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client\address.h">
@@ -367,6 +370,9 @@
       <Filter>client\json-rpc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\client\xdag_config.h">
+      <Filter>client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\global.h">
       <Filter>client</Filter>
     </ClInclude>
   </ItemGroup>

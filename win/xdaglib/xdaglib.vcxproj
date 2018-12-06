@@ -31,6 +31,7 @@
     <ClCompile Include="..\..\client\block.c" />
     <ClCompile Include="..\..\client\commands.c" />
     <ClCompile Include="..\..\client\crypt.c" />
+    <ClCompile Include="..\..\client\global.c" />
     <ClCompile Include="..\..\client\hash.c" />
     <ClCompile Include="..\..\client\http\http.c" />
     <ClCompile Include="..\..\client\http\url.c" />
@@ -75,6 +76,7 @@
     <ClInclude Include="..\..\client\block.h" />
     <ClInclude Include="..\..\client\commands.h" />
     <ClInclude Include="..\..\client\crypt.h" />
+    <ClInclude Include="..\..\client\global.h" />
     <ClInclude Include="..\..\client\hash.h" />
     <ClInclude Include="..\..\client\http\http.h" />
     <ClInclude Include="..\..\client\http\url.h" />

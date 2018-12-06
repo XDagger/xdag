@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include "global.h"
 #include "init.h"
 #include "address.h"
 #include "wallet.h"
@@ -331,7 +332,7 @@ int xdag_command(char *cmd, FILE *out)
 
 	XDAG_COMMAND *command = find_xdag_command(cmd);
 
-	if(!command || (command->avaibility == 1 && !g_is_miner) || (command->avaibility == 2 && g_is_miner)) {
+	if(!command || (command->avaibility == 1 && g_xdag_type == XDAG_POOL) || (command->avaibility == 2 && g_xdag_type == XDAG_WALLET)) {
 		fprintf(out, "Illegal command.\n");
 	} else {
 		if(!strcmp(command->name, "xfer")) {
@@ -347,7 +348,7 @@ void processAccountCommand(char *nextParam, FILE *out)
 {
 	struct account_callback_data d;
 	d.out = out;
-	d.count = (g_is_miner ? 1 : 20);
+	d.count = (g_xdag_type == XDAG_WALLET ? 1 : 20);
 	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
 	if(cmd) {
 		sscanf(cmd, "%d", &d.count);
@@ -525,7 +526,7 @@ void processPoolCommand(char *nextParam, FILE *out)
 
 void processStatsCommand(FILE *out)
 {
-	if(g_is_miner) {
+	if(g_xdag_type == XDAG_WALLET) {
 		fprintf(out, "your hashrate MHs: %.2lf\n", xdagGetHashRate());
 	} else {
 		fprintf(out, "Statistics for ours and maximum known parameters:\n"
@@ -832,7 +833,7 @@ int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t ti
 	if(!amount) {
 		return -1;
 	}
-	if(!g_is_miner && xdag_main_time() < (time >> 16) + 2 * CONFIRMATIONS_COUNT) {
+	if(g_xdag_type == XDAG_POOL && xdag_main_time() < (time >> 16) + 2 * CONFIRMATIONS_COUNT) {
 		return 0;
 	}
 	for(i = 0; i < xferData->keysCount; ++i) {

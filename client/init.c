@@ -12,6 +12,7 @@
 #include "address.h"
 #include "block.h"
 #include "crypt.h"
+#include "global.h"
 #include "transport.h"
 #include "version.h"
 #include "wallet.h"
@@ -29,9 +30,6 @@
 #include "utils/utils.h"
 #include "json-rpc/rpc_service.h"
 #include "xdag_config.h"
-
-char *g_coinname, *g_progname;
-#define coinname   g_coinname
 
 #define ARG_EQUAL(a,b,c) strcmp(c, "") == 0 ? strcmp(a, b) == 0 : (strcmp(a, b) == 0 || strcmp(a, c) == 0)
 
@@ -51,16 +49,7 @@ struct startup_parameters {
 	int rpc_port;
 };
 
-int g_xdag_state = XDAG_STATE_INIT;
-int g_xdag_testnet = 0;
-int g_is_miner = 0;
-static int g_is_pool = 0;
-int g_xdag_run = 0;
 time_t g_xdag_xfer_last = 0;
-enum xdag_field_type g_block_header_type = XDAG_FIELD_HEAD;
-struct xdag_stats g_xdag_stats;
-struct xdag_ext_stats g_xdag_extstats;
-int g_disable_mining = 0;
 
 int(*g_xdag_show_state)(const char *state, const char *balance, const char *address) = 0;
 
@@ -109,15 +98,13 @@ int xdag_init(int argc, char **argv, int isGui)
 		parameters.transport_threads = 0;
 	}
 	
-	g_xdag_pool = parameters.is_pool; // move to here to avoid Data Race
-	g_is_miner = parameters.is_miner;
-	g_is_pool = parameters.is_pool;
+	g_xdag_type = parameters.is_pool ? XDAG_POOL : XDAG_WALLET; // move to here to avoid Data Race
 
-	if(g_disable_mining && g_is_miner) {
+	if(g_disable_mining && g_xdag_type == XDAG_WALLET) {
 		g_disable_mining = 0;   // this option is only for pools
 	}
 
-	if(g_is_miner) {
+	if(g_xdag_type == XDAG_WALLET) {
 		if(setup_miner(&parameters) < 0) {
 			return -1;
 		}
@@ -128,7 +115,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	}
 
 	if (!isGui) {
-		if (g_is_pool || (parameters.transport_flags & XDAG_DAEMON) > 0) {
+		if (g_xdag_type == XDAG_POOL || (parameters.transport_flags & XDAG_DAEMON) > 0) {
 			xdag_mess("Starting terminal server...");
 			pthread_t th;
 			const int err = pthread_create(&th, 0, &terminal_thread, 0);
@@ -302,7 +289,7 @@ int setup_miner(struct startup_parameters *parameters)
 	}
 
 	xdag_mess("Starting blocks engine...");
-	if(xdag_blocks_start(g_is_pool, parameters->mining_threads_count, !!parameters->miner_address)) return -1;	//TODO: rewrite
+	if(xdag_blocks_start(parameters->mining_threads_count, !!parameters->miner_address)) return -1;	//TODO: rewrite
 
 	if(!g_disable_mining) {
 		xdag_mess("Starting mining engine...");
@@ -346,7 +333,7 @@ int setup_pool(struct startup_parameters *parameters)
 		if(!!xdag_rpc_service_start(parameters->rpc_port)) return -1;
 	}
 	xdag_mess("Starting blocks engine...");
-	if(xdag_blocks_start(g_is_pool, parameters->mining_threads_count, !!parameters->miner_address)) return -1;
+	if(xdag_blocks_start(parameters->mining_threads_count, !!parameters->miner_address)) return -1;
 
 	if(!g_disable_mining) {
 		xdag_mess("Starting pool engine...");
