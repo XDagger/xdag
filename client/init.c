@@ -28,6 +28,7 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "json-rpc/rpc_service.h"
+#include "xdag_config.h"
 
 char *g_coinname, *g_progname;
 #define coinname   g_coinname
@@ -95,8 +96,15 @@ int xdag_init(int argc, char **argv, int isGui)
 			}
 			continue;
 		}
-		
-		if (ARG_EQUAL(argv[i], "-a", "")) { /* miner address */
+		if (ARG_EQUAL(argv[i], "-f", "")){ /* configuration file */
+			if (++i < argc) {
+				if(argv[i]!=NULL&&argv[i][0]!='-'&&pool_arg==NULL){
+					char buf[80];
+					if(get_pool_config(argv[i],buf,sizeof(buf))) return -1;
+					pool_arg = buf;
+				}
+			}
+		}else if (ARG_EQUAL(argv[i], "-a", "")) { /* miner address */
 			if (++i < argc) miner_address = argv[i];
 		} else if(ARG_EQUAL(argv[i], "-c", "")) { /* another full node address */
 			if (++i < argc && n_addrports < 256)
@@ -285,6 +293,7 @@ void printUsage(char* appName)
 		"  -a address     - specify your address to use in the miner\n"
 		"  -c ip:port     - address of another xdag full node to connect\n"
 		"  -d             - run as daemon (default is interactive mode)\n"
+		"  -f             - configuration file path(pools only)\n"
 		"  -h             - print this help\n"
 		"  -i             - run as interactive terminal for daemon running in this folder\n"
 		"  -l             - output non zero balances of all accounts\n"
@@ -311,3 +320,6 @@ void printUsage(char* appName)
 		"  -tag           - tag for pool to distingush pools. Max length is 32 chars\n"
 		, appName);
 }
+
+
+
