@@ -28,8 +28,8 @@ static struct dfslib_crypt *g_dnet_user_crypt = 0;
 
 struct dnet_session {
 	struct dnet_key key;
-	uint32_t sector_write[SECTOR_SIZE / 4];
-	uint32_t sector_read[SECTOR_SIZE / 4];
+	uint32_t sector_write[CRYPT_SECTOR_SIZE / 4];
+	uint32_t sector_read[CRYPT_SECTOR_SIZE / 4];
 	struct dfslib_crypt crypt_write;
 	struct dfslib_crypt crypt_read;
 	uint64_t pos_write, pos_read;
@@ -93,33 +93,33 @@ static int dnet_rsa_crypt(dfsrsa_t *data, int datalen, dfsrsa_t *key, int keylen
 
 #define dfsrsa_crypt dnet_rsa_crypt
 
-static void dnet_sector_to_password(uint32_t sector[SECTOR_SIZE / 4], char password[PWDLEN + 1])
+static void dnet_sector_to_password(uint32_t sector[CRYPT_SECTOR_SIZE / 4], char password[PWDLEN + 1])
 {
 	for(int i = 0; i < PWDLEN / 8; ++i) {
-		unsigned crc = crc_of_array((unsigned char *)(sector + i * SECTOR_SIZE / 4 / (PWDLEN / 8)), SECTOR_SIZE / (PWDLEN / 8));
+		unsigned crc = crc_of_array((unsigned char *)(sector + i * CRYPT_SECTOR_SIZE / 4 / (PWDLEN / 8)), CRYPT_SECTOR_SIZE / (PWDLEN / 8));
 		sprintf(password + 8 * i, "%08X", crc);
 	}
 }
 
-static void dnet_random_sector(uint32_t sector[SECTOR_SIZE / 4])
+static void dnet_random_sector(uint32_t sector[CRYPT_SECTOR_SIZE / 4])
 {
 	char password[PWDLEN + 1] = "Iyf&%d#$jhPo_t|3fgd+hf(s@;)F5D7gli^kjtrd%.kflP(7*5gt;Y1sYRC4VGL&";
 	for(int i = 0; i < 3; ++i) {
 		struct dfslib_string str;
 		dfslib_utf8_string(&str, password, PWDLEN);
 		dfslib_random_sector(sector, 0, &str, &str);
-		for(int j = KEYLEN_MIN / 8; j <= SECTOR_SIZE / 4; j += KEYLEN_MIN / 8) {
+		for(int j = KEYLEN_MIN / 8; j <= CRYPT_SECTOR_SIZE / 4; j += KEYLEN_MIN / 8) {
 			sector[j - 1] &= 0x7FFFFFFF;
 		}
 		if(i == 2) break;
-		dfsrsa_crypt((dfsrsa_t *)sector, SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->priv.key, DNET_KEYLEN);
+		dfsrsa_crypt((dfsrsa_t *)sector, CRYPT_SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->priv.key, DNET_KEYLEN);
 		dnet_sector_to_password(sector, password);
 	}
 }
 
 int dnet_generate_random_array(void *array, unsigned long size)
 {
-	uint32_t sector[SECTOR_SIZE / 4];
+	uint32_t sector[CRYPT_SECTOR_SIZE / 4];
 	unsigned long i;
 	if(size < 4 || size & (size - 1)) return -1;
 	if(size >= 512) {
@@ -142,16 +142,16 @@ void dnet_generate_stream_id(struct dnet_stream_id *id)
 
 static int dnet_test_keys(void)
 {
-	uint32_t src[SECTOR_SIZE / 4], dest[SECTOR_SIZE / 4];
+	uint32_t src[CRYPT_SECTOR_SIZE / 4], dest[CRYPT_SECTOR_SIZE / 4];
 	dnet_random_sector(src);
-	memcpy(dest, src, SECTOR_SIZE);
-	if(dfsrsa_crypt((dfsrsa_t *)dest, SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->priv.key, DNET_KEYLEN)) return 1;
-	if(dfsrsa_crypt((dfsrsa_t *)dest, SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->pub.key, DNET_KEYLEN)) return 2;
-	if(memcmp(dest, src, SECTOR_SIZE)) return 3;
-	memcpy(dest, src, SECTOR_SIZE);
-	if(dfsrsa_crypt((dfsrsa_t *)dest, SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->pub.key, DNET_KEYLEN)) return 4;
-	if(dfsrsa_crypt((dfsrsa_t *)dest, SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->priv.key, DNET_KEYLEN)) return 5;
-	if(memcmp(dest, src, SECTOR_SIZE)) return 6;
+	memcpy(dest, src, CRYPT_SECTOR_SIZE);
+	if(dfsrsa_crypt((dfsrsa_t *)dest, CRYPT_SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->priv.key, DNET_KEYLEN)) return 1;
+	if(dfsrsa_crypt((dfsrsa_t *)dest, CRYPT_SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->pub.key, DNET_KEYLEN)) return 2;
+	if(memcmp(dest, src, CRYPT_SECTOR_SIZE)) return 3;
+	memcpy(dest, src, CRYPT_SECTOR_SIZE);
+	if(dfsrsa_crypt((dfsrsa_t *)dest, CRYPT_SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->pub.key, DNET_KEYLEN)) return 4;
+	if(dfsrsa_crypt((dfsrsa_t *)dest, CRYPT_SECTOR_SIZE / sizeof(dfsrsa_t), g_dnet_keys->priv.key, DNET_KEYLEN)) return 5;
+	if(memcmp(dest, src, CRYPT_SECTOR_SIZE)) return 6;
 	return 0;
 }
 
@@ -236,7 +236,7 @@ int dnet_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned 
 	return 0;
 }
 
-int dnet_crypt_init()
+int dnet_crypt_init(void)
 {
 	g_dnet_keys = malloc(sizeof(struct dnet_keys));
 	if(!g_dnet_keys) return 1;
@@ -313,7 +313,7 @@ int dnet_crypt_init()
 	return -dnet_test_keys();
 }
 
-void dnet_session_init_crypt(struct dfslib_crypt *crypt, uint32_t sector[SECTOR_SIZE / 4])
+void dnet_session_init_crypt(struct dfslib_crypt *crypt, uint32_t sector[CRYPT_SECTOR_SIZE / 4])
 {
 	char password[PWDLEN + 1];
 	struct dfslib_string str;

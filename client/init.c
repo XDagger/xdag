@@ -28,8 +28,9 @@
 #include "network.h"
 #include "utils/log.h"
 #include "utils/utils.h"
-#include "json-rpc/rpc_service.h"
 #include "xdag_config.h"
+#include "json-rpc/rpc_service.h"
+#include "../dnet/dnet_crypt.h"
 
 #define ARG_EQUAL(a,b,c) strcmp(c, "") == 0 ? strcmp(a, b) == 0 : (strcmp(a, b) == 0 || strcmp(a, c) == 0)
 
@@ -54,9 +55,12 @@ time_t g_xdag_xfer_last = 0;
 int(*g_xdag_show_state)(const char *state, const char *balance, const char *address) = 0;
 
 int parse_startup_parameters(int argc, char **argv, struct startup_parameters *parameters);
+int pre_init(void);
 int setup_miner(struct startup_parameters *parameters);
+int setup_pool(struct startup_parameters *parameters);
+int dnet_key_init(void);
 void printUsage(char* appName);
-void set_xdag_name();
+void set_xdag_name(void);
 
 int xdag_init(int argc, char **argv, int isGui)
 {
@@ -248,7 +252,7 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 	return 1;	// 1 - continue execution
 }
 
-int pre_init()
+int pre_init(void)
 {
 	if(!xdag_time_init()) {
 		printf("Cannot initialize time module\n");
@@ -333,9 +337,11 @@ int setup_pool(struct startup_parameters *parameters)
 		xdag_mess("Starting pool engine...");
 		if(xdag_initialize_mining(parameters->pool_arg, parameters->miner_address)) return -1;
 	}
+
+	return 0;
 }
 
-int dnet_key_init()
+int dnet_key_init(void)
 {
 	int err = dnet_crypt_init();
 	if(err < 0)
@@ -346,7 +352,7 @@ int dnet_key_init()
 	return 0;
 }
 
-void set_xdag_name()
+void set_xdag_name(void)
 {
 	g_progname = "xdag";
 	g_coinname = "XDAG";
@@ -392,6 +398,3 @@ void printUsage(char* appName)
 		"  -tag           - tag for pool to distingush pools. Max length is 32 chars\n"
 		, appName);
 }
-
-
-

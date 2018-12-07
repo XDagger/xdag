@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include "xdag_config.h"
 
-
 #ifndef true
 #define true (1)
 #endif
@@ -14,6 +13,7 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 #define strkscmp _stricmp
+#define strdup _strdup
 #else
 #define strkscmp strcasecmp
 #endif
@@ -38,10 +38,6 @@ static char *trim(char *str)
 	return str;
 }
 
-
-
-
-
 typedef struct {
 	char *name;
 	char *value;
@@ -54,15 +50,12 @@ typedef struct {
 	char **key_names;
 } NODE;
 
-
-
 typedef struct {
 	char *path;
 	int number_nodes;
 	NODE **nodes;
 	char **node_names;
 } CFG;
-
 
 static const char COMMENT_MARK[] = { '#', '*' };
 typedef enum {
@@ -99,7 +92,6 @@ static char *readline(FILE *fp)
 	}
 	return line;
 }
-
 
 static int strn(const char *p, const char chr)
 {
@@ -255,7 +247,7 @@ static char *xdag_config_read_node_name(FILE *fp)
 		} else if(type == TYPE_KEY) {
 			free(line);
 			fseek(fp, offset, SEEK_SET);
-			return _strdup("");
+			return strdup("");
 		} else {
 			free(line);
 			offset = ftell(fp);
@@ -288,7 +280,7 @@ static int xdag_config_add_node(CFG *config, NODE *s)
 	}
 	if(!isEmpty(s->name)) {
 		config->nodes[config->number_nodes - 1] = s;
-		config->node_names[config->number_nodes - 1] = _strdup(s->name);
+		config->node_names[config->number_nodes - 1] = strdup(s->name);
 	} else {
 		int i;
 		for(i = config->number_nodes - 1; i > 0; i--) {
@@ -296,7 +288,7 @@ static int xdag_config_add_node(CFG *config, NODE *s)
 			config->node_names[i] = config->node_names[i - 1];
 		}
 		config->nodes[0] = s;
-		config->node_names[0] = _strdup(s->name);
+		config->node_names[0] = strdup(s->name);
 	}
 	return 0;
 }
@@ -308,7 +300,7 @@ static NODE *xdag_add_node(const char *name)
 		printf("Configuration:add node memory initialization failed\n");
 		return NULL;
 	}
-	node->name = _strdup(name);
+	node->name = strdup(name);
 	node->number_keys = 0;
 	node->keys = NULL;
 	node->key_names = NULL;
@@ -322,7 +314,7 @@ static KEY *xdag_add_key(const char *name)
 		printf("Configuration:add key memory initialization failed\n");
 		return NULL;
 	}
-	k->name = _strdup(name);
+	k->name = strdup(name);
 	k->value = NULL;
 	return k;
 }
@@ -341,7 +333,7 @@ static int xdag_config_add_key(NODE *node, KEY *key)
 		printf("Configuration:add key names memory initialization failed\n");
 		return -1;
 	}
-	node->key_names[node->number_keys - 1] = _strdup(key->name);
+	node->key_names[node->number_keys - 1] = strdup(key->name);
 	return 0;
 }
 
@@ -363,7 +355,7 @@ static KEY *xdag_config_read_key(FILE *fp)
 			if(key == NULL) {
 				return NULL;
 			}
-			key->value = trim(_strdup(p + 1));
+			key->value = trim(strdup(p + 1));
 			free(line);
 			return key;
 		} else if(type == TYPE_NODE) {
@@ -429,7 +421,7 @@ static CFG *xdag_config_init(const char *path)
 		return NULL;
 	}
 	if(path != NULL) {
-		cfg->path = _strdup(path);
+		cfg->path = strdup(path);
 	} else {
 		cfg->path = NULL;
 	}
