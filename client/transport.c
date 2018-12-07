@@ -36,7 +36,7 @@ static void *xdag_update_rip_thread(void *);
 
 struct xdag_send_data {
 	struct xdag_block b;
-	void *connection;
+	struct send_parameters send_parameters;
 };
 
 #define add_main_timestamp(a)   ((a)->main_time = xdag_get_frame())
@@ -45,7 +45,7 @@ static void *xdag_send_thread(void *arg)
 {
 	struct xdag_send_data *d = (struct xdag_send_data *)arg;
 
-	d->b.field[0].time = xdag_load_blocks(d->b.field[0].time, d->b.field[0].end_time, d->connection, &dnet_send_xdag_packet);
+	d->b.field[0].time = xdag_load_blocks(d->b.field[0].time, d->b.field[0].end_time, &d->send_parameters, &dnet_send_xdag_packet);
 	d->b.field[0].type = XDAG_FIELD_NONCE | XDAG_MESSAGE_BLOCKS_REPLY << 4;
 
 	memcpy(&d->b.field[2], &g_xdag_stats, sizeof(g_xdag_stats));
@@ -54,7 +54,7 @@ static void *xdag_send_thread(void *arg)
 	xdag_netdb_send((uint8_t*)&d->b.field[2] + sizeof(struct xdag_stats),
 						 14 * sizeof(struct xdag_field) - sizeof(struct xdag_stats));
 	
-	dnet_send_xdag_packet(&d->b, d->connection);
+	dnet_send_xdag_packet(&d->b, &d->send_parameters);
 	
 	free(d);
 	
@@ -98,8 +98,7 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 			if(!send_data) return -1;
 
 			memcpy(&send_data->b, received_block, sizeof(struct xdag_block));
-
-			send_data->connection = connection;
+			send_data->send_parameters = (struct send_parameters){connection, time(NULL) + REQUEST_WAIT};
 
 			if(received_block->field[0].end_time - received_block->field[0].time <= REQUEST_BLOCKS_MAX_TIME) {
 				xdag_send_thread(send_data);
@@ -150,8 +149,8 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 
 			xdag_netdb_send((uint8_t*)&received_block->field[2] + sizeof(struct xdag_stats),
 				6 * sizeof(struct xdag_field) - sizeof(struct xdag_stats));
-
-			dnet_send_xdag_packet(received_block, connection);
+			struct send_parameters send_parameters = {connection, time(NULL) + REQUEST_WAIT};
+			dnet_send_xdag_packet(received_block, &send_parameters);
 
 			break;
 		}
@@ -182,10 +181,12 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 			xtime_t t;
 			int64_t pos = xdag_get_block_pos(received_block->field[1].hash, &t, &buf);
 
+			struct send_parameters send_parameters = {connection, time(NULL) + REQUEST_WAIT};
+
 			if (pos == -2l) {
-				dnet_send_xdag_packet(&buf, connection);
+				dnet_send_xdag_packet(&buf, &send_parameters);
 			} else if (pos >= 0 && (blk = xdag_storage_load(received_block->field[1].hash, t, pos, &buf))) {
-				dnet_send_xdag_packet(blk, connection);
+				dnet_send_xdag_packet(blk, &send_parameters);
 			}
 
 			break;
@@ -342,13 +343,13 @@ static int do_request(int type, xtime_t start_time, xtime_t end_time, void *data
 	reply_callback = callback;
 	
 	if (type == XDAG_MESSAGE_SUMS_REQUEST) {
-		reply_connection = dnet_send_xdag_packet(&b, 0);
+		reply_connection = dnet_send_xdag_packet(&b, &(struct send_parameters){0});
 		if (!reply_connection) {
 			pthread_mutex_unlock(&g_process_mutex);
 			return 0;
 		}
 	} else {
-		dnet_send_xdag_packet(&b, reply_connection);
+		dnet_send_xdag_packet(&b, &(struct send_parameters){reply_connection, 0});
 	}
 
 	time(&actual_time);
@@ -395,7 +396,7 @@ int xdag_request_sums(xtime_t start_time, xtime_t end_time, struct xdag_storage_
 int xdag_send_new_block(struct xdag_block *b)
 {
 	if(is_pool()) {
-		dnet_send_xdag_packet(b, (void*)(uintptr_t)NEW_BLOCK_TTL);
+		dnet_send_xdag_packet(b, &(struct send_parameters){(void*)(uintptr_t)NEW_BLOCK_TTL, 0});
 	} else {
 		xdag_send_block_via_pool(b);
 	}
@@ -415,7 +416,7 @@ int xdag_send_packet(struct xdag_block *b, void *conn)
 		conn = (void*)(uintptr_t)1l;
 	}
 
-	dnet_send_xdag_packet(b, conn);
+	dnet_send_xdag_packet(b, &(struct send_parameters){conn, 0});
 	
 	return 0;
 }
@@ -439,7 +440,7 @@ int xdag_request_block(xdag_hash_t hash, void *conn)
 		conn = (void*)(uintptr_t)1l;
 	}
 
-	dnet_send_xdag_packet(&b, conn);
+	dnet_send_xdag_packet(&b, &(struct send_parameters){conn, 0});
 	
 	return 0;
 }
