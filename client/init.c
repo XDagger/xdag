@@ -80,7 +80,10 @@ int xdag_init(int argc, char **argv, int isGui)
 	xdag_show_state(0);
 
 	struct startup_parameters parameters;
-	parse_startup_parameters(argc, argv, &parameters);
+	int res = parse_startup_parameters(argc, argv, &parameters);
+	if(res <= 0) {
+		return res;
+	}
 
 	if(pre_init() < 0) {
 		return -1;
