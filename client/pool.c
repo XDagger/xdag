@@ -268,7 +268,7 @@ void *general_mining_thread(void *arg)
 	xdag_mess("Starting main blocks creation...");
 
 	while(!g_stop_general_mining) {
-		xdag_create_and_send_block(0, 0, 0, 0, 0, xdag_main_time() << 16 | 0xffff, NULL);
+		xdag_create_and_send_block(0, 0, 0, 0, 0, xdag_get_frame() << 16 | 0xffff, NULL);
 	}
 
 	xdag_mess("Stopping general mining thread...");

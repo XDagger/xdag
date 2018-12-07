@@ -39,7 +39,7 @@ struct xdag_send_data {
 	void *connection;
 };
 
-#define add_main_timestamp(a)   ((a)->main_time = xdag_main_time())
+#define add_main_timestamp(a)   ((a)->main_time = xdag_get_frame())
 
 static void *xdag_send_thread(void *arg)
 {
@@ -65,8 +65,8 @@ static int process_transport_block(struct xdag_block *received_block, void *conn
 {
 	struct xdag_stats *stats = (struct xdag_stats *)&received_block->field[2];
 	struct xdag_stats *g = &g_xdag_stats;
-	xtime_t start_time = xdag_start_main_time();
-	xtime_t current_time = xdag_main_time();
+	xdag_frame_t start_time = xdag_get_start_frame();
+	xdag_frame_t current_time = xdag_get_frame();
 
 	if(current_time >= start_time && stats->total_nmain <= current_time - start_time + 1) {
 		if(stats->main_time <= current_time + 1) {

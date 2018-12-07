@@ -1186,7 +1186,7 @@ begin:
 				g_xdag_state == XDAG_STATE_SYNC || g_xdag_state == XDAG_STATE_STST || 
 				g_xdag_state == XDAG_STATE_CONN || g_xdag_state == XDAG_STATE_CTST)) {
 			if (g_xdag_state == XDAG_STATE_SYNC || g_xdag_state == XDAG_STATE_STST || 
-					g_xdag_stats.nmain >= (MAIN_TIME(t) - xdag_start_main_time())) {
+					g_xdag_stats.nmain >= (MAIN_TIME(t) - xdag_get_start_frame())) {
 				g_block_production_on = 1;
 			} else if (last_nmain != nmain) {
 				last_nmain = nmain;

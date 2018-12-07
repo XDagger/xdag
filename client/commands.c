@@ -833,7 +833,7 @@ int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t ti
 	if(!amount) {
 		return -1;
 	}
-	if(g_xdag_type == XDAG_POOL && xdag_main_time() < (time >> 16) + 2 * CONFIRMATIONS_COUNT) {
+	if(g_xdag_type == XDAG_POOL && xdag_get_frame() < (time >> 16) + 2 * CONFIRMATIONS_COUNT) {
 		return 0;
 	}
 	for(i = 0; i < xferData->keysCount; ++i) {
@@ -923,10 +923,10 @@ int out_balances()
 	struct out_balances_data d;
 	unsigned i = 0;
 	xdag_set_log_level(0);
-	xdag_mem_init((xdag_main_time() - xdag_start_main_time()) << 17);
+	xdag_mem_init((xdag_get_frame() - xdag_get_start_frame()) << 17);
 	xdag_crypt_init(0);
 	memset(&d, 0, sizeof(struct out_balances_data));
-	xdag_load_blocks(xdag_start_main_time() << 16, xdag_main_time() << 16, &i, &add_block_callback);
+	xdag_load_blocks(xdag_get_start_frame() << 16, xdag_get_frame() << 16, &i, &add_block_callback);
 	xdag_traverse_all_blocks(&d, out_balances_callback);
 	qsort(d.blocks, d.blocksCount, sizeof(struct xdag_field), out_sort_callback);
 	for(i = 0; i < d.blocksCount; ++i) {
