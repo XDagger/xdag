@@ -57,6 +57,7 @@ set(DAGGER_SOURCES
   client/time.c
   client/transport.c
   client/wallet.c
+  client/xdag_config.c
 
   dnet/dnet_crypt.c
   dnet/dnet_xdag.c
@@ -114,6 +115,7 @@ set(DAGGER_HEADERS
   client/types.h
   client/version.h
   client/wallet.h
+  client/xdag_config.h
 
   dnet/dnet_crypt.h
   dnet/dnet_history.h
