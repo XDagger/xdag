@@ -1001,6 +1001,8 @@ static int dfsrsa_isprime(dfsrsa_t *n, dfsrsa_t *work, int len)
 #endif
 			dfsrsa_debug(MILLER, "miller a", a, len);
 			dfsrsa_powmod(res, a, nm1, n, work, len);
+			if (*work == 1)
+				return 1;
 			dfsrsa_debug(MILLER, "miller a^(n-1)", res, len);
 			dfsrsa_debug(MILLER, "miller work", work, len);
 			dfsrsa_debug(MILLER, "miller work2", work2, len);
