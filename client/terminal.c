@@ -38,6 +38,7 @@ int terminal(void)
 
 	if(!xdag_network_init()) {
 		printf("Can't initialize sockets");
+		return -1;
 	}
 
 	char cmd[XDAG_COMMAND_MAX] = {0};

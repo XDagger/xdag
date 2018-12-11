@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "init.h"
+#include "time.h"
 #include "math.h"
 #include "utils/log.h"
 

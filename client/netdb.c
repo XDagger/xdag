@@ -9,7 +9,7 @@
 #include "../ldus/source/include/ldus/rbtree.h"
 #include "transport.h"
 #include "netdb.h"
-#include "init.h"
+#include "global.h"
 #include "sync.h"
 #include "utils/log.h"
 #include "utils/utils.h"

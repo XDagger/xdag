@@ -8,7 +8,7 @@
 #include "storage.h"
 #include "block.h"
 #include "netdb.h"
-#include "init.h"
+#include "global.h"
 #include "sync.h"
 #include "miner.h"
 #include "pool.h"
@@ -248,11 +248,10 @@ static void conn_close_notify(void *conn)
 */
 int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs, const char **addr_port_pairs)
 {
-	const char **argv = malloc((npairs + 7) * sizeof(char *)), *version;
-	int argc = 0, i, res;
-
+	const char **argv = malloc((npairs + 7) * sizeof(char *));
 	if (!argv) return -1;
 
+	int argc = 0;
 	argv[argc++] = "dnet";
 #if !defined(_WIN32) && !defined(_WIN64)
 	if (flags & XDAG_DAEMON) {
@@ -272,7 +271,7 @@ int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs
 		argv[argc++] = strdup(buf);
 	}
 
-	for (i = 0; i < npairs; ++i) {
+	for (int i = 0; i < npairs; ++i) {
 		argv[argc++] = addr_port_pairs[i];
 	}
 	argv[argc] = 0;
@@ -281,9 +280,9 @@ int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs
 	dnet_connection_open_check = &conn_open_check;
 	dnet_connection_close_notify = &conn_close_notify;
 
-	res = dnet_init(argc, (char**)argv);
+	int res = dnet_init(argc, (char**)argv);
 	if (!res) {
-		version = strchr(XDAG_VERSION, '-');
+		char *version = strchr(XDAG_VERSION, '-');
 		if (version) dnet_set_self_version(version + 1);
 	}
 
@@ -306,6 +305,7 @@ int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs
 /* generates an array with random data */
 int xdag_generate_random_array(void *array, unsigned long size)
 {
+	//TODO: do we need to generate random array based on DNET key?
 	return dnet_generate_random_array(array, size);
 }
 
@@ -394,7 +394,7 @@ int xdag_request_sums(xtime_t start_time, xtime_t end_time, struct xdag_storage_
 /* sends a new block to network */
 int xdag_send_new_block(struct xdag_block *b)
 {
-	if(!g_is_miner) {
+	if(g_xdag_type == XDAG_POOL) {
 		dnet_send_xdag_packet(b, (void*)(uintptr_t)NEW_BLOCK_TTL);
 	} else {
 		xdag_send_block_via_pool(b);
