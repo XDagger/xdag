@@ -50,6 +50,8 @@ static inline xdag_diff_t xdag_diff_div(xdag_diff_t p, xdag_diff_t q)
 #define xOPENSSL_ia32cap_P      OPENSSL_ia32cap_P
 #define xsha256_multi_block     sha256_multi_block
 
+typedef long ssize_t;
+
 #else
 
 #define pthread_self_ptr()      pthread_self()

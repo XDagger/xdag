@@ -214,7 +214,7 @@ void CXDagWalletDlg::OnClickedButtonXfer()
 		MessageBox("Transfer address must be set", "Dagger wallet", MB_OK | MB_ICONSTOP);
 		return;
 	}
-	xdag_do_xfer(0, (char*)(LPCTSTR)_transferAmount, (char*)(LPCTSTR)_transferAddress, 1);
+	xdag_do_xfer(0, (char*)(LPCTSTR)_transferAmount, (char*)(LPCTSTR)_transferAddress, NULL, 1);
 }
 
 LRESULT CXDagWalletDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)

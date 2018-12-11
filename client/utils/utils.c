@@ -13,20 +13,19 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
-#if defined (__MACOS__) || defined (__APPLE__)
-#include <libgen.h>
-#define PATH_MAX 4096
-#elif defined (_WIN32)
+#if defined (_WIN32)
 #include <direct.h>
 #include <shlwapi.h>
 #else
 #include <libgen.h>
-#include <linux/limits.h>
+#include <limits.h>
+#include "dirname.h"
 #endif
 #include "../uthash/utlist.h"
 #include "log.h"
 #include "../system.h"
 #include "math.h"
+#include <math.h>
 
 static pthread_mutex_t g_detect_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -286,32 +285,14 @@ void test_deadlock(void)
 	check_deadlock();
 }
 
-uint64_t get_timestamp(void)
-{
-	struct timeval tp;
-
-	gettimeofday(&tp, 0);
-
-	return (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
-}
-
-uint64_t get_time_ms(void)
-{
-	struct timeval tp;
-
-	gettimeofday(&tp, 0);
-
-	return (uint64_t)(unsigned long)tp.tv_sec * 1000 + tp.tv_usec / 1000;
-}
-
 static char g_xdag_current_path[4096] = {0};
 
 void xdag_init_path(char *path)
 {
 #ifdef _WIN32
-	char szPath[MAX_PATH];
-	char szBuffer[MAX_PATH];
-	char *pszFile;
+	char szPath[MAX_PATH] = {0};
+	char szBuffer[MAX_PATH] = {0};
+	char *pszFile = NULL;
 
 	GetModuleFileName(NULL, (LPTCH)szPath, sizeof(szPath) / sizeof(*szPath));
 	GetFullPathName((LPTSTR)szPath, sizeof(szBuffer) / sizeof(*szBuffer), (LPTSTR)szBuffer, (LPTSTR*)&pszFile);
@@ -321,7 +302,7 @@ void xdag_init_path(char *path)
 #else
 	char pathcopy[PATH_MAX] = {0};
 	strcpy(pathcopy, path);
-	char *prefix = dirname(pathcopy);
+	char *prefix = posix_dirname(pathcopy);
 	if (*prefix != '/' && *prefix != '\\') {
 		char buf[PATH_MAX] = {0};
 		getcwd(buf, PATH_MAX);
@@ -329,9 +310,6 @@ void xdag_init_path(char *path)
 	} else {
 		sprintf(g_xdag_current_path, "%s", prefix);
 	}
-#if defined (__MACOS__) || defined (__APPLE__)
-	free(prefix);
-#endif
 #endif
 
 	const size_t pathLen = strlen(g_xdag_current_path);
@@ -372,11 +350,6 @@ int xdag_mkdir(const char *path)
 #else 
 	return mkdir(abspath, 0770);
 #endif	
-}
-
-long double log_difficulty2hashrate(long double log_diff)
-{
-	return ldexpl(expl(log_diff), -58)*(0.65);
 }
 
 void xdag_str_toupper(char *str)
@@ -420,27 +393,6 @@ char *xdag_filename(char *_filename)
 	return filename;
 }
 
-// convert time to string representation
-// minimal length of string buffer `buf` should be 60
-void xdag_time_to_string(xdag_time_t time, char *buf)
-{
-	struct tm tm;
-	char tmp[64];
-	time_t t = time >> 10;
-	localtime_r(&t, &tm);
-	strftime(tmp, 60, "%Y-%m-%d %H:%M:%S", &tm);
-	sprintf(buf, "%s.%03d", tmp, (int)((time & 0x3ff) * 1000) >> 10);
-}
-
-// convert time to string representation
-// minimal length of string buffer `buf` should be 50
-void time_to_string(time_t time, char* buf)
-{
-	struct tm tm;
-	localtime_r(&time, &tm);
-	strftime(buf, 50, "%Y-%m-%d %H:%M:%S", &tm);
-}
-
 // replaces all occurences of non-printable characters (code < 33 || code > 126) in `string` with specified `symbol`
 // length - max length of string to be processed, if -1 - whole string will be processed
 void replace_all_nonprintable_characters(char *string, int length, char symbol)
@@ -452,4 +404,76 @@ void replace_all_nonprintable_characters(char *string, int length, char symbol)
 		}
 		++index;
 	}
+}
+
+int validate_ipv4(const char *str)
+{
+	if(!str) {
+		return 0;
+	}
+
+	int a, b, c, d;
+	char tmp;
+	if(4 != sscanf(str, "%d.%d.%d.%d%c", &a, &b, &c, &d, &tmp)) {
+		return 0;
+	}
+
+	if(a < 0 || a > 255
+	   || b < 0 || b > 255
+	   || c < 0 || c > 255
+	   || d < 0 || d > 255) {
+		return 0;
+	}
+
+	return 1;
+}
+
+
+int validate_ipv4_port(const char *str)
+{
+	if(!str) {
+		return 0;
+	}
+	
+	int a, b, c, d, e;
+	char tmp;
+	if(5 != sscanf(str, "%d.%d.%d.%d:%d%c", &a, &b, &c, &d, &e, &tmp)) {
+		return 0;
+	}
+
+	if(a < 0 || a > 255
+	   || b < 0 || b > 255
+	   || c < 0 || c > 255
+	   || d < 0 || d > 255
+	   || e < 0 || e > 65535) {
+		return 0;
+	}
+
+	return 1;
+}
+
+size_t validate_remark(const char *str)
+{
+	return validate_ascii_safe(str, 33);// sizeof(xdag_remark_t) + 1
+}
+
+size_t validate_ascii_safe(const char *str, size_t maxsize)
+{
+	if(str == NULL) {
+		return 0;
+	}
+
+	const char* start = str;
+	const char* stop = str + maxsize;
+
+	for(;str < stop;++str) {
+		if(*str < 32 || *str > 126) {
+			if(*str == '\0') {
+				return str - start;
+			}
+			return 0;
+		}
+	}
+
+	return 0;
 }

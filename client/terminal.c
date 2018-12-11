@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #if !defined(_WIN32) && !defined(_WIN64)
+#include <string.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -16,10 +17,6 @@
 #include "network.h"
 #include "utils/log.h"
 #include "utils/utils.h"
-
-#if defined (__MACOS__) || defined (__APPLE__)
-#include <string.h>
-#endif
 
 #if defined(_WIN32) || defined(_WIN64)
 #define poll WSAPoll
@@ -43,8 +40,8 @@ int terminal(void)
 		printf("Can't initialize sockets");
 	}
 
-	char cmd[XDAG_COMMAND_MAX];
-	char cmd2[XDAG_COMMAND_MAX];
+	char cmd[XDAG_COMMAND_MAX] = {0};
+	char cmd2[XDAG_COMMAND_MAX] = {0};
 
 	xdag_init_commands();
 
@@ -142,7 +139,7 @@ void *terminal_thread(void *arg)
 		return 0;
 	}
 	while (1) {
-		char cmd[XDAG_COMMAND_MAX];
+		char cmd[XDAG_COMMAND_MAX] = {0};
 		int clientSock, res;
 		struct pollfd fds;
 		if ((clientSock = accept(sock, NULL, NULL)) == -1) {
@@ -185,7 +182,7 @@ void *terminal_thread(void *arg)
 #else
 			rewind(fd);
 
-			char buf[256];
+			char buf[256] = {0};
 			while (!feof(fd)) {
 				const int length = fread(buf, 1, 256, fd);
 				write(clientSock, buf, length);
