@@ -61,11 +61,11 @@ int xdag_initialize_mining(const char *pool_arg, const char *miner_address)
 		}
 	}
 
-	if(g_xdag_type == XDAG_WALLET && !pool_arg) return 0;
+	if(is_wallet() && !pool_arg) return 0;
 
 	if(crypt_start()) return -1;
 
-	if(g_xdag_type == XDAG_WALLET) {
+	if(is_wallet()) {
 		return xdag_initialize_miner(pool_arg);
 	} else {
 		return xdag_initialize_pool(pool_arg);

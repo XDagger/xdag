@@ -105,13 +105,13 @@ int xdag_init(int argc, char **argv, int isGui)
 		parameters.transport_threads = 0;
 	}
 	
-	g_xdag_type = parameters.is_pool ? XDAG_POOL : XDAG_WALLET; // move to here to avoid Data Race
+	g_xdag_type = parameters.is_pool ? XDAG_POOL : XDAG_WALLET;
 
-	if(g_disable_mining && g_xdag_type == XDAG_WALLET) {
+	if(g_disable_mining && is_wallet()) {
 		g_disable_mining = 0;   // this option is only for pools
 	}
 
-	if(g_xdag_type == XDAG_WALLET) {
+	if(is_wallet()) {
 		if(setup_miner(&parameters) < 0) {
 			return -1;
 		}
@@ -122,7 +122,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	}
 
 	if (!isGui) {
-		if (g_xdag_type == XDAG_POOL || (parameters.transport_flags & XDAG_DAEMON) > 0) {
+		if (is_pool() || (parameters.transport_flags & XDAG_DAEMON) > 0) {
 			xdag_mess("Starting terminal server...");
 			pthread_t th;
 			const int err = pthread_create(&th, 0, &terminal_thread, 0);
