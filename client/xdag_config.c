@@ -475,10 +475,10 @@ int get_pool_config(const char *path, struct pool_configuration *pool_configurat
 	static char *key[9] = { "ip", "port", "max_connection_count_input", "max_miner_ip_count", "connections_per_miner_limit", "pool_fee", "pool_reward", "pool_direct", "pool_fund" };
 
 	//TODO: think of better way to return string buffers
-	static char node_address_buf[100];
-	static char mining_configuration_buf[100];
-	memset(node_address_buf, 0, 100);
-	memset(mining_configuration_buf, 0, 100);
+	static char node_address_buf[CONFIG_BUG_LENGTH];
+	static char mining_configuration_buf[CONFIG_BUG_LENGTH];
+	memset(node_address_buf, 0, CONFIG_BUG_LENGTH);
+	memset(mining_configuration_buf, 0, CONFIG_BUG_LENGTH);
 
 	if(path == NULL) {
 		path = DEFAUL_POOL_CONFIG_FILE;

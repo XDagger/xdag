@@ -209,20 +209,20 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 				printf("Number of transport threads is not given.\n");
 		} else if(ARG_EQUAL(argv[i], "", "-dm")) { /* disable mining */
 			g_disable_mining = 1;
-			//} else if(ARG_EQUAL(argv[i], "", "-tag")) { /* pool tag */
-			//	if(i + 1 < argc) {
-			//		if(validate_remark(argv[i + 1])) {
-			//			memcpy(g_pool_tag, argv[i + 1], strlen(argv[i + 1]));
-			//			g_pool_has_tag = 1;
-			//			++i;
-			//		} else {
-			//			printf("Pool tag exceeds 32 chars or is invalid ascii.\n");
-			//			return -1;
-			//		}
-			//	} else {
-			//		printUsage(argv[0]);
-			//		return -1;
-			//	}
+		//} else if(ARG_EQUAL(argv[i], "", "-tag")) { /* pool tag */
+		//	if(i + 1 < argc) {
+		//		if(validate_remark(argv[i + 1])) {
+		//			memcpy(g_pool_tag, argv[i + 1], strlen(argv[i + 1]));
+		//			g_pool_has_tag = 1;
+		//			++i;
+		//		} else {
+		//			printf("Pool tag exceeds 32 chars or is invalid ascii.\n");
+		//			return -1;
+		//		}
+		//	} else {
+		//		printUsage(argv[0]);
+		//		return -1;
+		//	}
 		} else if(ARG_EQUAL(argv[i], "", "-disable-refresh")) { /* disable auto refresh white list */
 			g_prevent_auto_refresh = 1;
 		} else if(ARG_EQUAL(argv[i], "-l", "")) { /* list balance */
