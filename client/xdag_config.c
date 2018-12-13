@@ -450,7 +450,7 @@ static void xdag_config_close(void *cfg)
 	xdag_config_free(config);
 }
 
-int parse_section(void *cfg, const char *section, static char *keys, int keys_count, char *buffer)
+int parse_section(void *cfg, const char *section, static char **keys, int keys_count, char *buffer)
 {
 	for(int i = 0; i < keys_count; ++i) {
 		const char *value = xdag_config_get_value(cfg, section, keys[i], "");

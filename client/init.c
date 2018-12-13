@@ -104,7 +104,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	}
 
 	if(!isGui) {
-		if (is_pool() || (parameters.transport_flags & XDAG_DAEMON) > 0) {
+		if(is_pool() || (parameters.transport_flags & XDAG_DAEMON) > 0) {
 			xdag_mess("Starting terminal server...");
 			pthread_t th;
 			const int err = pthread_create(&th, 0, &terminal_thread, 0);
@@ -251,7 +251,7 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 		g_xdag_type = XDAG_WALLET;
 	}
 
-	if(g_disable_mining && g_xdag_type == XDAG_WALLET) {
+	if(g_disable_mining && is_wallet()) {
 		g_disable_mining = 0;   // this option is only for pools
 	}
 
