@@ -43,8 +43,6 @@ struct startup_parameters {
 	int transport_flags;
 	int transport_threads;
 	int mining_threads_count;
-	int is_pool;
-	int is_miner;
 	int is_rpc;
 	int rpc_port;
 	struct pool_configuration pool_configuration;
@@ -181,7 +179,6 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 				return 0;
 			}
 			if(++i < argc) {
-				parameters->is_pool = 1;
 				parameters->pool_configuration.node_address = argv[i];
 			}
 		} else if(ARG_EQUAL(argv[i], "-P", "")) { /* pool config */

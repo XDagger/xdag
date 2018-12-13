@@ -463,7 +463,7 @@ int parse_section(void *cfg, const char *section, static char **keys, int keys_c
 			printf("Wrong configuration.\n");
 			return -1;
 		}
-		if(i > 0) { 
+		if(i > 0) {
 			strcat(buffer, ":");
 		}
 		strcat(buffer, value);
@@ -495,7 +495,7 @@ int get_pool_config(const char *path, struct pool_configuration *pool_configurat
 		return -1;
 	}
 	xdag_config_close(cfg);
-	
+
 	pool_configuration->node_address = node_address_buf;
 	pool_configuration->mining_configuration = mining_configuration_buf;
 
