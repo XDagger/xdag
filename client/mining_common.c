@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include "global.h"
 #include "mining_common.h"
 #include "miner.h"
 #include "pool.h"
@@ -10,9 +11,6 @@
 #define MINERS_PWD             "minersgonnamine"
 #define SECTOR0_BASE           0x1947f3acu
 #define SECTOR0_OFFSET         0x82e9d1b5u
-
-/* 1 - program works as a pool */
-int g_xdag_pool = 0;
 
 struct xdag_pool_task g_xdag_pool_task[2];
 uint64_t g_xdag_pool_task_index;
@@ -63,11 +61,11 @@ int xdag_initialize_mining(const char *pool_arg, const char *miner_address)
 		}
 	}
 
-	if(!g_xdag_pool && !pool_arg) return 0;
+	if(is_wallet() && !pool_arg) return 0;
 
 	if(crypt_start()) return -1;
 
-	if(!g_xdag_pool) {
+	if(is_wallet()) {
 		return xdag_initialize_miner(pool_arg);
 	} else {
 		return xdag_initialize_pool(pool_arg);

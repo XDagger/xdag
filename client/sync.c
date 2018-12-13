@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include "sync.h"
 #include "hash.h"
-#include "init.h"
+#include "global.h"
 #include "transport.h"
 #include "utils/log.h"
 #include "utils/utils.h"

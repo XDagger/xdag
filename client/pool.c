@@ -16,6 +16,7 @@
 #include <errno.h>
 #endif
 #include "block.h"
+#include "global.h"
 #include "sync.h"
 #include "mining_common.h"
 #include "pool.h"
@@ -280,7 +281,7 @@ int xdag_pool_set_config(const char *pool_config)
 {
 	char buf[0x100] = {0}, *lasts = NULL;
 
-	if(!g_xdag_pool) return -1;
+	if(is_wallet()) return -1;
 	strncpy(buf, pool_config, 0xff);
 
 	pool_config = strtok_r(buf, " \t\r\n:", &lasts);
@@ -375,7 +376,7 @@ int xdag_pool_set_config(const char *pool_config)
 /* gets pool parameters as a string, 0 - if the pool is disabled */
 char *xdag_pool_get_config(char *buf)
 {
-	if(!g_xdag_pool) return 0;
+	if(is_wallet()) return 0;
 
 	sprintf(buf, "%d:%d:%d:%.2lf:%.2lf:%.2lf:%.2lf", g_max_connections_count, g_max_miner_ip_count, g_connections_per_miner_limit,
 		g_pool_fee * 100, g_pool_reward * 100, g_pool_direct * 100, g_pool_fund * 100);

@@ -51,7 +51,6 @@
 #define BAD_CONN_TIMEOUT_SEC		90
 
 extern int g_xdag_sync_on;
-extern void dnet_session_init_crypt(struct dfslib_crypt *crypt, uint32_t sector[SECTOR_SIZE / 4]);
 
 struct xsector {
 	union {
@@ -791,11 +790,6 @@ int dnet_init(int argc, char **argv)
 		}
 	}
 	printf("%s %s%s.\n", argv[0], DNET_VERSION, (is_daemon ? ", running as daemon" : ""));
-	if((err = dnet_crypt_init(DNET_VERSION))) {
-		sleep(3);
-		printf("Password incorrect.\n");
-		return err;
-	}
 
 	if(nthreads >= 1) {
 		dnet_session_init_crypt(g_crypt, g_xkeys.sect0.word);

@@ -4,6 +4,7 @@
 #define XDAG_TIME_H
 
 #include <stdint.h>
+#include <time.h>
 #include "types.h"
 
 /* the maximum period of time for which blocks are requested, not their amounts */

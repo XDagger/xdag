@@ -46,6 +46,7 @@ sources =                                   \
     time.c                                  \
     math.c                                  \
     xdag_config.c                           \
+	global.c                                \
     $(dnet)/dnet_crypt.c                    \
     $(dnet)/dnet_xdag.c                     \
     $(dfslib)/dfslib_crypt.c                \
@@ -93,6 +94,7 @@ headers =                                   \
     time.h                                  \
     math.h                                  \
     xdag_config.h                           \
+	global.h                                \
     $(dnet)/dnet_crypt.h                    \
     $(dnet)/dnet_history.h                  \
     $(dnet)/dnet_main.h                     \
