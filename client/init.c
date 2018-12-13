@@ -38,8 +38,7 @@ struct startup_parameters {
 	const char *addr_ports[256];
 	int addrports_count;
 	char *bind_to;
-	char *pub_addr;
-	char *pool_arg;
+	char *pool_address;
 	char *miner_address;
 	int transport_flags;
 	int transport_threads;
@@ -48,6 +47,7 @@ struct startup_parameters {
 	int is_miner;
 	int is_rpc;
 	int rpc_port;
+	struct pool_configuration pool_configuration;
 };
 
 time_t g_xdag_xfer_last = 0;
@@ -64,8 +64,8 @@ void set_xdag_name(void);
 
 int xdag_init(int argc, char **argv, int isGui)
 {
-    xdag_init_path(argv[0]);
-	
+	xdag_init_path(argv[0]);
+
 #if !defined(_WIN32) && !defined(_WIN64)
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
@@ -76,7 +76,7 @@ int xdag_init(int argc, char **argv, int isGui)
 
 	set_xdag_name();
 
-	if (!isGui) {
+	if(!isGui) {
 		printf("%s client/server, version %s.\n", g_progname, XDAG_VERSION);
 	}
 
@@ -93,24 +93,6 @@ int xdag_init(int argc, char **argv, int isGui)
 		return -1;
 	}
 
-	if(!parameters.is_pool && parameters.pool_arg == NULL) {
-		parameters.is_miner = 1;
-	}
-
-	if (parameters.is_miner) {
-		if (parameters.is_pool || parameters.bind_to || parameters.addrports_count || parameters.transport_threads > 0) {
-			printf("Miner can't be a pool or have directly connected to the xdag network.\n");
-			return -1;
-		}
-		parameters.transport_threads = 0;
-	}
-	
-	g_xdag_type = parameters.is_pool ? XDAG_POOL : XDAG_WALLET; // move to here to avoid Data Race
-
-	if(g_disable_mining && g_xdag_type == XDAG_WALLET) {
-		g_disable_mining = 0;   // this option is only for pools
-	}
-
 	if(g_xdag_type == XDAG_WALLET) {
 		if(setup_miner(&parameters) < 0) {
 			return -1;
@@ -121,8 +103,8 @@ int xdag_init(int argc, char **argv, int isGui)
 		}
 	}
 
-	if (!isGui) {
-		if (g_xdag_type == XDAG_POOL || (parameters.transport_flags & XDAG_DAEMON) > 0) {
+	if(!isGui) {
+		if(g_xdag_type == XDAG_POOL || (parameters.transport_flags & XDAG_DAEMON) > 0) {
 			xdag_mess("Starting terminal server...");
 			pthread_t th;
 			const int err = pthread_create(&th, 0, &terminal_thread, 0);
@@ -147,22 +129,23 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 	for(int i = 1; i < argc; ++i) {
 		if(argv[i][0] != '-') {
 			if((!argv[i][1] || argv[i][2]) && strchr(argv[i], ':')) {
-				parameters->is_miner = 1;
-				parameters->pool_arg = argv[i];
+				parameters->pool_address = argv[i];
 			} else {
 				printUsage(argv[0]);
 				return 0;
 			}
 			continue;
 		}
-		if (ARG_EQUAL(argv[i], "-f", "")){ /* configuration file */
-			if (++i < argc) {
-				if(argv[i] != NULL && argv[i][0] != '-' && parameters->pool_arg == NULL) {
-					char buf[80];
-					if(get_pool_config(argv[i], buf, sizeof(buf))) return -1;
-					parameters->pool_arg = buf;
-				}
+		if(ARG_EQUAL(argv[i], "-f", "")) { /* configuration file */
+			if(parameters->pool_configuration.node_address != NULL || parameters->pool_configuration.mining_configuration != NULL) {
+				printUsage(argv[0]);
+				return 0;
 			}
+			const char *config_path = NULL;
+			if(i + 1 < argc && argv[i + 1] != NULL && argv[i + 1][0] != '-') {
+				config_path = argv[++i];
+			}
+			if(get_pool_config(config_path, &parameters->pool_configuration) < 0) return -1;
 		} else if(ARG_EQUAL(argv[i], "-a", "")) { /* miner address */
 			if(++i < argc) {
 				parameters->miner_address = argv[i];
@@ -193,13 +176,17 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 				if(parameters->mining_threads_count < 0) parameters->mining_threads_count = 0;
 			}
 		} else if(ARG_EQUAL(argv[i], "-p", "")) { /* public address & port */
+			if(parameters->pool_configuration.node_address != NULL) {
+				printUsage(argv[0]);
+				return 0;
+			}
 			if(++i < argc) {
 				parameters->is_pool = 1;
-				parameters->pub_addr = argv[i];
+				parameters->pool_configuration.node_address = argv[i];
 			}
 		} else if(ARG_EQUAL(argv[i], "-P", "")) { /* pool config */
 			if(++i < argc) {
-				parameters->pool_arg = argv[i];
+				parameters->pool_configuration.mining_configuration = argv[i];
 			}
 		} else if(ARG_EQUAL(argv[i], "-r", "")) { /* load blocks and wait for run command */
 			g_xdag_run = 0;
@@ -225,20 +212,20 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 				printf("Number of transport threads is not given.\n");
 		} else if(ARG_EQUAL(argv[i], "", "-dm")) { /* disable mining */
 			g_disable_mining = 1;
-		//} else if(ARG_EQUAL(argv[i], "", "-tag")) { /* pool tag */
-		//	if(i + 1 < argc) {
-		//		if(validate_remark(argv[i + 1])) {
-		//			memcpy(g_pool_tag, argv[i + 1], strlen(argv[i + 1]));
-		//			g_pool_has_tag = 1;
-		//			++i;
-		//		} else {
-		//			printf("Pool tag exceeds 32 chars or is invalid ascii.\n");
-		//			return -1;
-		//		}
-		//	} else {
-		//		printUsage(argv[0]);
-		//		return -1;
-		//	}
+			//} else if(ARG_EQUAL(argv[i], "", "-tag")) { /* pool tag */
+			//	if(i + 1 < argc) {
+			//		if(validate_remark(argv[i + 1])) {
+			//			memcpy(g_pool_tag, argv[i + 1], strlen(argv[i + 1]));
+			//			g_pool_has_tag = 1;
+			//			++i;
+			//		} else {
+			//			printf("Pool tag exceeds 32 chars or is invalid ascii.\n");
+			//			return -1;
+			//		}
+			//	} else {
+			//		printUsage(argv[0]);
+			//		return -1;
+			//	}
 		} else if(ARG_EQUAL(argv[i], "", "-disable-refresh")) { /* disable auto refresh white list */
 			g_prevent_auto_refresh = 1;
 		} else if(ARG_EQUAL(argv[i], "-l", "")) { /* list balance */
@@ -247,6 +234,25 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 			printUsage(argv[0]);
 			return 0;
 		}
+	}
+
+	if(parameters->pool_address != NULL && (parameters->pool_configuration.node_address != NULL || parameters->pool_configuration.mining_configuration != NULL)) {
+		printf("{0} must be started either as pool or as wallet.\n", argv[0]);
+		return -1;
+	}
+
+	if(parameters->pool_configuration.node_address != NULL || parameters->pool_configuration.mining_configuration != NULL) {
+		if(parameters->pool_configuration.node_address == NULL || parameters->pool_configuration.mining_configuration == NULL) {
+			printf("You have to specify both node address and mining configuration.\n");
+			return -1;
+		}
+		g_xdag_type = XDAG_POOL;
+	} else {
+		g_xdag_type = XDAG_WALLET;
+	}
+
+	if(g_disable_mining && g_xdag_type == XDAG_WALLET) {
+		g_disable_mining = 0;   // this option is only for pools
 	}
 
 	return 1;	// 1 - continue execution
@@ -283,11 +289,11 @@ int pre_init(void)
 int setup_miner(struct startup_parameters *parameters)
 {
 	static char pool_address_buf[50] = { 0 };
-	if(parameters->pool_arg == NULL) {
+	if(parameters->pool_address == NULL) {
 		if(!xdag_pick_pool(pool_address_buf)) {
 			return -1;
 		}
-		parameters->pool_arg = pool_address_buf;
+		parameters->pool_address = pool_address_buf;
 	}
 
 	//TODO: think of combining the logic with pool-initialization functions (after decision what to do with xdag_blocks_start)
@@ -301,7 +307,7 @@ int setup_miner(struct startup_parameters *parameters)
 
 	if(!g_disable_mining) {
 		xdag_mess("Starting mining engine...");
-		if(xdag_initialize_mining(parameters->pool_arg, parameters->miner_address)) return -1;
+		if(xdag_initialize_mining(parameters->pool_address, parameters->miner_address)) return -1;
 	}
 
 	return 0;
@@ -309,8 +315,8 @@ int setup_miner(struct startup_parameters *parameters)
 
 int setup_pool(struct startup_parameters *parameters)
 {
-	if(parameters->pub_addr && !parameters->bind_to) {
-		char str[64] = { 0 }, *p = strchr(parameters->pub_addr, ':');
+	if(parameters->pool_configuration.node_address != NULL && parameters->bind_to == NULL) {
+		char str[64] = { 0 }, *p = strchr(parameters->pool_configuration.node_address, ':');
 		if(p) {
 			sprintf(str, "0.0.0.0%s", p);
 			parameters->bind_to = strdup(str);
@@ -324,7 +330,7 @@ int setup_pool(struct startup_parameters *parameters)
 	if(xdag_transport_start(parameters->transport_flags, parameters->transport_threads, parameters->bind_to, parameters->addrports_count, parameters->addr_ports)) return -1;
 
 	xdag_mess("Reading hosts database...");
-	if(xdag_netdb_init(parameters->pub_addr, parameters->addrports_count, parameters->addr_ports)) return -1;
+	if(xdag_netdb_init(parameters->pool_configuration.node_address, parameters->addrports_count, parameters->addr_ports)) return -1;
 
 	if(parameters->is_rpc) {
 		xdag_mess("Initializing RPC service...");
@@ -335,7 +341,7 @@ int setup_pool(struct startup_parameters *parameters)
 
 	if(!g_disable_mining) {
 		xdag_mess("Starting pool engine...");
-		if(xdag_initialize_mining(parameters->pool_arg, parameters->miner_address)) return -1;
+		if(xdag_initialize_mining(parameters->pool_configuration.mining_configuration, parameters->miner_address)) return -1;
 	}
 
 	return 0;
@@ -344,8 +350,7 @@ int setup_pool(struct startup_parameters *parameters)
 int dnet_key_init(void)
 {
 	int err = dnet_crypt_init();
-	if(err < 0)
-	{
+	if(err < 0) {
 		printf("Password incorrect.\n");
 		return err;
 	}
@@ -360,7 +365,7 @@ void set_xdag_name(void)
 
 int xdag_set_password_callback(int(*callback)(const char *prompt, char *buf, unsigned size))
 {
-    return xdag_user_crypt_action((uint32_t *)(void *)callback, 0, 0, 6);
+	return xdag_user_crypt_action((uint32_t *)(void *)callback, 0, 0, 6);
 }
 
 void printUsage(char* appName)
@@ -371,13 +376,13 @@ void printUsage(char* appName)
 		"  -a address     - specify your address to use in the miner\n"
 		"  -c ip:port     - address of another xdag full node to connect\n"
 		"  -d             - run as daemon (default is interactive mode)\n"
-		"  -f             - configuration file path(pools only)\n"
 		"  -h             - print this help\n"
 		"  -i             - run as interactive terminal for daemon running in this folder\n"
 		"  -l             - output non zero balances of all accounts\n"
 		"  -m N           - use N CPU mining threads (default is 0)\n"
-		"  -p ip:port     - public address of this node\n"
-		"  -P ip:port:CFG - run the pool, bind to ip:port, CFG is miners:maxip:maxconn:fee:reward:direct:fund\n"
+		"  -f             - configuration file path (pools only). Default value is pool.config\n"
+		"  -p ip:port     - (obsolete) public address of this node\n"
+		"  -P ip:port:CFG - (obsolete) run the pool, bind to ip:port, CFG is miners:maxip:maxconn:fee:reward:direct:fund\n"
 		"                     miners - maximum allowed number of miners,\n"
 		"                     maxip - maximum allowed number of miners connected from single ip,\n"
 		"                     maxconn - maximum allowed number of miners with the same address,\n"
