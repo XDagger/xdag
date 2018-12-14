@@ -234,7 +234,7 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 	}
 
 	if(parameters->pool_address != NULL && (parameters->pool_configuration.node_address != NULL || parameters->pool_configuration.mining_configuration != NULL)) {
-		printf("{0} must be started either as pool or as wallet.\n", argv[0]);
+		printf("%s must be started either as pool or as wallet.\n", argv[0]);
 		return -1;
 	}
 

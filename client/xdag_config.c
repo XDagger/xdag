@@ -74,7 +74,7 @@ static char *readline(FILE *fp)
 	char buf[128];
 	char c;
 	char *line = NULL;
-	int line_len = 0, buf_len = 0;
+	size_t line_len = 0, buf_len = 0;
 
 	while(!feof(fp)) {
 		memset(buf, 0, sizeof(buf));
@@ -256,7 +256,7 @@ static char *xdag_config_read_node_name(FILE *fp)
 	return NULL;
 }
 
-bool isEmpty(const char *s)
+static bool isEmpty(const char *s)
 {
 	return (s == NULL) || (*s == 0);
 }
@@ -450,7 +450,7 @@ static void xdag_config_close(void *cfg)
 	xdag_config_free(config);
 }
 
-int parse_section(void *cfg, const char *section, static char **keys, int keys_count, char *buffer)
+int parse_section(void *cfg, const char *section, const char **keys, int keys_count, char *buffer)
 {
 	for(int i = 0; i < keys_count; ++i) {
 		const char *value = xdag_config_get_value(cfg, section, keys[i], "");
@@ -468,6 +468,8 @@ int parse_section(void *cfg, const char *section, static char **keys, int keys_c
 		}
 		strcat(buffer, value);
 	}
+
+	return 0;
 }
 
 int get_pool_config(const char *path, struct pool_configuration *pool_configuration)
