@@ -15,11 +15,11 @@ lgmp_installed      := $(shell if cc -lgmp 2>&1 | grep --quiet main; then echo t
 
 ifeq ($(OS), Darwin)
     asm_src =                               \
-        sha256-mb-x86_64-mac.s              \
+        $(algorithms)/sha256-mb-x86_64-mac.s\
         x86_64cpuid-mac.s
 else
     asm_src =                               \
-        sha256-mb-x86_64.s                  \
+        $(algorithms)/sha256-mb-x86_64.s    \
         x86_64cpuid.s
 endif
 
@@ -65,7 +65,7 @@ sources =                                   \
     $(json-rpc)/rpc_procedure.c             \
     $(json-rpc)/rpc_procedures.c            \
     $(json-rpc)/rpc_service.c               \
-    $(json-rpc)rpc_wrapper.c                \
+    $(json-rpc)/rpc_wrapper.c               \
     $(json-rpc)/rpc_commands.c              \
     ./http/url.c                            \
     ./http/http.c                           \

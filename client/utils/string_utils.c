@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "string_utils.h"
 
 int string_is_empty(const char *s)

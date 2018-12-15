@@ -124,7 +124,7 @@ _DEFS =                                             \
 _INCLUDES =                                         \
 	-I$(SRCROOT)                                    \
 	-I$(dnet)                                       \
-	-I$(dfslib)                                   \
+	-I$(dfslib)                                     \
 	-I$(ldusinc)                                    \
 	-I$(utils)                                      \
 	-I$(moving_statistics)                          \
