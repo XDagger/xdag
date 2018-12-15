@@ -6,6 +6,8 @@
 struct send_parameters {
         void *connection;
         time_t time_limit;
+        int broadcast;
+        uint8_t time_to_live;
 };
 
 #ifdef __cplusplus

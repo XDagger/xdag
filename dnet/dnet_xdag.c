@@ -315,7 +315,7 @@ void *dnet_send_xdag_packet(void *block, void *data)
 		return (void*)(intptr_t)-1;
 	}
 
-	if(!conn) {
+	if(conn == NULL && !sp->time_to_live && !sp->broadcast) {
 		int i, n, sum = 0, steps = 2 * g_nthreads;
 		for(i = 0; i < g_nthreads; ++i) {
 			sum += g_threads[i].nconnections;
@@ -343,23 +343,23 @@ void *dnet_send_xdag_packet(void *block, void *data)
 			break;
 		}
 		if(steps < 0) return 0;
-	} else if((uintptr_t)conn < 256 || (uintptr_t)conn & 1) {
-		if((uintptr_t)conn >= 256 && ((struct xsector *)block)->head.ttl <= 2) {
+	} else if(sp->time_to_live || sp->broadcast) {
+		if(conn != NULL && ((struct xsector *)block)->head.ttl <= 2) {
 			return 0;
 		}
 		buf = g_common_queue + ((ldus_atomic64_inc_return(&g_common_queue_reserve) - 1) & (COMMON_QUEUE_SIZE - 1));
 		buf->time_limit = sp->time_limit;
 		memcpy(buf->word, block, SECTOR_SIZE);
 		buf->head.type = DNET_PKT_XDAG;
-		if((uintptr_t)conn < 256) {
-			buf->head.ttl = (uintptr_t)conn;
+		if(sp->time_to_live) {
+			buf->head.ttl = sp->time_to_live;
 		} else {
 			buf->head.ttl--;
 		}
 		buf->head.length = SECTOR_SIZE;
 		buf->head.crc32 = 0;
 		buf->head.crc32 = crc_of_array(buf->byte, SECTOR_SIZE);
-		if((uintptr_t)conn >= 256) {
+		if(conn != NULL) {
 			long nconn = (struct xconnection *)((uintptr_t)conn & ~(uintptr_t)1) - g_connections;
 			buf->head.length = (uint16_t)nconn;
 			buf->head.type = nconn >> 16;
@@ -384,7 +384,10 @@ void *dnet_send_xdag_packet(void *block, void *data)
 	conn->last_outbox = buf;
 	conn->out_queue_size++;
 	pthread_mutex_unlock(&conn->mutex);
-	return sp->connection ? 0 : conn;
+	if (sp->connection == NULL) {
+		sp->connection = conn;
+	}
+	return 0;
 }
 
 int dnet_set_xdag_callback(int(*callback)(void *block, void *connection_from))
@@ -493,7 +496,7 @@ close:
 					}
 					if(res > 0 && ttl > 2) {
 						xs->head.ttl = ttl;
-						dnet_send_xdag_packet(xs->word, &(struct send_parameters){(void *)((uintptr_t)conn | 1), 0});
+						dnet_send_xdag_packet(xs->word, &(struct send_parameters){conn, 0, 1, 0});
 					}
 				} else {
 					if(!conn->crypt) {
