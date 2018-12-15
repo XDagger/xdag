@@ -19,6 +19,9 @@
 #define strkscmp strcasecmp
 #endif
 
+#define DEFAUL_POOL_CONFIG_FILE "pool.config"
+#define CONFIG_BUG_LENGTH 100
+
 typedef struct {
 	char *name;
 	char *value;
@@ -52,7 +55,7 @@ static char *readline(FILE *fp)
 	char buf[128];
 	char c;
 	char *line = NULL;
-	int line_len = 0, buf_len = 0;
+	size_t line_len = 0, buf_len = 0;
 
 	while(!feof(fp)) {
 		memset(buf, 0, sizeof(buf));
@@ -144,7 +147,6 @@ static void xdag_config_free_node(NODE *node)
 	}
 }
 
-
 static void xdag_config_free(CFG *cfg)
 {
 	if(cfg != NULL) {
@@ -181,8 +183,7 @@ static NODE *xdag_get_node(CFG *config, const char *node_name)
 
 static KEY *xdag_config_get_key(NODE *node, const char *key_name)
 {
-	int i;
-	for(i = 0; i < node->number_keys; i++) {
+	for(int i = 0; i < node->number_keys; i++) {
 		if(strkscmp(key_name, node->keys[i]->name) == 0) {
 			return node->keys[i];
 		}
@@ -203,8 +204,6 @@ static const char *xdag_config_get_value(void *cfg, const char *node_name, const
 	}
 	return default_value;
 }
-
-
 
 static char *xdag_config_read_node_name(FILE *fp)
 {
@@ -370,7 +369,6 @@ static NODE *xdag_config_read_node(FILE *fp)
 	return NULL;
 }
 
-
 static int xdag_config_read(CFG *config, FILE *fp)
 {
 	NODE *node = NULL, *existNode;
@@ -404,7 +402,6 @@ static CFG *xdag_config_init(const char *path)
 	return cfg;
 }
 
-
 static void* xdag_config_open(const char *path)
 {
 	CFG *cfg = xdag_config_init(path);
@@ -423,59 +420,62 @@ static void* xdag_config_open(const char *path)
 	return (void*)cfg;
 }
 
-
 static void xdag_config_close(void *cfg)
 {
 	CFG *config = (CFG *)cfg;
 	xdag_config_free(config);
 }
 
-
-
-int get_pool_config(const char *path, char *buf, int buflen)
+int parse_section(void *cfg, const char *section, const char **keys, int keys_count, char *buffer)
 {
-
-	char *key[9] = { "ip","port","max_connection_count_input", "max_miner_ip_count","connections_per_miner_limit","pool_fee","pool_reward","pool_direct","pool_fund" };
-	if(path) {
-		void *cfg = xdag_config_open(path);
-
-		if(cfg == NULL) {
+	for(int i = 0; i < keys_count; ++i) {
+		const char *value = xdag_config_get_value(cfg, section, keys[i], "");
+		if(string_is_empty(value)) {
+			printf("Configuration parameter %s:%s cannot be empty.\n", section, keys[i]);
 			return -1;
 		}
-		const char *str = xdag_config_get_value(cfg, "POOL", "ip", "");
 
-		for(int i = 0; i < 9; i++) {
-			int len = 0;
-			str = xdag_config_get_value(cfg, "POOL", key[i], "");
-			if(strlen(str) == 0) {
-				printf("Configuration parameter cannot be empty\n");
-				return -1;
-			}
-			if(i == 0) {
-				len = strlen(str) + 1;
-			} else {
-				len = strlen(str) + strlen(buf) + 1;
-			}
-			if(len > buflen) {
-				printf("Configuration parameter error\n");
-				return -1;
-			}
-			if(i == 0) {
-				strcpy(buf, str);
-			} else {
-				strcat(buf, str);
-			}
-			if(i < 9 - 1) {
-				strcat(buf, ":");
-			}
-
+		if(strlen(buffer) + strlen(value) + 2 >= CONFIG_BUG_LENGTH) {
+			printf("Wrong configuration.\n");
+			return -1;
 		}
-		xdag_config_close(cfg);
+		if(i > 0) {
+			strcat(buffer, ":");
+		}
+		strcat(buffer, value);
 	}
 
 	return 0;
 }
 
+int get_pool_config(const char *path, struct pool_configuration *pool_configuration)
+{
+	static char *key[9] = { "ip", "port", "max_connection_count_input", "max_miner_ip_count", "connections_per_miner_limit", "pool_fee", "pool_reward", "pool_direct", "pool_fund" };
 
+	//TODO: think of better way to return string buffers
+	static char node_address_buf[CONFIG_BUG_LENGTH];
+	static char mining_configuration_buf[CONFIG_BUG_LENGTH];
+	memset(node_address_buf, 0, CONFIG_BUG_LENGTH);
+	memset(mining_configuration_buf, 0, CONFIG_BUG_LENGTH);
 
+	if(path == NULL) {
+		path = DEFAUL_POOL_CONFIG_FILE;
+	}
+	void *cfg = xdag_config_open(path);
+	if(cfg == NULL) {
+		return -1;
+	}
 
+	if(parse_section(cfg, "NODE", key, 2, node_address_buf) < 0) {
+		return -1;
+	}
+	if(parse_section(cfg, "POOL", key, 9, mining_configuration_buf) < 0) {
+		return -1;
+	}
+	xdag_config_close(cfg);
+
+	pool_configuration->node_address = node_address_buf;
+	pool_configuration->mining_configuration = mining_configuration_buf;
+
+	return 0;
+}
