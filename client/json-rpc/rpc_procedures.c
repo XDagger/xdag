@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -34,9 +34,9 @@
 #include "../commands.h"
 #include "../wallet.h"
 #include "../math.h"
-#include "../../dus/programs/dfstools/source/dfslib/dfslib_random.h"
-#include "../../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
-#include "../../dus/programs/dfstools/source/dfslib/dfslib_string.h"
+#include "../../dfslib/dfslib_random.h"
+#include "../../dfslib/dfslib_crypt.h"
+#include "../../dfslib/dfslib_string.h"
 #include "../../dnet/dnet_main.h"
 #include "../utils/log.h"
 #include "../utils/utils.h"

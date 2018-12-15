@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 #include "block.h"
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 #define poll WSAPoll
 #else
 #include <poll.h>

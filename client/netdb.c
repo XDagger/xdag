@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "system.h"
-#include "../ldus/source/include/ldus/rbtree.h"
+#include "../ldus/rbtree.h"
 #include "transport.h"
 #include "netdb.h"
 #include "global.h"

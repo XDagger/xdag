@@ -19,11 +19,8 @@
 #include "crypt.h"
 #include "json-rpc/rpc_commands.h"
 #include "math.h"
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 #include "utils/linenoise.h"
-#endif
-
-#if !defined(_WIN32) && !defined(_WIN64)
 #include <unistd.h>
 #endif
 
@@ -1005,7 +1002,7 @@ double xdagGetHashRate(void)
 
 int read_command(char *cmd)
 {
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 	char* line = linenoise("xdag> ");
 	if(line == NULL) return 0;
 
@@ -1031,7 +1028,7 @@ int read_command(char *cmd)
 	return 0;
 }
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 static void xdag_com_completion(const char *buf, linenoiseCompletions *lc)
 {
 	for(int index = 0; commands[index].name; index++) {
@@ -1044,7 +1041,7 @@ static void xdag_com_completion(const char *buf, linenoiseCompletions *lc)
 
 void xdag_init_commands(void)
 {
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 	linenoiseSetCompletionCallback(xdag_com_completion); //set completion
 	linenoiseHistorySetMaxLen(50); //set max line for history
 	linenoiseHistoryLoad(COMMAND_HISTORY); //load history

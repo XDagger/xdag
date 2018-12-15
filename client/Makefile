@@ -2,12 +2,12 @@
 
 SRCROOT              = ..
 dnet                 = ../dnet
-dfstools             = ../dus/programs/dfstools/source
-dfslib               = $(dfstools)/dfslib
-dar                  = ../dus/programs/dar/source
-ldusinc              = ../ldus/source/include/ldus
+dfslib               = ../dfslib
+ldusinc              = ../ldus
 utils                = ./utils
 moving_statistics    = ./utils/moving_statistics
+algorithms           = ./algorithms
+json-rpc             = ./json-rpc
 secp256k1            = ../secp256k1
 OS                  := $(shell uname)
 use_openssl_ec      := $(shell if grep --quiet -e 'define USE_OPTIMIZED_EC 1' -e 'define USE_OPTIMIZED_EC 2' crypt.h; then echo false; else echo true; fi)
@@ -35,7 +35,6 @@ sources =                                   \
     pool.c                                  \
     miner.c                                 \
     mining_common.c                         \
-    sha256.c                                \
     storage.c                               \
     sync.c                                  \
     transport.c                             \
@@ -52,20 +51,22 @@ sources =                                   \
     $(dfslib)/dfslib_crypt.c                \
     $(dfslib)/dfslib_random.c               \
     $(dfslib)/dfslib_string.c               \
-    $(dfstools)/lib/dfsrsa.c                \
-    $(dar)/lib/crc_c.c                      \
+    $(dfslib)/dfsrsa.c                      \
+    $(algorithms)/crc.c                     \
+    $(algorithms)/sha256.c                  \
     $(utils)/utils.c                        \
     $(utils)/log.c                          \
     $(utils)/linenoise.c                    \
     $(utils)/dirname.c                      \
+    $(utils)/string_utils.c                 \
     $(moving_statistics)/moving_average.c   \
-    ./json-rpc/cJSON.c                      \
-    ./json-rpc/cJSON_Utils.c                \
-    ./json-rpc/rpc_procedure.c              \
-    ./json-rpc/rpc_procedures.c             \
-    ./json-rpc/rpc_service.c                \
-    ./json-rpc/rpc_wrapper.c                \
-    ./json-rpc/rpc_commands.c               \
+    $(json-rpc)/cJSON.c                     \
+    $(json-rpc)/cJSON_Utils.c               \
+    $(json-rpc)/rpc_procedure.c             \
+    $(json-rpc)/rpc_procedures.c            \
+    $(json-rpc)/rpc_service.c               \
+    $(json-rpc)rpc_wrapper.c                \
+    $(json-rpc)/rpc_commands.c              \
     ./http/url.c                            \
     ./http/http.c                           \
 
@@ -81,7 +82,6 @@ headers =                                   \
     pool.h                                  \
     miner.h                                 \
     mining_common.h                         \
-    sha256.h                                \
     state.h                                 \
     storage.h                               \
     sync.h                                  \
@@ -99,27 +99,30 @@ headers =                                   \
     $(dnet)/dnet_history.h                  \
     $(dnet)/dnet_main.h                     \
     $(dnet)/dnet_packet.h                   \
+    $(dnet)/dnet_system.h                   \
     $(dfslib)/dfslib_crypt.h                \
     $(dfslib)/dfslib_random.h               \
     $(dfslib)/dfslib_string.h               \
     $(dfslib)/dfslib_types.h                \
-    $(dfstools)/include/dfsrsa.h            \
-    $(dar)/include/crc.h                    \
+    $(dfslib)/dfsrsa.h                      \
     $(ldusinc)/atomic.h                     \
     $(ldusinc)/list.h                       \
     $(ldusinc)/rbtree.h                     \
+    $(algorithms)/crc.h                     \
+    $(algorithms)/sha256.h                  \
     $(utils)/utils.h                        \
     $(utils)/log.h                          \
     $(utils)/linenoise.h                    \
     $(utils)/dirname.h                      \
+    $(utils)/string_utils.h                 \
     $(moving_statistics)/moving_average.h   \
-    ./json-rpc/cJSON.h                      \
-    ./json-rpc/cJSON_Utils.h                \
-    ./json-rpc/rpc_procedure.h              \
-    ./json-rpc/rpc_procedures.h             \
-    ./json-rpc/rpc_service.h                \
-    ./json-rpc/rpc_wrapper.h                \
-    ./json-rpc/rpc_commands.h               \
+    $(json-rpc)/cJSON.h                     \
+    $(json-rpc)/cJSON_Utils.h               \
+    $(json-rpc)/rpc_procedure.h             \
+    $(json-rpc)/rpc_procedures.h            \
+    $(json-rpc)/rpc_service.h               \
+    $(json-rpc)/rpc_wrapper.h               \
+    $(json-rpc)/rpc_commands.h              \
     ./http/url.h                            \
     ./http/http.h                           \
 

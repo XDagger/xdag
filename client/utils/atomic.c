@@ -1,7 +1,7 @@
 /* This file wrap standard atomic functions in windows non-standard atomic functions */
 /* This file is intended to be compiled ONLY ON WINDOWS systems                      */
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 
 #include <stdio.h>
 #include <string.h>

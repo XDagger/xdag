@@ -5,13 +5,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <termios.h>
-#include "system.h"
-#include "../dus/programs/dfstools/source/dfslib/dfslib_random.h"
-#include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
-#include "../dus/programs/dfstools/source/dfslib/dfslib_string.h"
-#include "../dus/programs/dar/source/include/crc.h"
+#include "dnet_system.h"
+#include "../dfslib/dfslib_random.h"
+#include "../dfslib/dfslib_crypt.h"
+#include "../dfslib/dfslib_string.h"
 #include "dnet_crypt.h"
 #include "dnet_main.h"
+#include "../client/algorithms/crc.h"
 #include "../client/utils/utils.h"
 
 #define KEYFILE	    "dnet_key.dat"
@@ -46,7 +46,7 @@ static int input_password(const char *prompt, char *buf, unsigned len)
 {
 	struct termios t[1];
 	int noecho = !!strstr(prompt, "assword");
-	printf("%s: ", prompt); 
+	printf("%s: ", prompt);
 	fflush(stdout);
 	if(noecho) {
 		tcgetattr(0, t);
@@ -240,15 +240,16 @@ int dnet_crypt_init(void)
 {
 	g_dnet_keys = malloc(sizeof(struct dnet_keys));
 	if(!g_dnet_keys) return 1;
+
 	dfslib_random_init();
 	if(crc_init()) return 2;
+
 	FILE *f = xdag_open_file(KEYFILE, "rb");
 	if(f) {
 		if(fread(g_dnet_keys, sizeof(struct dnet_keys), 1, f) != 1) {
 			xdag_close_file(f);
 			f = 0;
-		}
-		else {
+		} else {
 			g_keylen = dnet_detect_keylen(g_dnet_keys->pub.key, DNET_KEYLEN);
 			if(dnet_test_keys()) {
 				struct dfslib_string str;

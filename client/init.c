@@ -5,7 +5,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <ctype.h>
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 #include <signal.h>
 #endif
 #include "system.h"
@@ -66,7 +66,7 @@ int xdag_init(int argc, char **argv, int isGui)
 {
     xdag_init_path(argv[0]);
 	
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGWINCH, SIG_IGN);
@@ -172,7 +172,7 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 				parameters->addr_ports[parameters->addrports_count++] = argv[i];
 			}
 		} else if(ARG_EQUAL(argv[i], "-d", "")) { /* daemon mode */
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 			parameters->transport_flags |= XDAG_DAEMON;
 #endif
 		} else if(ARG_EQUAL(argv[i], "-h", "")) { /* help */

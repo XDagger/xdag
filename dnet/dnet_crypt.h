@@ -4,8 +4,8 @@
 #define DNET_CRYPT_H_INCLUDED
 
 #include <sys/types.h>
-#include "system.h"
-#include "../dus/programs/dfstools/source/include/dfsrsa.h"
+#include "dnet_system.h"
+#include "../dfslib/dfsrsa.h"
 
 #define DNET_KEY_SIZE	4096
 #define DNET_KEYLEN	((DNET_KEY_SIZE * 2) / (sizeof(dfsrsa_t) * 8))
