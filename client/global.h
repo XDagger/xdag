@@ -66,7 +66,7 @@ extern int g_disable_mining;
 //Test network and main network have different types of the block headers, so blocks from different networks are incompatible
 extern enum xdag_field_type g_block_header_type;
 
-inline int is_pool() { return g_xdag_type == XDAG_POOL; }
-inline int is_wallet() { return g_xdag_type == XDAG_WALLET; }
+inline int is_pool(void) { return g_xdag_type == XDAG_POOL; }
+inline int is_wallet(void) { return g_xdag_type == XDAG_WALLET; }
 
 #endif
