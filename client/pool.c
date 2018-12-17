@@ -7,8 +7,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <float.h>
-#if defined(_WIN32) || defined(_WIN64)
-#else
+#ifndef _WIN32
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -30,8 +29,8 @@
 #include "math.h"
 #include "utils/log.h"
 #include "utils/utils.h"
-#include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
-#include "../dus/programs/dar/source/include/crc.h"
+#include "../dfslib/dfslib_crypt.h"
+#include "algorithms/crc.h"
 #include "uthash/utlist.h"
 #include "uthash/uthash.h"
 #include "utils/atomic.h"

@@ -3,7 +3,7 @@
 #ifndef _UTILS_ATOMIC_H
 #define _UTILS_ATOMIC_H
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 
 /*******************  WINDOWS  *****************************
 Standard C11 atomic functions can take any atomic type without regards of the size

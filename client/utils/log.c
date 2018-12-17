@@ -201,7 +201,7 @@ extern int xdag_set_log_level(int level)
 }
 
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 #define __USE_GNU
 #include <stdlib.h>
 #include <string.h>

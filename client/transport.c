@@ -254,7 +254,7 @@ int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs
 
 	int argc = 0;
 	argv[argc++] = "dnet";
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 	if (flags & XDAG_DAEMON) {
 		argv[argc++] = "-d";
 	}

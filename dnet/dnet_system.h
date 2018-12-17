@@ -1,8 +1,8 @@
 #ifndef _SYSTEM_DNET_H
 #define _SYSTEM_DNET_H
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <Windows.h>
+#ifdef _WIN32
+#include <windows.h>
 #include <pthread.h>
 #define inline __inline
 #define __attribute__(x) 

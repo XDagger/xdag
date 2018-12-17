@@ -19,7 +19,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 #define poll WSAPoll
 #else
 #include <signal.h>
@@ -27,18 +27,18 @@
 #include <sys/wait.h>
 #include <poll.h>
 #endif
-#if defined(_WIN32) || defined(_WIN64) || defined (__MACOS__) || defined (__APPLE__)
+#if defined(_WIN32) || defined (__MACOS__) || defined (__APPLE__)
 #include "../client/utils/utils.h"
 #endif
-#include "../ldus/source/include/ldus/atomic.h"
-#include "../dus/programs/dfstools/source/include/dfsrsa.h"
-#include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
-#include "../dus/programs/dfstools/source/dfslib/dfslib_string.h"
-#include "../dus/programs/dar/source/include/crc.h"
+#include "../ldus/atomic.h"
+#include "../dfslib/dfsrsa.h"
+#include "../dfslib/dfslib_crypt.h"
+#include "../dfslib/dfslib_string.h"
 #include "dnet_main.h"
 #include "dnet_crypt.h"
 #include "dnet_packet.h"
 #include "dnet_history.h"
+#include "../client/algorithms/crc.h"
 #include "../client/utils/log.h"
 
 #define SECTOR_SIZE			0x200
@@ -77,7 +77,7 @@ struct xdnet_keys {
 
 extern struct xdnet_keys g_xkeys;
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 /* add proper code for Windows pools here */
 static struct xdnet_keys g_xkeys;
 #elif defined (__MACOS__) || defined (__APPLE__)
@@ -691,7 +691,7 @@ static void *accept_thread_main(void *arg)
 
 static void daemonize(void)
 {
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 	if(getppid() == 1) exit(0); /* already a daemon */
 	int i = fork();
 	if(i < 0) exit(1); /* fork error */
@@ -719,7 +719,7 @@ static void daemonize(void)
 
 static void angelize(void)
 {
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 	int stat = 0;
 	pid_t childpid;
 	while((childpid = fork())) {
@@ -747,7 +747,7 @@ static void angelize(void)
 #endif
 }
 
-#if defined(_WIN32) || defined(_WIN64) || defined (__MACOS__) || defined (__APPLE__)
+#if defined(_WIN32) || defined (__MACOS__) || defined (__APPLE__)
 static int dnet_load_keys(void)
 {
 	FILE *f = xdag_open_file("dnet_keys.bin", "rb");
@@ -773,7 +773,7 @@ int dnet_init(int argc, char **argv)
 	int is_daemon = 0, i, err, nthreads = DEF_NTHREADS, n;
 	pthread_t t;
 	for(i = 1; i < argc; ++i) {
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 		if(!strcmp(argv[i], "-d")) is_daemon = 1;
 		else
 #endif
@@ -786,7 +786,7 @@ int dnet_init(int argc, char **argv)
 
 	if(nthreads >= 1) {
 
-#if defined(_WIN32) || defined(_WIN64) || defined (__MACOS__) || defined (__APPLE__)
+#if defined(_WIN32) || defined (__MACOS__) || defined (__APPLE__)
 		if((err = dnet_load_keys())) {
 			printf("Load dnet keys failed.");
 			return err;

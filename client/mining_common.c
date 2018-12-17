@@ -6,7 +6,7 @@
 #include "mining_common.h"
 #include "miner.h"
 #include "pool.h"
-#include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
+#include "../dfslib/dfslib_crypt.h"
 
 #define MINERS_PWD             "minersgonnamine"
 #define SECTOR0_BASE           0x1947f3acu

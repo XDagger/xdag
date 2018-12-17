@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "system.h"
 #include "xdag_config.h"
+#include "utils/string_utils.h"
 
 #ifndef true
 #define true (1)
@@ -11,35 +13,14 @@
 #define false (0)
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 #define strkscmp _stricmp
-#define strdup _strdup
 #else
 #define strkscmp strcasecmp
 #endif
 
 #define DEFAUL_POOL_CONFIG_FILE "pool.config"
 #define CONFIG_BUG_LENGTH 100
-
-static char *trim(char *str)
-{
-	if(str != NULL) {
-		int len = (int)strlen(str);
-		char *start = str;
-		char *end = str + len;
-		while(start < end && *start <= ' ') {
-			start++;
-		}
-		while(end > start && *(end - 1) <= ' ') {
-			end--;
-		}
-		if(end - start != len) {
-			strncpy(str, start, end - start);
-			str[end - start] = '\0';
-		}
-	}
-	return str;
-}
 
 typedef struct {
 	char *name;
@@ -230,7 +211,7 @@ static char *xdag_config_read_node_name(FILE *fp)
 	long offset = ftell(fp);
 	char *line = NULL;
 
-	while((line = trim(readline(fp))) != NULL) {
+	while((line = string_trim(readline(fp))) != NULL) {
 		type = xdag_get_content_type(line);
 		if(type == TYPE_NODE) {
 			int len = (int)strlen(line);
@@ -256,11 +237,6 @@ static char *xdag_config_read_node_name(FILE *fp)
 	return NULL;
 }
 
-static bool isEmpty(const char *s)
-{
-	return (s == NULL) || (*s == 0);
-}
-
 static int xdag_config_add_node(CFG *config, NODE *s)
 {
 	config->number_nodes++;
@@ -274,7 +250,7 @@ static int xdag_config_add_node(CFG *config, NODE *s)
 		printf("Configuration:node names memory initialization failed\n");
 		return -1;
 	}
-	if(!isEmpty(s->name)) {
+	if(!string_is_empty(s->name)) {
 		config->nodes[config->number_nodes - 1] = s;
 		config->node_names[config->number_nodes - 1] = strdup(s->name);
 	} else {
@@ -339,19 +315,19 @@ static KEY *xdag_config_read_key(FILE *fp)
 	CFG_CONTENT_TYPE type;
 	char *line = NULL;
 
-	while((line = trim(readline(fp))) != NULL) {
+	while((line = string_trim(readline(fp))) != NULL) {
 		type = xdag_get_content_type(line);
 		if(type == TYPE_KEY) {
 			KEY *key;
 			char *key_name;
 			char *p = strchr(line, '=');
 			*p = '\0';
-			key_name = trim(line);
+			key_name = string_trim(line);
 			key = xdag_add_key(key_name);
 			if(key == NULL) {
 				return NULL;
 			}
-			key->value = trim(strdup(p + 1));
+			key->value = string_trim(strdup(p + 1));
 			free(line);
 			return key;
 		} else if(type == TYPE_NODE) {
@@ -454,7 +430,7 @@ int parse_section(void *cfg, const char *section, const char **keys, int keys_co
 {
 	for(int i = 0; i < keys_count; ++i) {
 		const char *value = xdag_config_get_value(cfg, section, keys[i], "");
-		if(isEmpty(value)) {
+		if(string_is_empty(value)) {
 			printf("Configuration parameter %s:%s cannot be empty.\n", section, keys[i]);
 			return -1;
 		}

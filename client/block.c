@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <math.h>
 #include "system.h"
-#include "../ldus/source/include/ldus/rbtree.h"
+#include "../ldus/rbtree.h"
 #include "block.h"
 #include "crypt.h"
 #include "global.h"

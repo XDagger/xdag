@@ -13,17 +13,16 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include "system.h"
-#include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
-#include "../dus/programs/dar/source/include/crc.h"
+#include "../dfslib/dfslib_crypt.h"
 #include "address.h"
 #include "block.h"
 #include "global.h"
 #include "miner.h"
-#include "storage.h"
 #include "sync.h"
 #include "transport.h"
 #include "mining_common.h"
 #include "network.h"
+#include "algorithms/crc.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 

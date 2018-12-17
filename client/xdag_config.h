@@ -6,8 +6,6 @@ struct pool_configuration {
 	char *mining_configuration;
 };
 
-typedef int bool;
-
 /**
  * get xdag pool config.
  * @param <buf> pool arg.
