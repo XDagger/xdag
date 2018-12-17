@@ -40,6 +40,7 @@ set(DAGGER_SOURCES
   client/commands.c
   client/crypt.c
   #client/dvstime.c
+  client/global.c
   client/hash.c
   client/init.c
   client/main.c
@@ -95,6 +96,7 @@ set(DAGGER_HEADERS
   client/block.h
   client/commands.h
   client/crypt.h
+  client/global.h
   client/hash.h
   client/init.h
   client/math.h
