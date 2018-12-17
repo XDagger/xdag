@@ -138,7 +138,7 @@ int xdag_sync_add_block_nolock(struct xdag_block *b, void *conn)
 		xdag_sync_pop_block_nolock(b);
 		if (res > 0 && ttl > 2) {
 			b->field[0].transport_header = ttl << 8;
-			xdag_send_packet(b, (void*)((uintptr_t)conn | 1l));
+			xdag_send_packet(b, conn, 1);
 		}
 	} else if (g_xdag_sync_on && ((res = -res) & 0xf) == 5) {
 		res = (res >> 4) & 0xf;
@@ -161,7 +161,7 @@ begin:
 				}
 			}
 			
-			xdag_request_block(hash, (void*)(uintptr_t)1l);
+			xdag_request_block(hash, NULL, 1);
 			
 			xdag_info("ReqBlk: %016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0]);
 		}
