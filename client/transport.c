@@ -15,6 +15,7 @@
 #include "version.h"
 #include "../dnet/dnet_main.h"
 #include "utils/log.h"
+#include "utils/random.h"
 
 #define NEW_BLOCK_TTL     5
 #define REQUEST_WAIT      64
@@ -303,13 +304,6 @@ int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs
 	return res;
 }
 
-/* generates an array with random data */
-int xdag_generate_random_array(void *array, unsigned long size)
-{
-	//TODO: do we need to generate random array based on DNET key?
-	return dnet_generate_random_array(array, size);
-}
-
 static int do_request(int type, xtime_t start_time, xtime_t end_time, void *data,
 					  void *(*callback)(void *block, void *data))
 {
@@ -323,7 +317,7 @@ static int do_request(int type, xtime_t start_time, xtime_t end_time, void *data
 	b.field[0].time = start_time;
 	b.field[0].end_time = end_time;
 	
-	xdag_generate_random_array(&id, sizeof(uint64_t));
+	GetRandBytes(&id, sizeof(uint64_t));
 
 	memset(&b.field[1], 0,  sizeof(struct xdag_field));
 	*(uint64_t*)b.field[1].hash = id;
@@ -457,7 +451,7 @@ static void *xdag_update_rip_thread(void *arg)
 	while(1) {
 		if (time(NULL) - last_change_time > REPLY_ID_PVT_TTL) {
 			time(&last_change_time);
-			xdag_generate_random_array(&reply_id_private, sizeof(uint64_t));
+			GetRandBytes(&reply_id_private, sizeof(uint64_t));
 		}
 		sleep(60);
 	}

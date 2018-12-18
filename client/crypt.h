@@ -18,7 +18,7 @@ extern "C" {
 #endif
 	
 // initialization of the encryption system
-extern int xdag_crypt_init(int withrandom);
+extern int xdag_crypt_init();
 
 // creates a new pair of private and public keys
 extern void *xdag_create_key(xdag_hash_t privkey, xdag_hash_t pubkey, uint8_t *pubkey_bit);

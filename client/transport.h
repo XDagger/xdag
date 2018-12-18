@@ -25,9 +25,6 @@ extern "C" {
  */
 extern int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs, const char **addr_port_pairs);
 
-/* generates an array with random data */
-extern int xdag_generate_random_array(void *array, unsigned long size);
-
 /* sends a new block to network */
 extern int xdag_send_new_block(struct xdag_block *b);
 

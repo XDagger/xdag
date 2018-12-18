@@ -28,6 +28,7 @@
 #include "time.h"
 #include "math.h"
 #include "utils/atomic.h"
+#include "utils/random.h"
 
 #define MAX_WAITING_MAIN        1
 #define MAIN_START_AMOUNT       (1ll << 42)
@@ -1048,7 +1049,7 @@ int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t 
 	uint64_t taskIndex = g_xdag_pool_task_index + 1;
 	struct xdag_pool_task *task = &g_xdag_pool_task[taskIndex & 1];
 
-	xdag_generate_random_array(block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
+	GetRandBytes(block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
 
 	task->task_time = MAIN_TIME(send_time);
 

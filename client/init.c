@@ -31,6 +31,7 @@
 #include "xdag_config.h"
 #include "json-rpc/rpc_service.h"
 #include "../dnet/dnet_crypt.h"
+#include "utils/random.h"
 
 #define ARG_EQUAL(a,b,c) strcmp(c, "") == 0 ? strcmp(a, b) == 0 : (strcmp(a, b) == 0 || strcmp(a, c) == 0)
 
@@ -273,11 +274,15 @@ int pre_init(void)
 	memset(&g_xdag_stats, 0, sizeof(g_xdag_stats));
 	memset(&g_xdag_extstats, 0, sizeof(g_xdag_extstats));
 
+	RandAddSeed();
+
+	xdag_mess("Initializing cryptography...");
+	if(xdag_crypt_init()) return -1;
+
 	//TODO: future xdag.wallet
 	xdag_mess("Reading wallet...");
 	if(dnet_key_init() < 0) return -1;
-	xdag_mess("Initializing cryptography...");
-	if(xdag_crypt_init(1)) return -1;
+	
 	if(xdag_wallet_init()) return -1;
 
 	return 0;

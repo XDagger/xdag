@@ -919,14 +919,16 @@ int out_balances()
 	char address[33] = {0};
 	struct out_balances_data d;
 	unsigned i = 0;
+
 	xdag_set_log_level(0);
 	xdag_mem_init((xdag_get_frame() - xdag_get_start_frame()) << 17);
-	xdag_crypt_init(0);
+	xdag_crypt_init();
 	memset(&d, 0, sizeof(struct out_balances_data));
 	xdag_load_blocks(xdag_get_start_frame() << 16, xdag_get_frame() << 16, &i, &add_block_callback);
 	xdag_traverse_all_blocks(&d, out_balances_callback);
+
 	qsort(d.blocks, d.blocksCount, sizeof(struct xdag_field), out_sort_callback);
-	for(i = 0; i < d.blocksCount; ++i) {
+	for(int i = 0; i < d.blocksCount; ++i) {
 		xdag_hash2address(d.blocks[i].data, address);
 		printf("%s  %20.9Lf\n", address, amount2xdags(d.blocks[i].amount));
 	}
