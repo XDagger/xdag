@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/dfsrsa.h"
+#include "dfsrsa.h"
 
 const char
 	DFSRSA_TITLE[] = "DFS RSA library",

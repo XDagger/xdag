@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 #include "block.h"
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 #define poll WSAPoll
 #else
 #include <poll.h>
@@ -14,7 +14,7 @@
 
 struct xdag_pool_task {
 	struct xdag_field task[2], lastfield, minhash, nonce;
-	xtime_t task_time;
+	xdag_frame_t task_time;
 	void *ctx0, *ctx;
 };
 
@@ -28,16 +28,13 @@ extern uint64_t g_xdag_pool_task_index; /* global variables are instantiated wit
 /* poiter to mutex for optimal share  */
 extern void *g_ptr_share_mutex;
 
-/* 1 - program works as a pool */
-extern int g_xdag_pool;
-
 extern const char *g_miner_address;
 
 extern pthread_mutex_t g_share_mutex;
 
 extern struct dfslib_crypt *g_crypt;
 
-/* initialization of the pool (g_xdag_pool = 1) or connecting the miner to pool (g_xdag_pool = 0; pool_arg - pool parameters ip:port[:CFG];
+/* initialization of the pool (g_xdag_type = XDAG_WALLET) or connecting the miner to pool (g_xdag_type = XDAG_WALLET; pool_arg - pool parameters ip:port[:CFG];
 miner_addr - address of the miner, if specified */
 extern int xdag_initialize_mining(const char *pool_arg, const char *miner_address);
 

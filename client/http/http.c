@@ -13,7 +13,7 @@
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
