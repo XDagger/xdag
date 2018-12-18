@@ -38,6 +38,7 @@
 #include "dnet_crypt.h"
 #include "dnet_packet.h"
 #include "dnet_history.h"
+#include "../client/system.h"
 #include "../client/algorithms/crc.h"
 #include "../client/utils/log.h"
 

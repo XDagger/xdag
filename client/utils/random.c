@@ -24,9 +24,9 @@ static inline int64_t GetPerformanceCounter()
 #ifdef _WIN32
 	QueryPerformanceCounter((LARGE_INTEGER*)&counter);
 #else
-	timeval t;
+	struct timeval t;
 	gettimeofday(&t, NULL);
-	nCounter = (int64_t)(t.tv_sec * 1000000 + t.tv_usec);
+	counter = (int64_t)(t.tv_sec * 1000000 + t.tv_usec);
 #endif
 	return counter;
 }
@@ -43,7 +43,7 @@ void RandAddSeed()
 	RAND_add(&nCounter, sizeof(nCounter), 1.5);
 }
 
-void GetRandBytes(unsigned char* buf, int num)
+void GetRandBytes(void* buf, int num)
 {
 	if(RAND_bytes(buf, num) != 1) {
 		RandFailure();
@@ -68,5 +68,5 @@ uint64_t GetRand(uint64_t max)
 
 int GetRandInt(int max)
 {
-	return GetRand(max);
+	return (int)GetRand(max);
 }

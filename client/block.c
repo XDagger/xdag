@@ -1730,7 +1730,7 @@ void cache_retarget(int32_t cache_hit, int32_t cache_miss)
 		} else if(g_xdag_extstats.cache_hitrate > 0.98 && !cache_miss && g_xdag_extstats.cache_size && (rand() & 0xF) < 0x5) {
 			g_xdag_extstats.cache_size--;
 		}
-		for(int l = g_xdag_extstats.cache_usage; l > g_xdag_extstats.cache_size; l--) {
+		for(uint32_t l = g_xdag_extstats.cache_usage; l > g_xdag_extstats.cache_size; l--) {
 			if(cache_first != NULL) {
 				struct cache_block* to_free = cache_first;
 				cache_first = cache_first->next;
