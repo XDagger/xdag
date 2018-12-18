@@ -139,7 +139,7 @@ static struct xthread *g_threads;
 static struct xconnection *g_connections;
 static int g_nthreads;
 
-void dnet_help(void);
+static void dnet_help(FILE*);
 
 static int open_socket(struct sockaddr_in *peeraddr, const char *ipport)
 {
@@ -850,21 +850,24 @@ int dnet_execute_command(const char *cmd, void *fileout)
 	char buf[4096], *str, *lasts;
 	strcpy(buf, cmd);
 	str = strtok_r(buf, " \t\r\n", &lasts);
-	if(!str) {
-		return 0;
+	if(!str || !strcmp(str, "help")) {
+		dnet_help(f);
 	} else if(!strcmp(str, "conn")) {
 		struct xconnection *conn;
 		char buf[32];
 		int i, j, count = 0, len;
+		fprintf(f, "---------------------------------------------------------------------------------------------------------\n"
+			"Connection list:\n");
 		for(i = 0; i < g_nthreads; ++i) for(j = 0; j < g_threads[i].nconnections; ++j) {
 			conn = g_threads[i].conn[j];
 			sprintf(buf, "%d.%d.%d.%d:%d", conn->ip & 0xFF, conn->ip >> 8 & 0xFF, conn->ip >> 16 & 0xFF, conn->ip >> 24 & 0xFF, conn->port);
 			len = strlen(buf);
-			fprintf(f, " %2d. %s%*s%d sec, %lld/%lld in/out bytes, %lld/%lld packets, %lld/%lld dropped\n",
+			fprintf(f, " %2d. %s%*s%d sec, [in/out] - %lld/%lld bytes, %lld/%lld packets, %lld/%lld dropped\n",
 				count++, buf, 24 - len, "", (int)(time(0) - conn->created),
 				(long long)conn->packets_in << 9, (long long)conn->packets_out << 9,
 				(long long)conn->packets_in, (long long)conn->packets_out, (long long)conn->dropped_in, 0ll);
 		}
+		fprintf(f, "---------------------------------------------------------------------------------------------------------\n");
 	} else if(!strcmp(str, "connect")) {
 		struct sockaddr_in peeraddr;
 		int fd;
@@ -874,6 +877,7 @@ int dnet_execute_command(const char *cmd, void *fileout)
 			return -1;
 		}
 
+		fprintf(f, "connect: connecting...");
 		fd = open_socket(&peeraddr, str);
 		if(fd < 0) {
 			fprintf(f, "connect: error opening the socket\n");
@@ -892,16 +896,16 @@ int dnet_execute_command(const char *cmd, void *fileout)
 				htonl(peeraddr.sin_addr.s_addr), htons(peeraddr.sin_port));
 			return -1;
 		}
-	} else if(!strcmp(str, "help")) {
-		dnet_help();
+	} else {
+		dnet_help(f);
 	}
 	return 0;
 }
 
-void dnet_help(void)
+static void dnet_help(FILE *fileout)
 {
-	printf("Commands:\n");
-	printf("  conn                          - list connections\n");
-	printf("  connect ip:port               - connect to this host\n");
-	printf("  help                          - print this help\n");
+	fprintf(fileout, "Commands:\n"
+		"  conn                          - list connections\n"
+		"  connect ip:port               - connect to this host\n"
+		"  help                          - print this help\n");
 }
