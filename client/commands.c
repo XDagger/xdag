@@ -928,7 +928,7 @@ int out_balances()
 	xdag_traverse_all_blocks(&d, out_balances_callback);
 
 	qsort(d.blocks, d.blocksCount, sizeof(struct xdag_field), out_sort_callback);
-	for(int i = 0; i < d.blocksCount; ++i) {
+	for(i = 0; i < d.blocksCount; ++i) {
 		xdag_hash2address(d.blocks[i].data, address);
 		printf("%s  %20.9Lf\n", address, amount2xdags(d.blocks[i].amount));
 	}
