@@ -7,7 +7,7 @@
 
 int g_use_tmpfile = 0;
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 
 void xdag_mem_tempfile_path(const char *tempfile_path)
 {

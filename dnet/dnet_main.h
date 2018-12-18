@@ -3,6 +3,13 @@
 #ifndef DNET_MAIN_H_INCLUDED
 #define DNET_MAIN_H_INCLUDED
 
+struct send_parameters {
+        void *connection;
+        time_t time_limit;
+        int broadcast;
+        uint8_t time_to_live;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif

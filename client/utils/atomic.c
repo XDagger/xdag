@@ -1,3 +1,8 @@
+/* This file wrap standard atomic functions in windows non-standard atomic functions */
+/* This file is intended to be compiled ONLY ON WINDOWS systems                      */
+
+#ifdef _WIN32
+
 #include <stdio.h>
 #include <string.h>
 #include <intrin.h>
@@ -92,3 +97,5 @@ int atomic_compare_exchange_strong_uint_least64(atomic_uint_least64_t *ptr, uint
 	atomic_compare_exchange_strong_switch_max64(ptr, expected, desired);
 #endif
 }
+
+#endif
