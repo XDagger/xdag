@@ -426,7 +426,7 @@ static void xdag_config_close(void *cfg)
 	xdag_config_free(config);
 }
 
-int parse_section(void *cfg, const char *section, const char **keys, int keys_count, char *buffer)
+static int parse_section(void *cfg, const char *section, const char **keys, int keys_count, char *buffer)
 {
 	for(int i = 0; i < keys_count; ++i) {
 		const char *value = xdag_config_get_value(cfg, section, keys[i], "");
@@ -450,7 +450,7 @@ int parse_section(void *cfg, const char *section, const char **keys, int keys_co
 
 int get_pool_config(const char *path, struct pool_configuration *pool_configuration)
 {
-	static char *key[9] = { "ip", "port", "max_connection_count_input", "max_miner_ip_count", "connections_per_miner_limit", "pool_fee", "pool_reward", "pool_direct", "pool_fund" };
+	static const char *key[9] = { "ip", "port", "max_connection_count_input", "max_miner_ip_count", "connections_per_miner_limit", "pool_fee", "pool_reward", "pool_direct", "pool_fund" };
 
 	//TODO: think of better way to return string buffers
 	static char node_address_buf[CONFIG_BUG_LENGTH];
