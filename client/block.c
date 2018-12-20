@@ -555,7 +555,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	/* check remark */
 	if(tmpNodeBlock.flags & BI_REMARK) {
 		if(!remark_acceptance(newBlock->field[remark_index].remark)) {
-			err = 0xC;
+			err = 0xE;
 			goto end;
 		}
 	}
@@ -732,7 +732,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	if(!insert_index(nodeBlock)) {
 		g_xdag_stats.nblocks++;
 	} else {
-		err = 0xC;
+		err = 0xD;
 		goto end;
 	}
 
