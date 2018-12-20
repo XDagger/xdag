@@ -10,6 +10,8 @@ struct send_parameters {
         uint8_t time_to_live;
 };
 
+struct xconnection;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,6 +53,17 @@ extern void (*dnet_connection_close_notify)(void *conn);
  */
 extern int dnet_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action);
 
+// get number of maximum nuber of connections
+uint64_t dnet_get_maxconnections(void);
+
+// get the representative "number" of the connection
+long dnet_get_nconnection(struct xconnection*);
+
+// get a string that contains connection info
+void dnet_stringify_conn_info(char *buf, size_t size, struct xconnection *conn);
+
+// executes callback for each connection
+void dnet_for_each_conn(void *(*callback)(void*, void*), void* data);
 #ifdef __cplusplus
 };
 #endif

@@ -360,7 +360,7 @@ void *dnet_send_xdag_packet(void *block, void *data)
 		buf->head.crc32 = 0;
 		buf->head.crc32 = crc_of_array(buf->byte, SECTOR_SIZE);
 		if(conn != NULL) {
-			long nconn = (struct xconnection *)((uintptr_t)conn & ~(uintptr_t)1) - g_connections;
+			long nconn = dnet_get_nconnection(conn);
 			buf->head.length = (uint16_t)nconn;
 			buf->head.type = nconn >> 16;
 		}
@@ -860,7 +860,7 @@ int dnet_execute_command(const char *cmd, void *fileout)
 			"Connection list:\n");
 		for(i = 0; i < g_nthreads; ++i) for(j = 0; j < g_threads[i].nconnections; ++j) {
 			conn = g_threads[i].conn[j];
-			sprintf(buf, "%d.%d.%d.%d:%d", conn->ip & 0xFF, conn->ip >> 8 & 0xFF, conn->ip >> 16 & 0xFF, conn->ip >> 24 & 0xFF, conn->port);
+			dnet_stringify_conn_info(buf, sizeof(buf), conn);
 			len = strlen(buf);
 			fprintf(f, " %2d. %s%*s%d sec, [in/out] - %lld/%lld bytes, %lld/%lld packets, %lld/%lld dropped\n",
 				count++, buf, 24 - len, "", (int)(time(0) - conn->created),
@@ -909,3 +909,34 @@ static void dnet_help(FILE *fileout)
 		"  connect ip:port               - connect to this host\n"
 		"  help                          - print this help\n");
 }
+
+inline uint64_t dnet_get_maxconnections(void)
+{
+	return MAX_CONNECTIONS_PER_THREAD * g_nthreads;
+}
+
+inline long dnet_get_nconnection(struct xconnection* connection)
+{
+	long nconn = connection - g_connections;
+	if (nconn >= dnet_get_maxconnections()) {
+		dnet_err("out of bounds nconnection requested [function: %s]", __func__);
+		nconn = 0;
+	}
+	return nconn;
+}
+
+inline void dnet_stringify_conn_info(char *buf, size_t size, struct xconnection *conn)
+{
+	snprintf(buf, size, "%d.%d.%d.%d:%d", conn->ip & 0xFF, conn->ip >> 8 & 0xFF, 
+		conn->ip >> 16 & 0xFF, conn->ip >> 24 & 0xFF, conn->port);
+}
+
+void dnet_for_each_conn(void *(*callback)(void*, void*), void* data)
+{
+	if (callback != NULL) {
+		for (int i = 0; i < g_nthreads; ++i) for(int j = 0; j < g_threads[i].nconnections; ++j) {
+			callback(data, g_threads[i].conn[j]);
+		}
+	}
+}
+
