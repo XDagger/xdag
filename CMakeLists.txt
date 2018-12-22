@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
+project(daggercoin)
 
 # Use a different compiler
 # http://www.cmake.org/Wiki/CMake_FAQ#How_do_I_use_a_different_compiler.3F
@@ -8,8 +9,10 @@ cmake_minimum_required(VERSION 3.2)
 # usually avoid this by using environment variables:
 #   mkdir build-gcc && cd build-gcc && CC=gcc-7 CXX=g++-7 cmake ..
 
-project(daggercoin)
-enable_language(C ASM)
+enable_language(
+  C
+  ASM
+)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -17,133 +20,33 @@ set(CMAKE_C_FLAGS "-std=gnu11 -O3 -g -Wall -Wmissing-prototypes -Wno-unused-resu
 
 set(OPENSSL_ROOT_DIR "/opt/openssl/")
 
-set(DAGGER_SOURCES
-  client/http/http.c
-  client/http/url.c
-
-  client/json-rpc/cJSON_Utils.c
-  client/json-rpc/cJSON.c
-  client/json-rpc/rpc_commands.c
-  client/json-rpc/rpc_procedure.c
-  client/json-rpc/rpc_procedures.c
-  client/json-rpc/rpc_service.c
-  client/json-rpc/rpc_wrapper.c
-
-  client/utils/moving_statistics/moving_average.c
-  client/utils/dirname.c
-  client/utils/linenoise.c
-  client/utils/log.c
-  client/utils/utils.c
-
-  client/address.c
-  client/block.c
-  client/commands.c
-  client/crypt.c
-  #client/dvstime.c
-  client/global.c
-  client/hash.c
-  client/init.c
-  client/main.c
-  client/math.c
-  client/memory.c
-  client/miner.c
-  client/mining_common.c
-  client/netdb.c
-  client/network.c
-  client/pool.c
-  client/sha256.c
-  client/storage.c
-  client/sync.c
-  client/terminal.c
-  client/time.c
-  client/transport.c
-  client/wallet.c
-  client/xdag_config.c
-
-  dnet/dnet_crypt.c
-  dnet/dnet_xdag.c
-
-  dus/programs/dfstools/source/dfslib/dfslib_crypt.c
-  dus/programs/dfstools/source/dfslib/dfslib_random.c
-  dus/programs/dfstools/source/dfslib/dfslib_string.c
-  dus/programs/dfstools/source/lib/dfsrsa.c
-  dus/programs/dar/source/lib/crc_c.c
+file(GLOB_RECURSE DAGGER_SOURCES
+  client/*.c
+  dfslib/*.c
+  dnet/*.c
+  ldus/*.c
 )
 
-set(DAGGER_HEADERS
-  client/http/http.h
-  client/http/url.h
+# ignore sources that we do not intend to include
+# when building the executable...
+list(FILTER DAGGER_SOURCES EXCLUDE REGEX ".*cgi.c$")
+list(FILTER DAGGER_SOURCES EXCLUDE REGEX ".*dvstime.c$")
+list(FILTER DAGGER_SOURCES EXCLUDE REGEX ".*statsdaemon.c$")
 
-  client/json-rpc/cJSON_Utils.h
-  client/json-rpc/cJSON.h
-  client/json-rpc/rpc_commands.h
-  client/json-rpc/rpc_procedure.h
-  client/json-rpc/rpc_procedures.h
-  client/json-rpc/rpc_service.h
-  client/json-rpc/rpc_wrapper.h
-
-  client/uthash/uthash.h
-  client/uthash/utlist.h
-
-  client/utils/moving_statistics/moving_average.h
-  client/utils/atomic.h
-  client/utils/dirname.h
-  client/utils/linenoise.h
-  client/utils/log.h
-  client/utils/utils.h
-
-  client/address.h
-  client/block.h
-  client/commands.h
-  client/crypt.h
-  client/global.h
-  client/hash.h
-  client/init.h
-  client/math.h
-  client/memory.h
-  client/miner.h
-  client/mining_common.h
-  client/netdb.h
-  client/network.h
-  client/pool.h
-  client/sha256.h
-  client/state.h
-  client/storage.h
-  client/sync.h
-  client/system.h
-  client/terminal.h
-  client/time.h
-  client/transport.h
-  client/types.h
-  client/version.h
-  client/wallet.h
-  client/xdag_config.h
-
-  dnet/dnet_crypt.h
-  dnet/dnet_history.h
-  dnet/dnet_main.h
-  dnet/dnet_packet.h
-  dnet/system.h
-
-  dus/programs/dfstools/source/dfslib/dfslib_crypt.h
-  dus/programs/dfstools/source/dfslib/dfslib_random.h
-  dus/programs/dfstools/source/dfslib/dfslib_string.h
-  dus/programs/dfstools/source/dfslib/dfslib_types.h
-  dus/programs/dfstools/source/include/dfsrsa.h
-  dus/programs/dar/source/include/crc.h
-
-  ldus/source/include/ldus/atomic.h
-  ldus/source/include/ldus/list.h
-  ldus/source/include/ldus/rbtree.h
+file(GLOB_RECURSE DAGGER_HEADERS
+  client/*.h
+  dfslib/*.h
+  dnet/*.h
+  ldus/*.h
 )
 
 set(SHA256_LINUX_ASM_SOURCES
-  client/sha256-mb-x86_64.s
+  client/algorithms/sha256-mb-x86_64.s
   client/x86_64cpuid.s
 )
 
 set(SHA256_MAC_ASM_SOURCES
-  client/sha256-mb-x86_64-mac.s
+  client/algorithms/sha256-mb-x86_64-mac.s
   client/x86_64cpuid-mac.s
 )
 
@@ -159,6 +62,20 @@ endif(DEBUG)
 add_definitions(-DDFSTOOLS)
 add_definitions(-DSHA256_USE_OPENSSL_TXFM)
 add_definitions(-DSHA256_OPENSSL_MBLOCK)
+
+find_package(Threads QUIET)
+if(NOT Threads_FOUND)
+  message(FATAL_ERROR "Failed to find pthreads dependency!")
+endif()
+
+find_package(OpenSSL QUIET)
+if(NOT OpenSSL_FOUND)
+  message(FATAL_ERROR "Failed to find openssl dependency!")
+endif()
+
+include_directories(
+  ${OPENSSL_INCLUDE_DIR}
+)
 
 if(APPLE)
   add_executable(
@@ -176,19 +93,21 @@ else(UNIX)
   )
 endif()
 
-# Find and link the pthreads package
-find_package(threads REQUIRED)
-target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(
+  ${PROJECT_NAME}
+  ${CMAKE_THREAD_LIBS_INIT}
+)
 
-# Find and link the openssl package
-find_package(OpenSSL REQUIRED)
-include_directories(${OPENSSL_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
+target_link_libraries(
+  ${PROJECT_NAME}
+  ${OPENSSL_LIBRARIES}
+)
 
 add_executable(
  cgi_stats
  client/statsdaemon.c
 )
+
 add_executable(
  cgi_block
  client/block.cgi.c
