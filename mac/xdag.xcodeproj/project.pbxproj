@@ -64,6 +64,7 @@
 		3845AC1F21D2BD9F00252F71 /* wallet.c in Sources */ = {isa = PBXBuildFile; fileRef = 3845ABE421D2BD9F00252F71 /* wallet.c */; };
 		3845AC2021D2BD9F00252F71 /* x86_64cpuid-mac.s in Sources */ = {isa = PBXBuildFile; fileRef = 3845ABE721D2BD9F00252F71 /* x86_64cpuid-mac.s */; };
 		3845AC2221D2BD9F00252F71 /* xdag_config.c in Sources */ = {isa = PBXBuildFile; fileRef = 3845ABE921D2BD9F00252F71 /* xdag_config.c */; };
+		3845AC2621D2C36100252F71 /* random.c in Sources */ = {isa = PBXBuildFile; fileRef = 3845AC2421D2C36100252F71 /* random.c */; };
 		418AAFF6213BB3A900E96520 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 418AAFF5213BB3A900E96520 /* libcrypto.a */; };
 		418AAFF8213BB3B300E96520 /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 418AAFF7213BB3B300E96520 /* libssl.a */; };
 /* End PBXBuildFile section */
@@ -197,6 +198,8 @@
 		3845ABE921D2BD9F00252F71 /* xdag_config.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = xdag_config.c; sourceTree = "<group>"; };
 		3845ABEA21D2BD9F00252F71 /* xdag_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xdag_config.h; sourceTree = "<group>"; };
 		3845AC2321D2BE0D00252F71 /* dnet_system.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dnet_system.h; sourceTree = "<group>"; };
+		3845AC2421D2C36100252F71 /* random.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = random.c; sourceTree = "<group>"; };
+		3845AC2521D2C36100252F71 /* random.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = random.h; sourceTree = "<group>"; };
 		389F043620544EDC003F3084 /* xdag */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xdag; sourceTree = BUILT_PRODUCTS_DIR; };
 		418AAFF5213BB3A900E96520 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = lib/openssl/lib/libcrypto.a; sourceTree = "<group>"; };
 		418AAFF7213BB3B300E96520 /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libssl.a; path = lib/openssl/lib/libssl.a; sourceTree = "<group>"; };
@@ -384,6 +387,8 @@
 		3845ABD321D2BD9F00252F71 /* utils */ = {
 			isa = PBXGroup;
 			children = (
+				3845AC2421D2C36100252F71 /* random.c */,
+				3845AC2521D2C36100252F71 /* random.h */,
 				3845ABD421D2BD9F00252F71 /* atomic.c */,
 				3845ABD521D2BD9F00252F71 /* atomic.h */,
 				3845ABD621D2BD9F00252F71 /* dirname.c */,
@@ -552,6 +557,7 @@
 				3845ABFC21D2BD9F00252F71 /* cJSON.c in Sources */,
 				3845AC2021D2BD9F00252F71 /* x86_64cpuid-mac.s in Sources */,
 				3845AC0821D2BD9F00252F71 /* mining_common.c in Sources */,
+				3845AC2621D2C36100252F71 /* random.c in Sources */,
 				3845AC1A21D2BD9F00252F71 /* linenoise.c in Sources */,
 				3845ABFA21D2BD9F00252F71 /* url.c in Sources */,
 				3845AC1D21D2BD9F00252F71 /* string_utils.c in Sources */,
