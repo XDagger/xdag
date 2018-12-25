@@ -58,6 +58,7 @@ void processMinerCommand(char *nextParam, FILE *out);
 void processMinersCommand(char *nextParam, FILE *out);
 void processMiningCommand(char *nextParam, FILE *out);
 void processNetCommand(char *nextParam, FILE *out);
+void processTransportCommand(char *nextParam, FILE *out);
 void processPoolCommand(char *nextParam, FILE *out);
 void processStatsCommand(FILE *out);
 void processInternalStatsCommand(FILE *out);
@@ -86,6 +87,7 @@ int xdag_com_miner(char *, FILE*);
 int xdag_com_miners(char *, FILE*);
 int xdag_com_mining(char *, FILE*);
 int xdag_com_net(char *, FILE*);
+int xdag_com_transport(char *, FILE*);
 int xdag_com_pool(char *, FILE*);
 int xdag_com_stats(char *, FILE*);
 int xdag_com_state(char *, FILE*);
@@ -115,6 +117,7 @@ XDAG_COMMAND commands[] = {
 	{ "miners"      , 2, xdag_com_miners },
 	{ "mining"      , 1, xdag_com_mining },
 	{ "net"         , 0, xdag_com_net },
+	{ "transport"   , 0, xdag_com_transport },
 	{ "pool"        , 2, xdag_com_pool },
 	{ "run"         , 0, xdag_com_run },
 	{ "state"       , 0, xdag_com_state },
@@ -194,6 +197,12 @@ int xdag_com_mining(char * args, FILE* out)
 int xdag_com_net(char * args, FILE* out)
 {
 	processNetCommand(args, out);
+	return 0;
+}
+
+int xdag_com_transport(char * args, FILE* out)
+{
+	processTransportCommand(args, out);
 	return 0;
 }
 
@@ -490,6 +499,14 @@ void processNetCommand(char *nextParam, FILE *out)
 		strcat(netcmd, " ");
 	}
 	xdag_net_command(netcmd, out);
+}
+
+void processTransportCommand(char *nextParam, FILE *out)
+{
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	if(cmd != NULL && !strcmp(cmd, "info")) {
+		xdag_print_transport_task_info(out);
+	}
 }
 
 void processRPCCommand(char *nextParam, FILE *out)

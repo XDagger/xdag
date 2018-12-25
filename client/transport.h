@@ -56,6 +56,9 @@ extern int xdag_send_packet(struct xdag_block *b, void *conn, int broadcast);
 /* see dnet_user_crypt_action */
 extern int xdag_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action);
 
+// print tasks info for each connection
+extern void xdag_print_transport_task_info(FILE *f);
+
 extern pthread_mutex_t g_transport_mutex;
 extern atomic_uint_least64_t g_xdag_last_received;
 	
