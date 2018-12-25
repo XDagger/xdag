@@ -60,6 +60,7 @@
     <ClCompile Include="..\..\client\utils\atomic.c" />
     <ClCompile Include="..\..\client\utils\log.c" />
     <ClCompile Include="..\..\client\utils\moving_statistics\moving_average.c" />
+    <ClCompile Include="..\..\client\utils\random.c" />
     <ClCompile Include="..\..\client\utils\string_utils.c" />
     <ClCompile Include="..\..\client\utils\utils.c" />
     <ClCompile Include="..\..\client\wallet.c" />
@@ -111,6 +112,7 @@
     <ClInclude Include="..\..\client\utils\atomic.h" />
     <ClInclude Include="..\..\client\utils\log.h" />
     <ClInclude Include="..\..\client\utils\moving_statistics\moving_average.h" />
+    <ClInclude Include="..\..\client\utils\random.h" />
     <ClInclude Include="..\..\client\utils\string_utils.h" />
     <ClInclude Include="..\..\client\utils\utils.h" />
     <ClInclude Include="..\..\client\version.h" />

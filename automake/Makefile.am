@@ -49,6 +49,7 @@ sources = \
 	$(utils)/linenoise.c                            \
 	$(utils)/dirname.c                              \
 	$(utils)/string_utils.c                         \
+	$(utils)/random.c                               \
 	$(moving_statistics)/moving_average.c           \
 	$(jsonrpc)/cJSON.c                              \
 	$(jsonrpc)/cJSON_Utils.c                        \
@@ -99,6 +100,7 @@ headers = \
 	$(utils)/utils.h                                \
 	$(utils)/linenoise.h                            \
 	$(utils)/string_utils.h                         \
+	$(utils)/random.h                               \
 	$(moving_statistics)/moving_average.h           \
 	$(jsonrpc)/cJSON.h                              \
 	$(jsonrpc)/cJSON_Utils.h                        \
