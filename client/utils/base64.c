@@ -8,10 +8,7 @@
 
 #include "base64.h"
 #include <stdlib.h>
-
-/* This uses that the expression (n+(k-1))/k means the smallest
- integer >= n/k, i.e., the ceiling of n/k.  */
-#define BASE64_LENGTH(inlen) ((((inlen) + 2) / 3) * 4)
+#include <string.h>
 
 static const uint8_t bits2mime[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const uint8_t mime2bits[256] = {
@@ -33,33 +30,72 @@ static const uint8_t mime2bits[256] = {
 	0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
 };
 
-int base64_encode(const uint8_t *in, size_t inlen, char **out, size_t *outlen)
-{
-	*outlen = BASE64_LENGTH(inlen) + 1;
-	*out = (char *)malloc(*outlen);
-	char *tmp = *out;
+int encode(const uint8_t *in, size_t inlen, char *out);
+int decode(const char *in, size_t inlen, uint8_t *out, size_t *outlen);
 
+int encode(const uint8_t *in, size_t inlen, char *out)
+{
 	while(inlen) {
-		*tmp++ = bits2mime[in[0] >> 2];
-		*tmp++ = bits2mime[(in[0] << 4 & 0x3f) | (--inlen ? in[1] >> 4 : 0)];
+		*out++ = bits2mime[in[0] >> 2];
+		*out++ = bits2mime[(in[0] << 4 & 0x3f) | (--inlen ? in[1] >> 4 : 0)];
 		if (!inlen) {
-			*tmp++ = '=';
-			*tmp++ = '=';
+			*out++ = '=';
+			*out++ = '=';
 			break;
 		}
-		*tmp++ = bits2mime[(in[1] << 2 & 0x3f) | (--inlen ? in[2] >> 6 : 0)];
+		*out++ = bits2mime[(in[1] << 2 & 0x3f) | (--inlen ? in[2] >> 6 : 0)];
 		if(!inlen) {
-			*(*out)++ = '=';
+			*out++ = '=';
 			break;
 		}
-		*tmp++ = bits2mime[in[2] & 0x3f];
+		*out++ = bits2mime[in[2] & 0x3f];
 		--inlen;
 
 		in += 3;
 	}
-	*tmp = '\0';
+	*out = '\0';
 
 	return 0;
+}
+
+int decode(const char *in, size_t inlen, uint8_t *out, size_t *outlen)
+{
+	while(inlen) {
+		if(mime2bits[in[0]] == 0xFF || mime2bits[in[1]] == 0xFF) {
+			return -1;
+		}
+		*out++ = mime2bits[in[0]] << 2 | mime2bits[in[1]] >> 4;
+		(*outlen)++;
+		if(in[2] == '=') {
+			break;
+		}
+		*out++ = mime2bits[in[1]] << 4 | mime2bits[in[2]] >> 2;
+		(*outlen)++;
+
+		if(in[3] == '=') {
+			break;
+		}
+		*out++ = mime2bits[in[2]] << 6 | mime2bits[in[3]];
+		(*outlen)++;
+		in += 4;
+		inlen -= 4;
+	}
+
+	return 0;
+}
+
+int base64_encode(const uint8_t *in, size_t inlen, char **out, size_t *outlen)
+{
+	*outlen = BASE64_LENGTH(inlen) + 1; /* extra byte for '\0' */
+	*out = (char *)malloc(*outlen);
+	memset((void*)(*out), 0, *outlen);
+	int ret = encode(in, inlen, *out);
+	if(ret != 0) {
+		free(*out);
+		*out = NULL;
+		return ret;
+	}
+	return ret;
 }
 
 int base64_decode(const char *in, size_t inlen, uint8_t **out, size_t *outlen)
@@ -74,29 +110,13 @@ int base64_decode(const char *in, size_t inlen, uint8_t **out, size_t *outlen)
 	 The exact amount is 3 * inlen / 4, minus 1 if the input ends
 	 with "=" and minus another 1 if the input ends with "==".
 	 Dividing before multiplying avoids the possibility of overflow. */
+
 	*out = malloc(3 * (inlen / 4) + 2);
-	uint8_t *tmp = *out;
-
-	while(inlen) {
-		if(mime2bits[in[0]] == 0xFF || mime2bits[in[1]] == 0xFF) {
-			return -1;
-		}
-		*tmp++ = mime2bits[in[0]] << 2 | mime2bits[in[1]] >> 4;
-		(*outlen)++;
-		if(in[2] == '=') {
-			break;
-		}
-		*tmp++ = mime2bits[in[1]] << 4 | mime2bits[in[2]] >> 2;
-		(*outlen)++;
-
-		if(in[3] == '=') {
-			break;
-		}
-		*tmp++ = mime2bits[in[2]] << 6 | mime2bits[in[3]];
-		(*outlen)++;
-		in += 4;
-		inlen -= 4;
+	memset(*out, 0, 3 * (inlen / 4) + 2);
+	int ret = decode(in, inlen, *out, outlen);
+	if(ret != 0) {
+		free(*out);
+		*out = NULL;
 	}
-
-	return 0;
+	return ret;
 }
