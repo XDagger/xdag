@@ -28,7 +28,6 @@
 #include <poll.h>
 #endif
 
-#include "headers.h"
 #include "wslay/wslay.h"
 #include <openssl/sha.h>
 #include "../utils/log.h"
@@ -170,18 +169,18 @@ static int make_non_block(int fd)
 	int flags, r;
 	while((flags = fcntl(fd, F_GETFL, 0)) == -1 && errno == EINTR);
 	if(flags == -1) {
-		perror("fcntl");
+		ws_err("fcntl set F_GETFL 0 failed!");
 		return -1;
 	}
 	while((r = fcntl(fd, F_SETFL, flags | O_NONBLOCK)) == -1 && errno == EINTR);
 	if(r == -1) {
-		perror("fcntl");
+		ws_err("fcntl set F_SETFL O_NONBLOCK failed!");
 		return -1;
 	}
 	return 0;
 }
 
-#define WS_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+#define WS_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11" // UID from RFC6455
 
 static void create_accept_key(char *dst, const char *client_key)
 {
@@ -591,6 +590,7 @@ void *ws_handler_thread(void *args)
 		}
 	}
 
+	g_websocket_running = 0;
 	ws_cleanup();
 
 	pthread_cleanup_pop(0);
@@ -620,9 +620,6 @@ void *ws_server_thread(void *args)
 	peeraddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	peeraddr.sin_port = htons(port);
 
-//	printf("IP Address is : %s\n", inet_ntoa(peeraddr.sin_addr));
-//	fflush(stdout);
-
 	if(bind(sock, (struct sockaddr*)&peeraddr, sizeof(peeraddr)) < 0) {
 		server_error_exit(strerror(errno), sock);
 	}
@@ -639,6 +636,10 @@ void *ws_server_thread(void *args)
 		}
 
 		ws_session *session = calloc(1, sizeof(ws_session));
+		if (!session) {
+			ws_err("[ws_server_thread] calloc failed!");
+			continue;
+		}
 		session->fd = peer_sock;
 		session->addr = peeraddr.sin_addr;
 		session->port = peeraddr.sin_port;
