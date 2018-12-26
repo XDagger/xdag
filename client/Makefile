@@ -68,6 +68,12 @@ sources =                                   \
     $(json-rpc)/rpc_service.c               \
     $(json-rpc)/rpc_wrapper.c               \
     $(json-rpc)/rpc_commands.c              \
+    ./websocket/websocket.c                 \
+    ./websocket/wslay/wslay_event.c         \
+    ./websocket/wslay/wslay_frame.c         \
+    ./websocket/wslay/wslay_net.c           \
+    ./websocket/wslay/wslay_queue.c         \
+    ./websocket/wslay/wslay_stack.c         \
     ./http/url.c                            \
     ./http/http.c                           \
 
@@ -125,6 +131,15 @@ headers =                                   \
     $(json-rpc)/rpc_service.h               \
     $(json-rpc)/rpc_wrapper.h               \
     $(json-rpc)/rpc_commands.h              \
+    ./websocket/websocket.h                 \
+    ./websocket/wslay/config.h              \
+    ./websocket/wslay/wslay.h               \
+    ./websocket/wslay/wslayver.h            \
+    ./websocket/wslay/wslay_event.h         \
+    ./websocket/wslay/wslay_frame.h         \
+    ./websocket/wslay/wslay_net.h           \
+    ./websocket/wslay/wslay_queue.h         \
+    ./websocket/wslay/wslay_stack.h         \
     ./http/url.h                            \
     ./http/http.h                           \
 
