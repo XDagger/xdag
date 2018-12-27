@@ -4,7 +4,7 @@
 #define DNET_MAIN_H_INCLUDED
 
 struct send_parameters {
-        void *connection;
+        struct xconnection *connection;
         time_t time_limit;
         int broadcast;
         uint8_t time_to_live;
