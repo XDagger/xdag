@@ -28,7 +28,7 @@ static pthread_cond_t g_process_cond   = PTHREAD_COND_INITIALIZER;
 atomic_uint_least64_t g_xdag_last_received;
 static void *reply_data;
 static void *(*reply_callback)(void *block, void *data) = 0;
-static void *reply_connection;
+static struct xconnection *reply_connection;
 static atomic_uint_least64_t reply_id;
 static uint64_t last_reply_id;
 static int reply_rcvd;
@@ -76,7 +76,7 @@ static void *xdag_send_thread(void *arg)
 	return 0;
 }
 
-static int process_transport_block(struct xdag_block *received_block, void *connection)
+static int process_transport_block(struct xdag_block *received_block, struct xconnection *connection)
 {
 	struct xdag_stats *stats = (struct xdag_stats *)&received_block->field[2];
 	struct xdag_stats *g = &g_xdag_stats;
@@ -237,7 +237,7 @@ static int block_arrive_callback(void *packet, void *connection)
 	return 0;
 }
 
-static int conn_open_check(uint32_t ip, uint16_t port)
+static int conn_open_check_callback(uint32_t ip, uint16_t port)
 {
 	for (int i = 0; i < g_xdag_n_blocked_ips; ++i) {
 		if(ip == g_xdag_blocked_ips[i]) {
@@ -254,7 +254,7 @@ static int conn_open_check(uint32_t ip, uint16_t port)
 	return -1;
 }
 
-static void conn_close_notify(void *conn)
+static void conn_close_notify_callback(void *conn)
 {
 	g_task_info[dnet_get_nconnection(conn)] = (struct xdag_task_info){0};
 
@@ -300,8 +300,8 @@ int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs
 	argv[argc] = 0;
 	
 	dnet_set_xdag_callback(block_arrive_callback);
-	dnet_connection_open_check = &conn_open_check;
-	dnet_connection_close_notify = &conn_close_notify;
+	dnet_connection_open_check = &conn_open_check_callback;
+	dnet_connection_close_notify = &conn_close_notify_callback;
 
 	int res = dnet_init(argc, (char**)argv);
 	if (!res) {
@@ -433,7 +433,7 @@ int xdag_net_command(const char *cmd, void *out)
 }
 
 /* sends the package, conn is the same as in function dnet_send_xdag_packet */
-int xdag_send_packet(struct xdag_block *b, void *conn, int broadcast)
+int xdag_send_packet(struct xdag_block *b, struct xconnection *conn, int broadcast)
 {
 	if (conn != NULL && dnet_test_connection(conn) < 0) {
 		conn = NULL;
@@ -445,7 +445,7 @@ int xdag_send_packet(struct xdag_block *b, void *conn, int broadcast)
 }
 
 /* requests a block by hash from another host */
-int xdag_request_block(xdag_hash_t hash, void *conn, int broadcast)
+int xdag_request_block(xdag_hash_t hash, struct xconnection *conn, int broadcast)
 {
 	struct xdag_block b;
 

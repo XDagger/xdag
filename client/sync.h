@@ -4,6 +4,7 @@
 #define XDAG_SYNC_H
 
 #include "block.h"
+#include "transport.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,7 +13,7 @@ extern "C" {
 extern int g_xdag_sync_on;
 	
 /* checks a block and includes it in the database with synchronization, ruturs non-zero value in case of error */
-extern int xdag_sync_add_block(struct xdag_block *b, void *conn);
+extern int xdag_sync_add_block(struct xdag_block *b, struct xconnection *conn);
 
 /* notifies synchronization mechanism about found block */
 extern int xdag_sync_pop_block(struct xdag_block *b);
