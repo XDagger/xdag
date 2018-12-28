@@ -42,18 +42,63 @@ struct xdag_send_data {
 	struct send_parameters send_parameters;
 };
 
-struct xdag_task_info {
-	uint8_t task_type;
-	uint32_t block_req_counter;
+enum task_info_action {
+	TASK_INFO_START,
+	TASK_INFO_END
 };
 
 enum task_type {
-	TASK_REQBLOCKS		= 0x01,
-	TASK_REQBLOCKS_THREAD	= 0x02,
-	TASK_REQSUM		= 0x04
+	TASK_REQBLOCKS			= 0x01,
+	TASK_REQBLOCKS_INDEX		= 0,
+	TASK_REQBLOCKS_THREAD		= 0x02,
+	TASK_REQBLOCKS_THREAD_INDEX	= 1,
+	TASK_REQSUM			= 0x04,
+	TASK_REQSUM_INDEX		= 2,
+	_TASK_TYPE_SIZE			= 3
+};
+
+struct xdag_task_info {
+	uint32_t start_time[_TASK_TYPE_SIZE];
+	uint32_t block_req_counter;
+	uint8_t  task_type;
 };
 
 #define add_main_timestamp(a)   ((a)->main_time = xdag_get_frame())
+
+static void set_task_info(struct xconnection* connection, enum task_type flag, enum task_info_action action)
+{
+	time_t t;
+	struct xdag_task_info *ti = &g_task_info[dnet_get_nconnection(connection)];
+
+	if (!action) {
+		t = time(NULL);
+	}
+
+	if (action) {
+		ti->task_type &= ~flag;
+	} else {		
+		ti->task_type |= flag;
+	}
+		
+	for (int j = 1, i = 0; i < _TASK_TYPE_SIZE; j <<= 1, ++i) {
+		if (flag & j) {
+			if (action) {
+				ti->start_time[i] = 0;
+			} else {
+				ti->start_time[i] = t;
+			}
+		}
+	}	
+}
+
+static inline uint32_t get_task_info_start_time(struct xconnection* connection, enum task_type flag) {
+	for (int i = 1, j = 0; j < _TASK_TYPE_SIZE; i <<= 1, ++j) {
+		if (flag & i) {
+			return g_task_info[dnet_get_nconnection(connection)].start_time[j];
+		}
+	}
+	return 0;
+}
 
 static void *xdag_send_thread(void *arg)
 {
@@ -70,7 +115,7 @@ static void *xdag_send_thread(void *arg)
 	
 	dnet_send_xdag_packet(&d->b, &d->send_parameters);
 	
-	g_task_info[dnet_get_nconnection(d->send_parameters.connection)].task_type &= ~(TASK_REQBLOCKS | TASK_REQBLOCKS_THREAD);
+	set_task_info(d->send_parameters.connection, TASK_REQBLOCKS | TASK_REQBLOCKS_THREAD, TASK_INFO_END);
 	free(d);
 
 	return 0;
@@ -116,11 +161,11 @@ static int process_transport_block(struct xdag_block *received_block, struct xco
 			send_data->send_parameters = (struct send_parameters){connection, time(NULL) + REQUEST_WAIT, 0, 0};
 
 			if(received_block->field[0].end_time - received_block->field[0].time <= REQUEST_BLOCKS_MAX_TIME) {
-				g_task_info[dnet_get_nconnection(connection)].task_type |= TASK_REQBLOCKS;
+				set_task_info(connection, TASK_REQBLOCKS, TASK_INFO_START);
 				xdag_send_thread(send_data);
 			}
 			else {
-				g_task_info[dnet_get_nconnection(connection)].task_type |= TASK_REQBLOCKS_THREAD;
+				set_task_info(connection, TASK_REQBLOCKS_THREAD, TASK_INFO_START);
 				pthread_t t;
 				int err = pthread_create(&t, 0, xdag_send_thread, send_data);
 				if(err != 0) {
@@ -158,7 +203,7 @@ static int process_transport_block(struct xdag_block *received_block, struct xco
 
 		case XDAG_MESSAGE_SUMS_REQUEST:
 		{
-			g_task_info[dnet_get_nconnection(connection)].task_type |= TASK_REQSUM;
+			set_task_info(connection, TASK_REQSUM, TASK_INFO_START);
 			received_block->field[0].type = XDAG_FIELD_NONCE | XDAG_MESSAGE_SUMS_REPLY << 4;
 			received_block->field[0].time = xdag_load_sums(received_block->field[0].time, received_block->field[0].end_time,
 				(struct xdag_storage_sum *)&received_block->field[8]);
@@ -169,7 +214,7 @@ static int process_transport_block(struct xdag_block *received_block, struct xco
 				6 * sizeof(struct xdag_field) - sizeof(struct xdag_stats));
 			struct send_parameters send_parameters = {connection, time(NULL) + REQUEST_WAIT, 0, 0};
 			dnet_send_xdag_packet(received_block, &send_parameters);
-			g_task_info[dnet_get_nconnection(connection)].task_type &= ~TASK_REQSUM;
+			set_task_info(connection, TASK_REQSUM, TASK_INFO_END);
 			break;
 		}
 
@@ -256,7 +301,7 @@ static int conn_open_check_callback(uint32_t ip, uint16_t port)
 
 static void conn_close_notify_callback(void *conn)
 {
-	g_task_info[dnet_get_nconnection(conn)] = (struct xdag_task_info){0};
+	set_task_info(conn, TASK_REQBLOCKS | TASK_REQBLOCKS_THREAD | TASK_REQSUM, TASK_INFO_END);
 
 	if (reply_connection == conn)
 		reply_connection = 0;
@@ -486,13 +531,28 @@ static void *xdag_update_rip_thread(void *arg)
 
 static void *print_callback(void *file, void* conn)
 {
-	char buf[32];
-	dnet_stringify_conn_info(buf, sizeof(buf), conn);
-	size_t len = strlen(buf);
-	fprintf((FILE*)file, "%s %*s %33s %31s %21" PRIu32 "\n",
-		buf, (int)(sizeof(buf) + 4 - len), ((g_task_info[dnet_get_nconnection(conn)].task_type & TASK_REQBLOCKS) ? "yes" : "no"),
-		((g_task_info[dnet_get_nconnection(conn)].task_type & TASK_REQBLOCKS_THREAD) ? "yes" : "no"),
-		((g_task_info[dnet_get_nconnection(conn)].task_type & TASK_REQSUM) ? "yes" : "no"), g_task_info[dnet_get_nconnection(conn)].block_req_counter);
+	struct xdag_task_info *ti = &g_task_info[dnet_get_nconnection(conn)];
+	uint32_t t = time(NULL);
+	char buf[_TASK_TYPE_SIZE + 1][32];
+	dnet_stringify_conn_info(buf[_TASK_TYPE_SIZE], sizeof(buf[_TASK_TYPE_SIZE]), conn);
+
+
+	for (int flag_index = 0, flag = 1; flag_index < _TASK_TYPE_SIZE; flag <<= 1, ++flag_index) {
+		if (ti->task_type & flag) {
+			snprintf(buf[flag_index], sizeof(buf[flag_index]),
+				 "yes %" PRIu32 "s", t - get_task_info_start_time(conn, flag));
+		} else {
+			snprintf(buf[flag_index], sizeof(buf[flag_index]), "no"); 
+		}
+	}
+
+
+	fprintf((FILE*)file, "%-*s %-*s %-*s %-*s %" PRIu32 "\n",
+			30, buf[_TASK_TYPE_SIZE], 
+			28, buf[TASK_REQBLOCKS_INDEX], 
+			38, buf[TASK_REQBLOCKS_THREAD_INDEX], 
+			24, buf[TASK_REQSUM_INDEX],
+			ti->block_req_counter);
 	return NULL;
 }
 
