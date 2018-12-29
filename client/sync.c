@@ -23,7 +23,7 @@ struct sync_block {
 	struct xdag_block b;
 	xdag_hash_t hash;
 	struct sync_block *next, *next_r;
-	void *conn;
+	struct xconnection *conn;
 	time_t t;
 	uint8_t nfield;
 	uint8_t ttl;
@@ -35,14 +35,14 @@ int g_xdag_sync_on = 0;
 extern xtime_t g_time_limit;
 
 //functions
-int xdag_sync_add_block_nolock(struct xdag_block*, void*);
+int xdag_sync_add_block_nolock(struct xdag_block*, struct xconnection*);
 int xdag_sync_pop_block_nolock(struct xdag_block*);
 extern void *add_block_callback(void *block, void *data);
 void *sync_thread(void*);
 
 /* moves the block to the wait list, block with hash written to field 'nfield' of block 'b' is expected 
  (original russian comment was unclear too) */
-static int push_block_nolock(struct xdag_block *b, void *conn, int nfield, int ttl)
+static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int nfield, int ttl)
 {
 	xdag_hash_t hash;
 	struct sync_block **p, *q;
@@ -129,7 +129,7 @@ int xdag_sync_pop_block(struct xdag_block *b)
 }
 
 /* checks a block and includes it in the database with synchronization, ruturs non-zero value in case of error */
-int xdag_sync_add_block_nolock(struct xdag_block *b, void *conn)
+int xdag_sync_add_block_nolock(struct xdag_block *b, struct xconnection *conn)
 {
 	int res=0, ttl = b->field[0].transport_header >> 8 & 0xff;
 
@@ -170,7 +170,7 @@ begin:
 	return 0;
 }
 
-int xdag_sync_add_block(struct xdag_block *b, void *conn)
+int xdag_sync_add_block(struct xdag_block *b, struct xconnection *conn)
 {
 	pthread_mutex_lock(&g_sync_hash_mutex);
 	int res = xdag_sync_add_block_nolock(b, conn);

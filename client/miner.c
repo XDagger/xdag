@@ -25,6 +25,7 @@
 #include "algorithms/crc.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "utils/random.h"
 
 #define MINERS_PWD             "minersgonnamine"
 #define SECTOR0_BASE           0x1947f3acu
@@ -262,7 +263,7 @@ begin:
 					xdag_hash_update(task->ctx, data[1].data, sizeof(struct xdag_field));
 					xdag_hash_update(task->ctx, hash, sizeof(xdag_hashlow_t));
 
-					xdag_generate_random_array(task->nonce.data, sizeof(xdag_hash_t));
+					GetRandBytes(task->nonce.data, sizeof(xdag_hash_t));
 
 					memcpy(task->nonce.data, hash, sizeof(xdag_hashlow_t));
 					memcpy(task->lastfield.data, task->nonce.data, sizeof(xdag_hash_t));

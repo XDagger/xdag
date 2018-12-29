@@ -58,6 +58,7 @@ void processMinerCommand(char *nextParam, FILE *out);
 void processMinersCommand(char *nextParam, FILE *out);
 void processMiningCommand(char *nextParam, FILE *out);
 void processNetCommand(char *nextParam, FILE *out);
+void processTransportCommand(char *nextParam, FILE *out);
 void processPoolCommand(char *nextParam, FILE *out);
 void processStatsCommand(FILE *out);
 void processInternalStatsCommand(FILE *out);
@@ -86,6 +87,7 @@ int xdag_com_miner(char *, FILE*);
 int xdag_com_miners(char *, FILE*);
 int xdag_com_mining(char *, FILE*);
 int xdag_com_net(char *, FILE*);
+int xdag_com_transport(char *, FILE*);
 int xdag_com_pool(char *, FILE*);
 int xdag_com_stats(char *, FILE*);
 int xdag_com_state(char *, FILE*);
@@ -115,6 +117,7 @@ XDAG_COMMAND commands[] = {
 	{ "miners"      , 2, xdag_com_miners },
 	{ "mining"      , 1, xdag_com_mining },
 	{ "net"         , 0, xdag_com_net },
+	{ "transport"   , 0, xdag_com_transport },
 	{ "pool"        , 2, xdag_com_pool },
 	{ "run"         , 0, xdag_com_run },
 	{ "state"       , 0, xdag_com_state },
@@ -194,6 +197,12 @@ int xdag_com_mining(char * args, FILE* out)
 int xdag_com_net(char * args, FILE* out)
 {
 	processNetCommand(args, out);
+	return 0;
+}
+
+int xdag_com_transport(char * args, FILE* out)
+{
+	processTransportCommand(args, out);
 	return 0;
 }
 
@@ -490,6 +499,14 @@ void processNetCommand(char *nextParam, FILE *out)
 		strcat(netcmd, " ");
 	}
 	xdag_net_command(netcmd, out);
+}
+
+void processTransportCommand(char *nextParam, FILE *out)
+{
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	if(cmd != NULL && !strcmp(cmd, "info")) {
+		xdag_print_transport_task_info(out);
+	}
 }
 
 void processRPCCommand(char *nextParam, FILE *out)
@@ -919,12 +936,14 @@ int out_balances()
 	char address[33] = {0};
 	struct out_balances_data d;
 	unsigned i = 0;
+
 	xdag_set_log_level(0);
 	xdag_mem_init((xdag_get_frame() - xdag_get_start_frame()) << 17);
-	xdag_crypt_init(0);
+	xdag_crypt_init();
 	memset(&d, 0, sizeof(struct out_balances_data));
 	xdag_load_blocks(xdag_get_start_frame() << 16, xdag_get_frame() << 16, &i, &add_block_callback);
 	xdag_traverse_all_blocks(&d, out_balances_callback);
+
 	qsort(d.blocks, d.blocksCount, sizeof(struct xdag_field), out_sort_callback);
 	for(i = 0; i < d.blocksCount; ++i) {
 		xdag_hash2address(d.blocks[i].data, address);

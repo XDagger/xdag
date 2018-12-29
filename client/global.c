@@ -9,3 +9,10 @@ struct xdag_ext_stats g_xdag_extstats;
 int g_disable_mining = 0;
 enum xdag_type g_xdag_type = 0;
 char *g_coinname, *g_progname;
+
+#if defined (__MACOS__) || defined (__APPLE__)
+inline int is_pool(void) { return g_xdag_type == XDAG_POOL; }
+inline int is_wallet(void) { return g_xdag_type == XDAG_WALLET; }
+#endif
+
+

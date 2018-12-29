@@ -28,6 +28,7 @@
 #include "time.h"
 #include "math.h"
 #include "utils/atomic.h"
+#include "utils/random.h"
 
 #define MAX_WAITING_MAIN        1
 #define MAIN_START_AMOUNT       (1ll << 42)
@@ -555,7 +556,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	/* check remark */
 	if(tmpNodeBlock.flags & BI_REMARK) {
 		if(!remark_acceptance(newBlock->field[remark_index].remark)) {
-			err = 0xC;
+			err = 0xE;
 			goto end;
 		}
 	}
@@ -732,7 +733,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	if(!insert_index(nodeBlock)) {
 		g_xdag_stats.nblocks++;
 	} else {
-		err = 0xC;
+		err = 0xD;
 		goto end;
 	}
 
@@ -1048,7 +1049,7 @@ int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t 
 	uint64_t taskIndex = g_xdag_pool_task_index + 1;
 	struct xdag_pool_task *task = &g_xdag_pool_task[taskIndex & 1];
 
-	xdag_generate_random_array(block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
+	GetRandBytes(block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
 
 	task->task_time = MAIN_TIME(send_time);
 
@@ -1729,7 +1730,7 @@ void cache_retarget(int32_t cache_hit, int32_t cache_miss)
 		} else if(g_xdag_extstats.cache_hitrate > 0.98 && !cache_miss && g_xdag_extstats.cache_size && (rand() & 0xF) < 0x5) {
 			g_xdag_extstats.cache_size--;
 		}
-		for(int l = g_xdag_extstats.cache_usage; l > g_xdag_extstats.cache_size; l--) {
+		for(uint32_t l = g_xdag_extstats.cache_usage; l > g_xdag_extstats.cache_size; l--) {
 			if(cache_first != NULL) {
 				struct cache_block* to_free = cache_first;
 				cache_first = cache_first->next;
