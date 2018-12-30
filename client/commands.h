@@ -30,7 +30,7 @@ struct xfer_callback_data {
 	xdag_amount_t todo, done, remains;
 	int fieldsCount, keysCount, outsig, hasRemark;
 	xdag_hash_t transactionBlockHash;
-	char remark[32];
+	xdag_remark_t remark;
 };
 
 void startCommandProcessing(int transportFlags);
@@ -39,7 +39,7 @@ void xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount);
 int out_balances(void);
 int xdag_show_state(xdag_hash_t hash);
 
-int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xdag_time_t time, int n_our_key);
+int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, int n_our_key);
 
 int read_command(char* cmd);
 

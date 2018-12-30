@@ -1,4 +1,4 @@
-/* локальное хранилище, T13.663-T13.825 $DVS:time$ */
+/* локальное хранилище, T13.663-T14.596 $DVS:time$ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "storage.h"
-#include "init.h"
+#include "global.h"
 #include "hash.h"
 #include "utils/log.h"
 #include "utils/utils.h"
@@ -69,9 +69,9 @@ static int correct_storage_sum(const char *path, int pos, const struct xdag_stor
 	return 1;
 }
 
-static int correct_storage_sums(xdag_time_t t, const struct xdag_storage_sum *sum, int add)
+static int correct_storage_sums(xtime_t t, const struct xdag_storage_sum *sum, int add)
 {
-	char path[256];
+	char path[256] = {0};
 
 	sprintf(path, STORAGE_DIR3 DELIMITER SUMS_FILE, STORAGE_DIR3_ARGS(t));
 	int res = correct_storage_sum(path, (t >> 16) & 0xff, sum, add);
@@ -96,7 +96,7 @@ static int correct_storage_sums(xdag_time_t t, const struct xdag_storage_sum *su
 int64_t xdag_storage_save(const struct xdag_block *b)
 {
 	struct xdag_storage_sum s;
-	char path[256];
+	char path[256] = {0};
 	int64_t res;
 
 	if (in_adding_all) {
@@ -145,10 +145,10 @@ int64_t xdag_storage_save(const struct xdag_block *b)
 }
 
 /* reads a block and its number from the local repository; writes it to the buffer or returns a permanent reference, 0 in case of error */
-struct xdag_block *xdag_storage_load(xdag_hash_t hash, xdag_time_t time, uint64_t pos, struct xdag_block *buf)
+struct xdag_block *xdag_storage_load(xdag_hash_t hash, xtime_t time, uint64_t pos, struct xdag_block *buf)
 {
 	xdag_hash_t hash0;
-	char path[256];
+	char path[256] = {0};
 
 	sprintf(path, STORAGE_FILE, STORAGE_FILE_ARGS(time));
 
@@ -193,11 +193,11 @@ static int sort_callback(const void *l, const void *r)
 }
 
 /* Calls a callback for all blocks from the repository that are in specified time interval; returns the number of blocks */
-uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *data, void *(*callback)(void *, void *))
+uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *data, void *(*callback)(void *, void *))
 {
 	struct xdag_block *buf, *pbuf[bufsize];
 	struct xdag_storage_sum s;
-	char path[256];
+	char path[256] = {0};
 	
 	uint64_t sum = 0, pos = 0, mask;
 	int64_t i, j, k, todo;
@@ -246,7 +246,10 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 
 		for (i = 0; i < k; ++i) {
 			pbuf[i]->field[0].transport_header = pos0 + ((uint8_t*)pbuf[i] - (uint8_t*)buf);
-			if (callback(pbuf[i], data)) return sum;
+			if (callback(pbuf[i], data)) {
+				free(buf);
+				return sum;
+			}
 			sum++;
 		}
 
@@ -286,10 +289,10 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 /* places the sums of blocks in 'sums' array, blocks are filtered by interval from start_time to end_time, splitted to 16 parts;
  * end - start should be in form 16^k
  * (original russian comment is unclear too) */
-int xdag_load_sums(xdag_time_t start_time, xdag_time_t end_time, struct xdag_storage_sum sums[16])
+int xdag_load_sums(xtime_t start_time, xtime_t end_time, struct xdag_storage_sum sums[16])
 {
 	struct xdag_storage_sum buf[256];
-	char path[256];
+	char path[256] = {0};
 	int i, level;
 
 	end_time -= start_time;

@@ -28,6 +28,7 @@ HOW-TO:
 
 Docs:  
 ----------
+- [Wiki](https://github.com/XDagger/xdag/wiki)
 - [Whitepaper](https://github.com/XDagger/xdag/blob/master/WhitePaper.md)  [中文版](https://github.com/XDagger/xdag/blob/master/WhitePaper%20zh-cn.md)  
 - [Protocol](https://github.com/XDagger/xdag/blob/master/Protocol.md)  [中文版](https://github.com/XDagger/xdag/blob/master/Protocol-cn.md)  
 - [License](https://github.com/XDagger/xdag/blob/master/LICENSE)  
@@ -76,7 +77,8 @@ Types of fields:
 5. half of output signature; only owner of this key can use this block as input
 6. public key (x) with even y
 7. public key with odd y
-8. ... 15. are reserved for future usage.
+8. header of testnet
+9. ... 15. are reserved for future usage.  
 
 
 Transport layer:

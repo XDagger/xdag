@@ -11,14 +11,14 @@
 #include "resource.h"		// main symbols
 
 
-// CcheatcoinwalletApp:
+// CXdagWalletApp:
 // See cheatcoinwallet.cpp for the implementation of this class
 //
 
-class CcheatcoinwalletApp : public CWinApp
+class CXdagWalletApp : public CWinApp
 {
 public:
-	CcheatcoinwalletApp();
+	CXdagWalletApp();
 
 // Overrides
 public:
@@ -29,4 +29,4 @@ public:
 	DECLARE_MESSAGE_MAP()
 };
 
-extern CcheatcoinwalletApp theApp;
+extern CXdagWalletApp theApp;

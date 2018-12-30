@@ -25,6 +25,7 @@
 #include "log.h"
 #include "../system.h"
 #include "math.h"
+#include <math.h>
 
 static pthread_mutex_t g_detect_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -284,32 +285,14 @@ void test_deadlock(void)
 	check_deadlock();
 }
 
-uint64_t get_timestamp(void)
-{
-	struct timeval tp;
-
-	gettimeofday(&tp, 0);
-
-	return (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
-}
-
-uint64_t get_time_ms(void)
-{
-	struct timeval tp;
-
-	gettimeofday(&tp, 0);
-
-	return (uint64_t)(unsigned long)tp.tv_sec * 1000 + tp.tv_usec / 1000;
-}
-
 static char g_xdag_current_path[4096] = {0};
 
 void xdag_init_path(char *path)
 {
 #ifdef _WIN32
-	char szPath[MAX_PATH];
-	char szBuffer[MAX_PATH];
-	char *pszFile;
+	char szPath[MAX_PATH] = {0};
+	char szBuffer[MAX_PATH] = {0};
+	char *pszFile = NULL;
 
 	GetModuleFileName(NULL, (LPTCH)szPath, sizeof(szPath) / sizeof(*szPath));
 	GetFullPathName((LPTSTR)szPath, sizeof(szBuffer) / sizeof(*szBuffer), (LPTSTR)szBuffer, (LPTSTR*)&pszFile);
@@ -369,11 +352,6 @@ int xdag_mkdir(const char *path)
 #endif	
 }
 
-long double log_difficulty2hashrate(long double log_diff)
-{
-	return ldexpl(expl(log_diff), -58)*(0.65);
-}
-
 void xdag_str_toupper(char *str)
 {
 	while(*str) {
@@ -413,27 +391,6 @@ char *xdag_filename(char *_filename)
 	}
 
 	return filename;
-}
-
-// convert time to string representation
-// minimal length of string buffer `buf` should be 60
-void xdag_time_to_string(xdag_time_t time, char *buf)
-{
-	struct tm tm;
-	char tmp[64];
-	time_t t = time >> 10;
-	localtime_r(&t, &tm);
-	strftime(tmp, 60, "%Y-%m-%d %H:%M:%S", &tm);
-	sprintf(buf, "%s.%03d", tmp, (int)((time & 0x3ff) * 1000) >> 10);
-}
-
-// convert time to string representation
-// minimal length of string buffer `buf` should be 50
-void time_to_string(time_t time, char* buf)
-{
-	struct tm tm;
-	localtime_r(&time, &tm);
-	strftime(buf, 50, "%Y-%m-%d %H:%M:%S", &tm);
 }
 
 // replaces all occurences of non-printable characters (code < 33 || code > 126) in `string` with specified `symbol`
@@ -495,20 +452,28 @@ int validate_ipv4_port(const char *str)
 	return 1;
 }
 
-int validate_ascii(const char *str)
+size_t validate_remark(const char *str)
 {
-	if(!str || strlen(str) == 0) {
-		return 1;
+	return validate_ascii_safe(str, 33);// sizeof(xdag_remark_t) + 1
+}
+
+size_t validate_ascii_safe(const char *str, size_t maxsize)
+{
+	if(str == NULL) {
+		return 0;
 	}
 
-	uint8_t c = 0;
-	for(int i = 0; i < strlen(str); i++) {
-		c = str[i];
-		if(c > 126 && c < 32) {
+	const char* start = str;
+	const char* stop = str + maxsize;
+
+	for(;str < stop;++str) {
+		if(*str < 32 || *str > 126) {
+			if(*str == '\0') {
+				return str - start;
+			}
 			return 0;
 		}
 	}
 
-	return 1;
+	return 0;
 }
-

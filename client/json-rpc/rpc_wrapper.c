@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -28,7 +28,7 @@
 #include "cJSON.h"
 #include "cJSON_Utils.h"
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 #define UNIX_SOCK  "unix_sock.dat"
 #else
 const uint32_t LOCAL_HOST_IP = 0x7f000001; // 127.0.0.1
@@ -39,10 +39,10 @@ const uint32_t APPLICATION_DOMAIN_PORT = 7676;
 void rpc_call_dnet_command(const char *method, const char *params, char **result)
 {
 	int sock;
-	char cmd[XDAG_COMMAND_MAX];
+	char cmd[XDAG_COMMAND_MAX] = {0};
 	sprintf(cmd, "%s %s", method, params);
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 	if((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
 		xdag_err("Can't open unix domain socket errno:%d.\n", errno);
 		return;

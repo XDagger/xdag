@@ -18,13 +18,13 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 #define poll WSAPoll
 #else
 #include <poll.h>
 #endif
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 #define UNIX_SOCK  "unix_sock.dat"
 #else
 #define LOCAL_HOST_IP           0x7f000001 // 127.0.0.1
@@ -38,10 +38,11 @@ int terminal(void)
 
 	if(!xdag_network_init()) {
 		printf("Can't initialize sockets");
+		return -1;
 	}
 
-	char cmd[XDAG_COMMAND_MAX];
-	char cmd2[XDAG_COMMAND_MAX];
+	char cmd[XDAG_COMMAND_MAX] = {0};
+	char cmd2[XDAG_COMMAND_MAX] = {0};
 
 	xdag_init_commands();
 
@@ -58,7 +59,7 @@ int terminal(void)
 			sprintf(cmd2, "pwd=%08x%08x%08x%08x ", pwd[0], pwd[1], pwd[2], pwd[3]);
 			ispwd = 1;
 		}
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 		if((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
 			printf("Can't open unix domain socket errno:%d.\n", errno);
 			continue;
@@ -105,7 +106,7 @@ int terminal(void)
 void *terminal_thread(void *arg)
 {
 	int sock;
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 	struct sockaddr_un addr;
 	
 	if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
@@ -139,7 +140,7 @@ void *terminal_thread(void *arg)
 		return 0;
 	}
 	while (1) {
-		char cmd[XDAG_COMMAND_MAX];
+		char cmd[XDAG_COMMAND_MAX] = {0};
 		int clientSock, res;
 		struct pollfd fds;
 		if ((clientSock = accept(sock, NULL, NULL)) == -1) {
@@ -161,7 +162,7 @@ void *terminal_thread(void *arg)
 		if (res < 0 || cmd[p - 1] != '\0') {
 			close(clientSock);
 		} else {
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 			FILE *fd = fdopen(clientSock, "w");
 			if (!fd) {
 				xdag_err("Can't fdopen unix domain socket errno:%d", errno);
@@ -177,12 +178,12 @@ void *terminal_thread(void *arg)
 
 			res = xdag_command(cmd, fd);
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 			xdag_close_file(fd);
 #else
 			rewind(fd);
 
-			char buf[256];
+			char buf[256] = {0};
 			while (!feof(fd)) {
 				const int length = fread(buf, 1, 256, fd);
 				write(clientSock, buf, length);

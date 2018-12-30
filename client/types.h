@@ -2,6 +2,8 @@
 #define XDAG_TYPES_H
 
 typedef uint64_t xdag_time_t;
+typedef xdag_time_t xtime_t;
 typedef uint64_t xdag_amount_t;
+typedef uint64_t xdag_frame_t;
 
 #endif

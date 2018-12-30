@@ -3,7 +3,7 @@
 #ifndef DFSLIB_TYPES_H_INCLUDED
 #define DFSLIB_TYPES_H_INCLUDED
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 #ifndef inline
 #define inline __inline
 #endif
