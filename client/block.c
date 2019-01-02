@@ -1550,11 +1550,13 @@ void append_block_info(struct block_internal *bi)
 		return;
 	}
     
-    int flags;
-    struct block_internal *ref;
+    int flags, nlinks;
+    struct block_internal *ref, *link[MAX_LINKS];
     pthread_mutex_lock(&block_mutex);
     ref = bi->ref;
     flags = bi->flags;
+    nlinks = bi->nlinks;
+    memcpy(link, bi->link, nlinks * sizeof(struct block_internal*));
     pthread_mutex_unlock(&block_mutex);
 
 	char time_buf[64] = {0};
