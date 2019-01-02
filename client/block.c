@@ -1596,8 +1596,8 @@ void append_block_info(struct block_internal *bi)
 	sprintf(buf, "{\"direction\":\"fee\",\"address\":\"%s\",\"amount\":\"%u.%09u\"}", address, pramount(bi->fee));
 	strcat(message, buf);
 
-	for (int i = 0; i < bi->nlinks; ++i) {
-		xdag_hash2address(bi->link[i]->hash, address);
+	for (int i = 0; i < nlinks; ++i) {
+		xdag_hash2address(link[i]->hash, address);
 		sprintf(buf, ",{\"direction\":\"%s\",\"address\":\"%s\",\"amount\":\"%u.%09u\"}",  (1 << i & bi->in_mask ? " input" : "output"),address, pramount(bi->linkamount[i]));
 		strcat(message, buf);
 	}
