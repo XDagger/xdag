@@ -1549,6 +1549,13 @@ void append_block_info(struct block_internal *bi)
 	if(!g_websocket_running) {
 		return;
 	}
+    
+    int flags;
+    struct block_internal *ref;
+    pthread_mutex_lock(&block_mutex);
+    ref = bi->ref;
+    flags = bi->flags;
+    pthread_mutex_unlock(&block_mutex);
 
 	char time_buf[64] = {0};
 	char address[33] = {0};
@@ -1570,8 +1577,8 @@ void append_block_info(struct block_internal *bi)
 			",\"balance\":\"%u.%09u\""
 			",\"fields\":["
 			, time_buf
-			, bi->flags & ~BI_OURS
-			, xdag_get_block_state_info(bi->flags)
+			, flags & ~BI_OURS
+			, xdag_get_block_state_info(flags)
 			, (unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]
 			, xdag_diff_args(bi->difficulty)
 			, get_remark(bi)
@@ -1579,8 +1586,8 @@ void append_block_info(struct block_internal *bi)
 			, pramount(bi->amount)
 			);
 
-	if((bi->flags & BI_REF) && bi->ref != NULL) {
-		xdag_hash2address(bi->ref->hash, address);
+	if((flags & BI_REF) && ref != NULL) {
+		xdag_hash2address(ref->hash, address);
 	} else {
 		strcpy(address, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 	}
