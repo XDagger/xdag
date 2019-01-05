@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -29,14 +29,14 @@
 #include "rpc_procedure.h"
 #include "rpc_service.h"
 #include "../version.h"
-#include "../init.h"
+#include "../global.h"
 #include "../address.h"
 #include "../commands.h"
 #include "../wallet.h"
 #include "../math.h"
-#include "../../dus/programs/dfstools/source/dfslib/dfslib_random.h"
-#include "../../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
-#include "../../dus/programs/dfstools/source/dfslib/dfslib_string.h"
+#include "../../dfslib/dfslib_random.h"
+#include "../../dfslib/dfslib_crypt.h"
+#include "../../dfslib/dfslib_string.h"
 #include "../../dnet/dnet_main.h"
 #include "../utils/log.h"
 #include "../utils/utils.h"
@@ -61,6 +61,8 @@ cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJ
 
 /* method: xdag_get_block_info */
 int rpc_get_block_callback(void *data, int flag, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, const char* remark);
+int rpc_get_block_info_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, const char* remark);
+int rpc_get_block_links_callback(void *data, const char *direction, xdag_hash_t hash, xdag_amount_t amount);
 cJSON * method_xdag_get_block_info(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_do_xfer */
@@ -186,7 +188,7 @@ cJSON * method_xdag_stats(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id
 	cJSON *item = cJSON_CreateObject();
 
 	char buf[128] = {0};
-	if(g_is_miner) {
+	if(is_wallet()) {
 		sprintf(buf, "%.2lf MHs", xdagGetHashRate());
 		cJSON *json_hashrate = cJSON_CreateString(buf);
 		cJSON_AddItemToObject(item, "hashrate", json_hashrate);
@@ -299,7 +301,7 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
 {
 	xdag_debug("rpc call method get_account, version %s",version);
 	struct rpc_account_callback_data cbdata;
-	cbdata.count = (g_is_miner ? 1 : 20);
+	cbdata.count = (is_wallet() ? 1 : 20);
 	if (params) {
 		if (cJSON_IsArray(params)) {
 			size_t size = cJSON_GetArraySize(params);

@@ -1,18 +1,14 @@
 #ifndef _SYSTEM_H
 #define _SYSTEM_H
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 #include <Windows.h>
-#define inline              __inline
-#include "../dus/programs/dfstools/source/include/dfsrsa.h"
+#define inline __inline
+#include "../dfslib/dfsrsa.h"
 
 #define strtok_r            strtok_s
 #define localtime_r(a, b)   localtime_s(b, a)
-#ifdef _WIN32
 #define sleep(x)            Sleep((x) * 1000)
-#else
-#define sleep(x)            _sleep(x)
-#endif
 #define pthread_self_ptr()  pthread_self().p
 
 typedef struct {
@@ -23,6 +19,7 @@ typedef struct {
 #define xdag_diff_gt(l, r) (dfsrsa_cmp((l).num, (r).num, 4) > 0)
 #define xdag_diff_args(d)  (unsigned long long)(*(uint64_t*)&d.num[2]), (unsigned long long)(*(uint64_t*)&d.num[0])
 #define xdag_diff_shr32(p) ((p)->num[0] = (p)->num[1], (p)->num[1] = (p)->num[2], (p)->num[2] = (p)->num[3], (p)->num[3] = 0)
+
 static inline xdag_diff_t xdag_diff_add(xdag_diff_t p, xdag_diff_t q)
 {
 	xdag_diff_t r;
@@ -30,6 +27,7 @@ static inline xdag_diff_t xdag_diff_add(xdag_diff_t p, xdag_diff_t q)
 	dfsrsa_add(r.num, p.num, q.num, 4);
 	return r;
 }
+
 static inline xdag_diff_t xdag_diff_div(xdag_diff_t p, xdag_diff_t q)
 {
 	xdag_diff_t r;
@@ -37,6 +35,7 @@ static inline xdag_diff_t xdag_diff_div(xdag_diff_t p, xdag_diff_t q)
 	dfsrsa_divmod(p.num, 4, q.num, 4, r.num);
 	return r;
 }
+
 #define xdag_diff_to64(d)       (*(uint64_t*)&d.num[0])
 #define strdup(x)               _strdup(x)
 #define ioctl                   ioctlsocket

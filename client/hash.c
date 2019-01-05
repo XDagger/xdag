@@ -4,7 +4,7 @@
 #ifdef SHA256_OPENSSL_MBLOCK
 #include <arpa/inet.h>
 #endif
-#include "sha256.h"
+#include "algorithms/sha256.h"
 #include "hash.h"
 #include "system.h"
 

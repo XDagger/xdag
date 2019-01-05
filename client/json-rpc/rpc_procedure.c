@@ -189,17 +189,23 @@ cJSON * invoke_procedure(char *name, cJSON *params, cJSON *id, char *version)
 	}
 
 	if(!procedure_found) {
-		return make_error(RPC_METHOD_NOT_FOUND, strdup("Method not found."), id, version);
-	} else {
-		if(ctx.error_code) {
-			if(returned) {
-				cJSON_Delete(returned);
-			}
-			return make_error(ctx.error_code, ctx.error_message, id, version);
-		} else {
-			return make_result(returned, id, version);
-		}
+		ctx.error_code = RPC_METHOD_NOT_FOUND;
+		ctx.error_message = strdup("Method not found.");
 	}
+
+	if(ctx.error_code || ctx.error_message) {
+		if(returned) {
+			cJSON_Delete(returned);
+		}
+		returned = make_error(ctx.error_code, ctx.error_message, id, version);
+		if (ctx.error_message) {
+			free(ctx.error_message);
+		}
+	} else {
+		returned = make_result(returned, id, version);
+	}
+
+	return returned;
 }
 
 /* handle rpc request */
@@ -247,10 +253,10 @@ cJSON * xdag_rpc_handle_request(char* buffer)
 		}
 		
 		if(!result) {
-			result = make_error(RPC_PARSE_ERROR, strdup("Request parse error."), 0, "2.0");
+			result = make_error(RPC_PARSE_ERROR, "Request parse error.", 0, "2.0");
 		}
 	} else {
-		result = make_error( RPC_PARSE_ERROR, strdup("Request parse error."), 0, "2.0");
+		result = make_error( RPC_PARSE_ERROR, "Request parse error.", 0, "2.0");
 	}
 	
 	if(root) {

@@ -14,6 +14,8 @@ enum xdag_transport_flags {
 	XDAG_DAEMON = 1,
 };
 
+struct xconnection;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,9 +26,6 @@ extern "C" {
  * nthreads - number of transport threads
  */
 extern int xdag_transport_start(int flags, int nthreads, const char *bindto, int npairs, const char **addr_port_pairs);
-
-/* generates an array with random data */
-extern int xdag_generate_random_array(void *array, unsigned long size);
 
 /* sends a new block to network */
 extern int xdag_send_new_block(struct xdag_block *b);
@@ -39,7 +38,7 @@ extern int xdag_request_blocks(xtime_t start_time, xtime_t end_time, void *data,
 									void *(*callback)(void *, void *));
 
 /* requests a block by hash from another host */
-extern int xdag_request_block(xdag_hash_t hash, void *conn);
+extern int xdag_request_block(xdag_hash_t hash, struct xconnection *conn, int broadcast);
 
 /* requests a block from a remote host and places sums of blocks into 'sums' array,
  * blocks are filtered by interval from start_time to end_time, splitted to 16 parts;
@@ -51,10 +50,13 @@ extern int xdag_request_sums(xtime_t start_time, xtime_t end_time, struct xdag_s
 extern int xdag_net_command(const char *cmd, void *out);
 
 /* sends the package, conn is the same as in function dnet_send_xdag_packet */
-extern int xdag_send_packet(struct xdag_block *b, void *conn);
+extern int xdag_send_packet(struct xdag_block *b, struct xconnection *conn, int broadcast);
 
 /* see dnet_user_crypt_action */
 extern int xdag_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action);
+
+// print tasks info for each connection
+extern void xdag_print_transport_task_info(FILE *f);
 
 extern pthread_mutex_t g_transport_mutex;
 extern atomic_uint_least64_t g_xdag_last_received;

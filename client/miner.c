@@ -13,19 +13,19 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include "system.h"
-#include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
-#include "../dus/programs/dar/source/include/crc.h"
+#include "../dfslib/dfslib_crypt.h"
 #include "address.h"
 #include "block.h"
-#include "init.h"
+#include "global.h"
 #include "miner.h"
-#include "storage.h"
 #include "sync.h"
 #include "transport.h"
 #include "mining_common.h"
 #include "network.h"
+#include "algorithms/crc.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "utils/random.h"
 
 #define MINERS_PWD             "minersgonnamine"
 #define SECTOR0_BASE           0x1947f3acu
@@ -257,13 +257,13 @@ begin:
 					const uint64_t task_index = g_xdag_pool_task_index + 1;
 					struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
 
-					task->task_time = xdag_main_time();
+					task->task_time = xdag_get_frame();
 					xdag_hash_set_state(task->ctx, data[0].data,
 						sizeof(struct xdag_block) - 2 * sizeof(struct xdag_field));
 					xdag_hash_update(task->ctx, data[1].data, sizeof(struct xdag_field));
 					xdag_hash_update(task->ctx, hash, sizeof(xdag_hashlow_t));
 
-					xdag_generate_random_array(task->nonce.data, sizeof(xdag_hash_t));
+					GetRandBytes(task->nonce.data, sizeof(xdag_hash_t));
 
 					memcpy(task->nonce.data, hash, sizeof(xdag_hashlow_t));
 					memcpy(task->lastfield.data, task->nonce.data, sizeof(xdag_hash_t));

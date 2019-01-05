@@ -12,14 +12,14 @@
 
 // CcheatcoinwalletApp
 
-BEGIN_MESSAGE_MAP(CcheatcoinwalletApp, CWinApp)
+BEGIN_MESSAGE_MAP(CXdagWalletApp, CWinApp)
 	ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
 END_MESSAGE_MAP()
 
 
 // CcheatcoinwalletApp construction
 
-CcheatcoinwalletApp::CcheatcoinwalletApp()
+CXdagWalletApp::CXdagWalletApp()
 {
 	// support Restart Manager
 	m_dwRestartManagerSupportFlags = AFX_RESTART_MANAGER_SUPPORT_RESTART;
@@ -31,12 +31,12 @@ CcheatcoinwalletApp::CcheatcoinwalletApp()
 
 // The one and only CcheatcoinwalletApp object
 
-CcheatcoinwalletApp theApp;
+CXdagWalletApp theApp;
 
 
 // CcheatcoinwalletApp initialization
 
-BOOL CcheatcoinwalletApp::InitInstance()
+BOOL CXdagWalletApp::InitInstance()
 {
 	// InitCommonControlsEx() is required on Windows XP if an application
 	// manifest specifies use of ComCtl32.dll version 6 or later to enable
@@ -55,7 +55,6 @@ BOOL CcheatcoinwalletApp::InitInstance()
 		AfxMessageBox(IDP_SOCKETS_INIT_FAILED);
 		return FALSE;
 	}
-
 
 	AfxEnableControlContainer();
 

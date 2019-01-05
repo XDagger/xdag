@@ -231,10 +231,12 @@ LRESULT CXDagWalletDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 void CXDagWalletDlg::OnTimer(WPARAM wParam)
 {
 	KillTimer(ID_TIMER_INIT);
-
-	char *argv[] = { "xdag.exe" };
 	xdag_set_password_callback(&InputPassword);
 	g_xdag_show_state = &ShowState;
+
+	char path[_MAX_PATH];
+	GetModuleFileName(AfxGetApp()->m_hInstance, path, _MAX_PATH);
+	char *argv[] = { path };
 	xdag_init(1, argv, 1);
 
 	_transferAmountEdit.EnableWindow(TRUE);

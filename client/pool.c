@@ -8,8 +8,7 @@
 #include <sys/ioctl.h>
 #include <float.h>
 #include <sched.h>
-#if defined(_WIN32) || defined(_WIN64)
-#else
+#ifndef _WIN32
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -17,6 +16,7 @@
 #include <errno.h>
 #endif
 #include "block.h"
+#include "global.h"
 #include "sync.h"
 #include "mining_common.h"
 #include "pool.h"
@@ -30,8 +30,8 @@
 #include "math.h"
 #include "utils/log.h"
 #include "utils/utils.h"
-#include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
-#include "../dus/programs/dar/source/include/crc.h"
+#include "../dfslib/dfslib_crypt.h"
+#include "algorithms/crc.h"
 #include "uthash/utlist.h"
 #include "uthash/uthash.h"
 #include "utils/atomic.h"
@@ -280,7 +280,7 @@ void *general_mining_thread(void *arg)
 	xdag_mess("Starting main blocks creation...");
 
 	while(!g_stop_general_mining) {
-		xdag_create_and_send_block(0, 0, 0, 0, 0, xdag_main_time() << 16 | 0xffff, NULL);
+		xdag_create_and_send_block(0, 0, 0, 0, 0, xdag_get_frame() << 16 | 0xffff, NULL);
 	}
 
 	xdag_mess("Stopping general mining thread...");
@@ -293,7 +293,7 @@ int xdag_pool_set_config(const char *pool_config)
 {
 	char buf[0x100] = {0}, *lasts = NULL;
 
-	if(!g_xdag_pool) return -1;
+	if(is_wallet()) return -1;
 	strncpy(buf, pool_config, 0xff);
 
 	pool_config = strtok_r(buf, " \t\r\n:", &lasts);
@@ -388,7 +388,7 @@ int xdag_pool_set_config(const char *pool_config)
 /* gets pool parameters as a string, 0 - if the pool is disabled */
 char *xdag_pool_get_config(char *buf)
 {
-	if(!g_xdag_pool) return 0;
+	if(is_wallet()) return 0;
 
 	sprintf(buf, "%d:%d:%d:%.2lf:%.2lf:%.2lf:%.2lf", g_max_connections_count, g_max_miner_ip_count, g_connections_per_miner_limit,
 		g_pool_fee * 100, g_pool_reward * 100, g_pool_direct * 100, g_pool_fund * 100);
