@@ -24,84 +24,7 @@
 #include <unistd.h>
 #endif
 
-#define Nfields(d) (2 + d->hasRemark + d->fieldsCount + 3 * d->keysCount + 2 * d->outsig)
-#define COMMAND_HISTORY ".cmd.history"
-
-struct account_callback_data {
-	FILE *out;
-	int count;
-};
-
-struct out_balances_data {
-	struct xdag_field *blocks;
-	unsigned blocksCount, maxBlocksCount;
-};
-
-typedef int (*xdag_com_func_t)(char*, FILE *);
-typedef struct {
-	char *name;			/* command name */
-	int avaibility;			/* 0 - both miner and pool, 1 - only miner, 2 - only pool */
-	xdag_com_func_t func;		/* command function */
-} XDAG_COMMAND;
-
 extern int g_block_production_on;
-
-// Function declarations
-int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, int n_our_key);
-
-void processAccountCommand(char *nextParam, FILE *out);
-void processBalanceCommand(char *nextParam, FILE *out);
-void processBlockCommand(char *nextParam, FILE *out);
-void processKeyGenCommand(FILE *out);
-void processLevelCommand(char *nextParam, FILE *out);
-void processMinerCommand(char *nextParam, FILE *out);
-void processMinersCommand(char *nextParam, FILE *out);
-void processMiningCommand(char *nextParam, FILE *out);
-void processNetCommand(char *nextParam, FILE *out);
-void processTransportCommand(char *nextParam, FILE *out);
-void processPoolCommand(char *nextParam, FILE *out);
-void processStatsCommand(FILE *out);
-void processInternalStatsCommand(FILE *out);
-void processExitCommand(void);
-void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd);
-void processLastBlocksCommand(char *nextParam, FILE *out);
-void processMainBlocksCommand(char *nextParam, FILE *out);
-void processMinedBlocksCommand(char *nextParam, FILE *out);
-void processOrphanBlocksCommand(char *nextParam, FILE *out);
-void processHelpCommand(FILE *out);
-void processDisconnectCommand(char *nextParam, FILE *out);
-void processRPCCommand(char *nextParam, FILE *out);
-void processAutoRefreshCommand(char *nextParam, FILE *out);
-void processReloadCommand(char *nextParam, FILE *out);
-
-int xdag_com_account(char *, FILE*);
-int xdag_com_balance(char *, FILE*);
-int xdag_com_block(char *, FILE*);
-int xdag_com_lastblocks(char *, FILE*);
-int xdag_com_mainblocks(char *, FILE*);
-int xdag_com_minedblocks(char *, FILE*);
-int xdag_com_orphanblocks(char *, FILE*);
-int xdag_com_keyGen(char *, FILE*);
-int xdag_com_level(char *, FILE*);
-int xdag_com_miner(char *, FILE*);
-int xdag_com_miners(char *, FILE*);
-int xdag_com_mining(char *, FILE*);
-int xdag_com_net(char *, FILE*);
-int xdag_com_transport(char *, FILE*);
-int xdag_com_pool(char *, FILE*);
-int xdag_com_stats(char *, FILE*);
-int xdag_com_state(char *, FILE*);
-int xdag_com_internal_stats(char *, FILE*);
-int xdag_com_help(char *, FILE*);
-int xdag_com_run(char *, FILE*);
-int xdag_com_terminate(char *, FILE*);
-int xdag_com_exit(char *, FILE*);
-int xdag_com_disconnect(char *, FILE*);
-int xdag_com_rpc(char *, FILE*);
-int xdag_com_autorefresh(char *, FILE*);
-int xdag_com_reload(char *, FILE*);
-
-XDAG_COMMAND* find_xdag_command(char*);
 
 XDAG_COMMAND commands[] = {
 	{ "account"     , 0, xdag_com_account },
@@ -136,226 +59,10 @@ XDAG_COMMAND commands[] = {
 
 int xdag_com_account(char* args, FILE* out)
 {
-	processAccountCommand(args, out);
-	return 0;
-}
-
-int xdag_com_balance(char * args, FILE* out)
-{
-	processBalanceCommand(args, out);
-	return 0;
-}
-
-int xdag_com_block(char * args, FILE* out)
-{
-	processBlockCommand(args, out);
-	return 0;
-}
-
-int xdag_com_lastblocks(char * args, FILE* out)
-{
-	processLastBlocksCommand(args, out);
-	return 0;
-}
-
-int xdag_com_mainblocks(char * args, FILE* out)
-{
-	processMainBlocksCommand(args, out);
-	return 0;
-}
-
-int xdag_com_minedblocks(char * args, FILE* out)
-{
-	processMinedBlocksCommand(args, out);
-	return 0;
-}
-
-int xdag_com_orphanblocks(char * args, FILE* out)
-{
-	processOrphanBlocksCommand(args, out);
-	return 0;
-}
-
-int xdag_com_keyGen(char * args, FILE* out)
-{
-	processKeyGenCommand(out);
-	return 0;
-}
-
-int xdag_com_level(char * args, FILE* out)
-{
-	processLevelCommand(args, out);
-	return 0;
-}
-
-int xdag_com_mining(char * args, FILE* out)
-{
-	processMiningCommand(args, out);
-	return 0;
-}
-
-int xdag_com_net(char * args, FILE* out)
-{
-	processNetCommand(args, out);
-	return 0;
-}
-
-int xdag_com_transport(char * args, FILE* out)
-{
-	processTransportCommand(args, out);
-	return 0;
-}
-
-int xdag_com_pool(char * args, FILE* out)
-{
-	processPoolCommand(args, out);
-	return 0;
-}
-
-int xdag_com_miner(char * args, FILE* out)
-{
-	processMinerCommand(args, out);
-	return 0;
-}
-
-int xdag_com_miners(char * args, FILE* out)
-{
-	processMinersCommand(args, out);
-	return 0;
-}
-
-int xdag_com_stats(char * args, FILE* out)
-{
-	processStatsCommand(out);
-	return 0;
-}
-
-int xdag_com_state(char * args, FILE* out)
-{
-	fprintf(out, "%s\n", get_state());
-	return 0;
-}
-
-int xdag_com_internal_stats(char * args, FILE* out)
-{
-	processInternalStatsCommand(out);
-	return 0;
-}
-
-
-int xdag_com_run(char * args, FILE* out)
-{
-	g_xdag_run = 1;
-	return 0;
-}
-
-int xdag_com_terminate(char * args, FILE* out)
-{
-	processExitCommand();
-	return -1;
-}
-
-int xdag_com_exit(char * args, FILE* out)
-{
-	processExitCommand();
-	return -1;
-}
-
-int xdag_com_help(char *args, FILE* out)
-{
-	processHelpCommand(out);
-	return 0;
-}
-
-int xdag_com_disconnect(char *args, FILE *out)
-{
-	processDisconnectCommand(args, out);
-	return 0;
-}
-
-int xdag_com_rpc(char* args, FILE* out)
-{
-	processRPCCommand(args, out);
-	return 0;
-}
-
-int xdag_com_autorefresh(char *args, FILE *out)
-{
-	processAutoRefreshCommand(args, out);
-	return 0;
-}
-
-int xdag_com_reload(char *args, FILE *out)
-{
-	processReloadCommand(args, out);
-	return 0;
-}
-
-XDAG_COMMAND* find_xdag_command(char *name)
-{
-	for(int i = 0; commands[i].name; i++) {
-		if(strcmp(name, commands[i].name) == 0) {
-			return (&commands[i]);
-		}
-	}
-	return (XDAG_COMMAND *)NULL;
-}
-
-void startCommandProcessing(int transportFlags)
-{
-	char cmd[XDAG_COMMAND_MAX] = {0};
-	if(!(transportFlags & XDAG_DAEMON)) printf("Type command, help for example.\n");
-
-	xdag_init_commands();
-
-	for(;;) {
-		if(transportFlags & XDAG_DAEMON) {
-			sleep(100);
-		} else {
-			read_command(cmd);
-			if(strlen(cmd) > 0) {
-				int ret = xdag_command(cmd, stdout);
-				if(ret < 0) {
-					break;
-				}
-			}
-		}
-	}
-}
-
-int xdag_command(char *cmd, FILE *out)
-{
-	uint32_t pwd[4] = {0};
-	char *nextParam;
-	int ispwd = 0;
-
-	cmd = strtok_r(cmd, " \t\r\n", &nextParam);
-	if(!cmd) return 0;
-	if(sscanf(cmd, "pwd=%8x%8x%8x%8x", pwd, pwd + 1, pwd + 2, pwd + 3) == 4) {
-		ispwd = 1;
-		cmd = strtok_r(0, " \t\r\n", &nextParam);
-	}
-
-	XDAG_COMMAND *command = find_xdag_command(cmd);
-
-	if(!command || (command->avaibility == 1 && is_pool()) || (command->avaibility == 2 && is_wallet())) {
-		fprintf(out, "Illegal command.\n");
-	} else {
-		if(!strcmp(command->name, "xfer")) {
-			processXferCommand(nextParam, out, ispwd, pwd);
-		} else {
-			return (*(command->func))(nextParam, out);
-		}
-	}
-	return 0;
-}
-
-void processAccountCommand(char *nextParam, FILE *out)
-{
 	struct account_callback_data d;
 	d.out = out;
 	d.count = (is_wallet() ? 1 : 20);
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	char *cmd = strtok_r(args, " \t\r\n", &args);
 	if(cmd) {
 		sscanf(cmd, "%d", &d.count);
 	}
@@ -363,16 +70,17 @@ void processAccountCommand(char *nextParam, FILE *out)
 		fprintf(out, "Not ready to show balances. Type 'state' command to see the reason.\n");
 	}
 	xdag_traverse_our_blocks(&d, &account_callback);
+	return 0;
 }
 
-void processBalanceCommand(char *nextParam, FILE *out)
+int xdag_com_balance(char * args, FILE* out)
 {
 	if(g_xdag_state < XDAG_STATE_XFER) {
 		fprintf(out, "Not ready to show a balance. Type 'state' command to see the reason.\n");
 	} else {
 		xdag_hash_t hash;
 		xdag_amount_t balance;
-		char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+		char *cmd = strtok_r(args, " \t\r\n", &args);
 		if(cmd) {
 			xdag_address2hash(cmd, hash);
 			balance = xdag_get_balance(hash);
@@ -381,13 +89,14 @@ void processBalanceCommand(char *nextParam, FILE *out)
 		}
 		fprintf(out, "Balance: %.9Lf %s\n", amount2xdags(balance), g_coinname);
 	}
+	return 0;
 }
 
-void processBlockCommand(char *nextParam, FILE *out)
+int xdag_com_block(char * args, FILE* out)
 {
 	int c;
 	xdag_hash_t hash;
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	char *cmd = strtok_r(args, " \t\r\n", &args);
 	if(cmd) {
 		int incorrect = 0;
 		size_t len = strlen(cmd);
@@ -423,9 +132,58 @@ void processBlockCommand(char *nextParam, FILE *out)
 	} else {
 		fprintf(out, "Block is not specified.\n");
 	}
+	return 0;
 }
 
-void processKeyGenCommand(FILE *out)
+int xdag_com_lastblocks(char * args, FILE* out)
+{
+	int blocksCount = 20;
+	char *cmd = strtok_r(args, " \t\r\n", &args);
+	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
+		fprintf(out, "Illegal number.\n");
+	} else {
+		xdag_list_main_blocks(blocksCount, 1, out);
+	}
+	return 0;
+}
+
+int xdag_com_mainblocks(char * args, FILE* out)
+{
+	int blocksCount = 20;
+	char *cmd = strtok_r(args, " \t\r\n", &args);
+	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
+		fprintf(out, "Illegal number.\n");
+	} else {
+		xdag_list_main_blocks(blocksCount, 0, out);
+	}
+	return 0;
+}
+
+int xdag_com_minedblocks(char * args, FILE* out)
+{
+	int blocksCount = 20;
+	char *cmd = strtok_r(args, " \t\r\n", &args);
+	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
+		fprintf(out, "Illegal number.\n");
+	} else {
+		xdag_list_mined_blocks(blocksCount, 0, out);
+	}
+	return 0;
+}
+
+int xdag_com_orphanblocks(char * args, FILE* out)
+{
+	int blocksCount = 20;
+	char *cmd = strtok_r(args, " \t\r\n", &args);
+	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
+		fprintf(out, "Illegal number.\n");
+	} else {
+		xdag_list_orphan_blocks(blocksCount, out);
+	}
+	return 0;
+}
+
+int xdag_com_keyGen(char * args, FILE* out)
 {
 	const int res = xdag_wallet_new_key();
 	if(res < 0) {
@@ -433,12 +191,13 @@ void processKeyGenCommand(FILE *out)
 	} else {
 		fprintf(out, "Key %d generated and set as default.\n", res);
 	}
+	return 0;
 }
 
-void processLevelCommand(char *nextParam, FILE *out)
+int xdag_com_level(char * args, FILE* out)
 {
 	unsigned level;
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	char *cmd = strtok_r(args, " \t\r\n", &args);
 	if(!cmd) {
 		fprintf(out, "%d\n", xdag_set_log_level(-1));
 	} else if(sscanf(cmd, "%u", &level) != 1 || level > XDAG_TRACE) {
@@ -446,12 +205,13 @@ void processLevelCommand(char *nextParam, FILE *out)
 	} else {
 		xdag_set_log_level(level);
 	}
+	return 0;
 }
 
-void processMiningCommand(char *nextParam, FILE *out)
+int xdag_com_mining(char * args, FILE* out)
 {
 	int nthreads;
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	char *cmd = strtok_r(args, " \t\r\n", &args);
 	if(!cmd) {
 		fprintf(out, "%d mining threads running\n", g_xdag_mining_threads);
 	} else if(sscanf(cmd, "%d", &nthreads) != 1 || nthreads < 0) {
@@ -460,11 +220,51 @@ void processMiningCommand(char *nextParam, FILE *out)
 		xdag_mining_start(nthreads);
 		fprintf(out, "%d mining threads running\n", g_xdag_mining_threads);
 	}
+	return 0;
 }
 
-void processMinerCommand(char *nextParam, FILE *out)
+int xdag_com_net(char * args, FILE* out)
 {
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	char *cmd = NULL;
+	char netcmd[4096] = {0};
+	*netcmd = 0;
+	while((cmd = strtok_r(args, " \t\r\n", &args))) {
+		strcat(netcmd, cmd);
+		strcat(netcmd, " ");
+	}
+	xdag_net_command(netcmd, out);
+	return 0;
+}
+
+int xdag_com_transport(char * args, FILE* out)
+{
+	char *cmd = strtok_r(args, " \t\r\n", &args);
+	if(cmd != NULL && !strcmp(cmd, "info")) {
+		xdag_print_transport_task_info(out);
+	}
+	return 0;
+}
+
+int xdag_com_pool(char * args, FILE* out)
+{
+	char *cmd = strtok_r(args, " \t\r\n", &args);
+	if(!cmd) {
+		char buf[0x100] = {0};
+		cmd = xdag_pool_get_config(buf);
+		if(!cmd) {
+			fprintf(out, "Pool is disabled.\n");
+		} else {
+			fprintf(out, "Pool config: %s.\n", cmd);
+		}
+	} else {
+		xdag_pool_set_config(cmd);
+	}
+	return 0;
+}
+
+int xdag_com_miner(char * args, FILE* out)
+{
+	char *cmd = strtok_r(args, " \t\r\n", &args);
 	if(cmd) {
 		size_t len = strlen(cmd);
 		if(len == 32) {
@@ -477,68 +277,21 @@ void processMinerCommand(char *nextParam, FILE *out)
 	} else {
 		fprintf(out, "Miner is not specified.\n");
 	}
+	return 0;
 }
 
-void processMinersCommand(char *nextParam, FILE *out)
+int xdag_com_miners(char * args, FILE* out)
 {
 	int printOnlyConnections = 0;
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	char *cmd = strtok_r(args, " \t\r\n", &args);
 	if(cmd) {
 		printOnlyConnections = strcmp(cmd, "conn") == 0;
 	}
 	xdag_print_miners(out, printOnlyConnections);
+	return 0;
 }
 
-void processNetCommand(char *nextParam, FILE *out)
-{
-	char *cmd = NULL;
-	char netcmd[4096] = {0};
-	*netcmd = 0;
-	while((cmd = strtok_r(nextParam, " \t\r\n", &nextParam))) {
-		strcat(netcmd, cmd);
-		strcat(netcmd, " ");
-	}
-	xdag_net_command(netcmd, out);
-}
-
-void processTransportCommand(char *nextParam, FILE *out)
-{
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
-	if(cmd != NULL && !strcmp(cmd, "info")) {
-		xdag_print_transport_task_info(out);
-	}
-}
-
-void processRPCCommand(char *nextParam, FILE *out)
-{
-	char *cmd = NULL;
-	char rpccmd[4096] = {0};
-	while((cmd = strtok_r(nextParam, " \t\r\n", &nextParam))) {
-		strcat(rpccmd, cmd);
-		strcat(rpccmd, " ");
-	}
-
-	xdag_rpc_command(rpccmd, out);
-	return;
-}
-
-void processPoolCommand(char *nextParam, FILE *out)
-{
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
-	if(!cmd) {
-		char buf[0x100] = {0};
-		cmd = xdag_pool_get_config(buf);
-		if(!cmd) {
-			fprintf(out, "Pool is disabled.\n");
-		} else {
-			fprintf(out, "Pool config: %s.\n", cmd);
-		}
-	} else {
-		xdag_pool_set_config(cmd);
-	}
-}
-
-void processStatsCommand(FILE *out)
+int xdag_com_stats(char * args, FILE* out)
 {
 	if(is_wallet()) {
 		fprintf(out, "your hashrate MHs: %.2lf\n", xdagGetHashRate());
@@ -565,9 +318,16 @@ void processStatsCommand(FILE *out)
 			xdag_hashrate(g_xdag_extstats.hashrate_ours), xdag_hashrate(g_xdag_extstats.hashrate_total)
 		);
 	}
+	return 0;
 }
 
-void processInternalStatsCommand(FILE *out)
+int xdag_com_state(char * args, FILE* out)
+{
+	fprintf(out, "%s\n", get_state());
+	return 0;
+}
+
+int xdag_com_internal_stats(char * args, FILE* out)
 {
 	fprintf(out,
 		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
@@ -587,95 +347,38 @@ void processInternalStatsCommand(FILE *out)
 		(USE_OPTIMIZED_EC ? "Active" : "Inactive" ), 
 		g_xdag_extstats.cache_size, g_xdag_extstats.cache_usage, g_xdag_extstats.cache_hitrate*100
 	);
+	return 0;
 }
 
 
-void processExitCommand()
+int xdag_com_run(char * args, FILE* out)
+{
+	g_xdag_run = 1;
+	return 0;
+}
+
+int xdag_com_terminate(char * args, FILE* out)
 {
 	xdag_wallet_finish();
 	xdag_netdb_finish();
 	xdag_block_finish();
 	xdag_storage_finish();
 	xdag_mem_finish();
+	return -1;
 }
 
-void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd)
+int xdag_com_exit(char * args, FILE* out)
 {
-	char *amount = strtok_r(nextParam, " \t\r\n", &nextParam);
-	if(!amount) {
-		fprintf(out, "Xfer: amount not given.\n");
-		return;
-	}
-	char *address = strtok_r(0, " \t\r\n", &nextParam);
-	if(!address) {
-		fprintf(out, "Xfer: destination address not given.\n");
-		return;
-	}
-
-	char *remark = strtok_r(0, " \t\r\n", &nextParam);
-	if(remark && !validate_remark(remark)) {
-		fprintf(out, "Xfer: tx remark (Transaction ID) exceeds max length 32 chars or is invalid ascii.\n");
-		return;
-	}
-
-	if(out == stdout ? xdag_user_crypt_action(0, 0, 0, 3) : (ispwd ? xdag_user_crypt_action(pwd, 0, 4, 5) : 1)) {
-		sleep(3);
-		fprintf(out, "Password incorrect.\n");
-	} else {
-		xdag_do_xfer(out, amount, address, remark, 0);
-	}
+	xdag_com_terminate(args, out);
+	return -1;
 }
 
-void processLastBlocksCommand(char *nextParam, FILE *out)
+int xdag_com_disconnect(char *args, FILE *out)
 {
-	int blocksCount = 20;
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
-	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
-		fprintf(out, "Illegal number.\n");
-	} else {
-		xdag_list_main_blocks(blocksCount, 1, out);
-	}
-}
-
-void processMainBlocksCommand(char *nextParam, FILE *out)
-{
-	int blocksCount = 20;
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
-	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
-		fprintf(out, "Illegal number.\n");
-	} else {
-		xdag_list_main_blocks(blocksCount, 0, out);
-	}
-}
-
-void processMinedBlocksCommand(char *nextParam, FILE *out)
-{
-	int blocksCount = 20;
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
-	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
-		fprintf(out, "Illegal number.\n");
-	} else {
-		xdag_list_mined_blocks(blocksCount, 0, out);
-	}
-}
-
-void processOrphanBlocksCommand(char *nextParam, FILE *out)
-{
-	int blocksCount = 20;
-	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
-	if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
-		fprintf(out, "Illegal number.\n");
-	} else {
-		xdag_list_orphan_blocks(blocksCount, out);
-	}
-}
-
-void processDisconnectCommand(char *nextParam, FILE *out)
-{
-	char *typestr = strtok_r(nextParam, " \t\r\n", &nextParam);
+	char *typestr = strtok_r(args, " \t\r\n", &args);
 	if(!typestr) {
 		fprintf(out, "Invalid parameter.\n");
-		return;
+		return -1;
 	}
 
 	enum disconnect_type type = 0;
@@ -690,23 +393,36 @@ void processDisconnectCommand(char *nextParam, FILE *out)
 
 	if(type == 0) {
 		fprintf(out, "Invalid parameter.\n");
-		return;
+		return -1;
 	}
 
 	if(type == DISCONNECT_BY_ADRESS || type == DISCONNECT_BY_IP) {
-		value = strtok_r(nextParam, " \t\r\n", &nextParam);
+		value = strtok_r(args, " \t\r\n", &args);
 		if(!value) {
 			fprintf(out, "Invalid parameter.\n");
-			return;
+			return -1;
 		}
 	}
 
 	disconnect_connections(type, value);
+	return 0;
 }
 
-void processAutoRefreshCommand(char *nextParam, FILE *out)
+int xdag_com_rpc(char* args, FILE* out)
 {
-	char *typestr = strtok_r(nextParam, " \t\r\n", &nextParam);
+	char *cmd = NULL;
+	char rpccmd[4096] = {0};
+	while((cmd = strtok_r(args, " \t\r\n", &args))) {
+		strcat(rpccmd, cmd);
+		strcat(rpccmd, " ");
+	}
+	xdag_rpc_command(rpccmd, out);
+	return 0;
+}
+
+int xdag_com_autorefresh(char *args, FILE *out)
+{
+	char *typestr = strtok_r(args, " \t\r\n", &args);
 
 	if(!typestr) {
 		fprintf(out, g_prevent_auto_refresh ? "Auto refresh disabled.\n" : "Auto refresh enabled.\n");
@@ -719,11 +435,139 @@ void processAutoRefreshCommand(char *nextParam, FILE *out)
 			fprintf(out, "Invalid parameters.\n");
 		}
 	}
+	return 0;
 }
 
-void processReloadCommand(char *nextParam, FILE *out)
+int xdag_com_reload(char *args, FILE *out)
 {
 	g_xdag_state = XDAG_STATE_REST;
+	return 0;
+}
+
+int xdag_com_help(char *args, FILE* out)
+{
+	fprintf(out, "Commands:\n"
+		"  account [N]          - print first N (20 by default) our addresses with their amounts\n"
+		"  balance [A]          - print balance of the address A or total balance for all our addresses\n"
+		"  block [A]            - print extended info for the block corresponding to the address or hash A\n"
+		"  lastblocks [N]       - print latest N (20 by default, max limit 100) main blocks\n"
+		"  exit                 - exit this program (not the daemon)\n"
+		"  help                 - print this help\n"
+		"  keygen               - generate new private/public key pair and set it by default\n"
+		"  level [N]            - print level of logging or set it to N (0 - nothing, ..., 9 - all)\n"
+		"  miners               - for pool, print list of recent connected miners\n"
+		"  mining [N]           - print number of mining threads or set it to N\n"
+		"  net command          - run transport layer command, try 'net help'\n"
+		"  pool [CFG]           - print or set pool config; CFG is miners:maxip:maxconn:fee:reward:direct:fund\n"
+		"                          miners - maximum allowed number of miners,\n"
+		"                          maxip - maximum allowed number of miners connected from single ip,\n"
+		"                          maxconn - maximum allowed number of miners with the same address,\n"
+		"                          fee - pool fee in percent,\n"
+		"                          reward - reward to miner who got a block in percent,\n"
+		"                          direct - reward to miners participated in earned block in percent,\n"
+		"                          fund - community fund fee in percent\n"
+		"  run                  - run node after loading local blocks if option -r is used\n"
+		"  state                - print the program state\n"
+		"  stats                - print statistics for loaded and all known blocks\n"
+		"  terminate            - terminate both daemon and this program\n"
+		"  xfer S A             - transfer S %s to the address A\n"
+		"  disconnect O [A|IP]  - disconnect all connections or specified miners\n"
+		"                          O is option, can be all, address or ip\n"
+		"                          A is the miners' address\n"
+		"                          IP is the miners' IP\n"
+		"  rpc [command]        - rpc commands, try 'rpc help'\n"
+		"  mainblocks [N]       - print list of N (20 by default) main blocks\n"
+		"  minedblocks [N]      - print list of N (20 by default) main blocks mined by current pool\n"
+		, g_coinname);
+	return 0;
+}
+
+XDAG_COMMAND* xdag_find_command(char *name)
+{
+	for(int i = 0; commands[i].name; i++) {
+		if(strcmp(name, commands[i].name) == 0) {
+			return (&commands[i]);
+		}
+	}
+	return (XDAG_COMMAND *)NULL;
+}
+
+int xdag_start_command(int flags)
+{
+	char cmd[XDAG_COMMAND_MAX] = {0};
+	if(!(flags & XDAG_DAEMON)) printf("Type command, help for example.\n");
+
+	xdag_init_commands();
+
+	for(;;) {
+		if(flags & XDAG_DAEMON) {
+			sleep(100);
+		} else {
+			xdag_read_command(cmd);
+			if(strlen(cmd) > 0) {
+				int ret = xdag_search_command(cmd, stdout);
+				if(ret < 0) {
+					break;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+int xdag_search_command(char *cmd, FILE *out)
+{
+	uint32_t pwd[4] = {0};
+	char *nextParam;
+	int ispwd = 0;
+
+	cmd = strtok_r(cmd, " \t\r\n", &nextParam);
+	if(!cmd) return 0;
+	if(sscanf(cmd, "pwd=%8x%8x%8x%8x", pwd, pwd + 1, pwd + 2, pwd + 3) == 4) {
+		ispwd = 1;
+		cmd = strtok_r(0, " \t\r\n", &nextParam);
+	}
+
+	XDAG_COMMAND *command = xdag_find_command(cmd);
+
+	if(!command || (command->avaibility == 1 && is_pool()) || (command->avaibility == 2 && is_wallet())) {
+		fprintf(out, "Illegal command.\n");
+	} else {
+		if(!strcmp(command->name, "xfer")) {
+			xdag_com_xfer(nextParam, out, ispwd, pwd);
+		} else {
+			return (*(command->func))(nextParam, out);
+		}
+	}
+	return 0;
+}
+
+int xdag_com_xfer(char *nextParam, FILE *out, int ispwd, uint32_t* pwd)
+{
+	char *amount = strtok_r(nextParam, " \t\r\n", &nextParam);
+	if(!amount) {
+		fprintf(out, "Xfer: amount not given.\n");
+		return -1;
+	}
+	char *address = strtok_r(0, " \t\r\n", &nextParam);
+	if(!address) {
+		fprintf(out, "Xfer: destination address not given.\n");
+		return -1;
+	}
+
+	char *remark = strtok_r(0, " \t\r\n", &nextParam);
+	if(remark && !validate_remark(remark)) {
+		fprintf(out, "Xfer: tx remark (Transaction ID) exceeds max length 32 chars or is invalid ascii.\n");
+		return -1;
+	}
+
+	if(out == stdout ? xdag_user_crypt_action(0, 0, 0, 3) : (ispwd ? xdag_user_crypt_action(pwd, 0, 4, 5) : 1)) {
+		sleep(3);
+		fprintf(out, "Password incorrect.\n");
+	} else {
+		xdag_do_xfer(out, amount, address, remark, 0);
+	}
+	return 0;
 }
 
 const char *get_state()
@@ -889,12 +733,13 @@ int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t ti
 	return 0;
 }
 
-void xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount)
+int xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount)
 {
 	char address_from[33] = {0}, address_to[33] = {0};
 	xdag_hash2address(from, address_from);
 	xdag_hash2address(to, address_to);
 	xdag_mess("Xfer : from %s to %s xfer %.9Lf %s", address_from, address_to, amount2xdags(amount), g_coinname);
+	return 0;
 }
 
 static int out_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time)
@@ -931,7 +776,7 @@ static void *add_block_callback(void *block, void *data)
 	return 0;
 }
 
-int out_balances()
+int xdag_out_balances()
 {
 	char address[33] = {0};
 	struct out_balances_data d;
@@ -972,43 +817,6 @@ int xdag_show_state(xdag_hash_t hash)
 	return (*g_xdag_show_state)(state, balance, address);
 }
 
-void processHelpCommand(FILE *out)
-{
-	fprintf(out, "Commands:\n"
-		"  account [N]          - print first N (20 by default) our addresses with their amounts\n"
-		"  balance [A]          - print balance of the address A or total balance for all our addresses\n"
-		"  block [A]            - print extended info for the block corresponding to the address or hash A\n"
-		"  lastblocks [N]       - print latest N (20 by default, max limit 100) main blocks\n"
-		"  exit                 - exit this program (not the daemon)\n"
-		"  help                 - print this help\n"
-		"  keygen               - generate new private/public key pair and set it by default\n"
-		"  level [N]            - print level of logging or set it to N (0 - nothing, ..., 9 - all)\n"
-		"  miners               - for pool, print list of recent connected miners\n"
-		"  mining [N]           - print number of mining threads or set it to N\n"
-		"  net command          - run transport layer command, try 'net help'\n"
-		"  pool [CFG]           - print or set pool config; CFG is miners:maxip:maxconn:fee:reward:direct:fund\n"
-		"                          miners - maximum allowed number of miners,\n"
-		"                          maxip - maximum allowed number of miners connected from single ip,\n"
-		"                          maxconn - maximum allowed number of miners with the same address,\n"
-		"                          fee - pool fee in percent,\n"
-		"                          reward - reward to miner who got a block in percent,\n"
-		"                          direct - reward to miners participated in earned block in percent,\n"
-		"                          fund - community fund fee in percent\n"
-		"  run                  - run node after loading local blocks if option -r is used\n"
-		"  state                - print the program state\n"
-		"  stats                - print statistics for loaded and all known blocks\n"
-		"  terminate            - terminate both daemon and this program\n"
-		"  xfer S A             - transfer S %s to the address A\n"
-		"  disconnect O [A|IP]  - disconnect all connections or specified miners\n"
-		"                          O is option, can be all, address or ip\n"
-		"                          A is the miners' address\n"
-		"                          IP is the miners' IP\n"
-		"  rpc [command]        - rpc commands, try 'rpc help'\n"
-		"  mainblocks [N]       - print list of N (20 by default) main blocks\n"
-		"  minedblocks [N]      - print list of N (20 by default) main blocks mined by current pool\n"
-		, g_coinname);
-}
-
 void xdagSetCountMiningTread(int miningThreadsCount)
 {
 	xdag_mining_start(miningThreadsCount);
@@ -1019,7 +827,7 @@ double xdagGetHashRate(void)
 	return g_xdag_extstats.hashrate_s / (1024 * 1024);
 }
 
-int read_command(char *cmd)
+int xdag_read_command(char *cmd)
 {
 #ifndef _WIN32
 	char* line = linenoise("xdag> ");
@@ -1036,14 +844,13 @@ int read_command(char *cmd)
 
 	if(strlen(cmd) > 0) {
 		linenoiseHistoryAdd(cmd);
-		linenoiseHistorySave(COMMAND_HISTORY);
+		linenoiseHistorySave(XDAG_COMMAND_HISTORY);
 	}
 #else
 	printf("%s> ", g_progname);
 	fflush(stdout);
 	fgets(cmd, XDAG_COMMAND_MAX, stdin);
 #endif
-
 	return 0;
 }
 
@@ -1058,11 +865,12 @@ static void xdag_com_completion(const char *buf, linenoiseCompletions *lc)
 }
 #endif
 
-void xdag_init_commands(void)
+int xdag_init_commands(void)
 {
 #ifndef _WIN32
 	linenoiseSetCompletionCallback(xdag_com_completion); //set completion
 	linenoiseHistorySetMaxLen(50); //set max line for history
-	linenoiseHistoryLoad(COMMAND_HISTORY); //load history
+	linenoiseHistoryLoad(XDAG_COMMAND_HISTORY); //load history
 #endif
+    return 0;
 }

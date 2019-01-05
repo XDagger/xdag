@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.6)
-project(daggercoin)
+project(xdag)
 
 # Use a different compiler
 # http://www.cmake.org/Wiki/CMake_FAQ#How_do_I_use_a_different_compiler.3F
@@ -18,9 +18,9 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS "-std=gnu11 -O3 -g -Wall -Wmissing-prototypes -Wno-unused-result")
 
-set(OPENSSL_ROOT_DIR "/opt/openssl/")
+set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl/")
 
-file(GLOB_RECURSE DAGGER_SOURCES
+file(GLOB_RECURSE XDAG_SOURCES
   client/*.c
   dfslib/*.c
   dnet/*.c
@@ -29,11 +29,11 @@ file(GLOB_RECURSE DAGGER_SOURCES
 
 # ignore sources that we do not intend to include
 # when building the executable...
-list(FILTER DAGGER_SOURCES EXCLUDE REGEX ".*cgi.c$")
-list(FILTER DAGGER_SOURCES EXCLUDE REGEX ".*dvstime.c$")
-list(FILTER DAGGER_SOURCES EXCLUDE REGEX ".*statsdaemon.c$")
+list(FILTER XDAG_SOURCES EXCLUDE REGEX ".*cgi.c$")
+list(FILTER XDAG_SOURCES EXCLUDE REGEX ".*dvstime.c$")
+list(FILTER XDAG_SOURCES EXCLUDE REGEX ".*statsdaemon.c$")
 
-file(GLOB_RECURSE DAGGER_HEADERS
+file(GLOB_RECURSE XDAG_HEADERS
   client/*.h
   dfslib/*.h
   dnet/*.h
@@ -80,15 +80,15 @@ include_directories(
 if(APPLE)
   add_executable(
    ${PROJECT_NAME}
-   ${DAGGER_HEADERS}
-   ${DAGGER_SOURCES}
+   ${XDAG_HEADERS}
+   ${XDAG_SOURCES}
    ${SHA256_MAC_ASM_SOURCES}
   )
 else(UNIX)
   add_executable(
    ${PROJECT_NAME}
-   ${DAGGER_HEADERS}
-   ${DAGGER_SOURCES}
+   ${XDAG_HEADERS}
+   ${XDAG_SOURCES}
    ${SHA256_LINUX_ASM_SOURCES}
   )
 endif()
