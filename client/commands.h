@@ -5,7 +5,7 @@
 #include "block.h"
 
 #define XDAG_COMMAND_MAX	0x1000
-#define Nfields(d) (2 + d->hasRemark + d->fieldsCount + 3 * d->keysCount + 2 * d->outsig)
+#define XDAG_NFIELDS(d) (2 + d->hasRemark + d->fieldsCount + 3 * d->keysCount + 2 * d->outsig)
 #define XDAG_COMMAND_HISTORY ".cmd.history"
 
 #ifdef __cplusplus
@@ -65,7 +65,7 @@ int xdag_com_lastblocks(char *, FILE*);
 int xdag_com_mainblocks(char *, FILE*);
 int xdag_com_minedblocks(char *, FILE*);
 int xdag_com_orphanblocks(char *, FILE*);
-int xdag_com_keyGen(char *, FILE*);
+int xdag_com_keygen(char *, FILE*);
 int xdag_com_level(char *, FILE*);
 int xdag_com_miner(char *, FILE*);
 int xdag_com_miners(char *, FILE*);

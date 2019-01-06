@@ -5,5 +5,5 @@
 int main(int argc, char **argv)
 {
 	xdag_init(argc, argv, 0);
-	return 0;
+	return EXIT_SUCCESS;
 }
