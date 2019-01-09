@@ -54,7 +54,7 @@ typedef struct {
 
 XDAG_COMMAND* xdag_find_command(char* name);
 int xdag_init_commands(void);
-int xdag_start_command(int flags);
+/*int xdag_start_command(int flags);*/
 int xdag_search_command(char *cmd, FILE *out);
 int xdag_read_command(char *cmd);
 

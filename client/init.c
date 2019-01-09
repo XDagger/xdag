@@ -111,9 +111,12 @@ int xdag_init(int argc, char **argv, int isGui)
 				printf("create terminal_thread failed, error : %s\n", strerror(err));
 				return -1;
 			}
+			
+			if(pthread_join(th, NULL)) {
+                printf("thread error join.");
+                return -1;
+            }
 		}
-
-		xdag_start_command(parameters.transport_flags);
 	}
 
 	return 0;

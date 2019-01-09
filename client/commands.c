@@ -499,7 +499,7 @@ XDAG_COMMAND* xdag_find_command(char *name)
 	return (XDAG_COMMAND *)NULL;
 }
 
-int xdag_start_command(int flags)
+/*int xdag_start_command(int flags)
 {
 	char cmd[XDAG_COMMAND_MAX] = {0};
 	if(!(flags & XDAG_DAEMON)) printf("Type command, help for example.\n");
@@ -520,7 +520,7 @@ int xdag_start_command(int flags)
 		}
 	}
 	return EXIT_SUCCESS;
-}
+}*/
 
 int xdag_search_command(char *cmd, FILE *out)
 {
