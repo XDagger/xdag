@@ -540,8 +540,8 @@ cJSON * method_xdag_get_block_info(struct xdag_rpc_context * ctx, cJSON *params,
 	if(xdag_get_block_info(hash, (void *)info, rpc_get_block_info_callback, (void *)links, rpc_get_block_links_callback)) {
 		ctx->error_code = 1;
 		ctx->error_message = strdup("Block not found.");
-		free(info);
-		free(links);
+		cJSON_Delete(info);
+		cJSON_Delete(links);
 		return NULL;
 	}
 	cJSON_AddItemToObject(info, "transactions", links);
