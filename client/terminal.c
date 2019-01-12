@@ -48,7 +48,7 @@ int terminal(void)
 
 	while(1) {
 		int ispwd = 0, c = 0;
-		read_command(cmd);
+		xdag_read_command(cmd);
 		strcpy(cmd2, cmd);
 		char *ptr = strtok_r(cmd2, " \t\r\n", &lasts);
 		if(!ptr) continue;
@@ -176,7 +176,7 @@ void *terminal_thread(void *arg)
 			}
 #endif
 
-			res = xdag_command(cmd, fd);
+			res = xdag_search_command(cmd, fd);
 
 #ifndef _WIN32
 			xdag_close_file(fd);

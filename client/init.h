@@ -3,6 +3,8 @@
 #ifndef XDAG_MAIN_H
 #define XDAG_MAIN_H
 
+#include <stdlib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
