@@ -117,6 +117,8 @@ int xdag_init(int argc, char **argv, int isGui)
                 return -1;
             }
 		}
+
+		//xdag_start_command(parameters.transport_flags);
 	}
 
 	return 0;
