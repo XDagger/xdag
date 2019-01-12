@@ -26,7 +26,7 @@
 
 extern int g_block_production_on;
 
-XDAG_COMMAND commands[] = {
+xdag_command_t commands[] = {
 	{ "account"     , 0, xdag_com_account },
 	{ "balance"     , 0, xdag_com_balance },
 	{ "block"       , 2, xdag_com_block },
@@ -371,13 +371,13 @@ int xdag_com_terminate(char * args, FILE* out)
 	xdag_storage_finish();
 	xdag_mess("Closing memory module...");
 	xdag_mem_finish();
-	return EXIT_FAILURE;
+	return -1;
 }
 
 int xdag_com_exit(char * args, FILE* out)
 {
 	xdag_com_terminate(args, out);
-	return EXIT_FAILURE;
+	return -1;
 }
 
 int xdag_com_disconnect(char *args, FILE *out)
@@ -489,17 +489,17 @@ int xdag_com_help(char *args, FILE* out)
 	return EXIT_SUCCESS;
 }
 
-XDAG_COMMAND* xdag_find_command(char *name)
+xdag_command_t* xdag_find_command(char *name)
 {
 	for(int i = 0; commands[i].name; i++) {
 		if(strcmp(name, commands[i].name) == 0) {
 			return (&commands[i]);
 		}
 	}
-	return (XDAG_COMMAND *)NULL;
+	return (xdag_command_t *)NULL;
 }
 
-/*int xdag_start_command(int flags)
+int xdag_start_command(int flags)
 {
 	char cmd[XDAG_COMMAND_MAX] = {0};
 	if(!(flags & XDAG_DAEMON)) printf("Type command, help for example.\n");
@@ -520,7 +520,7 @@ XDAG_COMMAND* xdag_find_command(char *name)
 		}
 	}
 	return EXIT_SUCCESS;
-}*/
+}
 
 int xdag_search_command(char *cmd, FILE *out)
 {
@@ -535,9 +535,9 @@ int xdag_search_command(char *cmd, FILE *out)
 		cmd = strtok_r(0, " \t\r\n", &nextParam);
 	}
 
-	XDAG_COMMAND *command = xdag_find_command(cmd);
+	xdag_command_t *command = xdag_find_command(cmd);
 
-	if(!command || (command->avaibility == 1 && is_pool()) || (command->avaibility == 2 && is_wallet())) {
+	if(!command || (command->type == XDAG_COMMAND_TYPE_MINER && is_pool()) || (command->type == XDAG_COMMAND_TYPE_POOL && is_wallet())) {
 		fprintf(out, "Illegal command.\n");
 	} else {
 		if(!strcmp(command->name, "xfer")) {
@@ -735,7 +735,7 @@ int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t ti
 			return EXIT_FAILURE;
 		}
 		if(!xferData->remains) {
-			return 1;
+			return EXIT_FAILURE;
 		}
 	}
 	return EXIT_SUCCESS;
@@ -747,7 +747,7 @@ int xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount)
 	xdag_hash2address(from, address_from);
 	xdag_hash2address(to, address_to);
 	xdag_mess("Xfer : from %s to %s xfer %.9Lf %s", address_from, address_to, amount2xdags(amount), g_coinname);
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 static int out_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time)
@@ -784,7 +784,7 @@ static void *add_block_callback(void *block, void *data)
 	return EXIT_SUCCESS;
 }
 
-int xdag_out_balances()
+int xdag_out_balances(void)
 {
 	char address[33] = {0};
 	struct out_balances_data d;
