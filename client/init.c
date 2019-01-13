@@ -106,19 +106,18 @@ int xdag_init(int argc, char **argv, int isGui)
 		if(is_pool() || (parameters.transport_flags & XDAG_DAEMON) > 0) {
 			xdag_mess("Starting terminal server...");
 			pthread_t th;
-			const int err = pthread_create(&th, 0, &terminal_thread, 0);
+			const int err = pthread_create(&th, 0, &xdag_server_terminal, 0);
 			if(err != 0) {
-				printf("create terminal_thread failed, error : %s\n", strerror(err));
+				printf("create xdag_server_terminal thread failed, error : %s\n", strerror(err));
 				return -1;
 			}
-			
-			if(pthread_join(th, NULL)) {
-                printf("thread error join.");
-                return -1;
-            }
-		}
 
-		//xdag_start_command(parameters.transport_flags);
+			if(pthread_join(th, NULL)) {
+				printf("thread error join.");
+				return -1;
+			}
+		}
+		xdag_start_command(parameters.transport_flags);
 	}
 
 	return 0;
@@ -166,7 +165,7 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 			printUsage(argv[0]);
 			return 0;
 		} else if(ARG_EQUAL(argv[i], "-i", "")) { /* interactive mode */
-			return terminal();
+			return xdag_client_terminal();
 		} else if(ARG_EQUAL(argv[i], "-z", "")) { /* memory map  */
 			if(++i < argc) {
 				xdag_mem_tempfile_path(argv[i]);
@@ -380,34 +379,33 @@ void printUsage(char* appName)
 	printf("Usage: %s flags [pool_ip:port]\n"
 		"If pool_ip:port argument is given, then the node operates as a miner.\n"
 		"Flags:\n"
-		"  -a address       - specify your address to use in the miner\n"
-		"  -c ip:port       - address of another xdag full node to connect\n"
-		"  -d               - run as daemon (default is interactive mode)\n"
-		"  -h               - print this help\n"
-		"  -i               - run as interactive terminal for daemon running in this folder\n"
-		"  -l               - output non zero balances of all accounts\n"
-		"  -m N             - use N CPU mining threads (default is 0)\n"
-		"  -f               - configuration file path (pools only). Default value is pool.config\n"
-		"  -p ip:port       - (obsolete) public address of this node\n"
-		"  -P ip:port:CFG   - (obsolete) run the pool, bind to ip:port, CFG is miners:maxip:maxconn:fee:reward:direct:fund\n"
-		"                       miners  - maximum allowed number of miners,\n"
-		"                       maxip   - maximum allowed number of miners connected from single ip,\n"
-		"                       maxconn - maximum allowed number of miners with the same address,\n"
-		"                       fee     - pool fee in percent,\n"
-		"                       reward  - reward to miner who got a block in percent,\n"
-		"                       direct  - reward to miners participated in earned block in percent,\n"
-		"                       fund    - community fund fee in percent\n"
-		"  -r               - load local blocks and wait for 'run' command to continue\n"
-		"  -s ip:port       - address of this node to bind to\n"
-		"  -t               - connect to test net (default is main net)\n"
-		"  -v N             - set loglevel to N\n"
-		"  -z <path>        - path to temp-file folder\n"
-		"  -z RAM           - use RAM instead of temp-files\n"
-		"  -rpc-enable      - enable JSON-RPC service\n"
-		"  -rpc-port        - set HTTP JSON-RPC port (default is 7667)\n"
-		"  -threads N       - create N transport layer threads for pool (default is 6)\n"
-		"  -dm              - disable mining on pool (-P option is ignored)\n"
-		"  -tag             - tag for pool to distingush pools. Max length is 32 chars\n"
-		"  -disable-refresh - disable refresh netdb\n"
+		"  -a address     - specify your address to use in the miner\n"
+		"  -c ip:port     - address of another xdag full node to connect\n"
+		"  -d             - run as daemon (default is interactive mode)\n"
+		"  -h             - print this help\n"
+		"  -i             - run as interactive terminal for daemon running in this folder\n"
+		"  -l             - output non zero balances of all accounts\n"
+		"  -m N           - use N CPU mining threads (default is 0)\n"
+		"  -f             - configuration file path (pools only). Default value is pool.config\n"
+		"  -p ip:port     - (obsolete) public address of this node\n"
+		"  -P ip:port:CFG - (obsolete) run the pool, bind to ip:port, CFG is miners:maxip:maxconn:fee:reward:direct:fund\n"
+		"                     miners - maximum allowed number of miners,\n"
+		"                     maxip - maximum allowed number of miners connected from single ip,\n"
+		"                     maxconn - maximum allowed number of miners with the same address,\n"
+		"                     fee - pool fee in percent,\n"
+		"                     reward - reward to miner who got a block in percent,\n"
+		"                     direct - reward to miners participated in earned block in percent,\n"
+		"                     fund - community fund fee in percent\n"
+		"  -r             - load local blocks and wait for 'run' command to continue\n"
+		"  -s ip:port     - address of this node to bind to\n"
+		"  -t             - connect to test net (default is main net)\n"
+		"  -v N           - set loglevel to N\n"
+		"  -z <path>      - path to temp-file folder\n"
+		"  -z RAM         - use RAM instead of temp-files\n"
+		"  -rpc-enable    - enable JSON-RPC service\n"
+		"  -rpc-port      - set HTTP JSON-RPC port (default is 7667)\n"
+		"  -threads N     - create N transport layer threads for pool (default is 6)\n"
+		"  -dm            - disable mining on pool (-P option is ignored)\n"
+		"  -tag           - tag for pool to distingush pools. Max length is 32 chars\n"
 		, appName);
 }

@@ -1,12 +1,20 @@
 #ifndef XDAG_COMMANDS_H
 #define XDAG_COMMANDS_H
 
+#include <stdint.h>
 #include <time.h>
+
 #include "block.h"
 
 #define XDAG_COMMAND_MAX	0x1000
 #define XDAG_NFIELDS(d) (2 + d->hasRemark + d->fieldsCount + 3 * d->keysCount + 2 * d->outsig)
 #define XDAG_COMMAND_HISTORY ".cmd.history"
+
+#define XDAG_COMMAND_TYPE_BOTH   0 
+#define XDAG_COMMAND_TYPE_MINER  1 
+#define XDAG_COMMAND_TYPE_POOL   2 
+
+#define XFER_MAX_IN				11
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,8 +31,6 @@ extern const char *get_state(void);
 #ifdef __cplusplus
 };
 #endif
-
-#define XFER_MAX_IN				11
 
 struct xfer_callback_data {
 	struct xdag_field fields[XFER_MAX_IN + 1];
@@ -48,13 +54,13 @@ struct out_balances_data {
 typedef int (*xdag_com_func_t)(char*, FILE *);
 typedef struct {
 	char *name;			    /* command name */
-	int avaibility;			/* 0 - both miner and pool, 1 - only miner, 2 - only pool */
+	uint8_t type;	        /* 0 - both miner and pool, 1 - only miner, 2 - only pool */
 	xdag_com_func_t func;   /* command function */
-} XDAG_COMMAND;
+} xdag_command_t;
 
-XDAG_COMMAND* xdag_find_command(char* name);
+xdag_command_t* xdag_find_command(char* name);
 int xdag_init_commands(void);
-/*int xdag_start_command(int flags);*/
+int xdag_start_command(int flags);
 int xdag_search_command(char *cmd, FILE *out);
 int xdag_read_command(char *cmd);
 

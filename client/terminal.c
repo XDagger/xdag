@@ -31,7 +31,7 @@
 #define APPLICATION_DOMAIN_PORT 7676
 #endif
 
-int terminal(void)
+int xdag_client_terminal()
 {
 	char *lasts;
 	int sock;
@@ -48,6 +48,8 @@ int terminal(void)
 
 	while(1) {
 		int ispwd = 0, c = 0;
+		memset(cmd, 0, sizeof(cmd));
+		memset(cmd2, 0, sizeof(cmd2));
 		xdag_read_command(cmd);
 		strcpy(cmd2, cmd);
 		char *ptr = strtok_r(cmd2, " \t\r\n", &lasts);
@@ -90,8 +92,7 @@ int terminal(void)
 			write(sock, cmd2, strlen(cmd2));
 		}
 		write(sock, cmd, strlen(cmd) + 1);
-		if(!strcmp(ptr, "terminate")) {
-			sleep(1);
+		if(!strncmp(ptr, "terminate", strlen("terminate"))) {
 			close(sock);
 			break;
 		}
@@ -103,8 +104,9 @@ int terminal(void)
 	return 0;
 }
 
-void *terminal_thread(void *arg)
+void * xdag_server_terminal(void * args)
 {
+	int runing = 1;
 	int sock;
 #ifndef _WIN32
 	struct sockaddr_un addr;
@@ -139,7 +141,7 @@ void *terminal_thread(void *arg)
 		xdag_err("Unix domain socket listen errno:%d", errno);
 		return 0;
 	}
-	while (1) {
+	while (runing) {
 		char cmd[XDAG_COMMAND_MAX] = {0};
 		int clientSock, res;
 		struct pollfd fds;
@@ -192,7 +194,8 @@ void *terminal_thread(void *arg)
 			close(clientSock);
 #endif
 			if (res < 0) {
-				exit(0);
+				runing = 0;
+				xdag_info("run %s command and res is %d, terminal thread will finish.", cmd, res);
 			}
 		}
 	}
