@@ -510,6 +510,7 @@ int xdag_start_command(int flags)
 		if(flags & XDAG_DAEMON) {
 			sleep(100);
 		} else {
+			memset(cmd, 0, sizeof(cmd));
 			xdag_read_command(cmd);
 			if(strlen(cmd) > 0) {
 				int ret = xdag_search_command(cmd, stdout);

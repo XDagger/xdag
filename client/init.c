@@ -104,16 +104,16 @@ int xdag_init(int argc, char **argv, int isGui)
 
 	if(!isGui) {
 		if(is_pool() || (parameters.transport_flags & XDAG_DAEMON) > 0) {
-			xdag_mess("Starting terminal server...");
+			xdag_mess("Starting xdag pool server terminal ...");
 			pthread_t th;
 			const int err = pthread_create(&th, 0, &xdag_server_terminal, 0);
 			if(err != 0) {
-				printf("create xdag_server_terminal thread failed, error : %s\n", strerror(err));
+				xdag_err("Create xdag pool server terminal thread failed, error : %s\n", strerror(err));
 				return -1;
 			}
 
 			if(pthread_join(th, NULL)) {
-				printf("thread error join.");
+				xdag_err("thread error join.");
 				return -1;
 			}
 		}
