@@ -32,6 +32,7 @@
 #include "json-rpc/rpc_service.h"
 #include "../dnet/dnet_crypt.h"
 #include "utils/random.h"
+#include "websocket/websocket.h"
 
 #define ARG_EQUAL(a,b,c) strcmp(c, "") == 0 ? strcmp(a, b) == 0 : (strcmp(a, b) == 0 || strcmp(a, c) == 0)
 
@@ -338,6 +339,9 @@ int setup_pool(struct startup_parameters *parameters)
 	if(parameters->is_rpc) {
 		xdag_mess("Initializing RPC service...");
 		if(!!xdag_rpc_service_start(parameters->rpc_port)) return -1;
+
+		xdag_mess("Initializing WebSocket service...");
+		if(!!xdag_ws_server_start(-1, -1)) return -1;
 	}
 	xdag_mess("Starting blocks engine...");
 	if(xdag_blocks_start(parameters->mining_threads_count, !!parameters->miner_address)) return -1;

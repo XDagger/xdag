@@ -13,7 +13,7 @@ http                = $(SRCROOT)/client/http
 moving_statistics   = $(SRCROOT)/client/utils/moving_statistics
 algorithms          = $(SRCROOT)/client/algorithms
 secp256k1           = $(SRCROOT)/secp256k1
-
+websocket           = $(SRCROOT)/client/websocket
 
 sources = \
 	$(algorithms)/sha256-mb-x86_64$(HOST_SUFFIX).s  \
@@ -60,8 +60,13 @@ sources = \
 	$(jsonrpc)/rpc_commands.c                       \
 	$(http)/url.c                                   \
 	$(http)/http.c                                  \
-	$(secp256k1)/src/secp256k1.c
-
+	$(secp256k1)/src/secp256k1.c                    \
+	$(websocket)/websocket.c                        \
+	$(websocket)/wslay/wslay_event.c                \
+	$(websocket)/wslay/wslay_frame.c                \
+	$(websocket)/wslay/wslay_net.c                  \
+	$(websocket)/wslay/wslay_queue.c                \
+	$(websocket)/wslay/wslay_stack.c                \
 
 headers = \
 	$(client)/address.h                             \
@@ -110,7 +115,16 @@ headers = \
 	$(jsonrpc)/rpc_wrapper.h                        \
 	$(jsonrpc)/rpc_commands.h                       \
 	$(http)/url.h                                   \
-	$(http)/http.h                                  
+	$(http)/http.h                                  \
+	$(websocket)/websocket.h                        \
+	$(websocket)/wslay/config.h                     \
+	$(websocket)/wslay/wslay.h                      \
+	$(websocket)/wslay/wslayver.h                   \
+	$(websocket)/wslay/wslay_event.h                \
+	$(websocket)/wslay/wslay_frame.h                \
+	$(websocket)/wslay/wslay_net.h                  \
+	$(websocket)/wslay/wslay_queue.h                \
+	$(websocket)/wslay/wslay_stack.h                
 
 #program
 bin_PROGRAMS = xdag
@@ -133,7 +147,9 @@ _INCLUDES =                                         \
 	-I$(jsonrpc)                                    \
 	-I$(http)                                       \
 	-I$(secp256k1)/src                              \
-	-I$(secp256k1)/                                 
+	-I$(secp256k1)/                                 \
+	-I$(websocket)/wslay                            \
+	-I$(websocket)/                                 \
 	
 
 xdag_SOURCES = $(sources)
