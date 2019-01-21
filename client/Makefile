@@ -9,6 +9,8 @@ moving_statistics    = ./utils/moving_statistics
 algorithms           = ./algorithms
 json-rpc             = ./json-rpc
 secp256k1            = ../secp256k1
+http                 = ./http
+websocket            = ./websocket
 OS                  := $(shell uname)
 use_openssl_ec      := $(shell if grep --quiet -e 'define USE_OPTIMIZED_EC 1' -e 'define USE_OPTIMIZED_EC 2' crypt.h; then echo false; else echo true; fi)
 lgmp_installed      := $(shell if cc -lgmp 2>&1 | grep --quiet main; then echo true; else echo false; fi)
@@ -68,8 +70,14 @@ sources =                                   \
     $(json-rpc)/rpc_service.c               \
     $(json-rpc)/rpc_wrapper.c               \
     $(json-rpc)/rpc_commands.c              \
-    ./http/url.c                            \
-    ./http/http.c                           \
+    $(websocket)/websocket.c                \
+    $(websocket)/wslay/wslay_event.c        \
+    $(websocket)/wslay/wslay_frame.c        \
+    $(websocket)/wslay/wslay_net.c          \
+    $(websocket)/wslay/wslay_queue.c        \
+    $(websocket)/wslay/wslay_stack.c        \
+    $(http)/url.c                           \
+    $(http)/http.c                           
 
 
 headers =                                   \
@@ -125,8 +133,17 @@ headers =                                   \
     $(json-rpc)/rpc_service.h               \
     $(json-rpc)/rpc_wrapper.h               \
     $(json-rpc)/rpc_commands.h              \
-    ./http/url.h                            \
-    ./http/http.h                           \
+    $(websocket)/websocket.h                \
+    $(websocket)/wslay/config.h             \
+    $(websocket)/wslay/wslay.h              \
+    $(websocket)/wslay/wslayver.h           \
+    $(websocket)/wslay/wslay_event.h        \
+    $(websocket)/wslay/wslay_frame.h        \
+    $(websocket)/wslay/wslay_net.h          \
+    $(websocket)/wslay/wslay_queue.h        \
+    $(websocket)/wslay/wslay_stack.h        \
+    $(http)/url.h                           \
+    $(http)/http.h                          \
 
 
 
