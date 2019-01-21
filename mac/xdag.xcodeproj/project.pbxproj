@@ -9,12 +9,6 @@
 /* Begin PBXBuildFile section */
 		385EB84221D3D64200287D2B /* address.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7A721D3D64200287D2B /* address.c */; };
 		385EB84321D3D64200287D2B /* crc.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7AA21D3D64200287D2B /* crc.c */; };
-		382A4FF621DE73C900209951 /* netdb-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3845ABB221D2BD9F00252F71 /* netdb-testnet.txt */; };
-		382A4FF721DE73C900209951 /* netdb-white-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3845ABB321D2BD9F00252F71 /* netdb-white-testnet.txt */; };
-		382A4FF821DE73C900209951 /* netdb-white.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3845ABB421D2BD9F00252F71 /* netdb-white.txt */; };
-		382A4FF921DE73C900209951 /* netdb.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3845ABB721D2BD9F00252F71 /* netdb.txt */; };
-		382A4FFA21DE73C900209951 /* pools-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3845ABBC21D2BD9F00252F71 /* pools-testnet.txt */; };
-		382A4FFB21DE73C900209951 /* pools.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3845ABBD21D2BD9F00252F71 /* pools.txt */; };
 		385EB84421D3D64200287D2B /* sha256-mb-x86_64-mac.s in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7AC21D3D64200287D2B /* sha256-mb-x86_64-mac.s */; };
 		385EB84621D3D64200287D2B /* sha256.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7AE21D3D64200287D2B /* sha256.c */; };
 		385EB84821D3D64200287D2B /* block.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7B121D3D64200287D2B /* block.c */; };
