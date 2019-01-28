@@ -5,10 +5,12 @@
 //  Created by Rui Xie on 11/16/18.
 //  Copyright © 2018 xrdavies. All rights reserved.
 //
-
+#include <stdint.h>
 #include "base64.h"
 #include <stdlib.h>
 #include <string.h>
+
+
 
 static const uint8_t bits2mime[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const uint8_t mime2bits[256] = {

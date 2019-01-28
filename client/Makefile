@@ -62,6 +62,7 @@ sources =                                   \
     $(utils)/dirname.c                      \
     $(utils)/string_utils.c                 \
     $(utils)/random.c                       \
+    $(utils)/base64.c                       \
     $(moving_statistics)/moving_average.c   \
     $(json-rpc)/cJSON.c                     \
     $(json-rpc)/cJSON_Utils.c               \
@@ -125,6 +126,7 @@ headers =                                   \
     $(utils)/dirname.h                      \
     $(utils)/string_utils.h                 \
     $(utils)/random.h                       \
+    $(utils)/base64.h                       \
     $(moving_statistics)/moving_average.h   \
     $(json-rpc)/cJSON.h                     \
     $(json-rpc)/cJSON_Utils.h               \
