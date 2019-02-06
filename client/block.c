@@ -1545,6 +1545,7 @@ const char* xdag_get_block_state_info(uint8_t flags)
 
 void append_block_info(struct block_internal *bi)
 {
+#ifndef _WIN32
 	// if websocket service is not running return directly
 	if(!g_websocket_running) {
 		return;
@@ -1605,6 +1606,7 @@ void append_block_info(struct block_internal *bi)
 	strcat(message, "]}");
 
 	xdag_ws_message_append(message);
+#endif
 }
 
 /* prints detailed information about block */

@@ -186,6 +186,9 @@
     <ClCompile Include="..\..\client\utils\random.c">
       <Filter>client\utils</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\client\utils\uuid.c">
+      <Filter>client\utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client\address.h">
@@ -382,6 +385,9 @@
       <Filter>dfslib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\client\utils\random.h">
+      <Filter>client\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\utils\uuid.h">
       <Filter>client\utils</Filter>
     </ClInclude>
   </ItemGroup>

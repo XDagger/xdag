@@ -340,8 +340,10 @@ int setup_pool(struct startup_parameters *parameters)
 		xdag_mess("Initializing RPC service...");
 		if(!!xdag_rpc_service_start(parameters->rpc_port)) return -1;
 
+#ifndef _WIN32
 		xdag_mess("Initializing WebSocket service...");
 		if(!!xdag_ws_server_start(-1, -1)) return -1;
+#endif
 	}
 	xdag_mess("Starting blocks engine...");
 	if(xdag_blocks_start(parameters->mining_threads_count, !!parameters->miner_address)) return -1;
