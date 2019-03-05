@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
-project(daggercoin)
+project(xdag)
 
 # Use a different compiler
 # http://www.cmake.org/Wiki/CMake_FAQ#How_do_I_use_a_different_compiler.3F
