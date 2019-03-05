@@ -27,7 +27,7 @@
 #include <string.h>
 #include <assert.h>
 
-struct wslay_stack* wslay_stack_new()
+struct wslay_stack* wslay_stack_new(void)
 {
   struct wslay_stack *stack = (struct wslay_stack*)malloc
     (sizeof(struct wslay_stack));
