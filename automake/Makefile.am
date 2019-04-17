@@ -4,20 +4,19 @@
 
 SRCROOT             = ..
 client              = $(SRCROOT)/client
-dnet	            = $(SRCROOT)/dnet
-dfstools            = $(SRCROOT)/dus/programs/dfstools/source
-dfslib	            = $(dfstools)/dfslib
-dar		    = $(SRCROOT)/dus/programs/dar/source
-ldusinc	            = $(SRCROOT)/ldus/source/include/ldus
+dnet                = $(SRCROOT)/dnet
+dfslib              = $(SRCROOT)/dfslib
+ldusinc             = $(SRCROOT)/ldus
 utils               = $(SRCROOT)/client/utils
 jsonrpc             = $(SRCROOT)/client/json-rpc
 http                = $(SRCROOT)/client/http
 moving_statistics   = $(SRCROOT)/client/utils/moving_statistics
+algorithms          = $(SRCROOT)/client/algorithms
 secp256k1           = $(SRCROOT)/secp256k1
-
+websocket           = $(SRCROOT)/client/websocket
 
 sources = \
-	$(client)/sha256-mb-x86_64$(HOST_SUFFIX).s      \
+	$(algorithms)/sha256-mb-x86_64$(HOST_SUFFIX).s  \
 	$(client)/x86_64cpuid$(HOST_SUFFIX).s           \
 	$(client)/address.c                             \
 	$(client)/block.c                               \
@@ -30,7 +29,6 @@ sources = \
 	$(client)/netdb.c                               \
 	$(client)/pool.c                                \
 	$(client)/mining_common.c                       \
-	$(client)/sha256.c                              \
 	$(client)/storage.c                             \
 	$(client)/sync.c                                \
 	$(client)/transport.c                           \
@@ -43,12 +41,15 @@ sources = \
 	$(dfslib)/dfslib_crypt.c                        \
 	$(dfslib)/dfslib_random.c                       \
 	$(dfslib)/dfslib_string.c                       \
-	$(dfstools)/lib/dfsrsa.c                        \
-	$(dar)/lib/crc_c.c                              \
+	$(dfslib)/dfsrsa.c                              \
+	$(algorithms)/sha256.c                          \
+	$(algorithms)/crc.c                             \
 	$(utils)/log.c                                  \
 	$(utils)/utils.c                                \
 	$(utils)/linenoise.c                            \
 	$(utils)/dirname.c                              \
+	$(utils)/string_utils.c                         \
+	$(utils)/random.c                               \
 	$(moving_statistics)/moving_average.c           \
 	$(jsonrpc)/cJSON.c                              \
 	$(jsonrpc)/cJSON_Utils.c                        \
@@ -59,8 +60,13 @@ sources = \
 	$(jsonrpc)/rpc_commands.c                       \
 	$(http)/url.c                                   \
 	$(http)/http.c                                  \
-	$(secp256k1)/src/secp256k1.c
-
+	$(secp256k1)/src/secp256k1.c                    \
+	$(websocket)/websocket.c                        \
+	$(websocket)/wslay/wslay_event.c                \
+	$(websocket)/wslay/wslay_frame.c                \
+	$(websocket)/wslay/wslay_net.c                  \
+	$(websocket)/wslay/wslay_queue.c                \
+	$(websocket)/wslay/wslay_stack.c                \
 
 headers = \
 	$(client)/address.h                             \
@@ -73,7 +79,6 @@ headers = \
 	$(client)/pool.h                                \
 	$(client)/miner.h                               \
 	$(client)/mining_common.h                       \
-	$(client)/sha256.h                              \
 	$(client)/state.h                               \
 	$(client)/storage.h                             \
 	$(client)/sync.h                                \
@@ -82,29 +87,25 @@ headers = \
 	$(client)/commands.h                            \
 	$(client)/terminal.h                            \
 	$(dnet)/dnet_crypt.h                            \
-	$(dnet)/dnet_database.h                         \
 	$(dnet)/dnet_history.h                          \
-	$(dnet)/dnet_threads.h                          \
-	$(dnet)/dnet_connection.h                       \
-	$(dnet)/dnet_stream.h                           \
+	$(dnet)/dnet_main.h                             \
 	$(dnet)/dnet_packet.h                           \
-	$(dnet)/dnet_command.h                          \
-	$(dnet)/dnet_log.h                              \
-	$(dnet)/dnet_files.h                            \
-	$(dnet)/dnet_tap.h                              \
-	$(dnet)/dthread.h                               \
+	$(dnet)/dnet_system.h                           \
 	$(dfslib)/dfslib_crypt.h                        \
 	$(dfslib)/dfslib_random.h                       \
 	$(dfslib)/dfslib_string.h                       \
 	$(dfslib)/dfslib_types.h                        \
-	$(dfstools)/include/dfsrsa.h                    \
-	$(dar)/include/crc.h                            \
+	$(dfslib)/dfsrsa.h                              \
 	$(ldusinc)/atomic.h                             \
 	$(ldusinc)/list.h                               \
 	$(ldusinc)/rbtree.h                             \
+	$(algorithms)/sha256.h                          \
+	$(algorithms)/include/crc.h                     \
 	$(utils)/log.h                                  \
 	$(utils)/utils.h                                \
 	$(utils)/linenoise.h                            \
+	$(utils)/string_utils.h                         \
+	$(utils)/random.h                               \
 	$(moving_statistics)/moving_average.h           \
 	$(jsonrpc)/cJSON.h                              \
 	$(jsonrpc)/cJSON_Utils.h                        \
@@ -114,7 +115,16 @@ headers = \
 	$(jsonrpc)/rpc_wrapper.h                        \
 	$(jsonrpc)/rpc_commands.h                       \
 	$(http)/url.h                                   \
-	$(http)/http.h                                  
+	$(http)/http.h                                  \
+	$(websocket)/websocket.h                        \
+	$(websocket)/wslay/config.h                     \
+	$(websocket)/wslay/wslay.h                      \
+	$(websocket)/wslay/wslayver.h                   \
+	$(websocket)/wslay/wslay_event.h                \
+	$(websocket)/wslay/wslay_frame.h                \
+	$(websocket)/wslay/wslay_net.h                  \
+	$(websocket)/wslay/wslay_queue.h                \
+	$(websocket)/wslay/wslay_stack.h                
 
 #program
 bin_PROGRAMS = xdag
@@ -131,15 +141,15 @@ _INCLUDES =                                         \
 	-I$(SRCROOT)                                    \
 	-I$(dnet)                                       \
 	-I$(dfslib)                                     \
-	-I$(dfstools)/include                           \
-	-I$(dar)                                        \
 	-I$(ldusinc)                                    \
 	-I$(utils)                                      \
 	-I$(moving_statistics)                          \
 	-I$(jsonrpc)                                    \
 	-I$(http)                                       \
 	-I$(secp256k1)/src                              \
-	-I$(secp256k1)/                                 
+	-I$(secp256k1)/                                 \
+	-I$(websocket)/wslay                            \
+	-I$(websocket)/                                 \
 	
 
 xdag_SOURCES = $(sources)

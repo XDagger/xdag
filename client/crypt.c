@@ -29,15 +29,9 @@ extern unsigned int xOPENSSL_ia32cap_P[4];
 extern int xOPENSSL_ia32_cpuid(unsigned int *);
 
 // initialization of the encryption system
-int xdag_crypt_init(int withrandom)
+int xdag_crypt_init()
 {
-	if(withrandom) {
-		uint64_t buf[64];
-		xOPENSSL_ia32_cpuid(xOPENSSL_ia32cap_P);
-		xdag_generate_random_array(buf, sizeof(buf));
-		xdag_debug("Seed  : [%s]", xdag_log_array(buf, sizeof(buf)));
-		RAND_seed(buf, sizeof(buf));
-	}
+	xOPENSSL_ia32_cpuid(xOPENSSL_ia32cap_P);
 
 #if USE_OPTIMIZED_EC == 1 || USE_OPTIMIZED_EC == 2
 	ctx_noopenssl = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);

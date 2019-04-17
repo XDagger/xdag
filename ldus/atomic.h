@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 #define LDUS_USE_ATOMIC
 
 #ifndef _GCC_VERSION

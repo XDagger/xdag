@@ -16,14 +16,10 @@
 
 #include <stdlib.h> /* T5.245 */
 #include <stdio.h>
-#ifdef __DuS__
-#include <dus/error.h>
-#else
-#define _errn(n) return ((n) << 1 | 1)
-#include "../include/crc.h"
-#endif
 
-static const char version[] = "CRC library, ...-T4.046-T11.609"; /* $DVS:time$ */
+#include "crc.h"
+
+#define _errn(n) return ((n) << 1 | 1)
 
 unsigned *crc_table = NULL;
 

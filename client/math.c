@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "init.h"
+#include "time.h"
 #include "math.h"
 #include "utils/log.h"
 
@@ -34,7 +34,7 @@ xdag_diff_t xdag_hash_difficulty(xdag_hash_t hash)
 
 	xdag_diff_shr32(&res);
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 	if(!res) {
 		xdag_warn("hash_difficulty higher part of hash is equal zero");	
 		return max;

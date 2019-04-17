@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include "global.h"
 #include "init.h"
 #include "address.h"
 #include "wallet.h"
@@ -18,11 +19,8 @@
 #include "crypt.h"
 #include "json-rpc/rpc_commands.h"
 #include "math.h"
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 #include "utils/linenoise.h"
-#endif
-
-#if !defined(_WIN32) && !defined(_WIN64)
 #include <unistd.h>
 #endif
 
@@ -60,6 +58,7 @@ void processMinerCommand(char *nextParam, FILE *out);
 void processMinersCommand(char *nextParam, FILE *out);
 void processMiningCommand(char *nextParam, FILE *out);
 void processNetCommand(char *nextParam, FILE *out);
+void processTransportCommand(char *nextParam, FILE *out);
 void processPoolCommand(char *nextParam, FILE *out);
 void processStatsCommand(FILE *out);
 void processInternalStatsCommand(FILE *out);
@@ -88,6 +87,7 @@ int xdag_com_miner(char *, FILE*);
 int xdag_com_miners(char *, FILE*);
 int xdag_com_mining(char *, FILE*);
 int xdag_com_net(char *, FILE*);
+int xdag_com_transport(char *, FILE*);
 int xdag_com_pool(char *, FILE*);
 int xdag_com_stats(char *, FILE*);
 int xdag_com_state(char *, FILE*);
@@ -117,6 +117,7 @@ XDAG_COMMAND commands[] = {
 	{ "miners"      , 2, xdag_com_miners },
 	{ "mining"      , 1, xdag_com_mining },
 	{ "net"         , 0, xdag_com_net },
+	{ "transport"   , 0, xdag_com_transport },
 	{ "pool"        , 2, xdag_com_pool },
 	{ "run"         , 0, xdag_com_run },
 	{ "state"       , 0, xdag_com_state },
@@ -196,6 +197,12 @@ int xdag_com_mining(char * args, FILE* out)
 int xdag_com_net(char * args, FILE* out)
 {
 	processNetCommand(args, out);
+	return 0;
+}
+
+int xdag_com_transport(char * args, FILE* out)
+{
+	processTransportCommand(args, out);
 	return 0;
 }
 
@@ -331,7 +338,7 @@ int xdag_command(char *cmd, FILE *out)
 
 	XDAG_COMMAND *command = find_xdag_command(cmd);
 
-	if(!command || (command->avaibility == 1 && !g_is_miner) || (command->avaibility == 2 && g_is_miner)) {
+	if(!command || (command->avaibility == 1 && is_pool()) || (command->avaibility == 2 && is_wallet())) {
 		fprintf(out, "Illegal command.\n");
 	} else {
 		if(!strcmp(command->name, "xfer")) {
@@ -347,7 +354,7 @@ void processAccountCommand(char *nextParam, FILE *out)
 {
 	struct account_callback_data d;
 	d.out = out;
-	d.count = (g_is_miner ? 1 : 20);
+	d.count = (is_wallet() ? 1 : 20);
 	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
 	if(cmd) {
 		sscanf(cmd, "%d", &d.count);
@@ -494,6 +501,14 @@ void processNetCommand(char *nextParam, FILE *out)
 	xdag_net_command(netcmd, out);
 }
 
+void processTransportCommand(char *nextParam, FILE *out)
+{
+	char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+	if(cmd != NULL && !strcmp(cmd, "info")) {
+		xdag_print_transport_task_info(out);
+	}
+}
+
 void processRPCCommand(char *nextParam, FILE *out)
 {
 	char *cmd = NULL;
@@ -525,7 +540,7 @@ void processPoolCommand(char *nextParam, FILE *out)
 
 void processStatsCommand(FILE *out)
 {
-	if(g_is_miner) {
+	if(is_wallet()) {
 		fprintf(out, "your hashrate MHs: %.2lf\n", xdagGetHashRate());
 	} else {
 		fprintf(out, "Statistics for ours and maximum known parameters:\n"
@@ -542,11 +557,11 @@ void processStatsCommand(FILE *out)
 			(long long)g_xdag_stats.nblocks, (long long)g_xdag_stats.total_nblocks,
 			(long long)g_xdag_stats.nmain, (long long)g_xdag_stats.total_nmain,
 			(long long)g_xdag_extstats.nextra,
-			(long long)g_xdag_extstats.nnoref, g_xdag_extstats.nwaitsync,
-			xdag_diff_args(g_xdag_stats.difficulty),
-			xdag_diff_args(g_xdag_stats.max_difficulty), g_coinname,
-			amount2xdags(xdag_get_supply(g_xdag_stats.nmain)),
-			amount2xdags(xdag_get_supply(g_xdag_stats.total_nmain)),
+			(long long)g_xdag_extstats.nnoref,
+			g_xdag_extstats.nwaitsync,
+			xdag_diff_args(g_xdag_stats.difficulty), xdag_diff_args(g_xdag_stats.max_difficulty),
+			g_coinname, 
+			amount2xdags(xdag_get_supply(g_xdag_stats.nmain)), amount2xdags(xdag_get_supply(g_xdag_stats.total_nmain)),
 			xdag_hashrate(g_xdag_extstats.hashrate_ours), xdag_hashrate(g_xdag_extstats.hashrate_total)
 		);
 	}
@@ -577,10 +592,17 @@ void processInternalStatsCommand(FILE *out)
 
 void processExitCommand()
 {
+	xdag_mess("Closing wallet module...");
 	xdag_wallet_finish();
+	xdag_mess("Closing netdb module...");
 	xdag_netdb_finish();
+	xdag_mess("Closing pool module...");
+	xdag_pool_finish();
+	xdag_mess("Closing block module...");
 	xdag_block_finish();
+	xdag_mess("Closing storage module...");
 	xdag_storage_finish();
+	xdag_mess("Closing memory module...");
 	xdag_mem_finish();
 }
 
@@ -832,7 +854,7 @@ int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t ti
 	if(!amount) {
 		return -1;
 	}
-	if(!g_is_miner && xdag_main_time() < (time >> 16) + 2 * CONFIRMATIONS_COUNT) {
+	if(is_pool() && xdag_get_frame() < (time >> 16) + 2 * CONFIRMATIONS_COUNT) {
 		return 0;
 	}
 	for(i = 0; i < xferData->keysCount; ++i) {
@@ -921,12 +943,14 @@ int out_balances()
 	char address[33] = {0};
 	struct out_balances_data d;
 	unsigned i = 0;
+
 	xdag_set_log_level(0);
-	xdag_mem_init((xdag_main_time() - xdag_start_main_time()) << 17);
-	xdag_crypt_init(0);
+	xdag_mem_init((xdag_get_frame() - xdag_get_start_frame()) << 17);
+	xdag_crypt_init();
 	memset(&d, 0, sizeof(struct out_balances_data));
-	xdag_load_blocks(xdag_start_main_time() << 16, xdag_main_time() << 16, &i, &add_block_callback);
+	xdag_load_blocks(xdag_get_start_frame() << 16, xdag_get_frame() << 16, &i, &add_block_callback);
 	xdag_traverse_all_blocks(&d, out_balances_callback);
+
 	qsort(d.blocks, d.blocksCount, sizeof(struct xdag_field), out_sort_callback);
 	for(i = 0; i < d.blocksCount; ++i) {
 		xdag_hash2address(d.blocks[i].data, address);
@@ -1004,7 +1028,7 @@ double xdagGetHashRate(void)
 
 int read_command(char *cmd)
 {
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 	char* line = linenoise("xdag> ");
 	if(line == NULL) return 0;
 
@@ -1030,7 +1054,7 @@ int read_command(char *cmd)
 	return 0;
 }
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 static void xdag_com_completion(const char *buf, linenoiseCompletions *lc)
 {
 	for(int index = 0; commands[index].name; index++) {
@@ -1043,7 +1067,7 @@ static void xdag_com_completion(const char *buf, linenoiseCompletions *lc)
 
 void xdag_init_commands(void)
 {
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 	linenoiseSetCompletionCallback(xdag_com_completion); //set completion
 	linenoiseHistorySetMaxLen(50); //set max line for history
 	linenoiseHistoryLoad(COMMAND_HISTORY); //load history

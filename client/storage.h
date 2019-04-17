@@ -22,7 +22,7 @@ extern struct xdag_block *xdag_storage_load(xdag_hash_t hash, xtime_t time, uint
 	struct xdag_block *buf);
 
 /* Calls a callback for all blocks from the repository that are in specified time interval; returns the number of blocks */
-extern uint64_t xdag_load_blocks(xtime_t start_time, xtime_t end_time, void *data,
+extern uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *data,
 									  void *(*callback)(void *block, void *data));
 
 /* places the sums of blocks in 'sums' array, blocks are filtered by interval from start_time to end_time, splitted to 16 parts;

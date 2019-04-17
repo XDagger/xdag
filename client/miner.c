@@ -13,25 +13,27 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include "system.h"
-#include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
-#include "../dus/programs/dar/source/include/crc.h"
+#include "../dfslib/dfslib_crypt.h"
 #include "address.h"
 #include "block.h"
-#include "init.h"
+#include "global.h"
 #include "miner.h"
-#include "storage.h"
 #include "sync.h"
 #include "transport.h"
 #include "mining_common.h"
 #include "network.h"
+#include "algorithms/crc.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "utils/random.h"
 
 #define MINERS_PWD             "minersgonnamine"
 #define SECTOR0_BASE           0x1947f3acu
 #define SECTOR0_OFFSET         0x82e9d1b5u
 #define SEND_PERIOD            10                                  /* share period of sending shares */
 #define POOL_LIST_FILE         (g_xdag_testnet ? "pools-testnet.txt" : "pools.txt")
+
+int g_xdag_auto_swith_pool = 0;
 
 struct miner {
 	struct xdag_field id;
@@ -144,7 +146,8 @@ void *miner_net_thread(void *arg)
 	struct xdag_block b;
 	struct xdag_field data[2];
 	xdag_hash_t hash;
-	const char *pool_address = (const char*)arg;
+	char pool_address[50] = {0};
+	strncpy(pool_address, (const char*)arg, 49);
 	const char *mess = NULL;
 	int res = 0;
 	xtime_t t;
@@ -191,7 +194,16 @@ begin:
 	g_socket = xdag_connect_pool(pool_address, &mess);
 	if(g_socket == INVALID_SOCKET) {
 		pthread_mutex_unlock(&g_miner_mutex);
+		if(g_xdag_auto_swith_pool) {
+			if(!xdag_pick_pool(pool_address)) {
+				mess = "no active pool available";
+			}
+		} else {
+			mess = "connect pool failed.";
+		}
 		goto err;
+	} else {
+		xdag_mess("connected to pool %s", pool_address);
 	}
 
 	if(send_to_pool(b.field, XDAG_BLOCK_FIELDS) < 0) {
@@ -248,9 +260,7 @@ begin:
 				if(!memcmp(last->data, hash, sizeof(xdag_hashlow_t))) {
 					xdag_set_balance(hash, last->amount);
 
-					pthread_mutex_lock(&g_transport_mutex);
-					g_xdag_last_received = current_time;
-					pthread_mutex_unlock(&g_transport_mutex);
+					atomic_store_explicit_uint_least64(&g_xdag_last_received, current_time, memory_order_relaxed);
 
 					ndata = 0;
 
@@ -259,13 +269,13 @@ begin:
 					const uint64_t task_index = g_xdag_pool_task_index + 1;
 					struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
 
-					task->task_time = xdag_main_time();
+					task->task_time = xdag_get_frame();
 					xdag_hash_set_state(task->ctx, data[0].data,
 						sizeof(struct xdag_block) - 2 * sizeof(struct xdag_field));
 					xdag_hash_update(task->ctx, data[1].data, sizeof(struct xdag_field));
 					xdag_hash_update(task->ctx, hash, sizeof(xdag_hashlow_t));
 
-					xdag_generate_random_array(task->nonce.data, sizeof(xdag_hash_t));
+					GetRandBytes(task->nonce.data, sizeof(xdag_hash_t));
 
 					memcpy(task->nonce.data, hash, sizeof(xdag_hashlow_t));
 					memcpy(task->lastfield.data, task->nonce.data, sizeof(xdag_hash_t));
@@ -319,7 +329,7 @@ err:
 
 	pthread_mutex_unlock(&g_miner_mutex);
 
-	sleep(5);
+	sleep(10);
 
 	goto begin;
 }

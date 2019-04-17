@@ -19,7 +19,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 #define poll WSAPoll
 #else
 #include <signal.h>
@@ -27,18 +27,19 @@
 #include <sys/wait.h>
 #include <poll.h>
 #endif
-#if defined(_WIN32) || defined(_WIN64) || defined (__MACOS__) || defined (__APPLE__)
+#if defined(_WIN32) || defined (__MACOS__) || defined (__APPLE__)
 #include "../client/utils/utils.h"
 #endif
-#include "../ldus/source/include/ldus/atomic.h"
-#include "../dus/programs/dfstools/source/include/dfsrsa.h"
-#include "../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
-#include "../dus/programs/dfstools/source/dfslib/dfslib_string.h"
-#include "../dus/programs/dar/source/include/crc.h"
+#include "../ldus/atomic.h"
+#include "../dfslib/dfsrsa.h"
+#include "../dfslib/dfslib_crypt.h"
+#include "../dfslib/dfslib_string.h"
 #include "dnet_main.h"
 #include "dnet_crypt.h"
 #include "dnet_packet.h"
 #include "dnet_history.h"
+#include "../client/system.h"
+#include "../client/algorithms/crc.h"
 #include "../client/utils/log.h"
 
 #define SECTOR_SIZE			0x200
@@ -51,15 +52,23 @@
 #define BAD_CONN_TIMEOUT_SEC		90
 
 extern int g_xdag_sync_on;
-extern void dnet_session_init_crypt(struct dfslib_crypt *crypt, uint32_t sector[SECTOR_SIZE / 4]);
+
+#define XSECTOR \
+union { \
+	uint8_t byte[SECTOR_SIZE]; \
+	uint32_t word[SECTOR_SIZE / sizeof(uint32_t)]; \
+	struct xsector_extended *next; \
+	struct dnet_packet_header head; \
+};
+
 
 struct xsector {
-	union {
-		uint8_t byte[SECTOR_SIZE];
-		uint32_t word[SECTOR_SIZE / sizeof(uint32_t)];
-		struct xsector *next;
-		struct dnet_packet_header head;
-	};
+	XSECTOR
+};
+
+struct xsector_extended {
+	XSECTOR
+	time_t time_limit;
 };
 
 struct xdnet_keys {
@@ -69,7 +78,7 @@ struct xdnet_keys {
 
 extern struct xdnet_keys g_xkeys;
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 /* add proper code for Windows pools here */
 static struct xdnet_keys g_xkeys;
 #elif defined (__MACOS__) || defined (__APPLE__)
@@ -84,7 +93,7 @@ asm(
 #endif
 
 static struct dfslib_crypt *g_crypt;
-static struct xsector *g_common_queue;
+static struct xsector_extended *g_common_queue;
 static uint64_t g_common_queue_pos, g_common_queue_reserve;
 static int(*g_arrive_callback)(void *block, void *connection_from) = 0;
 int(*dnet_connection_open_check)(uint32_t ip, uint16_t port) = 0;
@@ -99,7 +108,7 @@ struct xcrypt {
 
 struct xpartbuf {
 	struct xsector read;
-	struct xsector write;
+	struct xsector_extended write;
 	int readlen;
 	int writelen;
 };
@@ -107,7 +116,7 @@ struct xpartbuf {
 struct xconnection {
 	pthread_mutex_t mutex;
 	struct xcrypt *crypt;
-	struct xsector *first_outbox, *last_outbox;
+	struct xsector_extended *first_outbox, *last_outbox;
 	struct xpartbuf *part;
 	uint64_t packets_in;
 	uint64_t packets_out;
@@ -131,7 +140,7 @@ static struct xthread *g_threads;
 static struct xconnection *g_connections;
 static int g_nthreads;
 
-void dnet_help(void);
+static void dnet_help(FILE*);
 
 static int open_socket(struct sockaddr_in *peeraddr, const char *ipport)
 {
@@ -238,7 +247,7 @@ int dnet_test_connection(void *connection)
 static int close_connection(struct xconnection *conn, int error, const char *mess)
 {
 	int nconn = conn - g_connections, nthread = nconn / MAX_CONNECTIONS_PER_THREAD, nfd, fd;
-	struct xsector *xs, *xs1;
+	struct xsector_extended *xse, *xse_tmp;
 	struct xthread *t = g_threads + nthread;
 	if(nconn < 0 || nconn >= g_nthreads * MAX_CONNECTIONS_PER_THREAD || conn != g_connections + nconn) {
 		return -1;
@@ -271,14 +280,14 @@ static int close_connection(struct xconnection *conn, int error, const char *mes
 	}
 	pthread_mutex_unlock(&t->mutex);
 	pthread_mutex_lock(&conn->mutex);
-	xs = conn->first_outbox;
+	xse = conn->first_outbox;
 	conn->first_outbox = conn->last_outbox = 0;
 	conn->out_queue_size = 0;
 	pthread_mutex_unlock(&conn->mutex);
-	while(xs) {
-		xs1 = xs->next;
-		free(xs);
-		xs = xs1;
+	while(xse) {
+		xse_tmp = xse->next;
+		free(xse);
+		xse = xse_tmp;
 	}
 	dnet_info("DNET  : closed with %d.%d.%d.%d:%d, nthread=%d, nfd=%d, fd=%d, conn=%p, "
 		"in/out/drop=%ld/%ld/%ld, time=%ld, last_time=%d, err=%x, mess=%s",
@@ -297,11 +306,17 @@ static int close_connection(struct xconnection *conn, int error, const char *mes
 	return 0;
 }
 
-void *dnet_send_xdag_packet(void *block, void *connection_to)
+void *dnet_send_xdag_packet(void *block, void *data)
 {
-	struct xconnection *conn = (struct xconnection *)connection_to;
-	struct xsector *buf;
-	if(!conn) {
+	struct send_parameters *sp = data;
+	struct xconnection *conn = sp->connection;
+	struct xsector_extended *buf;
+
+	if (sp->time_limit && time(NULL) > sp->time_limit) {
+		return (void*)(intptr_t)-1;
+	}
+
+	if(conn == NULL && !sp->time_to_live && !sp->broadcast) {
 		int i, n, sum = 0, steps = 2 * g_nthreads;
 		for(i = 0; i < g_nthreads; ++i) {
 			sum += g_threads[i].nconnections;
@@ -329,34 +344,36 @@ void *dnet_send_xdag_packet(void *block, void *connection_to)
 			break;
 		}
 		if(steps < 0) return 0;
-	} else if((uintptr_t)conn < 256 || (uintptr_t)conn & 1) {
-		if((uintptr_t)conn >= 256 && ((struct xsector *)block)->head.ttl <= 2) {
+	} else if(sp->time_to_live || sp->broadcast) {
+		if(conn != NULL && ((struct xsector *)block)->head.ttl <= 2) {
 			return 0;
 		}
 		buf = g_common_queue + ((ldus_atomic64_inc_return(&g_common_queue_reserve) - 1) & (COMMON_QUEUE_SIZE - 1));
+		buf->time_limit = sp->time_limit;
 		memcpy(buf->word, block, SECTOR_SIZE);
 		buf->head.type = DNET_PKT_XDAG;
-		if((uintptr_t)conn < 256) {
-			buf->head.ttl = (uintptr_t)conn;
+		if(sp->time_to_live) {
+			buf->head.ttl = sp->time_to_live;
 		} else {
 			buf->head.ttl--;
 		}
 		buf->head.length = SECTOR_SIZE;
 		buf->head.crc32 = 0;
 		buf->head.crc32 = crc_of_array(buf->byte, SECTOR_SIZE);
-		if((uintptr_t)conn >= 256) {
-			long nconn = (struct xconnection *)((uintptr_t)conn & ~(uintptr_t)1) - g_connections;
+		if(conn != NULL) {
+			long nconn = dnet_get_nconnection(conn);
 			buf->head.length = (uint16_t)nconn;
 			buf->head.type = nconn >> 16;
 		}
 		ldus_atomic64_inc_return(&g_common_queue_pos);
 		return 0;
 	}
-	buf = malloc(SECTOR_SIZE);
+	buf = malloc(sizeof(struct xsector_extended));
 	if(!buf) {
 		dnet_err("malloc failed. size : %ld", SECTOR_SIZE);
 		return 0;
 	}
+	buf->time_limit = sp->time_limit;
 	memcpy(buf->word, block, SECTOR_SIZE);
 	buf->next = 0;
 	pthread_mutex_lock(&conn->mutex);
@@ -368,7 +385,10 @@ void *dnet_send_xdag_packet(void *block, void *connection_to)
 	conn->last_outbox = buf;
 	conn->out_queue_size++;
 	pthread_mutex_unlock(&conn->mutex);
-	return connection_to ? 0 : conn;
+	if (sp->connection == NULL) {
+		sp->connection = conn;
+	}
+	return 0;
 }
 
 int dnet_set_xdag_callback(int(*callback)(void *block, void *connection_from))
@@ -382,6 +402,7 @@ static void *xthread_main(void *arg)
 	long nthread = (long)arg;
 	struct xthread *t = g_threads + nthread;
 	struct xsector buf, *xs;
+	struct xsector_extended bufe, *xse;
 	int res, ttl, size, err;
 	while(t->nconnections == 0) {
 		sleep(1);
@@ -476,7 +497,7 @@ close:
 					}
 					if(res > 0 && ttl > 2) {
 						xs->head.ttl = ttl;
-						dnet_send_xdag_packet(xs->word, (void *)((uintptr_t)conn | 1));
+						dnet_send_xdag_packet(xs->word, &(struct send_parameters){conn, 0, 1, 0});
 					}
 				} else {
 					if(!conn->crypt) {
@@ -509,63 +530,68 @@ skip_in:
 			if(t->fds[n].revents & POLLOUT) {
 				size = SECTOR_SIZE;
 				if(conn->part && conn->part->writelen) {
-					xs = &conn->part->write;
+					xse = &conn->part->write;
 					size = conn->part->writelen;
 				} else if(conn->packets_out >= FIRST_NSECTORS) {
 					if(conn->out_queue_size && (conn->packets_out & 1
 						|| conn->common_queue_pos == g_common_queue_pos)) {
 						pthread_mutex_lock(&conn->mutex);
 						if(conn->out_queue_size) {
-							xs = conn->first_outbox;
-							conn->first_outbox = xs->next;
+							xse = conn->first_outbox;
+							conn->first_outbox = xse->next;
 							if(!conn->first_outbox) {
 								conn->last_outbox = 0;
 							}
 							conn->out_queue_size--;
 						} else {
-							xs = 0;
+							xse = 0;
 						}
 						pthread_mutex_unlock(&conn->mutex);
-						if(!xs) {
+						if(!xse) {
 							continue;
 						}
-						xs->head.type = DNET_PKT_XDAG;
-						xs->head.ttl = 1;
-						xs->head.length = SECTOR_SIZE;
-						xs->head.crc32 = 0;
-						xs->head.crc32 = crc_of_array(xs->byte, SECTOR_SIZE);
+						if (xse->time_limit && time(NULL) > xse->time_limit) {
+							free(xse);
+							continue;
+						}
+						xse->head.type = DNET_PKT_XDAG;
+						xse->head.ttl = 1;
+						xse->head.length = SECTOR_SIZE;
+						xse->head.crc32 = 0;
+						xse->head.crc32 = crc_of_array(xse->byte, SECTOR_SIZE);
 					} else if(conn->common_queue_pos < g_common_queue_pos) {
 						if(g_common_queue_pos - conn->common_queue_pos > COMMON_QUEUE_SIZE) {
 							conn->common_queue_pos = g_common_queue_pos - COMMON_QUEUE_SIZE;
 						}
-						memcpy(buf.word, &g_common_queue[conn->common_queue_pos & (COMMON_QUEUE_SIZE - 1)],
-							SECTOR_SIZE);
-						xs = &buf;
+						memcpy(&bufe, &g_common_queue[conn->common_queue_pos & (COMMON_QUEUE_SIZE - 1)],
+							sizeof(struct xsector_extended));
+						xse = &bufe;
 						conn->common_queue_pos++;
-						if(conn - g_connections == (xs->head.length | xs->head.type << 16)) {
+						if(conn - g_connections == (xse->head.length | xse->head.type << 16) || 
+								(xse->time_limit && time(NULL) > xse->time_limit)) {
 							continue;
 						}
-						xs->head.type = DNET_PKT_XDAG;
-						xs->head.length = SECTOR_SIZE;
+						xse->head.type = DNET_PKT_XDAG;
+						xse->head.length = SECTOR_SIZE;
 					} else if(conn->crypt && time(0) >= conn->crypt->last_sent + OLD_DNET_TIMEOUT_SEC) {
-						memset(&buf, 0, SECTOR_SIZE);
-						xs = &buf;
+						memset(&bufe, 0, SECTOR_SIZE);
+						xse = &bufe;
 					} else {
 						t->fds[n].events &= ~POLLOUT;
 						continue;
 					}
-					dfslib_encrypt_sector(g_crypt, xs->word, conn->packets_out - FIRST_NSECTORS + 1);
+					dfslib_encrypt_sector(g_crypt, xse->word, conn->packets_out - FIRST_NSECTORS + 1);
 				} else if(conn->packets_out < FIRST_NSECTORS - 1 || (!conn->crypt && conn->packets_in)) {
-					xs = ((struct xsector *)&g_xkeys.pub) + conn->packets_out;
+					xse = (struct xsector_extended*)(((struct xsector *)&g_xkeys.pub) + conn->packets_out);
 				} else if(conn->crypt && conn->packets_in >= FIRST_NSECTORS - 1) {
-					memcpy(buf.word, g_xkeys.sect0.word, SECTOR_SIZE);
-					xs = &buf;
-					dfsrsa_crypt(xs->word, SECTOR_SIZE / sizeof(dfsrsa_t), conn->crypt->pub.key, DNET_KEYLEN);
+					memcpy(bufe.word, g_xkeys.sect0.word, SECTOR_SIZE);
+					xse = &bufe;
+					dfsrsa_crypt(xse->word, SECTOR_SIZE / sizeof(dfsrsa_t), conn->crypt->pub.key, DNET_KEYLEN);
 				} else {
 					continue;
 				}
 
-				res = write(t->fds[n].fd, xs->byte + SECTOR_SIZE - size, size);
+				res = write(t->fds[n].fd, xse->byte + SECTOR_SIZE - size, size);
 				if(conn->part && conn->part->writelen) {
 					if(res <= 0) {
 						err = res << 4 | 7;
@@ -585,11 +611,11 @@ skip_in:
 						}
 						if(conn->part) {
 							conn->part->writelen = size - res;
-							memcpy(&conn->part->write, xs->byte, SECTOR_SIZE);
+							memcpy(&conn->part->write, xse->byte, SECTOR_SIZE);
 						}
 					}
-					if(conn->packets_out >= FIRST_NSECTORS && xs != &buf) {
-						free(xs);
+					if(conn->packets_out >= FIRST_NSECTORS && xse != &bufe) {
+						free(xse);
 					}
 					if(res != size) {
 						if(res > 0 && conn->part) {
@@ -666,7 +692,7 @@ static void *accept_thread_main(void *arg)
 
 static void daemonize(void)
 {
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 	if(getppid() == 1) exit(0); /* already a daemon */
 	int i = fork();
 	if(i < 0) exit(1); /* fork error */
@@ -694,7 +720,7 @@ static void daemonize(void)
 
 static void angelize(void)
 {
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 	int stat = 0;
 	pid_t childpid;
 	while((childpid = fork())) {
@@ -722,7 +748,7 @@ static void angelize(void)
 #endif
 }
 
-#if defined(_WIN32) || defined(_WIN64) || defined (__MACOS__) || defined (__APPLE__)
+#if defined(_WIN32) || defined (__MACOS__) || defined (__APPLE__)
 static int dnet_load_keys(void)
 {
 	FILE *f = xdag_open_file("dnet_keys.bin", "rb");
@@ -748,7 +774,7 @@ int dnet_init(int argc, char **argv)
 	int is_daemon = 0, i, err, nthreads = DEF_NTHREADS, n;
 	pthread_t t;
 	for(i = 1; i < argc; ++i) {
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 		if(!strcmp(argv[i], "-d")) is_daemon = 1;
 		else
 #endif
@@ -761,7 +787,7 @@ int dnet_init(int argc, char **argv)
 
 	if(nthreads >= 1) {
 
-#if defined(_WIN32) || defined(_WIN64) || defined (__MACOS__) || defined (__APPLE__)
+#if defined(_WIN32) || defined (__MACOS__) || defined (__APPLE__)
 		if((err = dnet_load_keys())) {
 			printf("Load dnet keys failed.");
 			return err;
@@ -771,7 +797,7 @@ int dnet_init(int argc, char **argv)
 		g_nthreads = nthreads;
 		g_threads = calloc(sizeof(struct xthread), nthreads);
 		g_connections = calloc(sizeof(struct xconnection), nthreads * MAX_CONNECTIONS_PER_THREAD);
-		g_common_queue = malloc(COMMON_QUEUE_SIZE * SECTOR_SIZE);
+		g_common_queue = malloc(COMMON_QUEUE_SIZE * sizeof(struct xsector_extended));
 		g_crypt = malloc(sizeof(struct dfslib_crypt));
 
 		if(!g_threads || !g_connections || !g_common_queue || !g_crypt) {
@@ -791,11 +817,6 @@ int dnet_init(int argc, char **argv)
 		}
 	}
 	printf("%s %s%s.\n", argv[0], DNET_VERSION, (is_daemon ? ", running as daemon" : ""));
-	if((err = dnet_crypt_init(DNET_VERSION))) {
-		sleep(3);
-		printf("Password incorrect.\n");
-		return err;
-	}
 
 	if(nthreads >= 1) {
 		dnet_session_init_crypt(g_crypt, g_xkeys.sect0.word);
@@ -830,21 +851,24 @@ int dnet_execute_command(const char *cmd, void *fileout)
 	char buf[4096], *str, *lasts;
 	strcpy(buf, cmd);
 	str = strtok_r(buf, " \t\r\n", &lasts);
-	if(!str) {
-		return 0;
+	if(!str || !strcmp(str, "help")) {
+		dnet_help(f);
 	} else if(!strcmp(str, "conn")) {
 		struct xconnection *conn;
 		char buf[32];
 		int i, j, count = 0, len;
+		fprintf(f, "---------------------------------------------------------------------------------------------------------\n"
+			"Connection list:\n");
 		for(i = 0; i < g_nthreads; ++i) for(j = 0; j < g_threads[i].nconnections; ++j) {
 			conn = g_threads[i].conn[j];
-			sprintf(buf, "%d.%d.%d.%d:%d", conn->ip & 0xFF, conn->ip >> 8 & 0xFF, conn->ip >> 16 & 0xFF, conn->ip >> 24 & 0xFF, conn->port);
+			dnet_stringify_conn_info(buf, sizeof(buf), conn);
 			len = strlen(buf);
-			fprintf(f, " %2d. %s%*s%d sec, %lld/%lld in/out bytes, %lld/%lld packets, %lld/%lld dropped\n",
+			fprintf(f, " %2d. %s%*s%d sec, [in/out] - %lld/%lld bytes, %lld/%lld packets, %lld/%lld dropped\n",
 				count++, buf, 24 - len, "", (int)(time(0) - conn->created),
 				(long long)conn->packets_in << 9, (long long)conn->packets_out << 9,
 				(long long)conn->packets_in, (long long)conn->packets_out, (long long)conn->dropped_in, 0ll);
 		}
+		fprintf(f, "---------------------------------------------------------------------------------------------------------\n");
 	} else if(!strcmp(str, "connect")) {
 		struct sockaddr_in peeraddr;
 		int fd;
@@ -854,6 +878,7 @@ int dnet_execute_command(const char *cmd, void *fileout)
 			return -1;
 		}
 
+		fprintf(f, "connect: connecting...");
 		fd = open_socket(&peeraddr, str);
 		if(fd < 0) {
 			fprintf(f, "connect: error opening the socket\n");
@@ -872,16 +897,47 @@ int dnet_execute_command(const char *cmd, void *fileout)
 				htonl(peeraddr.sin_addr.s_addr), htons(peeraddr.sin_port));
 			return -1;
 		}
-	} else if(!strcmp(str, "help")) {
-		dnet_help();
+	} else {
+		dnet_help(f);
 	}
 	return 0;
 }
 
-void dnet_help(void)
+static void dnet_help(FILE *fileout)
 {
-	printf("Commands:\n");
-	printf("  conn                          - list connections\n");
-	printf("  connect ip:port               - connect to this host\n");
-	printf("  help                          - print this help\n");
+	fprintf(fileout, "Commands:\n"
+		"  conn                          - list connections\n"
+		"  connect ip:port               - connect to this host\n"
+		"  help                          - print this help\n");
 }
+
+inline uint64_t dnet_get_maxconnections(void)
+{
+	return MAX_CONNECTIONS_PER_THREAD * g_nthreads;
+}
+
+inline long dnet_get_nconnection(struct xconnection* connection)
+{
+	long nconn = connection - g_connections;
+	if (nconn >= dnet_get_maxconnections()) {
+		dnet_err("out of bounds nconnection requested [function: %s]", __func__);
+		nconn = 0;
+	}
+	return nconn;
+}
+
+inline void dnet_stringify_conn_info(char *buf, size_t size, struct xconnection *conn)
+{
+	snprintf(buf, size, "%d.%d.%d.%d:%d", conn->ip & 0xFF, conn->ip >> 8 & 0xFF, 
+		conn->ip >> 16 & 0xFF, conn->ip >> 24 & 0xFF, conn->port);
+}
+
+void dnet_for_each_conn(void *(*callback)(void*, void*), void* data)
+{
+	if (callback != NULL) {
+		for (int i = 0; i < g_nthreads; ++i) for(int j = 0; j < g_threads[i].nconnections; ++j) {
+			callback(data, g_threads[i].conn[j]);
+		}
+	}
+}
+
