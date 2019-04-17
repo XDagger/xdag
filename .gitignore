@@ -35,3 +35,8 @@ xdag
 /client/dnet_key.dat
 /client/storage
 /client/wallet.dat
+
+#clion project
+cmake-build-debug
+cmake-build-release
+.idea
