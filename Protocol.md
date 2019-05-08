@@ -122,7 +122,7 @@ In every moment of time there is one main chain of blocks (see [1.Terms](#1.Term
 
 Blocks are ordered by the following order rules:  
 
-1. If block A is referenced by a main block M, but he block B is not referenced by M, then A precedes B. 
+1. If block A is referenced by a main block M, but the block B is not referenced by M, then A precedes B. 
 2. IF blocks A and B are equal by the rule 1 and M is the minimum main block such that A and B are referenced by M, and C is nearest to M common block in shorted chains from M to A and from M to B, and A is i-referenced by C, and B is j-referenced by C where i < i, thn A precedes B.
 3. If blocks A and B are equal by rules 1 and 2, and block A is referenced by B, then A precedes B.
 
