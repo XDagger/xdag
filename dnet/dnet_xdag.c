@@ -199,6 +199,7 @@ static struct xconnection *add_connection(int fd, uint32_t ip, uint16_t port, in
 			conn->packets_in = conn->packets_out = conn->dropped_in = 0;
 			conn->common_queue_pos = g_common_queue_pos;
 			t->fds[nfd].events = POLLIN | POLLOUT;
+			t->fds[nfd].revents = 0;
 			t->fds[nfd].fd = fd;
 			t->nconnections++;
 			pthread_mutex_unlock(&t->mutex);
