@@ -1,19 +1,20 @@
 /* dnet: external interface; T13.011-T14.328; $DVS:time$ */
 
-#ifndef DNET_MAIN_H_INCLUDED
-#define DNET_MAIN_H_INCLUDED
+#pragma once
 
-struct send_parameters {
-        struct xconnection *connection;
-        time_t time_limit;
-        int broadcast;
-        uint8_t time_to_live;
+struct send_parameters
+{
+  struct xconnection *connection;
+  time_t time_limit;
+  int broadcast;
+  uint8_t time_to_live;
 };
 
 struct xconnection;
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 extern int dnet_init(int argc, char **argv);
@@ -48,7 +49,7 @@ extern void (*dnet_connection_close_notify)(void *conn);
  * 3 - ввести пароль и проверить его, возвращает 0 при успехе
  * 4 - ввести пароль и записать его отпечаток в массив data длины 16 байт
  * 5 - проверить, что отпечаток в массиве data соответствует паролю
- * 6 - setup callback function to input password, data is pointer to function 
+ * 6 - setup callback function to input password, data is pointer to function
  *     int (*)(const char *prompt, char *buf, unsigned size);
  */
 extern int dnet_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action);
@@ -66,6 +67,4 @@ void dnet_stringify_conn_info(char *buf, size_t size, struct xconnection *conn);
 void dnet_for_each_conn(void *(*callback)(void*, void*), void* data);
 #ifdef __cplusplus
 };
-#endif
-
 #endif

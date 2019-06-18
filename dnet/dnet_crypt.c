@@ -18,7 +18,8 @@
 #define PWDLEN	    64
 #define KEYLEN_MIN	(DNET_KEYLEN / 4)
 
-struct dnet_keys {
+struct dnet_keys
+{
 	struct dnet_key priv;
 	struct dnet_key pub;
 };
@@ -26,7 +27,8 @@ struct dnet_keys {
 struct dnet_keys *g_dnet_keys;
 static struct dfslib_crypt *g_dnet_user_crypt = 0;
 
-struct dnet_session {
+struct dnet_session
+{
 	struct dnet_key key;
 	uint32_t sector_write[CRYPT_SECTOR_SIZE / 4];
 	uint32_t sector_read[CRYPT_SECTOR_SIZE / 4];
