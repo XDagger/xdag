@@ -9,16 +9,16 @@ project(xdag)
 # usually avoid this by using environment variables:
 #   mkdir build-gcc && cd build-gcc && CC=gcc-7 CXX=g++-7 cmake ..
 
-enable_language(
-  C
-  ASM
-)
+enable_language(C ASM)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS "-std=gnu11 -O3 -g -Wall -Wmissing-prototypes -Wno-unused-result")
 
-set(OPENSSL_ROOT_DIR "/opt/openssl/")
+if (APPLE AND NOT DEFINED ENV{OPENSSL_ROOT_DIR})
+  set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl" "/usr/local/ssl/*" "/usr/local/Cellar/openssl/*")
+  set(OPENSSL_LIBRARIES "/usr/local/opt/openssl/lib" "/usr/local/ssl/*/lib" "/usr/local/Cellar/openssl/*/lib")
+endif()
 
 file(GLOB_RECURSE DAGGER_SOURCES
   client/*.c
