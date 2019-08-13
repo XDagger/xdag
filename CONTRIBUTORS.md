@@ -52,6 +52,7 @@ Current maintainers:
 * [晴空女王](https://github.com/wendychaung)
 * [wwrightc](https://github.com/wwrightc)
 * [yuguagua](https://github.com/yuguagua)
+
 Thanks to Daniel Cheatoshin for creating xdag project.
 Also thanks to all the people who reported bugs and suggested new features.
 
