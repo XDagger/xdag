@@ -12,11 +12,6 @@ Principles:
 - Mineable, no premine, no ICO  
 - Mining new money every 64 seconds  
 
-Status:
-----------
-
-[![Throughput Graph](https://graphs.waffle.io/XDagger/xdag/throughput.svg)](https://waffle.io/XDagger/xdag/metrics/throughput)
-
 
 HOW-TO:  
 ----------
