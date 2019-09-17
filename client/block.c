@@ -33,6 +33,12 @@
 
 #define MAX_WAITING_MAIN        1
 #define MAIN_START_AMOUNT       (1ll << 42)
+#define MAIN_APOLLO_AMOUNT      (1ll << 39)
+// 13500 is 10 days
+// nmain = 834646 ,          at 2019-09-17 00:30:00
+// nmain = 834646 + 13500  , at 2019-09-27 00:30:00
+#define MAIN_APOLLO_HIGHT       (834646 + 13500)
+//#define MAIN_APOLLO_HIGHT       2  // for test
 #define MAIN_BIG_PERIOD_LOG     21
 #define MAX_LINKS               15
 #define MAKE_BLOCK_PERIOD       13
@@ -286,24 +292,41 @@ static uint64_t unapply_block(struct block_internal *bi)
 	return (xdag_amount_t)0 - bi->fee;
 }
 
-// calculates current supply by specified count of main blocks
+static xdag_amount_t get_start_amount(uint64_t nmain) {
+    xdag_amount_t start_amount = 0;
+    if(nmain >= MAIN_APOLLO_HIGHT) {
+        start_amount = MAIN_APOLLO_AMOUNT;
+    } else {
+        start_amount = MAIN_START_AMOUNT;
+    }
+    return start_amount;
+}
+
+static xdag_amount_t get_amount(uint64_t nmain) {
+    xdag_amount_t amount = 0;
+    xdag_amount_t start_amount = 0;
+    
+    start_amount = get_start_amount(nmain);
+    amount = start_amount >> (nmain >> MAIN_BIG_PERIOD_LOG);
+    return amount;
+}
+
 xdag_amount_t xdag_get_supply(uint64_t nmain)
 {
-	xdag_amount_t res = 0, amount = MAIN_START_AMOUNT;
-
-	while (nmain >> MAIN_BIG_PERIOD_LOG) {
-		res += (1l << MAIN_BIG_PERIOD_LOG) * amount;
-		nmain -= 1l << MAIN_BIG_PERIOD_LOG;
-		amount >>= 1;
-	}
-	res += nmain * amount;
-	return res;
+    xdag_amount_t res = 0, amount = 0;
+    
+    for(int i = 0; i < nmain; i++) {
+        amount = get_amount(i);
+        res += amount;
+    }
+    return res;
 }
 
 static void set_main(struct block_internal *m)
 {
-	xdag_amount_t amount = MAIN_START_AMOUNT >> (g_xdag_stats.nmain >> MAIN_BIG_PERIOD_LOG);
-
+    xdag_amount_t amount = 0;
+    
+    amount = get_amount(g_xdag_stats.nmain);
 	m->flags |= BI_MAIN;
 	accept_amount(m, amount);
 	g_xdag_stats.nmain++;
@@ -319,9 +342,10 @@ static void set_main(struct block_internal *m)
 
 static void unset_main(struct block_internal *m)
 {
+    xdag_amount_t amount = 0;
 	g_xdag_stats.nmain--;
 	g_xdag_stats.total_nmain--;
-	xdag_amount_t amount = MAIN_START_AMOUNT >> (g_xdag_stats.nmain >> MAIN_BIG_PERIOD_LOG);
+	amount = get_amount(g_xdag_stats.nmain);
 	m->flags &= ~BI_MAIN;
 	accept_amount(m, (xdag_amount_t)0 - amount);
 	accept_amount(m, unapply_block(m));
