@@ -13,4 +13,3 @@ pool1.xdag.signal2noi.se:443
 142.44.143.234:777
 xdag.coolmine.top:13654
 xdag.poolaroid.cash:443
-pool.xdag.us:13654

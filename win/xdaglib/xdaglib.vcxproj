@@ -63,6 +63,7 @@
     <ClCompile Include="..\..\client\utils\random.c" />
     <ClCompile Include="..\..\client\utils\string_utils.c" />
     <ClCompile Include="..\..\client\utils\utils.c" />
+    <ClCompile Include="..\..\client\utils\uuid.c" />
     <ClCompile Include="..\..\client\wallet.c" />
     <ClCompile Include="..\..\client\xdag_config.c" />
     <ClCompile Include="..\..\dfslib\dfslib_crypt.c" />
@@ -115,6 +116,7 @@
     <ClInclude Include="..\..\client\utils\random.h" />
     <ClInclude Include="..\..\client\utils\string_utils.h" />
     <ClInclude Include="..\..\client\utils\utils.h" />
+    <ClInclude Include="..\..\client\utils\uuid.h" />
     <ClInclude Include="..\..\client\version.h" />
     <ClInclude Include="..\..\client\wallet.h" />
     <ClInclude Include="..\..\client\xdag_config.h" />

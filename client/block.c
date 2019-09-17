@@ -29,6 +29,7 @@
 #include "math.h"
 #include "utils/atomic.h"
 #include "utils/random.h"
+#include "websocket/websocket.h"
 
 #define MAX_WAITING_MAIN        1
 #define MAIN_START_AMOUNT       (1ll << 42)
@@ -120,6 +121,7 @@ static uint32_t cache_bounded_counter = 0;
 static struct orphan_block *g_orphan_first[ORPHAN_HASH_SIZE], *g_orphan_last[ORPHAN_HASH_SIZE];
 
 //functions
+void append_block_info(struct block_internal *bi);
 void cache_retarget(int32_t, int32_t);
 void cache_add(struct xdag_block*, xdag_hash_t);
 int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
@@ -247,6 +249,7 @@ static uint64_t apply_block(struct block_internal *bi)
 	accept_amount(bi, sum_in - sum_out);
 	bi->flags |= BI_APPLIED;
 
+	append_block_info(bi); //TODO: figure out how to detect when the block is rejected.
 	return bi->fee;
 }
 
@@ -1538,6 +1541,72 @@ const char* xdag_get_block_state_info(uint8_t flags)
 		return "Rejected";
 	}
 	return "Pending";
+}
+
+void append_block_info(struct block_internal *bi)
+{
+#ifndef _WIN32
+	// if websocket service is not running return directly
+	if(!g_websocket_running) {
+		return;
+	}
+    
+    int flags, nlinks;
+    struct block_internal *ref, *link[MAX_LINKS];
+    pthread_mutex_lock(&block_mutex);
+    ref = bi->ref;
+    flags = bi->flags;
+    nlinks = bi->nlinks;
+    memcpy(link, bi->link, nlinks * sizeof(struct block_internal*));
+    pthread_mutex_unlock(&block_mutex);
+
+	char time_buf[64] = {0};
+	char address[33] = {0};
+	uint64_t *h = bi->hash;
+	xdag_hash2address(h, address);
+	xdag_xtime_to_string(bi->time, time_buf);
+
+	char message[4096] = {0};
+	char buf[128] = {0};
+
+	sprintf(message,
+			"{\"time\":\"%s\""
+			",\"flags\":\"%x\""
+			",\"state\":\"%s\""
+			",\"hash\":\"%016llx%016llx%016llx%016llx\""
+			",\"difficulty\":\"%llx%016llx\""
+			",\"remark\":\"%s\""
+			",\"address\":\"%s\""
+			",\"balance\":\"%u.%09u\""
+			",\"fields\":["
+			, time_buf
+			, flags & ~BI_OURS
+			, xdag_get_block_state_info(flags)
+			, (unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]
+			, xdag_diff_args(bi->difficulty)
+			, get_remark(bi)
+			, address
+			, pramount(bi->amount)
+			);
+
+	if((flags & BI_REF) && ref != NULL) {
+		xdag_hash2address(ref->hash, address);
+	} else {
+		strcpy(address, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+	}
+	sprintf(buf, "{\"direction\":\"fee\",\"address\":\"%s\",\"amount\":\"%u.%09u\"}", address, pramount(bi->fee));
+	strcat(message, buf);
+
+	for (int i = 0; i < nlinks; ++i) {
+		xdag_hash2address(link[i]->hash, address);
+		sprintf(buf, ",{\"direction\":\"%s\",\"address\":\"%s\",\"amount\":\"%u.%09u\"}",  (1 << i & bi->in_mask ? " input" : "output"),address, pramount(bi->linkamount[i]));
+		strcat(message, buf);
+	}
+
+	strcat(message, "]}");
+
+	xdag_ws_message_append(message);
+#endif
 }
 
 /* prints detailed information about block */

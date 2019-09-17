@@ -9,7 +9,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-	
+
+extern int g_xdag_auto_swith_pool;
+
 /* a number of mining threads */
 extern int g_xdag_mining_threads;
 
