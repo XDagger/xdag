@@ -313,11 +313,17 @@ static xdag_amount_t get_amount(uint64_t nmain) {
 
 xdag_amount_t xdag_get_supply(uint64_t nmain)
 {
-    xdag_amount_t res = 0, amount = 0;
-    
-    for(int i = 0; i < nmain; i++) {
-        amount = get_amount(i);
-        res += amount;
+    xdag_amount_t res = 0, amount = get_start_amount(nmain);
+    uint64_t current_nmain = nmain;
+    while (current_nmain >> MAIN_BIG_PERIOD_LOG) {
+        res += (1l << MAIN_BIG_PERIOD_LOG) * amount;
+        current_nmain -= 1l << MAIN_BIG_PERIOD_LOG;
+        amount >>= 1;
+    }
+    res += current_nmain * amount;
+    if(nmain >= MAIN_APOLLO_HIGHT) {
+        // add before apollo amount
+        res += (MAIN_APOLLO_HIGHT - 1) * (MAIN_START_AMOUNT - MAIN_APOLLO_AMOUNT);
     }
     return res;
 }
@@ -1638,6 +1644,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 {
 	char time_buf[64] = {0};
 	char address[33] = {0};
+    xdag_amount_t amount = 0;
 	int i;
 
 	struct block_internal *bi = block_by_hash(hash);
@@ -1746,8 +1753,13 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	
 	if (bi->flags & BI_MAIN) {
 		xdag_hash2address(h, address);
+        if(MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA) < MAIN_APOLLO_HIGHT) {
+            amount = MAIN_START_AMOUNT;
+        } else {
+            amount = MAIN_APOLLO_AMOUNT;
+        }
 		fprintf(out, "   earning: %s  %10u.%09u  %s\n", address,
-			pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)),
+			pramount(amount >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)),
 			time_buf);
 	}
 	
