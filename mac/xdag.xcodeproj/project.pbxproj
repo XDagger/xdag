@@ -146,7 +146,7 @@
 		385EB7D121D3D64200287D2B /* rpc_service.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_service.h; sourceTree = "<group>"; };
 		385EB7D221D3D64200287D2B /* rpc_wrapper.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rpc_wrapper.c; sourceTree = "<group>"; };
 		385EB7D321D3D64200287D2B /* rpc_wrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_wrapper.h; sourceTree = "<group>"; };
-		385EB7D421D3D64200287D2B /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		385EB7D421D3D64200287D2B /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; wrapsLines = 0; };
 		385EB7D621D3D64200287D2B /* math.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = math.c; sourceTree = "<group>"; };
 		385EB7D721D3D64200287D2B /* math.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = math.h; sourceTree = "<group>"; };
 		385EB7D821D3D64200287D2B /* memory.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = memory.c; sourceTree = "<group>"; };
@@ -492,6 +492,7 @@
 		389F042D20544EDC003F3084 = {
 			isa = PBXGroup;
 			children = (
+				411CB7EF2337B294009C1728 /* test */,
 				385EB7A621D3D64200287D2B /* client */,
 				385EB82D21D3D64200287D2B /* dfslib */,
 				385EB83721D3D64200287D2B /* dnet */,
@@ -516,6 +517,14 @@
 				418AAFF5213BB3A900E96520 /* libcrypto.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		411CB7EF2337B294009C1728 /* test */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = test;
+			path = ../test;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

@@ -145,7 +145,6 @@ static int load_remark(struct block_internal*);
 static void order_ourblocks_by_amount(struct block_internal *bi);
 static inline void add_ourblock(struct block_internal *nodeBlock);
 static inline void remove_ourblock(struct block_internal *nodeBlock);
-void *add_block_callback(void *block, void *data);
 extern void *sync_thread(void *arg);
 
 static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
@@ -601,6 +600,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 		tmpNodeBlock.flags |= BI_EXTRA;
 	}
 
+    
 	for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
 		if(1 << i & (inmask | outmask)) {
 			blockRefs[i-1] = block_by_hash(newBlock->field[i].hash);
@@ -627,17 +627,25 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 		our_keys = xdag_wallet_our_keys(&ourKeysCount);
 	}
 
+    
 	for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
+        
 		if(1 << i & (signinmask | signoutmask)) {
+            
 			int keyNumber = valid_signature(newBlock, i, keysCount, public_keys);
+            
 			if(keyNumber >= 0) {
 				verified_keys_mask |= 1 << keyNumber;
 			}
+             
 			if(1 << i & signoutmask && !(tmpNodeBlock.flags & BI_OURS) && (keyNumber = valid_signature(newBlock, i, ourKeysCount, our_keys)) >= 0) {
 				tmpNodeBlock.flags |= BI_OURS;
 				tmpNodeBlock.n_our_key = keyNumber;
 			}
+            
 		}
+         
+        
 	}
 
 	for(i = j = 0; i < keysCount; ++i) {
@@ -727,7 +735,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	struct block_internal *nodeBlock;
 	if (g_xdag_extstats.nextra > MAX_ALLOWED_EXTRA
 			&& (g_xdag_state == XDAG_STATE_SYNC || g_xdag_state == XDAG_STATE_STST)) {
-		/* if too many extra blocks then reuse the oldest */
+		
 		nodeBlock = g_orphan_first[1]->orphan_bi;
 		remove_orphan(nodeBlock, ORPHAN_REMOVE_REUSE);
 		remove_index(nodeBlock);
@@ -745,7 +753,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	}
 
 	if(CACHE && signOutCount) {
-		cache_add(newBlock, tmpNodeBlock.hash);
+		//cache_add(newBlock, tmpNodeBlock.hash);
 	}
 
 	if(!(transportHeader & (sizeof(struct xdag_block) - 1))) {
@@ -753,7 +761,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	} else if (!(tmpNodeBlock.flags & BI_EXTRA)) {
 		tmpNodeBlock.storage_pos = xdag_storage_save(newBlock);
 	} else {
-		/* do not store extra block right now */
+		
 		tmpNodeBlock.storage_pos = -2l;
 	}
 
@@ -778,7 +786,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	set_pretop(top_main_chain);
 
 	if(xdag_diff_gt(tmpNodeBlock.difficulty, g_xdag_stats.difficulty)) {
-		/* Only log this if we are NOT loading state */
+		
 		if(g_xdag_state != XDAG_STATE_LOAD)
 			xdag_info("Diff  : %llx%016llx (+%llx%016llx)", xdag_diff_args(tmpNodeBlock.difficulty), xdag_diff_args(diff0));
 
@@ -825,7 +833,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	
 	add_orphan(nodeBlock, newBlock);
 
-	log_block((tmpNodeBlock.flags & BI_OURS ? "Good +" : "Good  "), tmpNodeBlock.hash, tmpNodeBlock.time, tmpNodeBlock.storage_pos);
+	//log_block((tmpNodeBlock.flags & BI_OURS ? "Good +" : "Good  "), tmpNodeBlock.hash, tmpNodeBlock.time, tmpNodeBlock.storage_pos);
 
 	i = MAIN_TIME(nodeBlock->time) & (HASHRATE_LAST_MAX_TIME - 1);
 	if(MAIN_TIME(nodeBlock->time) > MAIN_TIME(g_xdag_extstats.hashrate_last_time)) {
@@ -853,11 +861,11 @@ end:
 		sprintf(buf, "Err %2x", err & 0xff);
 		log_block(buf, tmpNodeBlock.hash, tmpNodeBlock.time, transportHeader);
 	}
-
+    
 	return -err;
 }
 
-void *add_block_callback(void *block, void *data)
+void *add_block_callback1(void *block, void *data)
 {
 	struct xdag_block *b = (struct xdag_block *)block;
 	xtime_t *t = (xtime_t*)data;
@@ -874,7 +882,7 @@ void *add_block_callback(void *block, void *data)
 	pthread_mutex_unlock(&block_mutex);
 
 	if(res >= 0 && is_pool()) {
-		xdag_sync_pop_block(b);
+		//xdag_sync_pop_block(b);
 	}
 
 	return 0;
@@ -1038,7 +1046,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 			block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
 	}
 
-	log_block("Create", newBlockHash, block[0].field[0].time, 1);
+	//log_block("Create", newBlockHash, block[0].field[0].time, 1);
 	
 	if(block_hash_result != NULL) {
 		memcpy(block_hash_result, newBlockHash, sizeof(xdag_hash_t));
@@ -1164,7 +1172,7 @@ begin:
 	xtime_t start = xdag_get_xtimestamp();
 	xdag_show_state(0);
 
-	xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback);
+	xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback1);
 
 	xdag_mess("Finish loading blocks, time cost %ldms", xdag_get_xtimestamp() - start);
 
