@@ -36,8 +36,8 @@
 #define MAIN_APOLLO_AMOUNT      (1ll << 39)
 // 13500 is 10 days
 // nmain = 834646 ,          at 2019-09-17 00:30:00
-// nmain = 834646 + 13500  , at 2019-09-27 00:30:00
-#define MAIN_APOLLO_HIGHT       (834646 + 13500)
+// nmain = 834646 + 4*13500, at 2019-10-27 00:30:00
+#define MAIN_APOLLO_HIGHT       (834646 + 4*13500)
 //#define MAIN_APOLLO_HIGHT       2  // for test
 #define MAIN_BIG_PERIOD_LOG     21
 #define MAX_LINKS               15
