@@ -10,17 +10,14 @@
 #include <openssl/err.h>
 #include <openssl/rand.h>
 #include <openssl/ecdsa.h>
+#include <secp256k1.h>
 #include "crypt.h"
 #include "transport.h"
 #include "utils/log.h"
 #include "system.h"
 
 #if USE_OPTIMIZED_EC == 1 || USE_OPTIMIZED_EC == 2
-
-#include "../secp256k1/include/secp256k1.h"
-
 secp256k1_context *ctx_noopenssl;
-
 #endif
 
 static EC_GROUP *group;

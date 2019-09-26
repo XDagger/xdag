@@ -5,6 +5,7 @@
 #include "math.h"
 #include "storage.h"
 #include "time.h"
+#include "global.h"
 #include "wallet.h"
 #include "address.h"
 #include "utils/random.h"
@@ -107,8 +108,6 @@ int out_balances1()
     return 0;
 }
 
-
-
 int main(int argc, char **argv)
 {
     
@@ -121,17 +120,18 @@ int main(int argc, char **argv)
     
     // xdag main blocks 839418
     // xdag total blocks 315933451
-    const int count = 100;
+    g_xdag_testnet = 1;
+    const int count = 10000;
     double start, end;
     xdag_time_t stime = XDAG_TEST_ERA;
     //xdag_time_t etime = stime + count * 64 * 1000;
     xdag_time_t etime = xdag_get_xtimestamp();
 
     unit_test_init();
-//    start = clock();
-//    unit_test_create_blocks(stime, 64 * 1000 , count);
-//    end = clock();
-//    printf("save %d blocks cost:%f sec\n", count, (end - start) / CLOCKS_PER_SEC);//以秒为单位显示之
+    start = clock();
+    unit_test_create_blocks(stime, 64 * 1000 , count);
+    end = clock();
+    printf("save %d blocks cost:%f sec\n", count, (end - start) / CLOCKS_PER_SEC);//以秒为单位显示之
 
 
     start = clock();
