@@ -15,6 +15,12 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS "-std=gnu11 -O3 -g -Wall -Wmissing-prototypes -Wno-unused-result")
 
+#set(ENV{PKG_CONFIG_PATH} secp256k1)
+if ( NOT DEFINED ENV{SECP256K1_ROOT_DIR})
+  find_package(PkgConfig)
+  pkg_search_module(SECP256K1 REQUIRED libsecp256k1)
+endif()
+
 if (APPLE AND NOT DEFINED ENV{OPENSSL_ROOT_DIR})
   set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl" "/usr/local/ssl/*" "/usr/local/Cellar/openssl/*")
   set(OPENSSL_LIBRARIES "/usr/local/opt/openssl/lib" "/usr/local/ssl/*/lib" "/usr/local/Cellar/openssl/*/lib")
@@ -75,6 +81,7 @@ endif()
 
 include_directories(
   ${OPENSSL_INCLUDE_DIR}
+  ${SECP256K1_INCLUDE_DIRS}
 )
 
 if(APPLE)
@@ -101,6 +108,7 @@ target_link_libraries(
 target_link_libraries(
   ${PROJECT_NAME}
   ${OPENSSL_LIBRARIES}
+  ${SECP256K1_LIBRARIES}
 )
 
 add_executable(
