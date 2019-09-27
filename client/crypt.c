@@ -10,7 +10,7 @@
 #include <openssl/err.h>
 #include <openssl/rand.h>
 #include <openssl/ecdsa.h>
-#include <secp256k1.h>
+#include "../secp256k1/include/secp256k1.h"
 #include "crypt.h"
 #include "transport.h"
 #include "utils/log.h"
