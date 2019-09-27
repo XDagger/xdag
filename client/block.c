@@ -30,6 +30,7 @@
 #include "utils/atomic.h"
 #include "utils/random.h"
 #include "websocket/websocket.h"
+#include "global.h"
 
 #define MAX_WAITING_MAIN        1
 #define MAIN_START_AMOUNT       (1ll << 42)
@@ -180,10 +181,10 @@ static inline struct cache_block *cache_block_by_hash(const xdag_hashlow_t hash)
 static void log_block(const char *mess, xdag_hash_t h, xtime_t t, uint64_t pos)
 {
 	/* Do not log blocks as we are loading from local storage */
-//    if(g_xdag_state != XDAG_STATE_LOAD) {
-//        xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess,
-//            ((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t, pos);
-//    }
+    if(g_xdag_state != XDAG_STATE_LOAD) {
+        xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess,
+            ((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t, pos);
+    }
 }
 
 static inline void accept_amount(struct block_internal *bi, xdag_amount_t sum)
@@ -869,7 +870,15 @@ end:
 
 static int counter = 0;
         
-void *add_block_callback1(void *block, void *data)
+void *add_block_callback_nosync(void *block, void *data)
+{
+    unsigned *i = (unsigned *)data;
+    xdag_add_block((struct xdag_block *)block);
+    if(!(++*i % 10000)) xdag_info("nosync add blocks: %u\n", *i);
+    return 0;
+}
+        
+void *add_block_callback_sync(void *block, void *data)
 {
 	struct xdag_block *b = (struct xdag_block *)block;
 	xtime_t *t = (xtime_t*)data;
@@ -884,13 +893,9 @@ void *add_block_callback1(void *block, void *data)
 	}
 
 	pthread_mutex_unlock(&block_mutex);
-    
-    if(counter++%10000 == 0) {
-        printf("add_block_callback1 run %d times.\n", counter);
-    }
 
-	if(res >= 0 && is_pool()) {
-		//xdag_sync_pop_block(b);
+	if(res >= 0 && is_pool() && g_xdag_state != XDAG_STATE_LOAD) {
+		xdag_sync_pop_block(b);
 	}
 
 	return 0;
@@ -1180,7 +1185,7 @@ begin:
 	xtime_t start = xdag_get_xtimestamp();
 	xdag_show_state(0);
 
-	xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback1);
+	xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback_nosync);
 
 	xdag_mess("Finish loading blocks, time cost %ldms", xdag_get_xtimestamp() - start);
 

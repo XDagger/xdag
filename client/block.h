@@ -156,8 +156,11 @@ void xdag_list_orphan_blocks(int, FILE*);
 
 // completes work with the blocks
 void xdag_block_finish(void);
+
+// add blocks with out sync for pool reload data
+void *add_block_callback_nosync(void *block, void *data);
     
-void *add_block_callback1(void *block, void *data);
+void *add_block_callback_sync(void *block, void *data);
 	
 // get block info of specified address
 extern int xdag_get_block_info(xdag_hash_t, void *, int (*)(void*, int, xdag_hash_t, xdag_amount_t, xtime_t, const char*),

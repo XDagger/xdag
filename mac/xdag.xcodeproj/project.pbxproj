@@ -80,6 +80,7 @@
 		385EB89121D3D84900287D2B /* netdb-white-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 385EB7DF21D3D64200287D2B /* netdb-white-testnet.txt */; };
 		385EB89221D3D84900287D2B /* netdb-white.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 385EB7E021D3D64200287D2B /* netdb-white.txt */; };
 		385EB89321D3D84900287D2B /* netdb.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 385EB7E321D3D64200287D2B /* netdb.txt */; };
+		4173E0B5233E10D600CD330E /* load_block_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 4173E0B4233E10D600CD330E /* load_block_test.c */; };
 		418AAFF6213BB3A900E96520 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 418AAFF5213BB3A900E96520 /* libcrypto.a */; };
 		418AAFF8213BB3B300E96520 /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 418AAFF7213BB3B300E96520 /* libssl.a */; };
 		41E00BED233D003E0031DA53 /* libsecp256k1.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41E00BEC233D003E0031DA53 /* libsecp256k1.a */; };
@@ -243,6 +244,8 @@
 		385EB83E21D3D64200287D2B /* dnet_system.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dnet_system.h; sourceTree = "<group>"; };
 		385EB83F21D3D64200287D2B /* dnet_xdag.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dnet_xdag.c; sourceTree = "<group>"; };
 		389F043620544EDC003F3084 /* xdag */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xdag; sourceTree = BUILT_PRODUCTS_DIR; };
+		4173E0B3233E10D600CD330E /* load_block_test.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = load_block_test.h; path = ../test/load_block_test.h; sourceTree = "<group>"; };
+		4173E0B4233E10D600CD330E /* load_block_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = load_block_test.c; path = ../test/load_block_test.c; sourceTree = "<group>"; };
 		418AAFF5213BB3A900E96520 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = lib/openssl/lib/libcrypto.a; sourceTree = "<group>"; };
 		418AAFF7213BB3B300E96520 /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libssl.a; path = lib/openssl/lib/libssl.a; sourceTree = "<group>"; };
 		41E00BEC233D003E0031DA53 /* libsecp256k1.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsecp256k1.a; path = lib/secp256k1/lib/libsecp256k1.a; sourceTree = "<group>"; };
@@ -498,6 +501,7 @@
 		389F042D20544EDC003F3084 = {
 			isa = PBXGroup;
 			children = (
+				4173E0B2233E10C000CD330E /* test */,
 				385EB7A621D3D64200287D2B /* client */,
 				385EB82D21D3D64200287D2B /* dfslib */,
 				385EB83721D3D64200287D2B /* dnet */,
@@ -524,6 +528,15 @@
 				418AAFF5213BB3A900E96520 /* libcrypto.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		4173E0B2233E10C000CD330E /* test */ = {
+			isa = PBXGroup;
+			children = (
+				4173E0B4233E10D600CD330E /* load_block_test.c */,
+				4173E0B3233E10D600CD330E /* load_block_test.h */,
+			);
+			name = test;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -553,6 +566,9 @@
 		389F042E20544EDC003F3084 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				KnownAssetTags = (
+					New,
+				);
 				LastUpgradeCheck = 0920;
 				ORGANIZATIONNAME = xrdavies;
 				TargetAttributes = {
@@ -635,6 +651,7 @@
 				385EB87121D3D64200287D2B /* dirname.c in Sources */,
 				385EB87621D3D64200287D2B /* string_utils.c in Sources */,
 				385EB85E21D3D64200287D2B /* miner.c in Sources */,
+				4173E0B5233E10D600CD330E /* load_block_test.c in Sources */,
 				385EB84421D3D64200287D2B /* sha256-mb-x86_64-mac.s in Sources */,
 				385EB86F21D3D64200287D2B /* atomic.c in Sources */,
 				385EB85221D3D64200287D2B /* init.c in Sources */,
