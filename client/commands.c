@@ -930,14 +930,6 @@ static int out_sort_callback(const void *l, const void *r)
 	return strcmp(address_l, address_r);
 }
 
-static void *add_block_callback(void *block, void *data)
-{
-	unsigned *i = (unsigned *)data;
-	xdag_add_block((struct xdag_block *)block);
-	if(!(++*i % 10000)) printf("blocks: %u\n", *i);
-	return 0;
-}
-
 int out_balances()
 {
 	char address[33] = {0};
@@ -948,7 +940,7 @@ int out_balances()
 	xdag_mem_init((xdag_get_frame() - xdag_get_start_frame()) << 17);
 	xdag_crypt_init();
 	memset(&d, 0, sizeof(struct out_balances_data));
-	xdag_load_blocks(xdag_get_start_frame() << 16, xdag_get_frame() << 16, &i, &add_block_callback);
+	xdag_load_blocks(xdag_get_start_frame() << 16, xdag_get_frame() << 16, &i, &add_block_callback_nosync);
 	xdag_traverse_all_blocks(&d, out_balances_callback);
 
 	qsort(d.blocks, d.blocksCount, sizeof(struct xdag_field), out_sort_callback);
