@@ -75,6 +75,21 @@ struct block_internal {
 	uint8_t nlinks:4, max_diff_link:4, reserved;
 };
 
+//struct block_internal_rsdb {
+//    xdag_hash_t hash;
+//    xdag_diff_t difficulty;
+//
+//    xdag_amount_t amount, linkamount[MAX_LINKS], fee;
+//    xtime_t time;
+//    uint64_t storage_pos;
+//
+//    xdag_hash_t link[MAX_LINKS];
+//    xdag_hash_t backrefs;
+//    atomic_uintptr_t remark;
+//    uint16_t flags, in_mask, n_our_key;
+//    uint8_t nlinks:4, max_diff_link:4, reserved;
+//};
+
 struct block_internal_index {
 	struct ldus_rbtree node;
 	xdag_hash_t hash;
@@ -638,11 +653,19 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 			if(keyNumber >= 0) {
 				verified_keys_mask |= 1 << keyNumber;
 			}
-             
-			if(1 << i & signoutmask && !(tmpNodeBlock.flags & BI_OURS) && (keyNumber = valid_signature(newBlock, i, ourKeysCount, our_keys)) >= 0) {
-				tmpNodeBlock.flags |= BI_OURS;
-				tmpNodeBlock.n_our_key = keyNumber;
-			}
+
+            // use pub key comp repleace second valid_signature with our_keys
+                     // if((keyNumber = valid_signature(newBlock, i, ourKeysCount, our_keys)) >= 0)
+            if(1 << i & signoutmask && !(tmpNodeBlock.flags & BI_OURS)) {
+                         for(int k = 0; i < ourKeysCount; k++)
+                         {
+                             if( *(public_keys[i].pub) == *(our_keys[k].pub))
+                             {
+                                 tmpNodeBlock.flags |= BI_OURS;
+                                 tmpNodeBlock.n_our_key = k;
+                             }
+                         }
+            }
             
 		}
          
