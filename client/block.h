@@ -9,6 +9,7 @@
 #include "hash.h"
 #include "system.h"
 #include "types.h"
+#include "utils/atomic.h"
 
 enum xdag_field_type {
 	XDAG_FIELD_NONCE,        //0
@@ -87,6 +88,93 @@ struct xdag_block {
 
 #define xdag_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)
 
+#define MAX_WAITING_MAIN        1
+#define MAIN_START_AMOUNT       (1ll << 42)
+#define MAIN_APOLLO_AMOUNT      (1ll << 39)
+// 13500 is 10 days
+// nmain = 834646 ,          at 2019-09-17 00:30:00
+// nmain = 834646 + 4*13500, at 2019-10-27 00:30:00
+#define MAIN_APOLLO_HIGHT       (834646 + 4*13500)
+//#define MAIN_APOLLO_HIGHT       2  // for test
+#define MAIN_BIG_PERIOD_LOG     21
+#define MAX_LINKS               15
+#define MAKE_BLOCK_PERIOD       13
+
+#define CACHE            1
+#define CACHE_MAX_SIZE        600000
+#define CACHE_MAX_SAMPLES    100
+#define ORPHAN_HASH_SIZE    2
+#define MAX_ALLOWED_EXTRA    0x10000
+
+struct block_backrefs;
+struct orphan_block;
+struct block_internal_index;
+
+struct block_internal {
+    //    union {
+    //        struct ldus_rbtree node;
+    //        struct block_internal_index *index;
+    //    };
+    xdag_hash_t hash;
+    xdag_diff_t difficulty;
+    xdag_amount_t amount, linkamount[MAX_LINKS], fee;
+    xtime_t time;
+    uint64_t storage_pos;
+    union {
+        xdag_hashlow_t ref;
+        struct orphan_block *oref;
+    };
+    xdag_hashlow_t link[MAX_LINKS];
+    //xdag_hashlow_t backrefs;
+    atomic_uintptr_t remark;
+    uint16_t flags, in_mask, n_our_key;
+    uint8_t nlinks:4, max_diff_link:4, reserved;
+};
+
+
+struct block_internal_backref {
+    xdag_hash_t hash;
+    xdag_hashlow_t backref;
+};
+
+//struct block_internal_index {
+//    struct ldus_rbtree node;
+//    xdag_hash_t hash;
+//    struct block_internal *bi;
+//};
+
+#define N_BACKREFS      (sizeof(struct block_internal) / sizeof(struct block_internal *) - 1)
+        
+#define ourprev link[MAX_LINKS - 2]
+#define ournext link[MAX_LINKS - 1]
+
+struct block_backrefs {
+    struct block_internal *backrefs[N_BACKREFS];
+    struct block_backrefs *next;
+};
+
+//struct cache_block {
+//    struct ldus_rbtree node;
+//    xdag_hash_t hash;
+//    struct xdag_block block;
+//    struct cache_block *next;
+//};
+
+struct orphan_block {
+    struct block_internal *orphan_bi;
+    struct orphan_block *next;
+    struct orphan_block *prev;
+    struct xdag_block block[0];
+};
+
+enum orphan_remove_actions {
+    ORPHAN_REMOVE_NORMAL,
+    ORPHAN_REMOVE_REUSE,
+    ORPHAN_REMOVE_EXTRA
+};
+
+#define get_orphan_index(bi)      (!!((bi)->flags & BI_EXTRA))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -161,10 +249,15 @@ void xdag_block_finish(void);
 void *add_block_callback_nosync(void *block, void *data);
     
 void *add_block_callback_sync(void *block, void *data);
+
+void xdag_connect_block(struct xdag_block *b);
+
+
 	
 // get block info of specified address
 extern int xdag_get_block_info(xdag_hash_t, void *, int (*)(void*, int, xdag_hash_t, xdag_amount_t, xtime_t, const char*),
 							void *, int (*)(void*, const char *, xdag_hash_t, xdag_amount_t));
+
 
 #ifdef __cplusplus
 };

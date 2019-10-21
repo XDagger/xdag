@@ -6,6 +6,7 @@
 #include "time.h"
 #include "system.h"
 #include "block.h"
+#include "rsdb.h"
 
 enum xdag_states {
 #define xdag_state(n,s) XDAG_STATE_##n ,
@@ -61,6 +62,8 @@ extern char *g_coinname, *g_progname;
 
 //defines if mining is disabled (pool)
 extern int g_disable_mining;
+
+extern XDAG_RSDB* g_xdag_rsdb;
 
 //Default type of the block header
 //Test network and main network have different types of the block headers, so blocks from different networks are incompatible

@@ -33,6 +33,7 @@
 #include "../dnet/dnet_crypt.h"
 #include "utils/random.h"
 #include "websocket/websocket.h"
+#include "rsdb.h"
 
 #define ARG_EQUAL(a,b,c) strcmp(c, "") == 0 ? strcmp(a, b) == 0 : (strcmp(a, b) == 0 || strcmp(a, c) == 0)
 
@@ -285,6 +286,8 @@ int pre_init(void)
 	if(dnet_key_init() < 0) return -1;
 	
 	if(xdag_wallet_init()) return -1;
+    
+    if(xdag_rsdb_pre_init()) return -1;
 
 	return 0;
 }

@@ -15,10 +15,18 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS "-std=gnu11 -O3 -g -Wall -Wmissing-prototypes -Wno-unused-result")
 
-#set(ENV{PKG_CONFIG_PATH} secp256k1)
 if ( NOT DEFINED ENV{SECP256K1_ROOT_DIR})
   find_package(PkgConfig)
   pkg_search_module(SECP256K1 REQUIRED libsecp256k1)
+endif()
+
+if ( NOT DEFINED ENV{SECP256K1_ROOT_DIR})
+  set(SECP256K1_LIBRARIES "/usr/local/lib/libsecp256k1.a" "/usr/local/lib/libgmp.a")
+endif()
+
+if ( NOT DEFINED ENV{ROCKSDB_ROOT_DIR})
+  set(ROCKSDB_INCLUDE_DIRS "/usr/local/include")
+  set(ROCKSDB_LIBRARIES "/usr/local/lib/librocksdb.a")
 endif()
 
 if (APPLE AND NOT DEFINED ENV{OPENSSL_ROOT_DIR})
@@ -82,6 +90,7 @@ endif()
 include_directories(
   ${OPENSSL_INCLUDE_DIR}
   ${SECP256K1_INCLUDE_DIRS}
+  ${ROCKSDB_INCLUDE_DIRS}
 )
 
 if(APPLE)
@@ -109,6 +118,7 @@ target_link_libraries(
   ${PROJECT_NAME}
   ${OPENSSL_LIBRARIES}
   ${SECP256K1_LIBRARIES}
+  ${ROCKSDB_LIBRARIES}
 )
 
 add_executable(

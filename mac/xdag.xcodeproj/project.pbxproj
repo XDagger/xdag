@@ -27,7 +27,6 @@
 		385EB85721D3D64200287D2B /* rpc_procedures.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7CE21D3D64200287D2B /* rpc_procedures.c */; };
 		385EB85821D3D64200287D2B /* rpc_service.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7D021D3D64200287D2B /* rpc_service.c */; };
 		385EB85921D3D64200287D2B /* rpc_wrapper.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7D221D3D64200287D2B /* rpc_wrapper.c */; };
-		385EB85A21D3D64200287D2B /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7D421D3D64200287D2B /* main.c */; };
 		385EB85C21D3D64200287D2B /* math.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7D621D3D64200287D2B /* math.c */; };
 		385EB85D21D3D64200287D2B /* memory.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7D821D3D64200287D2B /* memory.c */; };
 		385EB85E21D3D64200287D2B /* miner.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7DA21D3D64200287D2B /* miner.c */; };
@@ -81,9 +80,18 @@
 		385EB89221D3D84900287D2B /* netdb-white.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 385EB7E021D3D64200287D2B /* netdb-white.txt */; };
 		385EB89321D3D84900287D2B /* netdb.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 385EB7E321D3D64200287D2B /* netdb.txt */; };
 		410D8A6C23424F7D00C89764 /* librocksdb.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 410D8A6B23424F6800C89764 /* librocksdb.a */; };
-		4173E0B5233E10D600CD330E /* load_block_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 4173E0B4233E10D600CD330E /* load_block_test.c */; };
 		418AAFF6213BB3A900E96520 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 418AAFF5213BB3A900E96520 /* libcrypto.a */; };
 		418AAFF8213BB3B300E96520 /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 418AAFF7213BB3B300E96520 /* libssl.a */; };
+		4198C18F234DBE8100B5C2F4 /* rsdb.c in Sources */ = {isa = PBXBuildFile; fileRef = 410D8A7223424FD800C89764 /* rsdb.c */; };
+		41B5900B235C57C000D111EF /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7D421D3D64200287D2B /* main.c */; };
+		41B5900D235C5BB300D111EF /* libbz2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 41B5900C235C5BB300D111EF /* libbz2.dylib */; };
+		41B5900E235C5BB300D111EF /* libbz2.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 41B5900C235C5BB300D111EF /* libbz2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		41B59011235C5C2F00D111EF /* libsnappy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41B59010235C5C1A00D111EF /* libsnappy.a */; };
+		41B59013235C5CB600D111EF /* liblz4.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41B59012235C5CA900D111EF /* liblz4.a */; };
+		41B59015235C5D0A00D111EF /* libc++.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 41B59014235C5D0A00D111EF /* libc++.1.dylib */; };
+		41B59016235C5D0A00D111EF /* libc++.1.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 41B59014235C5D0A00D111EF /* libc++.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		41B59018235C5D4300D111EF /* libz.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 41B59017235C5D4300D111EF /* libz.1.dylib */; };
+		41B59019235C5D4300D111EF /* libz.1.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 41B59017235C5D4300D111EF /* libz.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		41E00BED233D003E0031DA53 /* libsecp256k1.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41E00BEC233D003E0031DA53 /* libsecp256k1.a */; };
 		41E00BEF233D056E0031DA53 /* libgmp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41E00BEE233D056E0031DA53 /* libgmp.a */; };
 /* End PBXBuildFile section */
@@ -106,6 +114,19 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		41B5900F235C5BB300D111EF /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				41B5900E235C5BB300D111EF /* libbz2.dylib in Embed Libraries */,
+				41B59019235C5D4300D111EF /* libz.1.dylib in Embed Libraries */,
+				41B59016235C5D0A00D111EF /* libc++.1.dylib in Embed Libraries */,
+			);
+			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -119,8 +140,8 @@
 		385EB7AC21D3D64200287D2B /* sha256-mb-x86_64-mac.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = "sha256-mb-x86_64-mac.s"; sourceTree = "<group>"; };
 		385EB7AE21D3D64200287D2B /* sha256.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sha256.c; sourceTree = "<group>"; };
 		385EB7AF21D3D64200287D2B /* sha256.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sha256.h; sourceTree = "<group>"; };
-		385EB7B121D3D64200287D2B /* block.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = block.c; sourceTree = "<group>"; };
-		385EB7B321D3D64200287D2B /* block.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = block.h; sourceTree = "<group>"; };
+		385EB7B121D3D64200287D2B /* block.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = block.c; sourceTree = "<group>"; wrapsLines = 0; };
+		385EB7B321D3D64200287D2B /* block.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = block.h; sourceTree = "<group>"; wrapsLines = 0; };
 		385EB7B421D3D64200287D2B /* commands.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = commands.c; sourceTree = "<group>"; wrapsLines = 0; };
 		385EB7B521D3D64200287D2B /* commands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = commands.h; sourceTree = "<group>"; };
 		385EB7B621D3D64200287D2B /* crypt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = crypt.c; sourceTree = "<group>"; };
@@ -253,6 +274,14 @@
 		4173E0B4233E10D600CD330E /* load_block_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = load_block_test.c; path = ../test/load_block_test.c; sourceTree = "<group>"; };
 		418AAFF5213BB3A900E96520 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = lib/openssl/lib/libcrypto.a; sourceTree = "<group>"; };
 		418AAFF7213BB3B300E96520 /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libssl.a; path = lib/openssl/lib/libssl.a; sourceTree = "<group>"; };
+		419D0EAE234F855B007C1911 /* bloom_filter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bloom_filter.c; sourceTree = "<group>"; wrapsLines = 0; };
+		419D0EAF234F855B007C1911 /* bloom_filter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bloom_filter.h; sourceTree = "<group>"; };
+		419D0EB2234F94C6007C1911 /* bloom_filter_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bloom_filter_test.c; path = ../test/bloom_filter_test.c; sourceTree = "<group>"; };
+		41B5900C235C5BB300D111EF /* libbz2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libbz2.dylib; path = lib/rocksdb/libbz2.dylib; sourceTree = "<group>"; };
+		41B59010235C5C1A00D111EF /* libsnappy.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsnappy.a; path = lib/rocksdb/libsnappy.a; sourceTree = "<group>"; };
+		41B59012235C5CA900D111EF /* liblz4.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblz4.a; path = lib/rocksdb/liblz4.a; sourceTree = "<group>"; };
+		41B59014235C5D0A00D111EF /* libc++.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libc++.1.dylib"; path = "lib/rocksdb/libc++.1.dylib"; sourceTree = "<group>"; };
+		41B59017235C5D4300D111EF /* libz.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.1.dylib; path = lib/rocksdb/libz.1.dylib; sourceTree = "<group>"; };
 		41E00BEC233D003E0031DA53 /* libsecp256k1.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsecp256k1.a; path = lib/secp256k1/lib/libsecp256k1.a; sourceTree = "<group>"; };
 		41E00BEE233D056E0031DA53 /* libgmp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgmp.a; path = lib/gmp/lib/libgmp.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -262,9 +291,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				41B59018235C5D4300D111EF /* libz.1.dylib in Frameworks */,
+				41B59013235C5CB600D111EF /* liblz4.a in Frameworks */,
 				418AAFF8213BB3B300E96520 /* libssl.a in Frameworks */,
 				418AAFF6213BB3A900E96520 /* libcrypto.a in Frameworks */,
+				41B59015235C5D0A00D111EF /* libc++.1.dylib in Frameworks */,
 				410D8A6C23424F7D00C89764 /* librocksdb.a in Frameworks */,
+				41B5900D235C5BB300D111EF /* libbz2.dylib in Frameworks */,
+				41B59011235C5C2F00D111EF /* libsnappy.a in Frameworks */,
 				41E00BEF233D056E0031DA53 /* libgmp.a in Frameworks */,
 				41E00BED233D003E0031DA53 /* libsecp256k1.a in Frameworks */,
 			);
@@ -287,6 +321,8 @@
 		385EB7A621D3D64200287D2B /* client */ = {
 			isa = PBXGroup;
 			children = (
+				419D0EAE234F855B007C1911 /* bloom_filter.c */,
+				419D0EAF234F855B007C1911 /* bloom_filter.h */,
 				410D8A7223424FD800C89764 /* rsdb.c */,
 				410D8A7023424FD700C89764 /* rsdb.h */,
 				385EB7A721D3D64200287D2B /* address.c */,
@@ -530,6 +566,11 @@
 		38A15E9E20545CCE00598EC2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				41B59017235C5D4300D111EF /* libz.1.dylib */,
+				41B59014235C5D0A00D111EF /* libc++.1.dylib */,
+				41B59012235C5CA900D111EF /* liblz4.a */,
+				41B59010235C5C1A00D111EF /* libsnappy.a */,
+				41B5900C235C5BB300D111EF /* libbz2.dylib */,
 				410D8A6B23424F6800C89764 /* librocksdb.a */,
 				41E00BEE233D056E0031DA53 /* libgmp.a */,
 				41E00BEC233D003E0031DA53 /* libsecp256k1.a */,
@@ -542,6 +583,7 @@
 		4173E0B2233E10C000CD330E /* test */ = {
 			isa = PBXGroup;
 			children = (
+				419D0EB2234F94C6007C1911 /* bloom_filter_test.c */,
 				410D8A6D23424FAE00C89764 /* rsdb_test.c */,
 				4173E0B4233E10D600CD330E /* load_block_test.c */,
 				4173E0B3233E10D600CD330E /* load_block_test.h */,
@@ -560,6 +602,7 @@
 				389F043320544EDC003F3084 /* Frameworks */,
 				389F043420544EDC003F3084 /* CopyFiles */,
 				384A29E02062194F00DD9D3B /* Resources */,
+				41B5900F235C5BB300D111EF /* Embed Libraries */,
 			);
 			buildRules = (
 			);
@@ -642,6 +685,7 @@
 				385EB87E21D3D64200287D2B /* wslay_queue.c in Sources */,
 				385EB84621D3D64200287D2B /* sha256.c in Sources */,
 				385EB88321D3D64200287D2B /* dfslib_crypt.c in Sources */,
+				41B5900B235C57C000D111EF /* main.c in Sources */,
 				385EB88021D3D64200287D2B /* x86_64cpuid-mac.s in Sources */,
 				385EB86521D3D64200287D2B /* network.c in Sources */,
 				385EB85921D3D64200287D2B /* rpc_wrapper.c in Sources */,
@@ -661,7 +705,6 @@
 				385EB87121D3D64200287D2B /* dirname.c in Sources */,
 				385EB87621D3D64200287D2B /* string_utils.c in Sources */,
 				385EB85E21D3D64200287D2B /* miner.c in Sources */,
-				4173E0B5233E10D600CD330E /* load_block_test.c in Sources */,
 				385EB84421D3D64200287D2B /* sha256-mb-x86_64-mac.s in Sources */,
 				385EB86F21D3D64200287D2B /* atomic.c in Sources */,
 				385EB85221D3D64200287D2B /* init.c in Sources */,
@@ -671,6 +714,7 @@
 				385EB84321D3D64200287D2B /* crc.c in Sources */,
 				385EB87C21D3D64200287D2B /* wslay_frame.c in Sources */,
 				385EB85021D3D64200287D2B /* http.c in Sources */,
+				4198C18F234DBE8100B5C2F4 /* rsdb.c in Sources */,
 				385EB84221D3D64200287D2B /* address.c in Sources */,
 				385EB85F21D3D64200287D2B /* mining_common.c in Sources */,
 				385EB87021D3D64200287D2B /* base64.c in Sources */,
@@ -679,7 +723,6 @@
 				385EB88621D3D64200287D2B /* dfsrsa.c in Sources */,
 				385EB87421D3D64200287D2B /* moving_average.c in Sources */,
 				385EB86E21D3D64200287D2B /* transport.c in Sources */,
-				385EB85A21D3D64200287D2B /* main.c in Sources */,
 				385EB86D21D3D64200287D2B /* time.c in Sources */,
 				385EB85621D3D64200287D2B /* rpc_procedure.c in Sources */,
 				385EB85321D3D64200287D2B /* cJSON.c in Sources */,
