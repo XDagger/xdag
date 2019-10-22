@@ -55,9 +55,11 @@ typedef enum xdag_rsdb_key_type {
     SETTING_TOP_MAIN_HASH                 =  2,
     SETTING_PRE_TOP_MAIN_HASH             =  3,
     SETTING_VERSION                       =  4,
-    HASH_BLOCK_INTERNAL                   =  5,
-    HASH_BLOCK_LINK                       =  6,
-    HASH_BLOCK_BACK_REF                   =  7
+    HASH_ORP_BLOCK_INTERNAL               =  5,
+    HASH_OUR_BLOCK_INTERNAL               =  6,
+    HASH_BLOCK_INTERNAL                   =  7,
+    HASH_BLOCK_LINK                       =  8,
+    HASH_BLOCK_BACK_REF                   =  9
 } XDAG_RSDB_KEY_TYPE;
 
 int xdag_rsdb_pre_init(void);
@@ -99,8 +101,13 @@ int xdag_rsdb_write(XDAG_RSDB* db, XDAG_RSDB_BATCH* batch);
 int xdag_rsdb_put_stats(XDAG_RSDB* rsdb);
 
 int xdag_rsdb_get_bi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal* bi);
-    
+int xdag_rsdb_get_orpbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal* bi, struct xdag_block* xb);
+int xdag_rsdb_del_orpbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash);
+int xdag_rsdb_get_outbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal* bi);
+
 int xdag_rsdb_put_bi(XDAG_RSDB* rsdb, struct block_internal* bi);
+int xdag_rsdb_put_orpbi(XDAG_RSDB* rsdb, struct block_internal* bi, struct xdag_block* xb);
+int xdag_rsdb_put_ourbi(XDAG_RSDB* rsdb, struct block_internal* bi);
     
 int xdag_rsdb_writebatch_put_bi(XDAG_RSDB_BATCH* batch, struct block_internal* bi);
 

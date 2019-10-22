@@ -161,7 +161,7 @@ struct block_backrefs {
 //};
 
 struct orphan_block {
-    struct block_internal *orphan_bi;
+    struct block_internal* orphan_bi;
     struct orphan_block *next;
     struct orphan_block *prev;
     struct xdag_block block[0];

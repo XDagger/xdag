@@ -274,17 +274,57 @@ int xdag_rsdb_get_bi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal
 {
     int retcode = 0;
     size_t vlen = 0;
-    char key[ 1 + sizeof(uint64_t) ] = {[0] = HASH_BLOCK_INTERNAL};
-    struct block_internal bbi = {0};
-    
-    //memset(&bbi, 0, sizeof(struct block_internal));
-    memcpy(key + 1, hash, sizeof(uint64_t));
-    
-    retcode = xdag_rsdb_getkey(rsdb, key, sizeof(key), (char*)&bbi, &vlen);
+    char key[ 1 + sizeof(xdag_hashlow_t) ] = {[0] = HASH_BLOCK_INTERNAL};
+    memcpy(key + 1, hash, sizeof(xdag_hashlow_t));
+    retcode = xdag_rsdb_getkey(rsdb, key, sizeof(key), (char*)bi, &vlen);
     if(retcode) {
         return retcode;
     }
-    memcpy(bi, &bbi, vlen);
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+int xdag_rsdb_get_orpbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal* bi, struct xdag_block* xb)
+{
+    int retcode = 0;
+   
+    char key[ 1 + sizeof(xdag_hashlow_t) ] = {[0] = HASH_ORP_BLOCK_INTERNAL};
+    char val[sizeof(struct block_internal) + sizeof(struct xdag_block)] = {0};
+    size_t vlen = 0;
+    memcpy(key + 1, hash, sizeof(xdag_hashlow_t));
+    retcode = xdag_rsdb_getkey(rsdb, key, sizeof(key), (char*)val, &vlen);
+    if(retcode) {
+        return retcode;
+    }
+    memcpy(bi, val, sizeof(struct block_internal));
+    memcpy(xb, val + sizeof(struct block_internal), sizeof(struct xdag_block));
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+int xdag_rsdb_del_orpbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
+{
+    int retcode = 0;
+    char key[ 1 + sizeof(xdag_hashlow_t) ] = {[0] = HASH_ORP_BLOCK_INTERNAL};
+    memcpy(key + 1, hash, sizeof(xdag_hashlow_t));
+    retcode = xdag_rsdb_delkey(rsdb, key, 1+sizeof(xdag_hashlow_t));
+    if(retcode) {
+        return retcode;
+    }
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+int xdag_rsdb_get_ourbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal* bi)
+{
+    int retcode = 0;
+    
+    char key[ 1 + sizeof(xdag_hashlow_t) ] = {[0] = HASH_OUR_BLOCK_INTERNAL};
+    char val[ sizeof(struct block_internal)] = {0};
+    size_t vlen = 0;
+    memcpy(key + 1, hash, sizeof(xdag_hashlow_t));
+    retcode = xdag_rsdb_getkey(rsdb, key, sizeof(key), val, &vlen);
+    if(retcode) {
+        return retcode;
+    }
+    memcpy(bi, val, sizeof(struct block_internal));
     return XDAG_RSDB_OP_SUCCESS;
 }
 
@@ -292,6 +332,36 @@ int xdag_rsdb_put_bi(XDAG_RSDB* rsdb, struct block_internal* bi)
 {
     int retcode = 0;
     char key[ 1 + sizeof(xdag_hashlow_t) ] = {[0] = HASH_BLOCK_INTERNAL};
+    memcpy(key + 1, bi->hash, sizeof(xdag_hashlow_t));
+    retcode = xdag_rsdb_putkey(rsdb, key, sizeof(key), (char*)bi, sizeof(struct block_internal));
+    if(retcode) {
+        return retcode;
+    }
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+int xdag_rsdb_put_orpbi(XDAG_RSDB* rsdb, struct block_internal* bi, struct xdag_block* xb)
+{
+    int retcode = 0;
+    char key[ 1 + sizeof(xdag_hashlow_t) ] = {[0] = HASH_ORP_BLOCK_INTERNAL};
+    const size_t vlen = sizeof(struct block_internal) + sizeof(struct xdag_block);
+    char val[vlen] = {0};
+    
+    memcpy(key + 1, bi->hash, sizeof(xdag_hashlow_t));
+    memcpy(val, bi, sizeof(struct block_internal));
+    memcpy(val + sizeof(struct block_internal), xb, sizeof(struct xdag_block));
+    
+    retcode = xdag_rsdb_putkey(rsdb, key, sizeof(key), val, vlen);
+    if(retcode) {
+        return retcode;
+    }
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+int xdag_rsdb_put_ourbi(XDAG_RSDB* rsdb, struct block_internal* bi)
+{
+    int retcode = 0;
+    char key[ 1 + sizeof(xdag_hashlow_t) ] = {[0] = HASH_OUR_BLOCK_INTERNAL};
     memcpy(key + 1, bi->hash, sizeof(xdag_hashlow_t));
     retcode = xdag_rsdb_putkey(rsdb, key, sizeof(key), (char*)bi, sizeof(struct block_internal));
     if(retcode) {
