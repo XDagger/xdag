@@ -39,12 +39,12 @@ static pthread_mutex_t g_create_block_mutex = PTHREAD_MUTEX_INITIALIZER;
 static xdag_amount_t g_balance = 0;
 extern xtime_t g_time_limit;
 //static struct ldus_rbtree *root = 0, *cache_root = 0;
-//static struct block_internal *volatile top_main_chain = 0, *volatile pretop_main_chain = 0;
-xdag_hash_t pretop_main_chain_hash = {0};
-xdag_hash_t top_main_chain_hash = {0};
+static struct block_internal *volatile top_main_chain = 0, *volatile pretop_main_chain = 0;
+static xdag_hash_t pretop_main_chain_hash = {0};
+static xdag_hash_t top_main_chain_hash = {0};
 //static struct block_internal *ourfirst = 0, *ourlast = 0;
-xdag_hash_t ourfirst_hash = {0};
-xdag_hash_t ourlast_hash = {0};
+static xdag_hash_t ourfirst_hash = {0};
+static xdag_hash_t ourlast_hash = {0};
 //static struct cache_block *cache_first = NULL, *cache_last = NULL;
 static pthread_mutex_t block_mutex;
 static pthread_mutex_t rbtree_mutex;
@@ -281,16 +281,6 @@ static void set_main(struct block_internal *m)
 //    m->ref = m;
     memcpy(m->ref, m->hash, sizeof(xdag_hashlow_t));
 	
-    //top_main_chain_hash
-    memcpy(top_main_chain_hash, m->hash, sizeof(xdag_hash_t));
-    char top_key[1] = {[0] = SETTING_TOP_MAIN_HASH};
-    xdag_rsdb_writebatch_put(batch, top_key, sizeof(top_key), (char*)top_main_chain_hash, sizeof(xdag_hash_t));
-    
-    // pre_top_main_chain_hash
-    memcpy(pretop_main_chain_hash, m->hash, sizeof(xdag_hash_t));
-    char pretop_key[1] = {[0] = SETTING_PRE_TOP_MAIN_HASH};
-    xdag_rsdb_writebatch_put(batch, pretop_key, sizeof(pretop_key), (char*)pretop_main_chain_hash, sizeof(xdag_hash_t));
-    
     xdag_rsdb_writebatch_put_bi(batch, m);
     xdag_rsdb_write(g_xdag_rsdb, batch);
 	log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time, m->storage_pos);
@@ -321,7 +311,6 @@ static void check_new_main(void)
 //    xdag_hash_t b_hash = {0};
     int i = 0;
 
-    
 //    for (b = top_main_chain, i = 0;
 //         b && !(b->flags & BI_MAIN);
 //         b = b->link[b->max_diff_link])
@@ -335,7 +324,6 @@ static void check_new_main(void)
     struct block_internal* bi = NULL;
     xdag_hash_t p_hash = {0};
     struct block_internal* p = NULL;
-    struct block_internal* top_main_chain = NULL;
     if(!xdag_rsdb_get_bi(g_xdag_rsdb, top_main_chain_hash, &b)) {
         top_main_chain = &b;
     }
@@ -370,8 +358,6 @@ static void check_new_main(void)
 static void unwind_main(struct block_internal *bi)
 {
     struct block_internal b = {0};
-    struct block_internal* top_main_chain = NULL;
-    
     if(!xdag_rsdb_get_bi(g_xdag_rsdb, top_main_chain_hash, &b)) {
         top_main_chain = &b;
     } else {
@@ -851,8 +837,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 		g_xdag_stats.total_nblocks = g_xdag_stats.nblocks;
 	}
 
-    struct block_internal* pretop_main_chain = NULL;
-    struct block_internal* top_main_chain = NULL;
     struct block_internal pmc = {0};
     struct block_internal tmc = {0};
     if(!xdag_rsdb_get_bi(g_xdag_rsdb, pretop_main_chain_hash, &pmc)) {
@@ -867,20 +851,14 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
         (!pretop_main_chain || xdag_diff_gt(nodeBlock->difficulty, pretop_main_chain->difficulty)))
     {
         pretop_main_chain = nodeBlock;
-        memcpy(pretop_main_chain_hash, nodeBlock->hash, sizeof(xdag_hash_t));
-        char key[1] = {[0]=SETTING_PRE_TOP_MAIN_HASH};
-        xdag_rsdb_putkey(g_xdag_rsdb, key, 1, (char*)pretop_main_chain_hash, sizeof(pretop_main_chain_hash));
-        log_block("Pretop", nodeBlock->hash, nodeBlock->time, nodeBlock->storage_pos);
+//        log_block("Pretop", nodeBlock->hash, nodeBlock->time, nodeBlock->storage_pos);
     }
 //	set_pretop(top_main_chain);
     if (top_main_chain && MAIN_TIME(top_main_chain->time) < MAIN_TIME(timestamp) &&
         (!pretop_main_chain || xdag_diff_gt(top_main_chain->difficulty, pretop_main_chain->difficulty)))
     {
         pretop_main_chain = top_main_chain;
-        memcpy(top_main_chain_hash, top_main_chain->hash, sizeof(xdag_hash_t));
-        char key[1] = {[0]=SETTING_TOP_MAIN_HASH};
-        xdag_rsdb_putkey(g_xdag_rsdb, key, 1, (char*)top_main_chain_hash, sizeof(top_main_chain_hash));
-        log_block("Pretop", top_main_chain->hash, top_main_chain->time, top_main_chain->storage_pos);
+//        log_block("Pretop", top_main_chain->hash, top_main_chain->time, top_main_chain->storage_pos);
     }
 
 	if(xdag_diff_gt(tmpNodeBlock.difficulty, g_xdag_stats.difficulty)) {
@@ -1064,8 +1042,6 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
     
     struct block_internal pretop_b = {0};
     struct block_internal top_b = {0};
-    struct block_internal* pretop_main_chain = NULL;
-    struct block_internal* top_main_chain = NULL;
     
     if(!xdag_rsdb_get_bi(g_xdag_rsdb, pretop_main_chain_hash, &pretop_b)) {
         pretop_main_chain = &pretop_b;
@@ -1303,8 +1279,6 @@ int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t 
         //struct block_internal *pretop_new = pretop_block();
         struct block_internal pretop_b = {0};
         struct block_internal top_b = {0};
-        struct block_internal* pretop_main_chain = NULL;
-        struct block_internal* top_main_chain = NULL;
       
         if(!xdag_rsdb_get_bi(g_xdag_rsdb, pretop_main_chain_hash, &pretop_b)) {
             pretop_main_chain = &pretop_b;
@@ -1479,7 +1453,9 @@ begin:
 			
 			//root = 0;
 			g_balance = 0;
-			//top_main_chain = pretop_main_chain = 0;
+			top_main_chain = pretop_main_chain = 0;
+            memset(pretop_main_chain_hash, 0, sizeof(xdag_hash_t));
+            memset(top_main_chain_hash, 0, sizeof(xdag_hash_t));
 			//ourfirst = ourlast = 0;
 			//g_orphan_first[0] = g_orphan_last[0] = 0;
 			//g_orphan_first[1] = g_orphan_last[1] = 0;
