@@ -13,6 +13,9 @@
 #include "../client/rsdb.h"
 #include "../client/global.h"
 
+XDAG_RSDB* g_xdag_rsdb = NULL;
+struct xdag_stats g_xdag_stats = {0};
+struct xdag_ext_stats g_xdag_extstats = {0};
 //struct block_internal {
 //    xdag_hash_t hash;
 //    xdag_diff_t difficulty;
@@ -67,7 +70,8 @@ void test_writebatch(XDAG_RSDB* rsdb)
     }
     printf("value:%s, len:%d\n", test_data, (int)tlen);
     printf("test_writebatch success\n");
-    free(batch);
+
+    //free(batch);
 }
 
 void test_xdag_block(XDAG_RSDB* rsdb, int count)
@@ -95,6 +99,65 @@ void test_xdag_block(XDAG_RSDB* rsdb, int count)
     printf("write %d block_internal ,size %zu to rocksdb.\n", count, write_size);
 }
 
+void test_xdag_block_not_exist(XDAG_RSDB* rsdb)
+{
+    char key[4] = "key";
+    char val[4] = "val";
+
+    char not_exist_key[4] = "not";
+    char v[16] = {0};
+    size_t vlen = 0;
+    xdag_rsdb_putkey(rsdb, key, sizeof(key), val, sizeof(val));
+    
+    if(!xdag_rsdb_getkey(rsdb, not_exist_key, sizeof(not_exist_key), (char*)v , &vlen)) {
+        printf("exist xdag_rsdb_getkey(%s) = value(%s)\n", not_exist_key, v);
+    } else {
+        printf("not exist xdag_rsdb_getkey(%s) = value(%s)\n", not_exist_key, v);
+    }
+   
+}
+
+void test_rsdb_seek(XDAG_RSDB* rsdb)
+{
+    struct block_internal b = {0};
+    memset(b.hash, 1, sizeof(xdag_hash_t));
+    b.amount = 11111;
+    struct xdag_block xb = {0};
+    xdag_rsdb_put_orpbi(rsdb, &b, &xb);
+    memset(&b, 0, sizeof(struct block_internal));
+    
+    memset(b.hash, 2, sizeof(xdag_hash_t));
+    b.amount = 22222;
+    xdag_rsdb_put_orpbi(rsdb, &b, &xb);
+    
+    memset(b.hash, 3, sizeof(xdag_hash_t));
+    b.amount = 33333;
+    xdag_rsdb_put_orpbi(rsdb, &b, &xb);
+    
+    if(!xdag_rsdb_seek_orpbi(rsdb, &b, &xb))
+    {
+        printf("b.amount = %llu\n", b.amount);
+        printf("xdag_rsdb_seek_orpbi success.\n");
+        xdag_rsdb_del_orpbi(rsdb, b.hash);
+        
+    } else {
+        printf("xdag_rsdb_seek_orpbi fail.\n");
+    }
+    
+    memset(&b, 0, sizeof(struct block_internal));
+    
+    if(!xdag_rsdb_seek_orpbi(rsdb, &b, &xb))
+    {
+        printf("b.amount = %llu\n", b.amount);
+        printf("xdag_rsdb_seek_orpbi success.\n");
+        xdag_rsdb_del_orpbi(rsdb, b.hash);
+    } else {
+        printf("xdag_rsdb_seek_orpbi fail.\n");
+    }
+    
+    
+}
+
 int xdag_rsdb_test()
 {
     const char* test_key = "test_key";
@@ -107,6 +170,7 @@ int xdag_rsdb_test()
     char* db_backup_path = "rsdb_backup";
     
     rsdb = xdag_rsdb_new(db_name, db_path, db_backup_path);
+    g_xdag_rsdb = rsdb;
     
     int error_code = 0;
     if((error_code = xdag_rsdb_conf(rsdb))) {
@@ -167,7 +231,11 @@ int xdag_rsdb_test()
     
     test_writebatch(rsdb);
     
-    test_xdag_block(rsdb, 10000000);
+   
+    test_rsdb_seek(rsdb);
+    
+    test_xdag_block_not_exist(rsdb);
+    //test_xdag_block(rsdb, 10000000);
     
     xdag_rsdb_close(rsdb);
     free(rsdb->config);

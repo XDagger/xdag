@@ -164,9 +164,8 @@ int xdag_rsdb_putkey(XDAG_RSDB* rsdb, const char* key, size_t klen, const char* 
 int xdag_rsdb_getkey(XDAG_RSDB* rsdb, const char* key, size_t klen, char* value, size_t* vlen)
 {
     char *errmsg = NULL;
-
     char *return_value = rocksdb_get(rsdb->db, rsdb->read_options, key, klen, vlen, &errmsg);
-    memcpy(value, return_value, *vlen);
+
     if(errmsg)
     {
         return XDAG_RSDB_GET_ERROR;
@@ -175,6 +174,8 @@ int xdag_rsdb_getkey(XDAG_RSDB* rsdb, const char* key, size_t klen, char* value,
     {
         return XDAG_RSDB_KEY_NOT_EXIST;
     }
+    memcpy(value, return_value, *vlen);
+    free(return_value);
     return XDAG_RSDB_OP_SUCCESS;
 }
 
@@ -195,6 +196,16 @@ XDAG_RSDB_BATCH* xdag_rsdb_writebatch_new()
     XDAG_RSDB_BATCH* xbatch = calloc(sizeof(XDAG_RSDB_BATCH), 1);
     xbatch->writebatch = rocksdb_writebatch_create();
     return xbatch;
+}
+
+void xdag_rsdb_writebatch_destroy(XDAG_RSDB_BATCH* batch)
+{
+    if(batch != NULL) {
+        if(batch->writebatch != NULL) {
+            rocksdb_writebatch_destroy(batch->writebatch);
+        }
+        free(batch);
+    }
 }
 
 extern int xdag_rsdb_writebatch_put(XDAG_RSDB_BATCH* rsdb_batch, const char* key, size_t klen, const char* value, size_t vlen)
@@ -283,6 +294,32 @@ int xdag_rsdb_get_bi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal
     return XDAG_RSDB_OP_SUCCESS;
 }
 
+int xdag_rsdb_seek_orpbi(XDAG_RSDB* rsdb, struct block_internal* bi, struct xdag_block* xb)
+{
+    char key[1] = {[0] = HASH_ORP_BLOCK_INTERNAL};
+    size_t vlen = 0;
+    rocksdb_iterator_t* iter = NULL;
+    
+    iter = rocksdb_create_iterator(rsdb->db, rsdb->read_options);
+    
+    rocksdb_iter_seek(iter, key, sizeof(key));
+    
+    if(!rocksdb_iter_valid(iter)) {
+       rocksdb_iter_destroy(iter);
+       return XDAG_RSDB_SEEK_ERROR;
+    }
+    
+    const char* val = rocksdb_iter_value(iter, &vlen);
+    rocksdb_iter_destroy(iter);
+    if(!val) {
+        return XDAG_RSDB_SEEK_ERROR;
+    }
+    memcpy(bi, val, sizeof(struct block_internal));
+    memcpy(xb, val + sizeof(struct block_internal), sizeof(struct xdag_block));
+
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
 int xdag_rsdb_get_orpbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal* bi, struct xdag_block* xb)
 {
     int retcode = 0;
@@ -328,8 +365,41 @@ int xdag_rsdb_get_ourbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_inter
     return XDAG_RSDB_OP_SUCCESS;
 }
 
+int xdag_rsdb_del_ourbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
+{
+    int retcode = 0;
+    char key[ 1 + sizeof(xdag_hashlow_t) ] = {[0] = HASH_OUR_BLOCK_INTERNAL};
+    memcpy(key + 1, hash, sizeof(xdag_hashlow_t));
+    retcode = xdag_rsdb_delkey(rsdb, key, 1+sizeof(xdag_hashlow_t));
+    if(retcode) {
+        return retcode;
+    }
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+//int xdag_rsdb_create_iter(XDAG_RSDB* rsdb)
+//{
+//    int retcode = 0;
+//    char key[1] = {[0] = HASH_OUR_BLOCK_INTERNAL};
+//   
+//    //rsdb->db;
+//    rocksdb_iterator_t* iter = NULL;
+//    iter = rocksdb_create_iterator(rsdb->db, rsdb->read_options);
+//    rocksdb_iter_seek(iter, key, 1);
+//    rocksdb_iter_seek_to_first(iter);
+//    
+//    retcode = xdag_rsdb_delkey(rsdb, key, 1+sizeof(xdag_hashlow_t));
+//    if(retcode) {
+//        return retcode;
+//    }
+//    return XDAG_RSDB_OP_SUCCESS;
+//}
+
+
+
 int xdag_rsdb_put_bi(XDAG_RSDB* rsdb, struct block_internal* bi)
 {
+    if(!bi) return XDAG_RSDB_NULL;
     int retcode = 0;
     char key[ 1 + sizeof(xdag_hashlow_t) ] = {[0] = HASH_BLOCK_INTERNAL};
     memcpy(key + 1, bi->hash, sizeof(xdag_hashlow_t));

@@ -46,7 +46,8 @@ typedef enum xdag_rsdb_op_result {
     XDAG_RSDB_GET_ERROR                   = 12,
     XDAG_RSDB_DELETE_ERROR                = 13,
     XDAG_RSDB_WRITEBATCH_CREATE_ERROR     = 14,
-    XDAG_RSDB_WRITE_ERROR                 = 15
+    XDAG_RSDB_WRITE_ERROR                 = 15,
+    XDAG_RSDB_SEEK_ERROR                  = 16
 } XDAG_RSDB_OP_TYPE;
 
 typedef enum xdag_rsdb_key_type {
@@ -54,12 +55,14 @@ typedef enum xdag_rsdb_key_type {
     SETTING_STATS                         =  1,
     SETTING_TOP_MAIN_HASH                 =  2,
     SETTING_PRE_TOP_MAIN_HASH             =  3,
-    SETTING_VERSION                       =  4,
-    HASH_ORP_BLOCK_INTERNAL               =  5,
-    HASH_OUR_BLOCK_INTERNAL               =  6,
-    HASH_BLOCK_INTERNAL                   =  7,
-    HASH_BLOCK_LINK                       =  8,
-    HASH_BLOCK_BACK_REF                   =  9
+    SETTING_OUR_FIRST_HASH                =  4,
+    SETTING_OUR_LAST_HASH                 =  5,
+    SETTING_VERSION                       =  6,
+    HASH_ORP_BLOCK_INTERNAL               =  7,
+    HASH_OUR_BLOCK_INTERNAL               =  8,
+    HASH_BLOCK_INTERNAL                   =  9,
+    HASH_BLOCK_LINK                       =  10,
+    HASH_BLOCK_BACK_REF                   =  11
 } XDAG_RSDB_KEY_TYPE;
 
 int xdag_rsdb_pre_init(void);
@@ -93,6 +96,8 @@ int xdag_rsdb_getkey(XDAG_RSDB* db, const char* key, size_t klen, char* value, s
 int xdag_rsdb_delkey(XDAG_RSDB* db, const char* key, size_t klen);
 
 XDAG_RSDB_BATCH* xdag_rsdb_writebatch_new(void);
+
+void xdag_rsdb_writebatch_destroy(XDAG_RSDB_BATCH* batch);
     
 int xdag_rsdb_writebatch_put(XDAG_RSDB_BATCH* batch, const char* key, size_t klen,const char* value, size_t vlen);
 
@@ -102,12 +107,17 @@ int xdag_rsdb_put_stats(XDAG_RSDB* rsdb);
 
 int xdag_rsdb_get_bi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal* bi);
 int xdag_rsdb_get_orpbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal* bi, struct xdag_block* xb);
-int xdag_rsdb_del_orpbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash);
-int xdag_rsdb_get_outbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal* bi);
+int xdag_rsdb_get_ourbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal* bi);
+
 
 int xdag_rsdb_put_bi(XDAG_RSDB* rsdb, struct block_internal* bi);
 int xdag_rsdb_put_orpbi(XDAG_RSDB* rsdb, struct block_internal* bi, struct xdag_block* xb);
 int xdag_rsdb_put_ourbi(XDAG_RSDB* rsdb, struct block_internal* bi);
+
+int xdag_rsdb_del_orpbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash);
+int xdag_rsdb_del_ourbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash);
+
+int xdag_rsdb_seek_orpbi(XDAG_RSDB* rsdb, struct block_internal* bi, struct xdag_block* xb);
     
 int xdag_rsdb_writebatch_put_bi(XDAG_RSDB_BATCH* batch, struct block_internal* bi);
 

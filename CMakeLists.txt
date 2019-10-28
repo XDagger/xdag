@@ -20,13 +20,19 @@ if ( NOT DEFINED ENV{SECP256K1_ROOT_DIR})
   pkg_search_module(SECP256K1 REQUIRED libsecp256k1)
 endif()
 
+#if ( NOT DEFINED ENV{LZ4_ROOT_DIR})
+#  find_package(PkgConfig)
+#  pkg_search_module(LZ4 REQUIRED liblz4) 
+#  #set(LZ4_LIBRARIES "/usr/local/lib/liblz4.a")
+#endif()
+
 if ( NOT DEFINED ENV{SECP256K1_ROOT_DIR})
   set(SECP256K1_LIBRARIES "/usr/local/lib/libsecp256k1.a" "/usr/local/lib/libgmp.a")
 endif()
 
 if ( NOT DEFINED ENV{ROCKSDB_ROOT_DIR})
   set(ROCKSDB_INCLUDE_DIRS "/usr/local/include")
-  set(ROCKSDB_LIBRARIES "/usr/local/lib/librocksdb.a")
+  set(ROCKSDB_LIBRARIES "/usr/lib/libz.dylib" "/usr/lib/libbz2.dylib" "/usr/lib/libc++.dylib" "/usr/local/lib/libsnappy.a" "/usr/local/lib/liblz4.a" "/usr/local/lib/librocksdb.a")
 endif()
 
 if (APPLE AND NOT DEFINED ENV{OPENSSL_ROOT_DIR})
@@ -77,6 +83,16 @@ add_definitions(-DDFSTOOLS)
 add_definitions(-DSHA256_USE_OPENSSL_TXFM)
 add_definitions(-DSHA256_OPENSSL_MBLOCK)
 
+find_package(gflags REQUIRED)
+if(NOT gflags_FOUND)
+  message(FATAL_ERROR "Failed to find gflags dependency!")
+endif()
+
+find_package(snappy REQUIRED)
+if(NOT snappy_FOUND)
+  message(FATAL_ERROR "Failed to find snappy dependency!")
+endif()
+
 find_package(Threads QUIET)
 if(NOT Threads_FOUND)
   message(FATAL_ERROR "Failed to find pthreads dependency!")
@@ -118,6 +134,9 @@ target_link_libraries(
   ${PROJECT_NAME}
   ${OPENSSL_LIBRARIES}
   ${SECP256K1_LIBRARIES}
+  ${GFLAGS_LIBRARIES}
+  ${SNAPPY_LIBRARIES}
+  ${LZ4_LIBRARIES}
   ${ROCKSDB_LIBRARIES}
 )
 
