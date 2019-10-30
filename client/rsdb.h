@@ -91,7 +91,7 @@ int xdag_rsdb_load(XDAG_RSDB* db);
 
 int xdag_rsdb_putkey(XDAG_RSDB* db, const char* key, size_t klen, const char* value, size_t vlen);
 
-int xdag_rsdb_getkey(XDAG_RSDB* db, const char* key, size_t klen, char* value, size_t* vlen);
+void* xdag_rsdb_getkey(XDAG_RSDB* rsdb, const char* key, size_t klen);
 
 int xdag_rsdb_delkey(XDAG_RSDB* db, const char* key, size_t klen);
 
@@ -105,19 +105,20 @@ int xdag_rsdb_write(XDAG_RSDB* db, XDAG_RSDB_BATCH* batch);
 
 int xdag_rsdb_put_stats(XDAG_RSDB* rsdb);
 
-int xdag_rsdb_get_bi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal* bi);
-int xdag_rsdb_get_orpbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal* bi, struct xdag_block* xb);
-int xdag_rsdb_get_ourbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct block_internal* bi);
+struct block_internal* xdag_rsdb_get_bi(XDAG_RSDB* rsdb, xdag_hashlow_t hash);
+struct block_internal* xdag_rsdb_get_orpbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash);
+struct block_internal* xdag_rsdb_get_ourbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash);
 
 
 int xdag_rsdb_put_bi(XDAG_RSDB* rsdb, struct block_internal* bi);
 int xdag_rsdb_put_orpbi(XDAG_RSDB* rsdb, struct block_internal* bi, struct xdag_block* xb);
 int xdag_rsdb_put_ourbi(XDAG_RSDB* rsdb, struct block_internal* bi);
 
+int xdag_rsdb_del_bi(XDAG_RSDB* rsdb, xdag_hashlow_t hash);
 int xdag_rsdb_del_orpbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash);
 int xdag_rsdb_del_ourbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash);
 
-int xdag_rsdb_seek_orpbi(XDAG_RSDB* rsdb, struct block_internal* bi, struct xdag_block* xb);
+struct block_internal* xdag_rsdb_seek_orpbi(XDAG_RSDB* rsdb);
     
 int xdag_rsdb_writebatch_put_bi(XDAG_RSDB_BATCH* batch, struct block_internal* bi);
 

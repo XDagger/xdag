@@ -7,6 +7,7 @@
 #include "system.h"
 #include "block.h"
 #include "rsdb.h"
+#include "bloom_filter.h"
 
 enum xdag_states {
 #define xdag_state(n,s) XDAG_STATE_##n ,
