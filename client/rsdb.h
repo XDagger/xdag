@@ -111,7 +111,7 @@ struct block_internal* xdag_rsdb_get_ourbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
 
 
 int xdag_rsdb_put_bi(XDAG_RSDB* rsdb, struct block_internal* bi);
-int xdag_rsdb_put_orpbi(XDAG_RSDB* rsdb, struct block_internal* bi, struct xdag_block* xb);
+int xdag_rsdb_put_orpbi(XDAG_RSDB* rsdb, struct block_internal* bi);
 int xdag_rsdb_put_ourbi(XDAG_RSDB* rsdb, struct block_internal* bi);
 
 int xdag_rsdb_del_bi(XDAG_RSDB* rsdb, xdag_hashlow_t hash);
