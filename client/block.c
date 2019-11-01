@@ -210,9 +210,11 @@ static uint64_t unapply_block(struct block_internal* bi)
 			accept_amount(bi, unapply_block(lbi));
             xdag_rsdb_put_bi(g_xdag_rsdb, lbi);
 		}
-        free(lbi);
+        if(lbi) {
+            free(lbi);
+        }
 	}
-    
+    xdag_rsdb_put_bi(g_xdag_rsdb, bi);
 	return (xdag_amount_t)0 - bi->fee;
 }
 
@@ -317,8 +319,20 @@ static void check_new_main(void)
         }
 
         bi = xdag_rsdb_get_bi(g_xdag_rsdb, bi->link[bi->max_diff_link]);
-        if(++rocksdb_get_bi_counter % 10000 == 0) {
-            printf("xdag_rsdb_get_bi run %d, times\n", rocksdb_get_bi_counter);
+        rocksdb_get_bi_counter++ ;
+        if(bi) {
+            char bi_address[33] = {0};
+            char max_diff_address[33] = {0};
+            xdag_hash2address(bi->hash, bi_address);
+            xdag_hash2address(bi->link[bi->max_diff_link], max_diff_address);
+            printf("nmain=%llu, MDL=%d, bi=%s, BI_MAIN=%d, BI_MAIN_CHAIN=%d, link[bi->MDL]=%s,  for loop %d times.\n",
+                   g_xdag_stats.nmain,
+                   bi->max_diff_link,
+                   bi_address,
+                   (bi->flags & BI_MAIN),
+                   (bi->flags & BI_MAIN_CHAIN),
+                   max_diff_address,
+                   rocksdb_get_bi_counter);
         }
         if(bi) {
             memset(&b, 0, sizeof(struct block_internal));
@@ -334,6 +348,9 @@ static void check_new_main(void)
     }
     if (p && (extractedExpr) && i > MAX_WAITING_MAIN && xdag_get_xtimestamp() >= p->time + 2 * 1024) {
         set_main(p);
+        char bi_address[33] = {0};
+        xdag_hash2address(p->hash, bi_address);
+        printf("set_main p=%s, BI_MAIN=%d, BI_MAIN_CHAIN=%d\n", bi_address, (p->flags & BI_MAIN), (p->flags & BI_MAIN_CHAIN));
     }
 //    if(p && p != top_main_chain) {
 //        free(p);
@@ -495,7 +512,6 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int keysLeng
 
 #define set_pretop(b) if ((b) && MAIN_TIME((b)->time) < MAIN_TIME(timestamp) && \
 		(!pretop_main_chain || xdag_diff_gt((b)->difficulty, pretop_main_chain->difficulty))) { \
-        if(pretop_main_chain && pretop_main_chain != top_main_chain) free(pretop_main_chain);\
 		pretop_main_chain = (b); \
 		log_block("Pretop", (b)->hash, (b)->time, (b)->storage_pos); \
 }
