@@ -309,13 +309,16 @@ static void check_new_main(void)
 //        }
 //    }
     struct block_internal* bi = NULL, *p = NULL;
-    struct block_internal b = {0};
+    struct block_internal current_b = {0};
+    struct block_internal pre_main_chain_b = {0};
     for(bi = top_main_chain, i = 0;
         bi && !(bi->flags & BI_MAIN);
         bi = xdag_rsdb_get_bi(g_xdag_rsdb, bi->link[bi->max_diff_link]))
     {
         if(bi->flags & BI_MAIN_CHAIN) {
-            p = bi;
+            memset(&pre_main_chain_b, 0, sizeof(struct block_internal));
+            memcpy(&pre_main_chain_b, bi, sizeof(struct block_internal));
+            p = &pre_main_chain_b;
             ++i;
         }
 //        if(!memcmp(bi->link[bi->max_diff_link], ZERO_HASH, sizeof(xdag_hashlow_t))) {
@@ -324,26 +327,26 @@ static void check_new_main(void)
 //            bi = xdag_rsdb_get_bi(g_xdag_rsdb, bi->link[bi->max_diff_link]);
 //        }
         rocksdb_get_bi_counter++ ;
-        if(bi) {
-            char bi_address[33] = {0};
-            char max_diff_address[33] = {0};
-            xdag_hash2address(bi->hash, bi_address);
-            xdag_hash2address(bi->link[bi->max_diff_link], max_diff_address);
-            printf("nmain=%llu, MDL=%d, bi=%s, BI_MAIN=%d, BI_MAIN_CHAIN=%d, link[bi->MDL]=%s,  for loop %d times.\n",
-                   g_xdag_stats.nmain,
-                   bi->max_diff_link,
-                   bi_address,
-                   (bi->flags & BI_MAIN),
-                   (bi->flags & BI_MAIN_CHAIN),
-                   max_diff_address,
-                   rocksdb_get_bi_counter);
-        }
+//        if(bi) {
+//            char bi_address[33] = {0};
+//            char max_diff_address[33] = {0};
+//            xdag_hash2address(bi->hash, bi_address);
+//            xdag_hash2address(bi->link[bi->max_diff_link], max_diff_address);
+//            printf("nmain=%llu, MDL=%d, bi=%s, BI_MAIN=%d, BI_MAIN_CHAIN=%d, link[bi->MDL]=%s,  for loop %d times.\n",
+//                   g_xdag_stats.nmain,
+//                   bi->max_diff_link,
+//                   bi_address,
+//                   (bi->flags & BI_MAIN),
+//                   (bi->flags & BI_MAIN_CHAIN),
+//                   max_diff_address,
+//                   rocksdb_get_bi_counter);
+//        }
         if(bi && bi != top_main_chain) {
-            memset(&b, 0, sizeof(struct block_internal));
-            memcpy(&b, bi, sizeof(struct block_internal));
+            memset(&current_b, 0, sizeof(struct block_internal));
+            memcpy(&current_b, bi, sizeof(struct block_internal));
             free(bi);
             bi = NULL;
-            bi = &b;
+            bi = &current_b;
         }
     }
     
@@ -353,9 +356,9 @@ static void check_new_main(void)
     }
     if (p && (extractedExpr) && i > MAX_WAITING_MAIN && xdag_get_xtimestamp() >= p->time + 2 * 1024) {
         set_main(p);
-        char bi_address[33] = {0};
-        xdag_hash2address(p->hash, bi_address);
-        printf("set_main p=%s, BI_MAIN=%d, BI_MAIN_CHAIN=%d\n", bi_address, (p->flags & BI_MAIN), (p->flags & BI_MAIN_CHAIN));
+//        char bi_address[33] = {0};
+//        xdag_hash2address(p->hash, bi_address);
+//        printf("set_main p=%s, BI_MAIN=%d, BI_MAIN_CHAIN=%d\n", bi_address, (p->flags & BI_MAIN), (p->flags & BI_MAIN_CHAIN));
     }
 }
 
@@ -885,10 +888,10 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 		}
 
 		unwind_main(blockRef);
-        if(top_main_chain) {
-            free(top_main_chain);
-            top_main_chain = NULL;
-        }
+//        if(top_main_chain) {
+//            free(top_main_chain);
+//            top_main_chain = NULL;
+//        }
 		top_main_chain = nodeBlock;
         memcpy(top_main_chain_hash, nodeBlock->hash, sizeof(top_main_chain_hash));
         char key[1] = {[0]=SETTING_TOP_MAIN_HASH};
@@ -945,10 +948,10 @@ end:
 		//log_block(buf, tmpNodeBlock.hash, tmpNodeBlock.time, transportHeader);
 	}
     // free nodeBlock
-    if(nodeBlock != NULL && nodeBlock != top_main_chain) {
-        free(nodeBlock);
-        nodeBlock = NULL;
-    }
+//    if(nodeBlock != NULL && nodeBlock != top_main_chain) {
+//        free(nodeBlock);
+//        nodeBlock = NULL;
+//    }
 	return -err;
 }
        
