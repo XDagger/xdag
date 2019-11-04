@@ -60,7 +60,7 @@ void append_block_info(struct block_internal *bi);
 int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
 static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
 int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t send_time);
-void remove_orphan(struct block_internal*);
+int remove_orphan(xdag_hashlow_t);
 struct block_internal* seek_orphan(void);
 void add_orphan(struct block_internal*);
 static inline size_t remark_acceptance(xdag_remark_t);
@@ -98,15 +98,18 @@ static inline void accept_amount(struct block_internal *bi, xdag_amount_t sum)
 
 static uint64_t apply_block(struct block_internal* bi)
 {
-	xdag_amount_t sum_in, sum_out;
+    xdag_amount_t sum_in = 0;
+    xdag_amount_t sum_out = 0;
+    
 	if (bi->flags & BI_MAIN_REF) {
 		return -1l;
 	}
     
 	bi->flags |= BI_MAIN_REF;
-
+    remove_orphan(bi->hash);
 	for (int i = 0; i < bi->nlinks; ++i) {
-        struct block_internal* lbi = xdag_rsdb_get_bi(g_xdag_rsdb, bi->link[i]);
+        struct block_internal* lbi = xdag_rsdb_get_bi(bi->link[i]);
+        remove_orphan(lbi->hash);
 		xdag_amount_t ref_amount = apply_block(lbi);
 		if (ref_amount == -1l) {
             if(lbi) {
@@ -131,7 +134,7 @@ static uint64_t apply_block(struct block_internal* bi)
     sum_out = bi->fee;
 
 	for (int i = 0; i < bi->nlinks; ++i) {
-        struct block_internal* lbi = xdag_rsdb_get_bi(g_xdag_rsdb, bi->link[i]);
+        struct block_internal* lbi = xdag_rsdb_get_bi(bi->link[i]);
 		if (1 << i & bi->in_mask) {
 			if (lbi->amount < bi->linkamount[i]) {
                 if(lbi) {
@@ -167,7 +170,7 @@ static uint64_t apply_block(struct block_internal* bi)
 	}
 
 	for (int i = 0; i < bi->nlinks; ++i) {
-        struct block_internal* lbi = xdag_rsdb_get_bi(g_xdag_rsdb, bi->link[i]);
+        struct block_internal* lbi = xdag_rsdb_get_bi(bi->link[i]);
 		if (1 << i & bi->in_mask) {
             accept_amount(lbi, (xdag_amount_t)0 - bi->linkamount[i]);
 		} else {
@@ -191,7 +194,7 @@ static uint64_t unapply_block(struct block_internal* bi)
 		xdag_amount_t sum = bi->fee;
 
 		for (int i = 0; i < bi->nlinks; ++i) {
-            struct block_internal* lbi = xdag_rsdb_get_bi(g_xdag_rsdb, bi->link[i]);
+            struct block_internal* lbi = xdag_rsdb_get_bi(bi->link[i]);
 			if (1 << i & bi->in_mask) {
                 accept_amount(lbi, bi->linkamount[i]);
 				sum -= bi->linkamount[i];
@@ -213,7 +216,7 @@ static uint64_t unapply_block(struct block_internal* bi)
 	//bi->ref = 0;
 
 	for (int i = 0; i < bi->nlinks; ++i) {
-        struct block_internal* lbi = xdag_rsdb_get_bi(g_xdag_rsdb, bi->link[i]);
+        struct block_internal* lbi = xdag_rsdb_get_bi(bi->link[i]);
 		if (memcmp(lbi->ref, bi->hash, sizeof(xdag_hashlow_t)) == 0 && lbi->flags & BI_MAIN_REF) {
 			accept_amount(bi, unapply_block(lbi));
             xdag_rsdb_put_bi(g_xdag_rsdb, lbi);
@@ -273,9 +276,9 @@ static void set_main(struct block_internal *m)
     amount = get_amount(g_xdag_stats.nmain);
 	m->flags |= BI_MAIN;
 	accept_amount(m, amount);
+    xdag_rsdb_put_bi(g_xdag_rsdb, m);
 	accept_amount(m, apply_block(m));
     memcpy(m->ref, m->hash, sizeof(xdag_hashlow_t));
-    xdag_rsdb_put_bi(g_xdag_rsdb, m);
 	log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time, m->storage_pos);
 }
 
@@ -309,42 +312,48 @@ static void check_new_main(void)
 //        }
 //    }
     struct block_internal* bi = NULL, *p = NULL;
-    struct block_internal current_b = {0};
-    struct block_internal pre_main_chain_b = {0};
+    struct block_internal* current_bi = calloc(sizeof(struct block_internal), 1);
+    struct block_internal* pre_main_chain_bi = calloc(sizeof(struct block_internal), 1);
     for(bi = top_main_chain, i = 0;
-        bi && !(bi->flags & BI_MAIN);
-        bi = xdag_rsdb_get_bi(g_xdag_rsdb, bi->link[bi->max_diff_link]))
+        bi && !(bi->flags & BI_MAIN);)
     {
         if(bi->flags & BI_MAIN_CHAIN) {
-            memset(&pre_main_chain_b, 0, sizeof(struct block_internal));
-            memcpy(&pre_main_chain_b, bi, sizeof(struct block_internal));
-            p = &pre_main_chain_b;
+            memset(pre_main_chain_bi, 0, sizeof(struct block_internal));
+            memcpy(pre_main_chain_bi, bi, sizeof(struct block_internal));
+            p = pre_main_chain_bi;
             ++i;
         }
 
-//        if(bi) {
-//            char bi_address[33] = {0};
-//            char max_diff_address[33] = {0};
-//            xdag_hash2address(bi->hash, bi_address);
-//            xdag_hash2address(bi->link[bi->max_diff_link], max_diff_address);
-//            printf("nmain=%llu, MDL=%d, bi=%s, BI_MAIN=%d, BI_MAIN_CHAIN=%d, link[bi->MDL]=%s,  for loop %d times.\n",
-//                   g_xdag_stats.nmain,
-//                   bi->max_diff_link,
-//                   bi_address,
-//                   (bi->flags & BI_MAIN),
-//                   (bi->flags & BI_MAIN_CHAIN),
-//                   max_diff_address,
-//                   rocksdb_get_bi_counter);
-//        }
-//        if(++rocksdb_get_bi_counter % 1000 == 0) {
-//            printf("run xdag_rsdb_get_bi %d times\n", rocksdb_get_bi_counter);
-//        }
-        if(bi && bi != top_main_chain) {
-            memset(&current_b, 0, sizeof(struct block_internal));
-            memcpy(&current_b, bi, sizeof(struct block_internal));
-            free(bi);
-            bi = NULL;
-            bi = &current_b;
+        if(bi) {
+            char bi_address[33] = {0};
+            char max_diff_address[33] = {0};
+            xdag_hash2address(bi->hash, bi_address);
+            xdag_hash2address(bi->link[bi->max_diff_link], max_diff_address);
+            printf("nmain=%llu, i=%d, MDL=%d, bi=%s, BI_MAIN=%d, BI_MAIN_CHAIN=%d, link[bi->MDL]=%s,  for loop %d times.\n",
+                   g_xdag_stats.nmain,
+                   i,
+                   bi->max_diff_link,
+                   bi_address,
+                   (bi->flags & BI_MAIN),
+                   (bi->flags & BI_MAIN_CHAIN),
+                   max_diff_address,
+                   rocksdb_get_bi_counter);
+        }
+        if(++rocksdb_get_bi_counter % 1000 == 0) {
+            printf("run xdag_rsdb_get_bi %d times\n", rocksdb_get_bi_counter);
+        }
+        if(bi) {
+            memset(current_bi, 0, sizeof(struct block_internal));
+            memcpy(current_bi, bi, sizeof(struct block_internal));
+            if(bi != top_main_chain) {
+                free(bi);
+                bi = NULL;
+            }
+        }
+        
+        bi = xdag_rsdb_get_bi(current_bi->link[current_bi->max_diff_link]);
+        if(!bi || (bi->flags & BI_MAIN)) {
+            break;
         }
     }
     
@@ -361,20 +370,35 @@ static void check_new_main(void)
     }
     if (p && c2 && c3 && c4) {
         set_main(p);
-//        xdag_hash2address(p->hash, bi_address);
-//        xdag_hash2address(p->link[p->max_diff_link], bi_max_diff_address);
-//        printf("set_main succ i=%d, p=%s, BI_MAIN=%d, BI_MAIN_CHAIN=%d,\n", i, bi_address, (p->flags & BI_MAIN), (p->flags & BI_MAIN_CHAIN));
+        xdag_rsdb_put_bi(g_xdag_rsdb, p);
+        xdag_hash2address(p->hash, bi_address);
+        xdag_hash2address(p->link[p->max_diff_link], bi_max_diff_address);
+        printf("set_main succ i=%d, p=%s, BI_MAIN=%d, BI_MAIN_CHAIN=%d,\n", i, bi_address, (p->flags & BI_MAIN), (p->flags & BI_MAIN_CHAIN));
     } else {
         if(p) {
             xdag_hash2address(p->hash, bi_address);
             xdag_hash2address(p->link[p->max_diff_link], bi_max_diff_address);
-//            printf("set_main fail i=%d, c2=%d, c3=%d, c4=%d, p=%s, BI_MAIN=%d, BI_MAIN_CHAIN=%d\n", i, c2,c3,c4, bi_address, (p->flags & BI_MAIN), (p->flags & BI_MAIN_CHAIN));
-            //if(i >= 2) {
-                remove_orphan(p);
-            //}
-        } else {
-            printf("set_main fail i=%d, c2=%d, c3=%d, c4=%d\n", i,c2,c3,c4);
+            printf("set_main fail i=%d, c2=%d, c3=%d, c4=%d, p=%s, BI_MAIN=%d, BI_MAIN_CHAIN=%d\n", i, c2,c3,c4, bi_address, (p->flags & BI_MAIN), (p->flags & BI_MAIN_CHAIN));
+            if(!c2 && c4) {
+                //                if(strcmp("sIPUZrl7OLDJ4LTlO2TDkISuz9m6ztY4", bi_address) == 0) {
+                //                    printf("hahaha!\n");
+                //                }
+                if(g_xdag_state == XDAG_STATE_LOAD) {
+                    remove_orphan(p->hash);
+                    set_main(p);
+                }
+              
+            }
         }
+    }
+    if(current_bi) {
+        free(current_bi);
+    }
+    if(pre_main_chain_bi) {
+        free(pre_main_chain_bi);
+    }
+    if(bi) {
+        free(bi);
     }
 }
 
@@ -383,7 +407,7 @@ static void unwind_main(struct block_internal *bi)
     struct block_internal current_b = {0};
     for (struct block_internal* t = top_main_chain;
          (t && (bi == NULL) ) || (t && memcmp(t->hash, bi->hash, sizeof(xdag_hashlow_t)));
-         t = xdag_rsdb_get_bi(g_xdag_rsdb, t->link[t->max_diff_link]))
+         t = xdag_rsdb_get_bi(t->link[t->max_diff_link]))
     {
         t->flags &= ~BI_MAIN_CHAIN;
         if (t->flags & BI_MAIN) {
@@ -566,7 +590,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
     newBlock->field[0].transport_header = 0;
     xdag_hash(newBlock, sizeof(struct xdag_block), tmpNodeBlock.hash);
 
-    if(pt = xdag_rsdb_get_bi(g_xdag_rsdb, tmpNodeBlock.hash)) {
+    if(pt = xdag_rsdb_get_bi(tmpNodeBlock.hash)) {
         free(pt);
         pt = NULL;
         return 0;
@@ -659,7 +683,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
     // refactor to connect_method link bitcoin
     for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
         if(1 << i & (inmask | outmask)) {
-            blockRefs[i-1] = xdag_rsdb_get_bi(g_xdag_rsdb, newBlock->field[i].hash);
+            blockRefs[i-1] = xdag_rsdb_get_bi(newBlock->field[i].hash);
             if(!blockRefs[i-1]) {
                 err = 5;
                 goto end;
@@ -760,7 +784,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 				while(blockRef && MAIN_TIME(blockRef->time) == MAIN_TIME(tmpNodeBlock.time)) {
                     //blockRef = blockRef->link[blockRef->max_diff_link];
                     pbf = blockRef;
-                    blockRef = xdag_rsdb_get_bi(g_xdag_rsdb, blockRef->link[blockRef->max_diff_link]);
+                    blockRef = xdag_rsdb_get_bi(blockRef->link[blockRef->max_diff_link]);
                     
 				}
 				if(blockRef && xdag_diff_gt(xdag_diff_add(diff0, blockRef->difficulty), diff)) {
@@ -845,7 +869,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 //    }
     
     if(!xdag_rsdb_put_bi(g_xdag_rsdb, nodeBlock)) {
-        //remove_orphan(nodeBlock->hash);
         g_xdag_stats.nblocks++;
     } else {
         err = 0xD;
@@ -873,7 +896,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
             )
         {
            
-            struct block_internal* bi = xdag_rsdb_get_bi(g_xdag_rsdb, blockRef->link[blockRef->max_diff_link]);
+            struct block_internal* bi = xdag_rsdb_get_bi(blockRef->link[blockRef->max_diff_link]);
 			if((!bi ||
                 xdag_diff_gt(blockRef->difficulty, bi->difficulty))
 				&&
@@ -895,7 +918,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 		if(blockRef && blockRef0 && memcmp(blockRef->hash, blockRef0->hash, sizeof(xdag_hashlow_t)) &&
            MAIN_TIME(blockRef->time) == MAIN_TIME(blockRef0->time))
         {
-            struct block_internal* bi = xdag_rsdb_get_bi(g_xdag_rsdb, blockRef->link[blockRef->max_diff_link]);
+            struct block_internal* bi = xdag_rsdb_get_bi(blockRef->link[blockRef->max_diff_link]);
             if(bi) {
                 memset(&b, 0, sizeof(struct block_internal));
                 memcpy(&b, bi, sizeof(struct block_internal));
@@ -931,13 +954,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
         add_ourblock(nodeBlock);
 	}
 
-	for(i = 0; i < tmpNodeBlock.nlinks; ++i) {
-        struct block_internal* bi = xdag_rsdb_get_orpbi(g_xdag_rsdb, tmpNodeBlock.link[i]);
-		remove_orphan(bi);
-        if(bi) {
-            free(bi);
-        }
-	}
+    for(i = 0; i < tmpNodeBlock.nlinks; ++i) {
+        remove_orphan(tmpNodeBlock.hash);
+    }
     
 	add_orphan(nodeBlock);
 
@@ -1042,7 +1061,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 	struct block_internal *ref = NULL, *pretop = pretop_block();
 
 	for (i = 0; i < inputsCount; ++i) {
-        ref = xdag_rsdb_get_bi(g_xdag_rsdb, fields[i].hash);
+        ref = xdag_rsdb_get_bi(fields[i].hash);
 		if (!ref || !(ref->flags & BI_OURS)) {
 			pthread_mutex_unlock(&g_create_block_mutex);
 			return NULL;
@@ -1123,7 +1142,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
                 setfld(XDAG_FIELD_OUT, bi->hash, xdag_hashlow_t);
                 res++;
             }
-            xdag_rsdb_del_orpbi(g_xdag_rsdb, bi->hash);
+            xdag_rsdb_del_orpbi(g_xdag_rsdb, bi);
             if(bi) {
                 free(bi);
                 bi = NULL;
@@ -1607,7 +1626,7 @@ xdag_amount_t xdag_get_balance(xdag_hash_t hash)
 		return g_balance;
 	}
     
-    bi = xdag_rsdb_get_bi(g_xdag_rsdb, hash);
+    bi = xdag_rsdb_get_bi(hash);
     if(!bi) {
         return 0;
     }
@@ -1622,9 +1641,9 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 	if (!hash) return -1;
     XDAG_RSDB_BATCH* batch = NULL;
 	pthread_mutex_lock(&block_mutex);
-    struct block_internal* bi = xdag_rsdb_get_bi(g_xdag_rsdb, hash);
+    struct block_internal* bi = xdag_rsdb_get_bi(hash);
     
-    struct block_internal* ourfirst = xdag_rsdb_get_bi(g_xdag_rsdb, ourfirst_hash);
+    struct block_internal* ourfirst = xdag_rsdb_get_bi(ourfirst_hash);
     struct block_internal* ourlast = NULL;
     if(!bi) {
         return -1;
@@ -1632,8 +1651,8 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 
 	if (bi->flags & BI_OURS && memcmp(bi->hash, ourfirst->hash, sizeof(xdag_hashlow_t))) {
         batch = xdag_rsdb_writebatch_new();
-        struct block_internal* prev_bi = xdag_rsdb_get_bi(g_xdag_rsdb, bi->ourprev);
-        struct block_internal* next_bi = xdag_rsdb_get_bi(g_xdag_rsdb, bi->ournext);
+        struct block_internal* prev_bi = xdag_rsdb_get_bi(bi->ourprev);
+        struct block_internal* next_bi = xdag_rsdb_get_bi(bi->ournext);
         
 		if (bi->ourprev) {
             
@@ -1725,7 +1744,7 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 int64_t xdag_get_block_pos(const xdag_hash_t hash, xtime_t *t, struct xdag_block *block)
 {
 	if (block) pthread_mutex_lock(&block_mutex);
-    struct block_internal *bi = xdag_rsdb_get_bi(g_xdag_rsdb, hash);
+    struct block_internal *bi = xdag_rsdb_get_bi(hash);
     int64_t pos = 0;
 
 	if (!bi) {
@@ -1749,7 +1768,7 @@ int64_t xdag_get_block_pos(const xdag_hash_t hash, xtime_t *t, struct xdag_block
 //returns a number of key by hash of block, or -1 if block is not ours
 int xdag_get_key(xdag_hash_t hash)
 {
-    struct block_internal *bi = xdag_rsdb_get_bi(g_xdag_rsdb, hash);
+    struct block_internal *bi = xdag_rsdb_get_bi(hash);
     int n_our_key = 0;
 	if (!bi || !(bi->flags & BI_OURS)) {
 		return -1;
@@ -1875,7 +1894,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
     xdag_amount_t amount = 0;
 	int i;
 
-    struct block_internal *bi = xdag_rsdb_get_bi(g_xdag_rsdb, hash);
+    struct block_internal *bi = xdag_rsdb_get_bi(hash);
 
 	if (!bi) {
 		return -1;
@@ -2159,7 +2178,7 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
 
 int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xtime_t, const char *))
 {
-    struct block_internal *bi = xdag_rsdb_get_bi(g_xdag_rsdb, hash);
+    struct block_internal *bi = xdag_rsdb_get_bi(hash);
 	
 	if (!bi) {
 		return -1;
@@ -2223,27 +2242,35 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 	return n;
 }
 
-void remove_orphan(struct block_internal* bi)
+int remove_orphan(xdag_hashlow_t hash)
 {
-    if(bi) {
-        int index = get_orphan_index(bi);
-        if(index) {
-            bi->flags &= ~BI_EXTRA;
-            g_xdag_extstats.nextra--;
-        } else {
-            g_xdag_extstats.nnoref--;
+//    if(hash && (hash[0] != 0 && hash[1] !=0 && hash[2] != 0 )) {
+        struct block_internal* bi = xdag_rsdb_get_orpbi(g_xdag_rsdb, hash);
+        if(bi) {
+            int recode = xdag_rsdb_del_orpbi(g_xdag_rsdb, bi);
+            
+            if(!recode) {
+                char bi_address[33] = {0};
+                xdag_hash2address(hash, bi_address);
+                printf("remove_orphan(%s)\n", bi_address);
+                int index = get_orphan_index(bi);
+                if(index && !recode) {
+                    bi->flags &= ~BI_EXTRA;
+                    g_xdag_extstats.nextra--;
+                } else {
+                    g_xdag_extstats.nnoref--;
+                }
+                bi->oref = NULL;
+                bi->flags |= BI_REF;
+                xdag_rsdb_put_bi(g_xdag_rsdb, bi);
+                return 0;
+            }
+//        } else {
+            
         }
-        bi->oref = NULL;
-        bi->flags |= BI_REF;
-        
-        //DEBUG
-//        char address[33] = {0};
-//        xdag_hash2address(bi->hash, address);
-//        printf("remove_orphan(%s)\n", address);
-        
-        xdag_rsdb_del_orpbi(g_xdag_rsdb, bi->hash);
-        xdag_rsdb_put_bi(g_xdag_rsdb, bi);
-    }
+    return 1;
+    
+//    }
 }
         
 struct block_internal* seek_orphan()
@@ -2261,9 +2288,9 @@ void add_orphan(struct block_internal* bi)
         printf("xdag_rsdb_put_orpbi(%s) error!!!!!!!!!!\n", address);
     }
     
-//    char address[33] = {0};
-//    xdag_hash2address(bi->hash, address);
-//    printf("add_orphan(%s)\n", address);
+    char address[33] = {0};
+    xdag_hash2address(bi->hash, address);
+    printf("add_orphan(%s)\n", address);
     
     if (index) {
         g_xdag_extstats.nextra++;
@@ -2316,7 +2343,7 @@ int xdag_get_block_info(xdag_hash_t hash, void *info, int (*info_callback)(void*
 						void *links, int (*links_callback)(void*, const char *, xdag_hash_t, xdag_amount_t))
 {
 	pthread_mutex_lock(&block_mutex);
-    struct block_internal *bi = xdag_rsdb_get_bi(g_xdag_rsdb, hash);
+    struct block_internal *bi = xdag_rsdb_get_bi(hash);
 	pthread_mutex_unlock(&block_mutex);
 
 	if(info_callback && bi) {
@@ -2455,7 +2482,7 @@ static int load_remark(struct block_internal* bi) {
 
 void order_ourblocks_by_amount(struct block_internal *bi)
 {
-    struct block_internal *ti = xdag_rsdb_get_bi(g_xdag_rsdb, bi->hash);
+    struct block_internal *ti = xdag_rsdb_get_bi(bi->hash);
 
     //TODO use rocksdb key sort rule
 //	while ((ti = bi->ourprev) && bi->amount > ti->amount) {
