@@ -45,14 +45,14 @@ void rand_str(char *dest, size_t length)
 
 void test_writebatch(XDAG_RSDB* rsdb)
 {
-    char test_data[32] = {0};
+    char* test_data = NULL;
     int error_code = 0;
     
-    const char* test_batch_key1 = "test_batch_key1";
-    const char* test_batch_value1 = "test_batch_value1";
+    char* test_batch_key1 = "test_batch_key1";
+    char* test_batch_value1 = "test_batch_value1";
     
-    const char* test_batch_key2 = "test_batch_key2";
-    const char* test_batch_value2 = "test_batch_value2";
+    char* test_batch_key2 = "test_batch_key2";
+    char* test_batch_value2 = "test_batch_value2";
     XDAG_RSDB_BATCH* batch = malloc(sizeof(XDAG_RSDB_BATCH));
     batch = xdag_rsdb_writebatch_new();
     xdag_rsdb_writebatch_put(batch, test_batch_key1, strlen(test_batch_key1), test_batch_value1, strlen(test_batch_value1));
@@ -62,7 +62,7 @@ void test_writebatch(XDAG_RSDB* rsdb)
     xdag_rsdb_write(rsdb, batch);
 
     size_t tlen = 0;
-    if((error_code = xdag_rsdb_getkey(rsdb, test_batch_key1, strlen(test_batch_key1), test_data, &tlen))) {
+    if((test_data = xdag_rsdb_getkey(rsdb, test_batch_key1, strlen(test_batch_key1)))) {
         printf("xdag_rsdb_get error code is:%d\n", error_code);
     }
     if(strncmp(test_batch_value1, test_data, strlen(test_data))) {
@@ -89,7 +89,7 @@ void test_xdag_block(XDAG_RSDB* rsdb, int count)
         
         struct block_internal r = {0};
         size_t vlen = 0;
-        xdag_rsdb_getkey(rsdb, key, sizeof(key), (char*)&r , &vlen);
+        r = xdag_rsdb_getkey(rsdb, key, sizeof(key));
         
         if(!memcmp(b, &r, sizeof(struct block_internal))) {
             printf("test_xdag_block put/get not cmp!\n");
@@ -119,38 +119,40 @@ void test_xdag_block_not_exist(XDAG_RSDB* rsdb)
 
 void test_rsdb_seek(XDAG_RSDB* rsdb)
 {
-    struct block_internal b = {0};
-    memset(b.hash, 1, sizeof(xdag_hash_t));
-    b.amount = 11111;
+    struct block_internal* bi = NULL;
+    bi = calloc(sizeof(struct block_internal), 1);
+    memset(bi->hash, 1, sizeof(xdag_hash_t));
+    bi->amount = 11111;
     struct xdag_block xb = {0};
-    xdag_rsdb_put_orpbi(rsdb, &b, &xb);
-    memset(&b, 0, sizeof(struct block_internal));
+    xdag_rsdb_put_orpbi(rsdb, bi);
+    memset(bi, 0, sizeof(struct block_internal));
     
-    memset(b.hash, 2, sizeof(xdag_hash_t));
-    b.amount = 22222;
-    xdag_rsdb_put_orpbi(rsdb, &b, &xb);
+    memset(bi->hash, 2, sizeof(xdag_hash_t));
+    bi->amount = 22222;
+    xdag_rsdb_put_orpbi(rsdb, bi);
     
-    memset(b.hash, 3, sizeof(xdag_hash_t));
-    b.amount = 33333;
-    xdag_rsdb_put_orpbi(rsdb, &b, &xb);
+    memset(bihash, 3, sizeof(xdag_hash_t));
+    bi->amount = 33333;
+    xdag_rsdb_put_orpbi(rsdb, bi);
     
-    if(!xdag_rsdb_seek_orpbi(rsdb, &b, &xb))
+    if(!xdag_rsdb_seek_orpbi(rsdb))
     {
-        printf("b.amount = %llu\n", b.amount);
+        printf("b.amount = %llu\n", bi->amount);
         printf("xdag_rsdb_seek_orpbi success.\n");
-        xdag_rsdb_del_orpbi(rsdb, b.hash);
+        xdag_rsdb_del_orpbi(rsdb, bi->hash);
         
     } else {
         printf("xdag_rsdb_seek_orpbi fail.\n");
     }
     
-    memset(&b, 0, sizeof(struct block_internal));
-    
-    if(!xdag_rsdb_seek_orpbi(rsdb, &b, &xb))
+    memset(bi, 0, sizeof(struct block_internal));
+    free(bi);
+    bi = NULL;
+    if(bi = xdag_rsdb_seek_orpbi(rsdb))
     {
-        printf("b.amount = %llu\n", b.amount);
+        printf("b.amount = %llu\n", bi->amount);
         printf("xdag_rsdb_seek_orpbi success.\n");
-        xdag_rsdb_del_orpbi(rsdb, b.hash);
+        xdag_rsdb_del_orpbi(rsdb, bi->hash);
     } else {
         printf("xdag_rsdb_seek_orpbi fail.\n");
     }
@@ -160,9 +162,9 @@ void test_rsdb_seek(XDAG_RSDB* rsdb)
 
 int xdag_rsdb_test()
 {
-    const char* test_key = "test_key";
-    const char* test_value = "test_value";
-    char test_data[32] = {0};
+    char* test_key = "test_key";
+    char* test_value = "test_value";
+    char* test_return_value = NULL;
     XDAG_RSDB* rsdb = NULL;
     
     char* db_name = "test_rsdb";
@@ -190,16 +192,15 @@ int xdag_rsdb_test()
         return error_code;
     }
     printf("xdag_rsdb_put success\n");
-    
-    size_t vlen = 0;
-    if((error_code = xdag_rsdb_getkey(rsdb, test_key, strlen(test_key), test_data, &vlen))) {
+
+    if((test_return_value = xdag_rsdb_getkey(rsdb, test_key, strlen(test_key)))) {
         printf("xdag_rsdb_get error code is:%d\n", error_code);
         return error_code;
     }
     printf("xdag_rsdb_get success\n");
     
-    if(strncmp(test_data, test_value, sizeof(test_data))) {
-        printf("strcmp put(%s, %s) and get(%s) value is:%s\n", test_key, test_value, test_key, test_data);
+    if(strncmp(test_return_value, test_value, strlen(test_return_value))) {
+        printf("strcmp put(%s, %s) and get(%s) value is:%s\n", test_key, test_value, test_key, test_return_value);
         return -1;
     }
 
@@ -223,7 +224,8 @@ int xdag_rsdb_test()
     
     vlen = 0;
     memset(test_data, 0, sizeof(test_data));
-    if((error_code = xdag_rsdb_getkey(rsdb, test_key, strlen(test_key), test_data, &vlen))) {
+    char* test_return_value = NULL;
+    if((test_return_value = xdag_rsdb_getkey(rsdb, test_key, strlen(test_key)))) {
         printf("xdag_rsdb_get (reget for restore) error code is:%d\n", error_code);
         return error_code;
     }
