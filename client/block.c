@@ -868,7 +868,7 @@ end:
 	return -err;
 }
 
-static int counter = 0;
+//static int counter = 0;
         
 void *add_block_callback_nosync(void *block, void *data)
 {
