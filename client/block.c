@@ -446,9 +446,9 @@ static inline void hash_for_signature(struct xdag_block b[2], const struct xdag_
 }
 
 /*
- * cache the sign to utxo for next time spent to verify
+ * cache the sign for block_internal for next time spent to verify
  */
-//static int cache_utxo_sign(const struct xdag_block *b, int signo_r, struct block_internal* bi)
+//static int cache_bi_sign(const struct xdag_block *b, int signo_r, struct block_internal* bi)
 //{
 //    struct xdag_block buf[2];
 //    int i, signo_s = -1;
@@ -1594,6 +1594,15 @@ static void traverse_all_callback(struct ldus_rbtree *node)
 int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag_hash_t hash,
 	xdag_amount_t amount, xtime_t time))
 {
+    
+//    pthread_mutex_lock(&block_mutex);
+//    g_traverse_callback = callback;
+//    g_traverse_data = data;
+//    pthread_mutex_lock(&rbtree_mutex);
+//    ldus_rbtree_walk_right(root, traverse_all_callback);
+//    pthread_mutex_unlock(&rbtree_mutex);
+//    pthread_mutex_unlock(&block_mutex);
+    
 	pthread_mutex_lock(&block_mutex);
 	g_traverse_callback = callback;
 	g_traverse_data = data;
@@ -1918,7 +1927,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, " direction  address                                    amount\n");
 	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
 	int flags;
-	xdag_hash_t ref;
+    xdag_hash_t ref = {0};
 	pthread_mutex_lock(&block_mutex);
 	//ref = bi->ref;
     memcpy(ref, bi->ref, sizeof(ref));
@@ -2046,13 +2055,30 @@ void xdag_list_main_blocks(int count, int print_only_addresses, FILE *out)
 
 	pthread_mutex_lock(&block_mutex);
 
-//	for (struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
-//		if (b->flags & BI_MAIN) {
-//			print_block(b, print_only_addresses, out);
-//			++i;
-//		}
-//	}
-
+    struct block_internal *b = NULL;
+    struct block_internal* current_bi = calloc(sizeof(struct block_internal), 1);
+    for (b = top_main_chain; b && i < count; ) {
+        if (b->flags & BI_MAIN) {
+            print_block(b, print_only_addresses, out);
+            ++i;
+        }
+        if(b!= top_main_chain) {
+            memset(current_bi, 0, sizeof(struct block_internal));
+            memcpy(current_bi, b, sizeof(struct block_internal));
+            free(b);
+            b = NULL;
+        }
+        
+        b = xdag_rsdb_get_bi(current_bi->link[current_bi->max_diff_link]);
+    }
+    if(b) {
+        free(b);
+        b = NULL;
+    }
+    if(current_bi) {
+        free(current_bi);
+        current_bi = NULL;
+    }
 	pthread_mutex_unlock(&block_mutex);
 }
 
@@ -2065,13 +2091,31 @@ void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out)
 
 	pthread_mutex_lock(&block_mutex);
 
-//	for(struct block_internal *b = top_main_chain; b && i < count; b = b->link[b->max_diff_link]) {
-//		if(b->flags & BI_MAIN && b->flags & BI_OURS) {
-//			print_block(b, 0, out);
-//			++i;
-//		}
-//	}
-
+    struct block_internal *b = NULL;
+    struct block_internal* current_bi = calloc(sizeof(struct block_internal), 1);
+    for(b = top_main_chain; b && i < count;) {
+        if(b->flags & BI_MAIN && b->flags & BI_OURS) {
+            print_block(b, 0, out);
+            ++i;
+        }
+        
+        if(b!= top_main_chain) {
+            memset(current_bi, 0, sizeof(struct block_internal));
+            memcpy(current_bi, b, sizeof(struct block_internal));
+            free(b);
+            b = NULL;
+        }
+        
+        b = xdag_rsdb_get_bi(current_bi->link[current_bi->max_diff_link]);
+    }
+    if(b) {
+        free(b);
+        b = NULL;
+    }
+    if(current_bi) {
+        free(current_bi);
+        current_bi = NULL;
+    }
 	pthread_mutex_unlock(&block_mutex);
 }
 
