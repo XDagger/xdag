@@ -21,6 +21,10 @@ if ( NOT DEFINED ENV{SECP256K1_ROOT_DIR})
   pkg_search_module(SECP256K1 REQUIRED libsecp256k1)
 endif()
 
+MESSAGE(STATUS ${SECP256K1_INCLUDE_DIRS})
+MESSAGE(STATUS ${SECP256K1_LIBRARIES})
+MESSAGE(STATUS ${SECP256K1_LIBDIR})
+
 if (APPLE AND NOT DEFINED ENV{OPENSSL_ROOT_DIR})
   set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl" "/usr/local/ssl/*" "/usr/local/Cellar/openssl/*")
   set(OPENSSL_LIBRARIES "/usr/local/opt/openssl/lib" "/usr/local/ssl/*/lib" "/usr/local/Cellar/openssl/*/lib")
@@ -108,7 +112,7 @@ target_link_libraries(
 target_link_libraries(
   ${PROJECT_NAME}
   ${OPENSSL_LIBRARIES}
-  ${SECP256K1_LIBRARIES}
+  -L${SECP256K1_LIBDIR} ${SECP256K1_LIBRARIES}
 )
 
 add_executable(
