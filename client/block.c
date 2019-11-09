@@ -36,9 +36,10 @@
 #define MAIN_START_AMOUNT       (1ll << 42)
 #define MAIN_APOLLO_AMOUNT      (1ll << 39)
 // 13500 is 10 days
-// nmain = 834646 ,          at 2019-09-17 00:30:00
-// nmain = 834646 + 4*13500, at 2019-10-27 00:30:00
-#define MAIN_APOLLO_HIGHT       (834646 + 4*13500)
+// nmain = 907601            at 2019-11-10 01:30:00
+// nmain = 907601 + 4*13500, at 2019-11-20 01:30:00
+#define MAIN_APOLLO_HEIGHT          (907601 + 4*13500)
+#define MAIN_APOLLO_TESTNET_HEIGHT   196258
 //#define MAIN_APOLLO_HIGHT       2  // for test
 #define MAIN_BIG_PERIOD_LOG     21
 #define MAX_LINKS               15
@@ -294,7 +295,8 @@ static uint64_t unapply_block(struct block_internal *bi)
 
 static xdag_amount_t get_start_amount(uint64_t nmain) {
     xdag_amount_t start_amount = 0;
-    if(nmain >= MAIN_APOLLO_HIGHT) {
+    uint64_t fork_height = g_xdag_testnet ? MAIN_APOLLO_TESTNET_HEIGHT:MAIN_APOLLO_HEIGHT;
+    if(nmain >= fork_height) {
         start_amount = MAIN_APOLLO_AMOUNT;
     } else {
         start_amount = MAIN_START_AMOUNT;
@@ -321,9 +323,10 @@ xdag_amount_t xdag_get_supply(uint64_t nmain)
         amount >>= 1;
     }
     res += current_nmain * amount;
-    if(nmain >= MAIN_APOLLO_HIGHT) {
+    uint64_t fork_height = g_xdag_testnet?MAIN_APOLLO_TESTNET_HEIGHT:MAIN_APOLLO_HEIGHT;
+    if(nmain >= fork_height) {
         // add before apollo amount
-        res += (MAIN_APOLLO_HIGHT - 1) * (MAIN_START_AMOUNT - MAIN_APOLLO_AMOUNT);
+        res += (fork_height - 1) * (MAIN_START_AMOUNT - MAIN_APOLLO_AMOUNT);
     }
     return res;
 }
@@ -1185,7 +1188,7 @@ begin:
 	xtime_t start = xdag_get_xtimestamp();
 	xdag_show_state(0);
 
-	xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback_nosync);
+	xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback_sync);
 
 	xdag_mess("Finish loading blocks, time cost %ldms", xdag_get_xtimestamp() - start);
 
@@ -1774,7 +1777,8 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	
 	if (bi->flags & BI_MAIN) {
 		xdag_hash2address(h, address);
-        if(MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA) < MAIN_APOLLO_HIGHT) {
+        uint64_t fork_height = g_xdag_testnet?MAIN_APOLLO_TESTNET_HEIGHT:MAIN_APOLLO_HEIGHT;
+        if(MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA) < fork_height) {
             amount = MAIN_START_AMOUNT;
         } else {
             amount = MAIN_APOLLO_AMOUNT;
