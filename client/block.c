@@ -276,8 +276,8 @@ static void set_main(struct block_internal *m)
     amount = get_amount(g_xdag_stats.nmain);
 	m->flags |= BI_MAIN;
 	accept_amount(m, amount);
-    xdag_rsdb_put_bi(g_xdag_rsdb, m);
 	accept_amount(m, apply_block(m));
+    xdag_rsdb_put_bi(g_xdag_rsdb, m);
     memcpy(m->ref, m->hash, sizeof(xdag_hashlow_t));
 	log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time, m->storage_pos);
 }
@@ -370,7 +370,9 @@ static void check_new_main(void)
     }
     if (p && c2 && c3 && c4) {
         set_main(p);
-        xdag_rsdb_put_bi(g_xdag_rsdb, p);
+        if(p->flags & BI_OURS) {
+            xdag_rsdb_put_ourbi(g_xdag_rsdb, p);
+        }
         xdag_hash2address(p->hash, bi_address);
         xdag_hash2address(p->link[p->max_diff_link], bi_max_diff_address);
         printf("set_main succ i=%d, p=%s, BI_MAIN=%d, BI_MAIN_CHAIN=%d,\n", i, bi_address, (p->flags & BI_MAIN), (p->flags & BI_MAIN_CHAIN));
@@ -1142,7 +1144,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
                 setfld(XDAG_FIELD_OUT, bi->hash, xdag_hashlow_t);
                 res++;
             }
-            xdag_rsdb_del_orpbi(g_xdag_rsdb, bi);
+            remove_orphan(bi->hash);
             if(bi) {
                 free(bi);
                 bi = NULL;
@@ -1335,7 +1337,7 @@ begin:
     xdag_mess("Loading xdag rocksdb blocks from local storage...");
     
     if(xdag_rsdb_init() == XDAG_RSDB_INIT_NEW) {
-        xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback_nosync);
+        xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback_sync);
     }
 
 	xdag_mess("Finish loading blocks, time cost %ldms", xdag_get_xtimestamp() - start);
@@ -1741,8 +1743,8 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 
 		bi->amount = balance;
         xdag_rsdb_writebatch_put_bi(batch, bi);
-        xdag_rsdb_write(g_xdag_rsdb, batch);
 	}
+    xdag_rsdb_write(g_xdag_rsdb, batch);
     xdag_rsdb_writebatch_destroy(batch);
     free(bi);
     bi = NULL;
@@ -2549,6 +2551,7 @@ void order_ourblocks_by_amount(struct block_internal *bi)
     ti = NULL;
  }
 
+// add ourblock should only save hash of block_internal
 static inline void add_ourblock(struct block_internal *nodeBlock)
 {
 //    nodeBlock->ourprev = ourlast;
