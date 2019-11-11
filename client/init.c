@@ -136,7 +136,13 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 			}
 			continue;
 		}
-		if(ARG_EQUAL(argv[i], "-f", "")) { /* configuration file */
+        // move -t , -disable-refresh befor -f
+        if(ARG_EQUAL(argv[i], "-t", "")) { /* connect test net */
+            g_xdag_testnet = 1;
+            g_block_header_type = XDAG_FIELD_HEAD_TEST; //block header has the different type in the test network
+        } else if(ARG_EQUAL(argv[i], "", "-disable-refresh")) { /* disable auto refresh white list */
+            g_prevent_auto_refresh = 1;
+        } else if(ARG_EQUAL(argv[i], "-f", "")) { /* configuration file */
 			if(parameters->pool_configuration.node_address != NULL || parameters->pool_configuration.mining_configuration != NULL) {
 				printUsage(argv[0]);
 				return 0;
@@ -167,10 +173,7 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 			if(++i < argc) {
 				xdag_mem_tempfile_path(argv[i]);
 			}
-		} else if(ARG_EQUAL(argv[i], "-t", "")) { /* connect test net */
-			g_xdag_testnet = 1;
-			g_block_header_type = XDAG_FIELD_HEAD_TEST; //block header has the different type in the test network
-		} else if(ARG_EQUAL(argv[i], "-m", "")) { /* mining thread number */
+        } else if(ARG_EQUAL(argv[i], "-m", "")) { /* mining thread number */
 			if(++i < argc) {
 				sscanf(argv[i], "%d", &parameters->mining_threads_count);
 				if(parameters->mining_threads_count < 0) parameters->mining_threads_count = 0;
@@ -225,8 +228,6 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 		//		printUsage(argv[0]);
 		//		return -1;
 		//	}
-		} else if(ARG_EQUAL(argv[i], "", "-disable-refresh")) { /* disable auto refresh white list */
-			g_prevent_auto_refresh = 1;
 		} else if(ARG_EQUAL(argv[i], "-l", "")) { /* list balance */
 			return out_balances();
 		} else {
