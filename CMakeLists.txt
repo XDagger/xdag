@@ -34,7 +34,7 @@ include(cmake/RocksDBConfig.cmake)
 #[2]end
 
 #[3]download and compile projects in hunter
-find_package(RocksDB)
+#find_package(RocksDB CONFIG)
 if(ROCKSDB_FOUND)
   message("found rocks db include path ${RocksDB_INCLUDE_DIR}  libraries ${RocksDB_LIBRARY}")
 else()
