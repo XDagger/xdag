@@ -421,7 +421,7 @@ int xdag_send_block_via_pool(struct xdag_block *b)
 /* picks random pool from the list of pools */
 int xdag_pick_pool(char *pool_address)
 {
-	char addresses[30][50] = {0};
+	char addresses[30][50] = {{0},{0}};
 	const char *error_message;
 	srand(time(NULL));
 	

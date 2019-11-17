@@ -105,7 +105,7 @@ int xdag_rsdb_write(XDAG_RSDB* db, XDAG_RSDB_BATCH* batch);
 
 int xdag_rsdb_put_stats(XDAG_RSDB* rsdb);
 
-struct block_internal* xdag_rsdb_get_bi(void* hp);
+struct block_internal* xdag_rsdb_get_bi(const void* hp);
 struct block_internal* xdag_rsdb_get_orpbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash);
 struct block_internal* xdag_rsdb_get_ourbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash);
 

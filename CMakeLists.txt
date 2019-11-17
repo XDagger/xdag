@@ -11,6 +11,7 @@ enable_language(C ASM)
 
 #[1]set c/c++ standard and compile flags & definitions
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS "-std=gnu11 -O3 -g -Wall -Wmissing-prototypes -Wno-unused-result -Wno-unused-function -Wno-unused-variable")
 OPTION(DEBUG "Build the project using debugging code" OFF)

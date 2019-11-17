@@ -398,7 +398,8 @@ static void check_new_main(void)
 
 static void unwind_main(struct block_internal *bi)
 {
-    struct block_internal current_b = {0};
+    struct block_internal current_b;
+    memset(&current_b,0, sizeof(current_b));
     for (struct block_internal* t = top_main_chain;
          (t && (bi == NULL) ) || (t && memcmp(t->hash, bi->hash, sizeof(xdag_hashlow_t)));
          t = xdag_rsdb_get_bi(t->link[t->max_diff_link]))
@@ -583,8 +584,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
     memset(&tmpNodeBlock, 0, sizeof(struct block_internal));
     newBlock->field[0].transport_header = 0;
     xdag_hash(newBlock, sizeof(struct xdag_block), tmpNodeBlock.hash);
-
-    if(pt = xdag_rsdb_get_bi(tmpNodeBlock.hash)) {
+		pt = xdag_rsdb_get_bi(tmpNodeBlock.hash);
+    if(pt) {
         free(pt);
         pt = NULL;
         return 0;
@@ -883,7 +884,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 			xdag_info("Diff  : %llx%016llx (+%llx%016llx)", xdag_diff_args(tmpNodeBlock.difficulty), xdag_diff_args(diff0));
         }
 
-        struct block_internal b = {0};
+  	struct block_internal b;
+		memset(&b,0, sizeof(b));
 		for(blockRef = nodeBlock, blockRef0 = 0;
             blockRef && !(blockRef->flags & BI_MAIN_CHAIN);
             //blockRef = blockRef->link[blockRef->max_diff_link]
@@ -1047,7 +1049,8 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 	xdag_amount_t fee, xtime_t send_time, xdag_hash_t block_hash_result)
 {
 	pthread_mutex_lock(&g_create_block_mutex);
-    struct xdag_block block[2] = {0};
+	struct xdag_block block[2];
+	memset(block,0, sizeof(block));
 	int i, j, res, mining, defkeynum, keysnum[XDAG_BLOCK_FIELDS], nkeys, nkeysnum = 0, outsigkeyind = -1, has_pool_tag = 0;
 	struct xdag_public_key *defkey = xdag_wallet_default_key(&defkeynum), *keys = xdag_wallet_our_keys(&nkeys), *key;
     xdag_hash_t signatureHash = {0};
@@ -1869,7 +1872,7 @@ void append_block_info(struct block_internal *bi)
 			, pramount(bi->amount)
 			);
 
-	if((flags & BI_REF) && ref != NULL) {
+	if((flags & BI_REF)) {
 		xdag_hash2address(ref, address);
 	} else {
 		strcpy(address, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
@@ -1927,7 +1930,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
     memcpy(ref, bi->ref, sizeof(ref));
 	flags = bi->flags;
 	pthread_mutex_unlock(&block_mutex);
-	if((flags & BI_REF) && ref != NULL) {
+	if((flags & BI_REF)) {
 		xdag_hash2address(ref, address);
 	} else {
 		strcpy(address, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
@@ -2411,16 +2414,16 @@ int xdag_get_block_info(xdag_hash_t hash, void *info, int (*info_callback)(void*
 
 	if(links_callback && bi) {
 		int flags;
-        xdag_hash_t ref_hash = {0};
+		xdag_hash_t ref_hash = {0};
 		pthread_mutex_lock(&block_mutex);
-        //ref = bi->ref;
-        memcpy(&ref_hash, bi->ref, sizeof(bi->ref));
+		//ref = bi->ref;
+		memcpy(&ref_hash, bi->ref, sizeof(bi->ref));
 		
 		flags = bi->flags;
 		pthread_mutex_unlock(&block_mutex);
 
-        xdag_hash_t link_hash = {0};
-		if((flags & BI_REF) && ref_hash != NULL) {
+		xdag_hash_t link_hash = {0};
+		if((flags & BI_REF)) {
 			memcpy(link_hash, ref_hash, sizeof(xdag_hash_t));
 		}
 		links_callback(links, "fee", link_hash, bi->fee);
