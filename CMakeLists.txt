@@ -30,12 +30,18 @@ add_definitions(-DSHA256_OPENSSL_MBLOCK)
 
 #[2]download and compile external project start
 include(cmake/ProjectSecp256k1.cmake)
+include(cmake/RocksDBConfig.cmake)
 #[2]end
 
 #[3]download and compile projects in hunter
-find_package(RocksDB CONFIG)
+find_package(RocksDB)
+if(ROCKSDB_FOUND)
+  message("found rocks db include path ${RocksDB_INCLUDE_DIR}  libraries ${RocksDB_LIBRARY}")
+else()
+  message("could not found rocks db")
+endif()
 
-hunter_add_package(OpenSSL)
+#hunter_add_package(OpenSSL)
 find_package(OpenSSL REQUIRED)
 #[3]end
 
@@ -114,9 +120,9 @@ target_link_libraries(
         PUBLIC
         ${CMAKE_THREAD_LIBS_INIT}
         Secp256k1
+        ${RocksDB_LIBRARY}
         OpenSSL::SSL
         OpenSSL::Crypto
-        RocksDB::rocksdb
         m
 )
 #[9]end
