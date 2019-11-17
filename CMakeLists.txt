@@ -36,9 +36,9 @@ include(cmake/RocksDBConfig.cmake)
 #[3]download and compile projects in hunter
 #find_package(RocksDB CONFIG)
 if(ROCKSDB_FOUND)
-  message("found rocks db include path ${RocksDB_INCLUDE_DIR}  libraries ${RocksDB_LIBRARY}")
+  message("-- Found RocksDB: include ${RocksDB_INCLUDE_DIR}  libraries ${RocksDB_LIBRARY}")
 else()
-  message("could not found rocks db")
+  message(FATAL_ERROR "Failed to find RocksDB dependency!")
 endif()
 
 #hunter_add_package(OpenSSL)
