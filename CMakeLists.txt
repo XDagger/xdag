@@ -42,7 +42,7 @@ else()
   message(FATAL_ERROR "Failed to find RocksDB dependency!")
 endif()
 
-#hunter_add_package(OpenSSL)
+hunter_add_package(OpenSSL)
 find_package(OpenSSL REQUIRED)
 #[3]end
 
@@ -54,7 +54,7 @@ endif()
 #[4]end
 
 #[5]include directories of external libraries
-
+include_directories(${RocksDB_INCLUDE_DIR})
 #[5]end
 
 #[6]add source file start
