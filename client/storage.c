@@ -258,7 +258,8 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 				pthread_mutex_lock(&storage_mutex);
                 int res = 0;
                 // TODO if load can not correct sums
-                if(g_xdag_state != XDAG_STATE_LOAD) {
+                if(g_xdag_state != XDAG_STATE_LOAD&&
+                   g_xdag_state != XDAG_STATE_INIT ) {
                     res = correct_storage_sums(start_time, &s, 0);
                 }
 				pthread_mutex_unlock(&storage_mutex);

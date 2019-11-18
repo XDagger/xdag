@@ -295,7 +295,6 @@ static void unset_main(struct block_internal *m)
 	log_block("UNMAIN", m->hash, m->time, m->storage_pos);
 }
 
-static int rocksdb_get_bi_counter = 0;
 static void check_new_main(void)
 {
 //    struct block_internal *b, *p = 0;
@@ -349,10 +348,7 @@ static void check_new_main(void)
                 bi = NULL;
             }
         }
-        
-        if(++rocksdb_get_bi_counter % 1000 == 0) {
-            printf("run xdag_rsdb_get_bi %d times\n", rocksdb_get_bi_counter);
-        }
+
         bi = xdag_rsdb_get_bi(current_bi->link[current_bi->max_diff_link]);
         if(!bi || (bi->flags & BI_MAIN)) {
             break;
@@ -1016,7 +1012,7 @@ void *add_block_callback_sync(void *block, void *data)
 
 	pthread_mutex_unlock(&block_mutex);
 
-	if(res >= 0 && is_pool() && g_xdag_state != XDAG_STATE_LOAD) {
+	if(res >= 0 && is_pool() && g_xdag_state != XDAG_STATE_LOAD && g_xdag_state != XDAG_STATE_INIT) {
 		xdag_sync_pop_block(b);
 	}
 
@@ -1591,34 +1587,23 @@ static void traverse_all_callback(struct ldus_rbtree *node)
 int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag_hash_t hash,
 	xdag_amount_t amount, xtime_t time))
 {
-    
-//    pthread_mutex_lock(&block_mutex);
-//    g_traverse_callback = callback;
-//    g_traverse_data = data;
-//    pthread_mutex_lock(&rbtree_mutex);
-//    ldus_rbtree_walk_right(root, traverse_all_callback);
-//    pthread_mutex_unlock(&rbtree_mutex);
-//    pthread_mutex_unlock(&block_mutex);
-    
 	pthread_mutex_lock(&block_mutex);
-	g_traverse_callback = callback;
-	g_traverse_data = data;
-	pthread_mutex_lock(&rbtree_mutex);
-    // TODO use rocksdb seek to traverse all blocks
-//    int retcode = 0;
-//
-//    rocksdb_iterator_t* iter = NULL;
-//    iter = rocksdb_create_iterator(g_xdag_rsdb->db, g_xdag_rsdb->read_options);
-//    char key[1] = {[0] = HASH_OUR_BLOCK_INTERNAL};
-//    size_t klen = 1;
-//
-//    for (rocksdb_iter_seek(iter, key, 1); rocksdb_iter_valid(iter) && !memcmp(rocksdb_iter_key(iter, &klen), key, 1); rocksdb_iter_next(iter)) {
-//        size_t vlen = 0;
-//        char* value = rocksdb_iter_value(iter, &vlen);
-//
-//    }
-    
-	pthread_mutex_unlock(&rbtree_mutex);
+    rocksdb_iterator_t* iter = NULL;
+    iter = rocksdb_create_iterator(g_xdag_rsdb->db, g_xdag_rsdb->read_options);
+    char key[1] = {[0] = HASH_BLOCK_INTERNAL};
+    size_t klen = 1;
+    char address[33] = {0};
+    for (rocksdb_iter_seek(iter, key, 1);
+         rocksdb_iter_valid(iter) && !memcmp(rocksdb_iter_key(iter, &klen), key, 1);
+         rocksdb_iter_next(iter))
+    {
+        size_t vlen = 0;
+        struct block_internal* bi = (struct block_internal*)rocksdb_iter_value(iter, &vlen);
+        if(bi) {
+            xdag_hash2address(bi->hash, address);
+            printf("%s  %20.9Lf\n", address, amount2xdags(bi->amount));
+        }
+    }
 	pthread_mutex_unlock(&block_mutex);
 	return 0;
 }
@@ -1939,20 +1924,20 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 
  	if(flags & BI_EXTRA) pthread_mutex_lock(&block_mutex);
  	int nlinks = bi->nlinks;
-	struct block_internal *link[MAX_LINKS];
-	memcpy(link, bi->link, nlinks * sizeof(struct block_internal*));
+	xdag_hashlow_t link[MAX_LINKS];
+	memcpy(link, bi->link, nlinks * sizeof(xdag_hashlow_t));
 	if(flags & BI_EXTRA) pthread_mutex_unlock(&block_mutex);
 
  	for (i = 0; i < nlinks; ++i) {
-		xdag_hash2address(link[i]->hash, address);
+		xdag_hash2address(link[i], address);
 		fprintf(out, "    %6s: %s  %10u.%09u\n", (1 << i & bi->in_mask ? " input" : "output"),
 			address, pramount(bi->linkamount[i]));
 	}
 
-	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
-	fprintf(out, "                                 block as address: details\n");
-	fprintf(out, " direction  transaction                                amount       time                     remark                          \n");
-	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
+//	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
+//	fprintf(out, "                                 block as address: details\n");
+//	fprintf(out, " direction  transaction                                amount       time                     remark                          \n");
+//	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
 
 //	int N = 0x10000;
 //	int n = 0;
