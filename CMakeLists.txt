@@ -111,7 +111,8 @@ target_link_libraries(
 
 target_link_libraries(
   ${PROJECT_NAME}
-  ${OPENSSL_LIBRARIES}
+  OpenSSL::SSL
+  OpenSSL::Crypto
   -L${SECP256K1_LIBDIR} ${SECP256K1_LIBRARIES}
 )
 
