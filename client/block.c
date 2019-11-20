@@ -38,8 +38,9 @@
 // 13500 is 10 days
 // nmain = 907601            at 2019-11-10 01:30:00
 // nmain = 907601 + 4*13500, at 2019-11-20 01:30:00
-#define MAIN_APOLLO_HEIGHT          (907601 + 4*13500)
-#define MAIN_APOLLO_TESTNET_HEIGHT   196258
+// nmain = 907601 + 8*13500, at 2019-11-30 01:30:00
+#define MAIN_APOLLO_HEIGHT          (907601 + 8*13500)
+#define MAIN_APOLLO_TESTNET_HEIGHT   196260
 //#define MAIN_APOLLO_HIGHT       2  // for test
 #define MAIN_BIG_PERIOD_LOG     21
 #define MAX_LINKS               15
