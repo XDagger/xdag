@@ -66,6 +66,8 @@ extern int g_disable_mining;
 //Test network and main network have different types of the block headers, so blocks from different networks are incompatible
 extern enum xdag_field_type g_block_header_type;
 
+extern xdag_time_t g_apollo_fork_time;
+
 #if defined (__MACOS__) || defined (__APPLE__)
 extern int is_pool(void);
 extern int is_wallet(void);
