@@ -935,7 +935,7 @@ int out_balances()
 	char address[33] = {0};
 	struct out_balances_data d;
 	unsigned i = 0;
-
+    g_xdag_state = XDAG_STATE_LOAD;
 	xdag_set_log_level(0);
 	xdag_mem_init((xdag_get_frame() - xdag_get_start_frame()) << 17);
 	xdag_crypt_init();
