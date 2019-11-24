@@ -35,13 +35,11 @@
 #define MAX_WAITING_MAIN        1
 #define MAIN_START_AMOUNT       (1ll << 42)
 #define MAIN_APOLLO_AMOUNT      (1ll << 39)
-// 13500 is 10 days
-// nmain = 907601            at 2019-11-10 01:30:00
-// nmain = 907601 + 4*13500, at 2019-11-20 01:30:00
-// nmain = 907601 + 8*13500, at 2019-11-30 01:30:00
-#define MAIN_APOLLO_HEIGHT          (907601 + 8*13500)
+// nmain = 955825, at 2019-12-15 10:42:07 UTC
+//                 at 2019-12-15 18:44:28 UTC + 8
+#define MAIN_APOLLO_HEIGHT           955825
 #define MAIN_APOLLO_TESTNET_HEIGHT   196250
-//#define MAIN_APOLLO_HIGHT       2  // for test
+//#define MAIN_APOLLO_HIGHT       3  // for test
 #define MAIN_BIG_PERIOD_LOG     21
 #define MAX_LINKS               15
 #define MAKE_BLOCK_PERIOD       13
@@ -349,8 +347,7 @@ xdag_amount_t xdag_get_supply(uint64_t nmain)
 static void set_main(struct block_internal *m)
 {
     xdag_amount_t amount = 0;
-    
-    amount = get_amount(m->time, g_xdag_stats.nmain);
+    amount = get_amount(m->time, g_xdag_stats.nmain + 1);
 	m->flags |= BI_MAIN;
 	accept_amount(m, amount);
 	g_xdag_stats.nmain++;
