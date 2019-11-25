@@ -1794,7 +1794,9 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
         } else {
             amount = MAIN_START_AMOUNT;
         }
-		fprintf(out, "   earning: %s  %10u.%09u  %s\n", address,
+        memset(time_buf, 0, sizeof(time_buf));
+        xdag_xtime_to_string(bi->time, time_buf);
+        fprintf(out, "   earning: %s  %10u.%09u  %s\n", address,
 			pramount(amount >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)),
 			time_buf);
 	}
