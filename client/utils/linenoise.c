@@ -208,7 +208,7 @@ static int isUnsupportedTerm(void) {
     char *term = getenv("TERM");
     int j;
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifdef _WIN32
 	if (term == NULL) return 1;
 #else
 	if (term == NULL) return 0;
