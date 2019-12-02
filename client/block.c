@@ -50,61 +50,6 @@
 #define ORPHAN_HASH_SIZE	2
 #define MAX_ALLOWED_EXTRA	0x10000
 
-struct block_backrefs;
-struct orphan_block;
-struct block_internal_index;
-
-struct block_internal {
-	union {
-		struct ldus_rbtree node;
-		struct block_internal_index *index;
-	};
-	xdag_hash_t hash;
-	xdag_diff_t difficulty;
-	xdag_amount_t amount, linkamount[MAX_LINKS], fee;
-	xtime_t time;
-	uint64_t storage_pos;
-	union {
-		struct block_internal *ref;
-		struct orphan_block *oref;
-	};
-	struct block_internal *link[MAX_LINKS];
-	atomic_uintptr_t backrefs;
-	atomic_uintptr_t remark;
-	uint16_t flags, in_mask, n_our_key;
-	uint8_t nlinks:4, max_diff_link:4, reserved;
-};
-
-struct block_internal_index {
-	struct ldus_rbtree node;
-	xdag_hash_t hash;
-	struct block_internal *bi;
-};
-
-#define N_BACKREFS      (sizeof(struct block_internal) / sizeof(struct block_internal *) - 1)
-
-struct block_backrefs {
-	struct block_internal *backrefs[N_BACKREFS];
-	struct block_backrefs *next;
-};
-
-#define ourprev link[MAX_LINKS - 2]
-#define ournext link[MAX_LINKS - 1]
-
-struct cache_block {
-	struct ldus_rbtree node;
-	xdag_hash_t hash;
-	struct xdag_block block;
-	struct cache_block *next;
-};
-
-struct orphan_block {
-	struct block_internal *orphan_bi;
-	struct orphan_block *next;
-	struct orphan_block *prev;
-	struct xdag_block block[0];
-};
-
 //int g_bi_index_enable = 1;
 int g_block_production_on;
 static pthread_mutex_t g_create_block_mutex = PTHREAD_MUTEX_INITIALIZER;
