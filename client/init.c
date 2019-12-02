@@ -5,6 +5,9 @@
 #include <string.h>
 #include <pthread.h>
 #include <ctype.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
 #ifndef _WIN32
 #include <signal.h>
 #endif
@@ -62,6 +65,8 @@ int setup_pool(struct startup_parameters *parameters);
 int dnet_key_init(void);
 void printUsage(char* appName);
 void set_xdag_name(void);
+static void daemonize(void);
+static void angelize(void);
 
 int xdag_init(int argc, char **argv, int isGui)
 {
@@ -137,7 +142,13 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 			}
 			continue;
 		}
-		if(ARG_EQUAL(argv[i], "-f", "")) { /* configuration file */
+        // move -t , -disable-refresh befor -f
+        if(ARG_EQUAL(argv[i], "-t", "")) { /* connect test net */
+            g_xdag_testnet = 1;
+            g_block_header_type = XDAG_FIELD_HEAD_TEST; //block header has the different type in the test network
+        } else if(ARG_EQUAL(argv[i], "", "-disable-refresh")) { /* disable auto refresh white list */
+            g_prevent_auto_refresh = 1;
+        } else if(ARG_EQUAL(argv[i], "-f", "")) { /* configuration file */
 			if(parameters->pool_configuration.node_address != NULL || parameters->pool_configuration.mining_configuration != NULL) {
 				printUsage(argv[0]);
 				return 0;
@@ -168,10 +179,7 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 			if(++i < argc) {
 				xdag_mem_tempfile_path(argv[i]);
 			}
-		} else if(ARG_EQUAL(argv[i], "-t", "")) { /* connect test net */
-			g_xdag_testnet = 1;
-			g_block_header_type = XDAG_FIELD_HEAD_TEST; //block header has the different type in the test network
-		} else if(ARG_EQUAL(argv[i], "-m", "")) { /* mining thread number */
+        } else if(ARG_EQUAL(argv[i], "-m", "")) { /* mining thread number */
 			if(++i < argc) {
 				sscanf(argv[i], "%d", &parameters->mining_threads_count);
 				if(parameters->mining_threads_count < 0) parameters->mining_threads_count = 0;
@@ -226,8 +234,6 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 		//		printUsage(argv[0]);
 		//		return -1;
 		//	}
-		} else if(ARG_EQUAL(argv[i], "", "-disable-refresh")) { /* disable auto refresh white list */
-			g_prevent_auto_refresh = 1;
 		} else if(ARG_EQUAL(argv[i], "-l", "")) { /* list balance */
 			return out_balances();
 		} else {
@@ -292,6 +298,64 @@ int pre_init(void)
 	return 0;
 }
 
+static void daemonize(void)
+{
+#if !defined(_WIN32) && !defined(_WIN64)
+	if(getppid() == 1) exit(0); /* already a daemon */
+	int i = fork();
+	if(i < 0) exit(1); /* fork error */
+	if(i > 0) exit(0); /* parent exits */
+
+	/* child (daemon) continues */
+	setsid(); /* obtain a new process group */
+	for(i = getdtablesize(); i >= 0; --i) close(i); /* close all descriptors */
+	i = open("/dev/null", O_RDWR); dup(i); dup(i); /* handle standard I/O */
+
+	/* first instance continues */
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
+	signal(SIGALRM, SIG_IGN);
+	signal(SIGUSR1, SIG_IGN);
+	signal(SIGUSR2, SIG_IGN);
+	signal(SIGTSTP, SIG_IGN); /* ignore tty signals */
+	signal(SIGIO, SIG_IGN);
+	signal(SIGTTIN, SIG_IGN);
+	signal(SIGTTOU, SIG_IGN);
+	signal(SIGVTALRM, SIG_IGN);
+	signal(SIGPROF, SIG_IGN);
+#endif
+}
+
+static void angelize(void)
+{
+#if !defined(_WIN32) && !defined(_WIN64)
+	int stat = 0;
+	pid_t childpid;
+	while((childpid = fork())) {
+		signal(SIGINT, SIG_IGN);
+		signal(SIGTERM, SIG_IGN);
+		if(childpid > 0) while(waitpid(childpid, &stat, 0) == -1) {
+			if(errno != EINTR) {
+				abort();
+			}
+		}
+
+		if (WIFEXITED(stat)) {
+			dnet_err("exited, status=%d\n", WEXITSTATUS(stat));
+		} else if (WIFSIGNALED(stat)) {
+			dnet_err("killed by signal %d\n", WTERMSIG(stat));
+		} else if (WIFSTOPPED(stat)) {
+			dnet_err("stopped by signal %d\n", WSTOPSIG(stat));
+		}
+
+		if(stat >= 0 && stat <= 5) {
+			exit(stat);
+		}
+		sleep(10);
+	}
+#endif
+}
+
 int setup_miner(struct startup_parameters *parameters)
 {
 	static char pool_address_buf[50] = { 0 };
@@ -302,6 +366,12 @@ int setup_miner(struct startup_parameters *parameters)
 		}
 		parameters->pool_address = pool_address_buf;
 	}
+
+    if(parameters->transport_flags & XDAG_DAEMON) {
+        daemonize();
+    }
+
+    angelize();
 
 	//TODO: think of combining the logic with pool-initialization functions (after decision what to do with xdag_blocks_start)
 	if(parameters->is_rpc) {

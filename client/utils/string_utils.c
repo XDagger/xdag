@@ -34,14 +34,14 @@ static char* rtrim(char *str)
     {
         return str;
     }
- 
+
     char *p = str + strlen(str) - 1;
     while (p >= str  && isspace(*p))
     {
         *p = '\0';
         --p;
     }
- 
+
     return str;
 }
 
@@ -51,7 +51,7 @@ static char* ltrim(char *str)
     {
         return str;
     }
- 
+
     int len = 0;
     char *p = str;
     while (*p != '\0' && isspace(*p))
@@ -59,9 +59,9 @@ static char* ltrim(char *str)
         ++p;
         ++len;
     }
- 
+
     memmove(str, p, strlen(str) - len + 1);
- 
+
     return str;
 }
 
@@ -69,6 +69,6 @@ char* string_trim(char *str)
 {
     str = rtrim(str);
     str = ltrim(str);
-    
+
     return str;
 }

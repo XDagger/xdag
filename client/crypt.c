@@ -318,7 +318,7 @@ static uint8_t *add_number_to_sign(uint8_t *sign, const xdag_hash_t num)
 
 // verify that the signature (sign_r, sign_s) corresponds to a hash 'hash', a version for its own key
 // returns 0 on success
-static int counter = 0;
+//static int counter = 0;
 int xdag_verify_signature(const void *key, const xdag_hash_t hash, const xdag_hash_t sign_r, const xdag_hash_t sign_s)
 {
 	uint8_t buf[72], *ptr;

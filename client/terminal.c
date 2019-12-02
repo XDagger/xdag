@@ -1,7 +1,7 @@
 #include "terminal.h"
 #include <stdio.h>
 #include <stdlib.h>
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 #include <string.h>
 #include <sys/types.h>
 #include <sys/un.h>
