@@ -23,6 +23,7 @@
 #include "utils/linenoise.h"
 #include <unistd.h>
 #endif
+#include "version.h"
 
 #define Nfields(d) (2 + d->hasRemark + d->fieldsCount + 3 * d->keysCount + 2 * d->outsig)
 #define COMMAND_HISTORY ".cmd.history"
@@ -100,6 +101,7 @@ int xdag_com_disconnect(char *, FILE*);
 int xdag_com_rpc(char *, FILE*);
 int xdag_com_autorefresh(char *, FILE*);
 int xdag_com_reload(char *, FILE*);
+int xdag_com_version(char *, FILE*);
 
 XDAG_COMMAND* find_xdag_command(char*);
 
@@ -131,6 +133,7 @@ XDAG_COMMAND commands[] = {
 	{ "rpc"         , 0, xdag_com_rpc},
 	{ "autorefresh" , 2, xdag_com_autorefresh },
 	{ "reload"      , 2, xdag_com_reload },
+	{ "version"     , 0, xdag_com_version },
 	{ (char *)NULL  , 0, (xdag_com_func_t)NULL}
 };
 
@@ -288,6 +291,12 @@ int xdag_com_autorefresh(char *args, FILE *out)
 int xdag_com_reload(char *args, FILE *out)
 {
 	processReloadCommand(args, out);
+	return 0;
+}
+
+int xdag_com_version(char * args, FILE* out)
+{
+	fprintf(out, "%s %s, version %s\n", g_progname, is_pool()?"server":"client", XDAG_VERSION);
 	return 0;
 }
 
@@ -1013,6 +1022,7 @@ void processHelpCommand(FILE *out)
 		"  rpc [command]        - rpc commands, try 'rpc help'\n"
 		"  mainblocks [N]       - print list of N (20 by default) main blocks\n"
 		"  minedblocks [N]      - print list of N (20 by default) main blocks mined by current pool\n"
+		"  version              - print version information.\n"
 		, g_coinname);
 }
 
