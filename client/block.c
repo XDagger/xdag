@@ -1629,6 +1629,8 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "     flags: %x\n", bi->flags & ~BI_OURS);
 	fprintf(out, "     state: %s\n", xdag_get_block_state_info(bi->flags));
 	fprintf(out, "  file pos: %llx\n", (unsigned long long)bi->storage_pos);
+    fprintf(out, "      file: storage%s/%02x/%02x/%02x/%02x.dat\n", (g_xdag_testnet ? "-testnet" : ""),
+        (int)((bi->time) >> 40)&0xff, (int)((bi->time) >> 32)&0xff, (int)((bi->time) >> 24)&0xff, (int)((bi->time) >> 16)&0xff);
 	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 		(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
 	fprintf(out, "    remark: %s\n", get_remark(bi));
