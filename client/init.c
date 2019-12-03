@@ -59,7 +59,7 @@ int(*g_xdag_show_state)(const char *state, const char *balance, const char *addr
 
 int parse_startup_parameters(int argc, char **argv, struct startup_parameters *parameters);
 int pre_init(void);
-int setup_miner(struct startup_parameters *parameters);
+int setup_miner(struct startup_parameters *parameters, int isGui);
 int setup_pool(struct startup_parameters *parameters);
 int dnet_key_init(void);
 void printUsage(char* appName);
@@ -99,7 +99,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	}
 
 	if(is_wallet()) {
-		if(setup_miner(&parameters) < 0) {
+		if(setup_miner(&parameters, isGui) < 0) {
 			return -1;
 		}
 	} else {
@@ -353,7 +353,7 @@ static void angelize(void)
 #endif
 }
 
-int setup_miner(struct startup_parameters *parameters)
+int setup_miner(struct startup_parameters *parameters, int isGui)
 {
 	static char pool_address_buf[50] = { 0 };
 	if(parameters->pool_address == NULL) {
@@ -364,7 +364,7 @@ int setup_miner(struct startup_parameters *parameters)
 		parameters->pool_address = pool_address_buf;
 	}
 
-    if(parameters->transport_flags & XDAG_DAEMON) {
+    if(parameters->transport_flags & XDAG_DAEMON && !isGui) {
         daemonize();
     }
 

@@ -156,9 +156,6 @@ void xdag_list_orphan_blocks(int, FILE*);
 
 // completes work with the blocks
 void xdag_block_finish(void);
-
-// add blocks with out sync for pool reload data
-void *add_block_callback_nosync(void *block, void *data);
     
 void *add_block_callback_sync(void *block, void *data);
 	

@@ -882,16 +882,6 @@ end:
     
 	return -err;
 }
-
-//static int counter = 0;
-        
-void *add_block_callback_nosync(void *block, void *data)
-{
-    unsigned *i = (unsigned *)data;
-    xdag_add_block((struct xdag_block *)block);
-    if(!(++*i % 10000)) xdag_info("nosync add blocks: %u\n", *i);
-    return 0;
-}
         
 void *add_block_callback_sync(void *block, void *data)
 {
@@ -909,7 +899,7 @@ void *add_block_callback_sync(void *block, void *data)
 
 	pthread_mutex_unlock(&block_mutex);
 
-	if(res >= 0 && is_pool() && g_xdag_state != XDAG_STATE_LOAD) {
+	if(res >= 0 && is_pool()) {
 		xdag_sync_pop_block(b);
 	}
 
