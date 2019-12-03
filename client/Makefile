@@ -47,7 +47,7 @@ sources =                                   \
     time.c                                  \
     math.c                                  \
     xdag_config.c                           \
-	global.c                                \
+    global.c                                \
     $(dnet)/dnet_crypt.c                    \
     $(dnet)/dnet_xdag.c                     \
     $(dfslib)/dfslib_crypt.c                \
@@ -104,7 +104,7 @@ headers =                                   \
     time.h                                  \
     math.h                                  \
     xdag_config.h                           \
-	global.h                                \
+    global.h                                \
     $(dnet)/dnet_crypt.h                    \
     $(dnet)/dnet_history.h                  \
     $(dnet)/dnet_main.h                     \
@@ -150,7 +150,7 @@ headers =                                   \
 
 
 ifeq ($(OS), Darwin)
-    flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result
+    flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -I/usr/local/opt/openssl/include -L/usr/local/opt/openssl/lib -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result
 else
     flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
 endif
