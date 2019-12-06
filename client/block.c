@@ -642,7 +642,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	if(signOutCount) {
 		our_keys = xdag_wallet_our_keys(&ourKeysCount);
 	}
-
     
 	for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
         
@@ -660,7 +659,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 			}
             
 		}
-         
         
 	}
 
@@ -751,7 +749,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	struct block_internal *nodeBlock;
 	if (g_xdag_extstats.nextra > MAX_ALLOWED_EXTRA
 			&& (g_xdag_state == XDAG_STATE_SYNC || g_xdag_state == XDAG_STATE_STST)) {
-		
+		/* if too many extra blocks then reuse the oldest */
 		nodeBlock = g_orphan_first[1]->orphan_bi;
 		remove_orphan(nodeBlock, ORPHAN_REMOVE_REUSE);
 		remove_index(nodeBlock);
@@ -802,7 +800,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	set_pretop(top_main_chain);
 
 	if(xdag_diff_gt(tmpNodeBlock.difficulty, g_xdag_stats.difficulty)) {
-		
+		/* Only log this if we are NOT loading state */
 		if(g_xdag_state != XDAG_STATE_LOAD)
         {
 			xdag_info("Diff  : %llx%016llx (+%llx%016llx)", xdag_diff_args(tmpNodeBlock.difficulty), xdag_diff_args(diff0));
@@ -851,7 +849,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	
 	add_orphan(nodeBlock, newBlock);
 
-	//log_block((tmpNodeBlock.flags & BI_OURS ? "Good +" : "Good  "), tmpNodeBlock.hash, tmpNodeBlock.time, tmpNodeBlock.storage_pos);
+	log_block((tmpNodeBlock.flags & BI_OURS ? "Good +" : "Good  "), tmpNodeBlock.hash, tmpNodeBlock.time, tmpNodeBlock.storage_pos);
 
 	i = MAIN_TIME(nodeBlock->time) & (HASHRATE_LAST_MAX_TIME - 1);
 	if(MAIN_TIME(nodeBlock->time) > MAIN_TIME(g_xdag_extstats.hashrate_last_time)) {
@@ -877,7 +875,7 @@ end:
 		char buf[32] = {0};
 		err |= i << 4;
 		sprintf(buf, "Err %2x", err & 0xff);
-		//log_block(buf, tmpNodeBlock.hash, tmpNodeBlock.time, transportHeader);
+		log_block(buf, tmpNodeBlock.hash, tmpNodeBlock.time, transportHeader);
 	}
     
 	return -err;
