@@ -35,9 +35,9 @@
 #define MAX_WAITING_MAIN        1
 #define MAIN_START_AMOUNT       (1ll << 42)
 #define MAIN_APOLLO_AMOUNT      (1ll << 39)
-// nmain = 955825, at 2019-12-15 10:42:07 UTC
-//                 at 2019-12-15 18:44:28 UTC + 8
-#define MAIN_APOLLO_HEIGHT           955825
+// nmain = 983201, at 2020-01-05 01:30:00 UTC
+//                 at 2020-01-05 09:30:00 UTC + 8
+#define MAIN_APOLLO_HEIGHT           983201
 #define MAIN_APOLLO_TESTNET_HEIGHT   196250
 //#define MAIN_APOLLO_HIGHT       3  // for test
 #define MAIN_BIG_PERIOD_LOG     21
