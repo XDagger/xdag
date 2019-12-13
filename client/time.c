@@ -17,7 +17,7 @@ xdag_frame_t xdag_get_frame(void)
 // returns the time period index corresponding to the start of the network
 xdag_frame_t xdag_get_start_frame(void)
 {
-	return MAIN_TIME(XDAG_ERA);
+	return MAIN_TIME(g_xdag_era);
 }
 
 int xdag_time_init(void)

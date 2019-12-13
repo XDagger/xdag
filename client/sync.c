@@ -37,7 +37,7 @@ extern xtime_t g_time_limit;
 //functions
 int xdag_sync_add_block_nolock(struct xdag_block*, struct xconnection*);
 int xdag_sync_pop_block_nolock(struct xdag_block*);
-extern void *add_block_callback(void *block, void *data);
+extern void *add_block_callback_sync(void *block, void *data);
 void *sync_thread(void*);
 
 /* moves the block to the wait list, block with hash written to field 'nfield' of block 'b' is expected 
@@ -201,7 +201,7 @@ static int request_blocks(xtime_t t, xtime_t dt)
 
 		for (i = 0;
 			xdag_info("QueryB: t=%llx dt=%llx", t, dt),
-			i < QUERY_RETRIES && (res = xdag_request_blocks(t, t + dt, &t0, add_block_callback)) < 0;
+			i < QUERY_RETRIES && (res = xdag_request_blocks(t, t + dt, &t0, add_block_callback_sync)) < 0;
 			++i);
 
 		if (res <= 0) {

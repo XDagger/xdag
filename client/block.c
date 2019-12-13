@@ -30,9 +30,16 @@
 #include "utils/atomic.h"
 #include "utils/random.h"
 #include "websocket/websocket.h"
+#include "global.h"
 
 #define MAX_WAITING_MAIN        1
 #define MAIN_START_AMOUNT       (1ll << 42)
+#define MAIN_APOLLO_AMOUNT      (1ll << 39)
+// nmain = 983201, at 2020-01-05 01:30:00 UTC
+//                 at 2020-01-05 09:30:00 UTC + 8
+#define MAIN_APOLLO_HEIGHT           983201
+#define MAIN_APOLLO_TESTNET_HEIGHT   196250
+//#define MAIN_APOLLO_HIGHT       3  // for test
 #define MAIN_BIG_PERIOD_LOG     21
 #define MAX_LINKS               15
 #define MAKE_BLOCK_PERIOD       13
@@ -139,7 +146,6 @@ static int load_remark(struct block_internal*);
 static void order_ourblocks_by_amount(struct block_internal *bi);
 static inline void add_ourblock(struct block_internal *nodeBlock);
 static inline void remove_ourblock(struct block_internal *nodeBlock);
-void *add_block_callback(void *block, void *data);
 extern void *sync_thread(void *arg);
 
 static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
@@ -175,10 +181,10 @@ static inline struct cache_block *cache_block_by_hash(const xdag_hashlow_t hash)
 static void log_block(const char *mess, xdag_hash_t h, xtime_t t, uint64_t pos)
 {
 	/* Do not log blocks as we are loading from local storage */
-	if(g_xdag_state != XDAG_STATE_LOAD) {
-		xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess,
-			((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t, pos);
-	}
+    if(g_xdag_state != XDAG_STATE_LOAD) {
+        xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess,
+            ((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t, pos);
+    }
 }
 
 static inline void accept_amount(struct block_internal *bi, xdag_amount_t sum)
@@ -286,24 +292,62 @@ static uint64_t unapply_block(struct block_internal *bi)
 	return (xdag_amount_t)0 - bi->fee;
 }
 
-// calculates current supply by specified count of main blocks
+static xdag_amount_t get_start_amount_with_time(xdag_time_t time, uint64_t nmain) {
+    xdag_amount_t start_amount = 0;
+    uint64_t fork_height = g_xdag_testnet ? MAIN_APOLLO_TESTNET_HEIGHT:MAIN_APOLLO_HEIGHT;
+    if(nmain >= fork_height) {
+        if(g_apollo_fork_time == 0) {
+            g_apollo_fork_time = time;
+        }
+        start_amount = MAIN_APOLLO_AMOUNT;
+    } else {
+        start_amount = MAIN_START_AMOUNT;
+    }
+    return start_amount;
+}
+
+static xdag_amount_t get_start_amount(uint64_t nmain) {
+    xdag_amount_t start_amount = 0;
+    uint64_t fork_height = g_xdag_testnet ? MAIN_APOLLO_TESTNET_HEIGHT:MAIN_APOLLO_HEIGHT;
+    if(nmain >= fork_height) {
+        start_amount = MAIN_APOLLO_AMOUNT;
+    } else {
+        start_amount = MAIN_START_AMOUNT;
+    }
+    return start_amount;
+}
+
+static xdag_amount_t get_amount(xdag_time_t time, uint64_t nmain) {
+    xdag_amount_t amount = 0;
+    xdag_amount_t start_amount = 0;
+    
+    start_amount = get_start_amount_with_time(time, nmain);
+    amount = start_amount >> (nmain >> MAIN_BIG_PERIOD_LOG);
+    return amount;
+}
+
 xdag_amount_t xdag_get_supply(uint64_t nmain)
 {
-	xdag_amount_t res = 0, amount = MAIN_START_AMOUNT;
-
-	while (nmain >> MAIN_BIG_PERIOD_LOG) {
-		res += (1l << MAIN_BIG_PERIOD_LOG) * amount;
-		nmain -= 1l << MAIN_BIG_PERIOD_LOG;
-		amount >>= 1;
-	}
-	res += nmain * amount;
-	return res;
+    xdag_amount_t res = 0, amount = get_start_amount(nmain);
+    uint64_t current_nmain = nmain;
+    while (current_nmain >> MAIN_BIG_PERIOD_LOG) {
+        res += (1l << MAIN_BIG_PERIOD_LOG) * amount;
+        current_nmain -= 1l << MAIN_BIG_PERIOD_LOG;
+        amount >>= 1;
+    }
+    res += current_nmain * amount;
+    uint64_t fork_height = g_xdag_testnet?MAIN_APOLLO_TESTNET_HEIGHT:MAIN_APOLLO_HEIGHT;
+    if(nmain >= fork_height) {
+        // add before apollo amount
+        res += (fork_height - 1) * (MAIN_START_AMOUNT - MAIN_APOLLO_AMOUNT);
+    }
+    return res;
 }
 
 static void set_main(struct block_internal *m)
 {
-	xdag_amount_t amount = MAIN_START_AMOUNT >> (g_xdag_stats.nmain >> MAIN_BIG_PERIOD_LOG);
-
+    xdag_amount_t amount = 0;
+    amount = get_amount(m->time, g_xdag_stats.nmain + 1);
 	m->flags |= BI_MAIN;
 	accept_amount(m, amount);
 	g_xdag_stats.nmain++;
@@ -314,18 +358,19 @@ static void set_main(struct block_internal *m)
 
 	accept_amount(m, apply_block(m));
 	m->ref = m;
-	log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time, m->storage_pos);
+	//log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time, m->storage_pos);
 }
 
 static void unset_main(struct block_internal *m)
 {
+    xdag_amount_t amount = 0;
 	g_xdag_stats.nmain--;
 	g_xdag_stats.total_nmain--;
-	xdag_amount_t amount = MAIN_START_AMOUNT >> (g_xdag_stats.nmain >> MAIN_BIG_PERIOD_LOG);
+	amount = get_amount(m->time, g_xdag_stats.nmain);
 	m->flags &= ~BI_MAIN;
 	accept_amount(m, (xdag_amount_t)0 - amount);
 	accept_amount(m, unapply_block(m));
-	log_block("UNMAIN", m->hash, m->time, m->storage_pos);
+	//log_block("UNMAIN", m->hash, m->time, m->storage_pos);
 }
 
 static void check_new_main(void)
@@ -363,8 +408,8 @@ static inline void hash_for_signature(struct xdag_block b[2], const struct xdag_
 
 	xdag_hash(b, sizeof(struct xdag_block) + sizeof(xdag_hash_t) + 1, hash);
 
-	xdag_debug("Hash  : hash=[%s] data=[%s]", xdag_log_hash(hash),
-		xdag_log_array(b, sizeof(struct xdag_block) + sizeof(xdag_hash_t) + 1));
+//    xdag_debug("Hash  : hash=[%s] data=[%s]", xdag_log_hash(hash),
+//        xdag_log_array(b, sizeof(struct xdag_block) + sizeof(xdag_hash_t) + 1));
 }
 
 // returns a number of public key from 'keys' array with lengh 'keysLength', which conforms to the signature starting from field signo_r of the block b
@@ -396,9 +441,9 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int keysLeng
 			int res1 = !xdag_verify_signature_optimized_ec(keys[i].pub, hash, b->field[signo_r].data, b->field[signo_s].data);
 			int res2 = !xdag_verify_signature(keys[i].key, hash, b->field[signo_r].data, b->field[signo_s].data);
 			if(res1 != res2) {
-				xdag_warn("Different result between openssl and secp256k1: res openssl=%2d res secp256k1=%2d key parity bit = %ld key=[%s] hash=[%s] r=[%s], s=[%s]",
-					res2, res1, ((uintptr_t)keys[i].pub & 1), xdag_log_hash((uint64_t*)((uintptr_t)keys[i].pub & ~1l)),
-					xdag_log_hash(hash), xdag_log_hash(b->field[signo_r].data), xdag_log_hash(b->field[signo_s].data));
+//                xdag_warn("Different result between openssl and secp256k1: res openssl=%2d res secp256k1=%2d key parity bit = %ld key=[%s] hash=[%s] r=[%s], s=[%s]",
+//                    res2, res1, ((uintptr_t)keys[i].pub & 1), xdag_log_hash((uint64_t*)((uintptr_t)keys[i].pub & ~1l)),
+//                    xdag_log_hash(hash), xdag_log_hash(b->field[signo_r].data), xdag_log_hash(b->field[signo_s].data));
 			}
 			if(res2) {
 #else
@@ -571,6 +616,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 		tmpNodeBlock.flags |= BI_EXTRA;
 	}
 
+    
 	for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
 		if(1 << i & (inmask | outmask)) {
 			blockRefs[i-1] = block_by_hash(newBlock->field[i].hash);
@@ -596,18 +642,24 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	if(signOutCount) {
 		our_keys = xdag_wallet_our_keys(&ourKeysCount);
 	}
-
+    
 	for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
+        
 		if(1 << i & (signinmask | signoutmask)) {
+            
 			int keyNumber = valid_signature(newBlock, i, keysCount, public_keys);
+            
 			if(keyNumber >= 0) {
 				verified_keys_mask |= 1 << keyNumber;
 			}
+             
 			if(1 << i & signoutmask && !(tmpNodeBlock.flags & BI_OURS) && (keyNumber = valid_signature(newBlock, i, ourKeysCount, our_keys)) >= 0) {
 				tmpNodeBlock.flags |= BI_OURS;
 				tmpNodeBlock.n_our_key = keyNumber;
 			}
+            
 		}
+        
 	}
 
 	for(i = j = 0; i < keysCount; ++i) {
@@ -723,7 +775,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	} else if (!(tmpNodeBlock.flags & BI_EXTRA)) {
 		tmpNodeBlock.storage_pos = xdag_storage_save(newBlock);
 	} else {
-		/* do not store extra block right now */
+		
 		tmpNodeBlock.storage_pos = -2l;
 	}
 
@@ -750,7 +802,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	if(xdag_diff_gt(tmpNodeBlock.difficulty, g_xdag_stats.difficulty)) {
 		/* Only log this if we are NOT loading state */
 		if(g_xdag_state != XDAG_STATE_LOAD)
+        {
 			xdag_info("Diff  : %llx%016llx (+%llx%016llx)", xdag_diff_args(tmpNodeBlock.difficulty), xdag_diff_args(diff0));
+        }
 
 		for(blockRef = nodeBlock, blockRef0 = 0; blockRef && !(blockRef->flags & BI_MAIN_CHAIN); blockRef = blockRef->link[blockRef->max_diff_link]) {
 			if((!blockRef->link[blockRef->max_diff_link] || xdag_diff_gt(blockRef->difficulty, blockRef->link[blockRef->max_diff_link]->difficulty))
@@ -823,11 +877,11 @@ end:
 		sprintf(buf, "Err %2x", err & 0xff);
 		log_block(buf, tmpNodeBlock.hash, tmpNodeBlock.time, transportHeader);
 	}
-
+    
 	return -err;
 }
-
-void *add_block_callback(void *block, void *data)
+        
+void *add_block_callback_sync(void *block, void *data)
 {
 	struct xdag_block *b = (struct xdag_block *)block;
 	xtime_t *t = (xtime_t*)data;
@@ -1008,7 +1062,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 			block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
 	}
 
-	log_block("Create", newBlockHash, block[0].field[0].time, 1);
+	//log_block("Create", newBlockHash, block[0].field[0].time, 1);
 	
 	if(block_hash_result != NULL) {
 		memcpy(block_hash_result, newBlockHash, sizeof(xdag_hash_t));
@@ -1134,7 +1188,7 @@ begin:
 	xtime_t start = xdag_get_xtimestamp();
 	xdag_show_state(0);
 
-	xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback);
+	xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback_sync);
 
 	xdag_mess("Finish loading blocks, time cost %ldms", xdag_get_xtimestamp() - start);
 
@@ -1614,6 +1668,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 {
 	char time_buf[64] = {0};
 	char address[33] = {0};
+    xdag_amount_t amount = 0;
 	int i;
 
 	struct block_internal *bi = block_by_hash(hash);
@@ -1724,8 +1779,15 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	
 	if (bi->flags & BI_MAIN) {
 		xdag_hash2address(h, address);
-		fprintf(out, "   earning: %s  %10u.%09u  %s\n", address,
-			pramount(MAIN_START_AMOUNT >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)),
+        if(g_apollo_fork_time && bi->time && MAIN_TIME(bi->time) >= MAIN_TIME(g_apollo_fork_time)) {
+            amount = MAIN_APOLLO_AMOUNT;
+        } else {
+            amount = MAIN_START_AMOUNT;
+        }
+        memset(time_buf, 0, sizeof(time_buf));
+        xdag_xtime_to_string(bi->time, time_buf);
+        fprintf(out, "   earning: %s  %10u.%09u  %s\n", address,
+			pramount(amount >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)),
 			time_buf);
 	}
 	
