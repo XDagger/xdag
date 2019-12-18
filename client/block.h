@@ -52,7 +52,7 @@ enum bi_flags {
 
 #define XDAG_BLOCK_FIELDS 16
 
-#define REMARK_ENABLED 0
+#define REMARK_ENABLED 1
 
 #if CHAR_BIT != 8
 #error Your system hasn't exactly 8 bit for a char, it won't run.
