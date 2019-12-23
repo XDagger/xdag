@@ -35,7 +35,6 @@
 #define MAX_WAITING_MAIN        1
 #define MAIN_START_AMOUNT       (1ll << 42)
 #define MAIN_APOLLO_AMOUNT      (1ll << 39)
-// https://explorer.xdag.io/
 // nmain = 964875, hash is xEMRhOnG2mntQRyi1T8ob/rqKKmRbxlV
 //                         at 2019-12-22 03:35:27 UTC
 //                         get this info from https://explorer.xdag.io/
