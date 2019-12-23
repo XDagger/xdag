@@ -12,11 +12,6 @@ Principles:
 - Mineable, no premine, no ICO  
 - Mining new money every 64 seconds  
 
-Status:
-----------
-
-[![Throughput Graph](https://graphs.waffle.io/XDagger/xdag/throughput.svg)](https://waffle.io/XDagger/xdag/metrics/throughput)
-
 
 HOW-TO:  
 ----------
@@ -93,4 +88,32 @@ Maintainers:
 [Evgeniy](https://github.com/jonano614) ( XDAG: gKNRtSL1pUaTpzMuPMznKw49ILtP6qX3, BTC: 1Jonano4esJzZvqNtUY6NwfPme3EMpVs7n )  
 [Frozen](https://github.com/xrdavies) ( XDAG: +L5dzSh1QZv1We3wi8Of31M8eHwQJq4K ) 
 
-[Full list of contributors](https://github.com/XDagger/xdag/blob/master/CONTRIBUTORS.md)  
+
+Code Contributors:
+---------------
+* [trueserve](https://github.com/trueserve)
+* [sgaragagghu](https://github.com/sgaragagghu)
+* [Sofarlemineur](https://github.com/Sofarlemineur)
+* [Chen Zhen](https://github.com/czsilence)
+* [kbs1](https://github.com/kbs1)
+* [amwsffgu](https://github.com/amwsffgu)
+* [s2n-gribbly](https://github.com/s2n-Gribbly)
+* [reymondtu](https://github.com/reymondtu)
+* [sugaryen](https://github.com/sugaryen)
+* [mojs78](https://github.com/mojs78)
+* [rubencm](https://github.com/rubencm)
+* [SantoMacias](https://github.com/SantoMacias)
+* [cnukaus](https://github.com/cnukaus)
+* [mathsw](https://github.com/mathsw)
+* [ruben](https://github.com/xdgruben)
+* [Dengfeng Liu](https://github.com/liudf0716)
+* [BinaryOverflow](https://github.com/BinaryOverflow)
+* [Caleb Marshall](https://github.com/cmarshall108)
+* [NKU-Nikoni](https://github.com/NKU-Nikoni)
+* [Elder Ryan](https://github.com/RyanKung)
+* [hughchiu](https://github.com/hillhero789)
+* [Mingege](https://github.com/Mingege-cc)
+* [p2peer](https://github.com/p2peer)
+* [ZR](https://github.com/zergl)
+
+[Full list of contributors](https://github.com/XDagger/xdag/blob/master/CONTRIBUTORS.md) including all contributors for XDAG sub-projects.

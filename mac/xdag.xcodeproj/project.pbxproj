@@ -809,6 +809,7 @@
 					/usr/local/opt/openssl/include,
 					/usr/local/opt/gmp/include,
 					/usr/local/include,
+					"$(PROJECT_DIR)/../secp256k1/include",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -848,6 +849,7 @@
 					/usr/local/opt/openssl/include,
 					/usr/local/opt/gmp/include,
 					/usr/local/include,
+					"$(PROJECT_DIR)/../secp256k1/include",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",

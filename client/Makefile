@@ -1,4 +1,4 @@
-# cheatcoin: Makefile; T13.656-T14.335; $DVS:time$
+# xdag: Makefile; T13.656-T14.335; $DVS:time$
 
 SRCROOT              = ..
 dnet                 = ../dnet
@@ -47,7 +47,7 @@ sources =                                   \
     time.c                                  \
     math.c                                  \
     xdag_config.c                           \
-	global.c                                \
+    global.c                                \
     $(dnet)/dnet_crypt.c                    \
     $(dnet)/dnet_xdag.c                     \
     $(dfslib)/dfslib_crypt.c                \
@@ -104,7 +104,7 @@ headers =                                   \
     time.h                                  \
     math.h                                  \
     xdag_config.h                           \
-	global.h                                \
+    global.h                                \
     $(dnet)/dnet_crypt.h                    \
     $(dnet)/dnet_history.h                  \
     $(dnet)/dnet_main.h                     \
@@ -150,39 +150,38 @@ headers =                                   \
 
 
 ifeq ($(OS), Darwin)
-    flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result
+    flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -I/usr/local/opt/openssl/include -L/usr/local/opt/openssl/lib -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result
 else
     flags = -std=gnu11 -O3 -DDFSTOOLS -DCHEATCOIN -DNDEBUG -g -lpthread -lcrypto -lssl -lm -Wall -Wmissing-prototypes -Wno-unused-result -Wl,--export-dynamic
 endif
 
-ifneq ($(OS), Darwin)
- ifeq ($(use_openssl_ec), false)
-    secp256k1_i = secp256k1.o -isystem$(secp256k1)/include/ $(include_gmp)
-  ifeq ("$(wildcard $(secp256k1)/src/libsecp256k1-config.h)","")
-    secp256k1_full_compile = true
-  endif
-  ifeq ("$(wildcard secp256k1.o)","")
-    secp256k1_full_compile = true
-  endif
-  ifeq ($(OS), Linux)
-    GNUmake = make
+ifeq ($(use_openssl_ec), false)
+  secp256k1_i = secp256k1.o -isystem$(secp256k1)/include/ $(include_gmp)
+ifeq ("$(wildcard $(secp256k1)/src/libsecp256k1-config.h)","")
+  secp256k1_full_compile = true
+endif
+ifeq ("$(wildcard secp256k1.o)","")
+  secp256k1_full_compile = true
+endif
+
+GNUmake = make
+
+ifeq ($(lgmp_installed), true)
+  ifeq ($(OS), Darwin)
+    include_gmp = -I/usr/local/opt/gmp/include -lgmp
   else
-    GNUmake = gmake
-  endif
-  ifeq ($(lgmp_installed), true)
     include_gmp = -lgmp
   endif
- endif
+endif
 endif
 
 
 all: secp256k1 xdag
 
 xdag: $(sources) $(headers) Makefile
-	cc -o xdag $(secp256k1_i) $(sources) $(asm_src) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) $(flags)
+	cc -O3 -o xdag $(secp256k1_i) $(sources) $(asm_src) -DSHA256_USE_OPENSSL_TXFM -DSHA256_OPENSSL_MBLOCK -I$(SRCROOT) -I$(utils) $(flags)
 
 secp256k1:
-ifneq ($(OS), Darwin)
  ifeq ($(use_openssl_ec), false)
   ifeq ($(lgmp_installed), false)
 	@echo "\033[0;31mPlease install libgmp-dev to have better performance\033[0m";
@@ -199,9 +198,6 @@ ifneq ($(OS), Darwin)
  else
 	@rm -f secp256k1.o
  endif
-else
-	@rm -f secp256k1.o
-endif
 
 clean:
 	rm -f xdag
