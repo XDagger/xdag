@@ -991,6 +991,7 @@ void processHelpCommand(FILE *out)
 		"  keygen               - generate new private/public key pair and set it by default\n"
 		"  level [N]            - print level of logging or set it to N (0 - nothing, ..., 9 - all)\n"
 		"  miners               - for pool, print list of recent connected miners\n"
+		"  miner [A]            - for pool, print information of specified miner with address A.\n"
 		"  mining [N]           - print number of mining threads or set it to N\n"
 		"  net command          - run transport layer command, try 'net help'\n"
 		"  pool [CFG]           - print or set pool config; CFG is miners:maxip:maxconn:fee:reward:direct:fund\n"
