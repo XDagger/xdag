@@ -48,6 +48,8 @@
 #define ws_debug(...)
 #endif
 
+#define ENABLE_WEBSOCKET 0
+
 #define WS_DEFAULT_PORT 9999
 #define WS_DEFAULT_MAX_LIMIT 100
 
@@ -627,7 +629,8 @@ void *ws_server_thread(void *args)
 	if(listen(sock, 100) < 0) {
 		server_error_exit(strerror(errno), sock);
 	}
-
+	
+	xdag_mess("Websocket service started.");
 	while(g_websocket_running) {
 		int peer_sock = accept(sock, (struct sockaddr*)&peeraddr, &peeraddr_len);
 		if(peer_sock < 0) {
@@ -656,6 +659,11 @@ void *ws_server_thread(void *args)
 
 int xdag_ws_server_start(int maxlimit, int port)
 {
+	/* if WEBSOCKET not enabled, just return 0 */
+	if (!ENABLE_WEBSOCKET) {
+		return 0;
+	}
+	
 	g_websocket_running = 1;
 	if (maxlimit < 0 || maxlimit > 65535) { // set to default max limit
 		ws_warn("Invalid websocket max limit value, set to default value %d", WS_DEFAULT_MAX_LIMIT);
