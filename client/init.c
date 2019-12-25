@@ -59,6 +59,7 @@ int(*g_xdag_show_state)(const char *state, const char *balance, const char *addr
 
 int parse_startup_parameters(int argc, char **argv, struct startup_parameters *parameters);
 int pre_init(void);
+int setup_common(void);
 int setup_miner(struct startup_parameters *parameters, int isGui);
 int setup_pool(struct startup_parameters *parameters);
 int dnet_key_init(void);
@@ -88,15 +89,17 @@ int xdag_init(int argc, char **argv, int isGui)
 	g_xdag_run = 1;
 	xdag_show_state(0);
 
+	if(pre_init() < 0) {
+		return -1;
+	}
+	
 	struct startup_parameters parameters;
 	int res = parse_startup_parameters(argc, argv, &parameters);
 	if(res <= 0) {
 		return res;
 	}
-
-	if(pre_init() < 0) {
-		return -1;
-	}
+	
+	setup_common();
 
 	if(is_wallet()) {
 		if(setup_miner(&parameters, isGui) < 0) {
@@ -285,13 +288,20 @@ int pre_init(void)
 
 	xdag_mess("Initializing cryptography...");
 	if(xdag_crypt_init()) return -1;
+	
+	xdag_mess("Starting synchonization engine...");
+	if(xdag_sync_init()) return -1;
 
+	return 0;
+}
+
+int setup_common(void)
+{
 	//TODO: future xdag.wallet
 	xdag_mess("Reading wallet...");
 	if(dnet_key_init() < 0) return -1;
 	
 	if(xdag_wallet_init()) return -1;
-
 	return 0;
 }
 
@@ -397,8 +407,6 @@ int setup_pool(struct startup_parameters *parameters)
 		}
 	}
 
-	xdag_mess("Starting synchonization engine...");
-	if(xdag_sync_init()) return -1;
 	xdag_mess("Starting dnet transport...");
 	printf("Transport module: ");
 	if(xdag_transport_start(parameters->transport_flags, parameters->transport_threads, parameters->bind_to, parameters->addrports_count, parameters->addr_ports)) return -1;
