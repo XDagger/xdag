@@ -242,7 +242,7 @@ cJSON * xdag_rpc_handle_request(char* buffer)
 						//We have to copy ID because using it on the reply and deleting the response Object will also delete ID
 						cJSON * id_copy = NULL;
 						if(id != NULL) {
-							id_copy = (id->type == cJSON_String) ? cJSON_CreateString(id->valuestring):cJSON_CreateNumber(id->valueint);
+							id_copy = (id->type == cJSON_String) ? cJSON_CreateString(id->valuestring):cJSON_CreateNumber(id->valuedouble);
 						}
 						xdag_debug("Method Invoked: %s\n", method->valuestring);
 						
