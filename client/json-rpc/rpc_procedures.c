@@ -311,6 +311,12 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
 				if(cJSON_IsString(item)) {
 					cbdata.count = atoi(item->valuestring);
 					break;
+				} else if(cJSON_IsNumber(item)) {
+					int n = item->valueint;
+					if(n>0) {
+						cbdata.count = item->valueint;
+						break;
+					}
 				}
 			}
 		} else {
