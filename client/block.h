@@ -160,7 +160,7 @@ void xdag_block_finish(void);
 void *add_block_callback_sync(void *block, void *data);
 	
 // get block info of specified address
-extern int xdag_get_block_info(xdag_hash_t, void *, int (*)(void*, int, xdag_hash_t, xdag_amount_t, xtime_t, const char*),
+extern int xdag_get_block_info(xdag_hash_t, void *, int (*)(void*, int, xdag_hash_t, xdag_amount_t, xtime_t, uint64_t, const char*),
 							void *, int (*)(void*, const char *, xdag_hash_t, xdag_amount_t));
 
 #ifdef __cplusplus

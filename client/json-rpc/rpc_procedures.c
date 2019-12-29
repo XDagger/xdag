@@ -60,8 +60,7 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
 cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_get_block_info */
-int rpc_get_block_callback(void *data, int flag, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, const char* remark);
-int rpc_get_block_info_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, const char* remark);
+int rpc_get_block_info_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, uint64_t pos, const char* remark);
 int rpc_get_block_links_callback(void *data, const char *direction, xdag_hash_t hash, xdag_amount_t amount);
 cJSON * method_xdag_get_block_info(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
@@ -417,7 +416,7 @@ cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJ
  "version":"1.1", "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"2018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
  */
 
-int rpc_get_block_info_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, const char* remark)
+int rpc_get_block_info_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, uint64_t pos, const char* remark)
 {
 	cJSON *callback_data = (cJSON *)data;
 
@@ -439,6 +438,16 @@ int rpc_get_block_info_callback(void *data, int flags, xdag_hash_t hash, xdag_am
 	sprintf(str, "%x", flags & ~BI_OURS);
 	cJSON *json_flags = cJSON_CreateString(str);
 	cJSON_AddItemToObject(callback_data, "flags", json_flags);
+	
+	
+	sprintf(str, "%llx", (unsigned long long)pos);
+	cJSON *json_storage_pos = cJSON_CreateString(str);
+	cJSON_AddItemToObject(callback_data, "file pos", json_storage_pos);
+	
+	sprintf(str, "storage%s/%02x/%02x/%02x/%02x.dat", (g_xdag_testnet ? "-testnet" : ""),
+		   (int)(time >> 40)&0xff, (int)(time >> 32)&0xff, (int)(time >> 24)&0xff, (int)(time >> 16)&0xff);
+	cJSON *json_storage_file = cJSON_CreateString(str);
+	cJSON_AddItemToObject(callback_data, "file", json_storage_file);
 
 	sprintf(str, "%s", xdag_get_block_state_info(flags));
 	cJSON *json_state = cJSON_CreateString(str);
