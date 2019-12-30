@@ -35,13 +35,13 @@
 #define MAX_WAITING_MAIN        1
 #define MAIN_START_AMOUNT       (1ll << 42)
 #define MAIN_APOLLO_AMOUNT      (1ll << 39)
-// nmain = 964875, hash is xEMRhOnG2mntQRyi1T8ob/rqKKmRbxlV
-//                         at 2019-12-22 03:35:27 UTC
+// nmain = 976487, hash is WENN9ZgvXA+vNaslRLFQPgBKIbJVaMsu
+//                         at 2019-12-30 18:01:35 UTC
 //                         get this info from https://explorer.xdag.io/
 //
-// Apollo plans to upgrade on 2020-01-05 00:00:00 UTC
+// Apollo plans to upgrade on 2020-01-10 00:00:00 UTC
 //
-#define MAIN_APOLLO_HEIGHT           983573
+#define MAIN_APOLLO_HEIGHT           990323
 #define MAIN_APOLLO_TESTNET_HEIGHT   196250
 #define MAIN_BIG_PERIOD_LOG     21
 #define MAX_LINKS               15
