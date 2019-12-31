@@ -39,9 +39,9 @@
 //                         at 2019-12-30 18:01:35 UTC
 //                         get this info from https://explorer.xdag.io/
 //
-// Apollo plans to upgrade on 2020-01-10 00:00:00 UTC
+// Apollo plans to upgrade on 2020-01-30 00:00:00 UTC
 //
-#define MAIN_APOLLO_HEIGHT           990323
+#define MAIN_APOLLO_HEIGHT           1017323
 #define MAIN_APOLLO_TESTNET_HEIGHT   196250
 #define MAIN_BIG_PERIOD_LOG     21
 #define MAX_LINKS               15
