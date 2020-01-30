@@ -948,14 +948,15 @@ int out_balances()
 	xdag_mem_init((xdag_get_frame() - xdag_get_start_frame()) << 17);
 	xdag_crypt_init();
 	memset(&d, 0, sizeof(struct out_balances_data));
-	xdag_load_blocks(xdag_get_start_frame() << 16, xdag_get_frame() << 16, &i, &add_block_callback_sync);
+    if(xdag_rsdb_pre_init()) return -1;
+	//xdag_load_blocks(xdag_get_start_frame() << 16, xdag_get_frame() << 16, &i, &add_block_callback_sync);
 	xdag_traverse_all_blocks(&d, out_balances_callback);
 
-	qsort(d.blocks, d.blocksCount, sizeof(struct xdag_field), out_sort_callback);
-	for(i = 0; i < d.blocksCount; ++i) {
-		xdag_hash2address(d.blocks[i].data, address);
-		printf("%s  %20.9Lf\n", address, amount2xdags(d.blocks[i].amount));
-	}
+//	qsort(d.blocks, d.blocksCount, sizeof(struct xdag_field), out_sort_callback);
+//	for(i = 0; i < d.blocksCount; ++i) {
+//		xdag_hash2address(d.blocks[i].data, address);
+//		printf("%s  %20.9Lf\n", address, amount2xdags(d.blocks[i].amount));
+//	}
 	return 0;
 }
 

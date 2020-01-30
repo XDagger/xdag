@@ -33,7 +33,7 @@ static const uint8_t mime2bits[256] = {
 };
 
 int encode(const uint8_t *in, size_t inlen, char *out);
-int decode(const char *in, size_t inlen, uint8_t *out, size_t *outlen);
+int decode(const uint8_t *in, size_t inlen, uint8_t *out, size_t *outlen);
 
 int encode(const uint8_t *in, size_t inlen, char *out)
 {
@@ -60,7 +60,7 @@ int encode(const uint8_t *in, size_t inlen, char *out)
 	return 0;
 }
 
-int decode(const char *in, size_t inlen, uint8_t *out, size_t *outlen)
+int decode(const uint8_t *in, size_t inlen, uint8_t *out, size_t *outlen)
 {
 	while(inlen) {
 		if(mime2bits[in[0]] == 0xFF || mime2bits[in[1]] == 0xFF) {
@@ -100,7 +100,7 @@ int base64_encode(const uint8_t *in, size_t inlen, char **out, size_t *outlen)
 	return ret;
 }
 
-int base64_decode(const char *in, size_t inlen, uint8_t **out, size_t *outlen)
+int base64_decode(const uint8_t *in, size_t inlen, uint8_t **out, size_t *outlen)
 {
 	if(inlen % 4) { // wrong inlen
 		*outlen = 0;

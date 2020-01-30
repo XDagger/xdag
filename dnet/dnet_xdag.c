@@ -826,7 +826,7 @@ int dnet_init(int argc, char **argv)
 		daemonize();
 	}
 
-	angelize();
+	//angelize();
 	for(i = 0; i < nthreads; ++i) {
 		pthread_create(&t, 0, xthread_main, (void *)(long)i);
 	}

@@ -246,8 +246,12 @@ void *sync_thread(void *arg)
 	for (;;) {
 		xtime_t st = xdag_get_xtimestamp();
 		if (st - t >= MAIN_CHAIN_PERIOD) {
-			t = st;
-			request_blocks(0, 1ll << 48);
+            if(g_xdag_state != XDAG_STATE_LOAD) {
+                t = st;
+                request_blocks(0, 1ll << 48);
+            } else {
+                xdag_info("sync_thread wait for Local load data : t=%llx", t);
+            }
 		}
 		sleep(1);
 	}
