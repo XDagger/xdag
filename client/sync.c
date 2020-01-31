@@ -84,7 +84,7 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
 	*p = q;
 	
 	g_xdag_extstats.nwaitsync++;
-	
+    xdag_rsdb_put_extstats(g_xdag_rsdb);
 	return 1;
 }
 
@@ -102,7 +102,7 @@ begin:
 		if (!memcmp(hash, q->b.field[q->nfield].hash, sizeof(xdag_hashlow_t))) {
 			*p = q->next;
 			g_xdag_extstats.nwaitsync--;
-
+            xdag_rsdb_put_extstats(g_xdag_rsdb);
 			for (p = get_list_r(q->hash); (r = *p) && r != q; p = &r->next_r);
 				
 			if (r == q) {

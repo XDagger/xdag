@@ -53,16 +53,17 @@ typedef enum xdag_rsdb_op_result {
 typedef enum xdag_rsdb_key_type {
     SETTING_CREATED                       =  0,
     SETTING_STATS                         =  1,
-    SETTING_TOP_MAIN_HASH                 =  2,
-    SETTING_PRE_TOP_MAIN_HASH             =  3,
-    SETTING_OUR_FIRST_HASH                =  4,
-    SETTING_OUR_LAST_HASH                 =  5,
-    SETTING_VERSION                       =  6,
-    HASH_ORP_BLOCK_INTERNAL               =  7,
-    HASH_OUR_BLOCK_INTERNAL               =  8,
-    HASH_BLOCK_INTERNAL                   =  9,
-    HASH_BLOCK_LINK                       =  10,
-    HASH_BLOCK_BACK_REF                   =  11
+    SETTING_EXT_STATS                     =  2,
+    SETTING_TOP_MAIN_HASH                 =  3,
+    SETTING_PRE_TOP_MAIN_HASH             =  4,
+    SETTING_OUR_FIRST_HASH                =  5,
+    SETTING_OUR_LAST_HASH                 =  6,
+    SETTING_VERSION                       =  7,
+    HASH_ORP_BLOCK_INTERNAL               =  8,
+    HASH_OUR_BLOCK_INTERNAL               =  9,
+    HASH_BLOCK_INTERNAL                   =  10,
+    HASH_BLOCK_LINK                       =  11,
+    HASH_BLOCK_BACK_REF                   =  12
 } XDAG_RSDB_KEY_TYPE;
 
 int xdag_rsdb_pre_init(void);
@@ -104,6 +105,10 @@ int xdag_rsdb_writebatch_put(XDAG_RSDB_BATCH* batch, const char* key, size_t kle
 int xdag_rsdb_write(XDAG_RSDB* db, XDAG_RSDB_BATCH* batch);
 
 int xdag_rsdb_put_stats(XDAG_RSDB* rsdb);
+int xdag_rsdb_get_stats(XDAG_RSDB* rsdb);
+
+int xdag_rsdb_put_extstats(XDAG_RSDB* rsdb);
+int xdag_rsdb_get_extstats(XDAG_RSDB* rsdb);
 
 struct block_internal* xdag_rsdb_get_bi(const void* hp);
 struct block_internal* xdag_rsdb_get_orpbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash);

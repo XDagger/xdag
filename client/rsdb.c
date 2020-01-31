@@ -166,14 +166,8 @@ int xdag_rsdb_delete(XDAG_RSDB* rsdb)
 
 int xdag_rsdb_load(XDAG_RSDB* db)
 {
-    const size_t klen = 1;
-    size_t vlen = 1;
-    char key[1] = {[0]=SETTING_STATS};
-    char* value = xdag_rsdb_getkey(key, &klen, &vlen);
-    if(value) {
-        memcpy(&g_xdag_stats, value, sizeof(g_xdag_stats));
-        free(value);
-    }
+    xdag_rsdb_get_stats(db);
+    xdag_rsdb_get_extstats(db);
     return XDAG_RSDB_OP_SUCCESS;
 }
 
@@ -303,19 +297,14 @@ int xdag_rsdb_init(void)
     size_t klen = 1;
     char* value = NULL;
     size_t vlen = 0;
-//    size_t vlen = 0;
-    
     value = xdag_rsdb_getkey(key, &klen, &vlen);
     
     if(!value) {
-        char stats_k[1] = {[0] = SETTING_STATS};
-        xdag_rsdb_putkey(g_xdag_rsdb, stats_k, klen, (char*)&g_xdag_stats, sizeof(g_xdag_stats));
         xdag_rsdb_putkey(g_xdag_rsdb, key, klen, "done", strlen("done"));
-        if(value) {
-            free(value);
-        }
+
         return XDAG_RSDB_INIT_NEW;
-    } else if (value && strncmp("done", value, strlen("done"))) {
+    } else if (strncmp("done", value, strlen("done")) == 0) {
+        free(value);
         xdag_rsdb_load(g_xdag_rsdb);
         return XDAG_RSDB_INIT_LOAD;
     }
@@ -324,9 +313,45 @@ int xdag_rsdb_init(void)
 
 int xdag_rsdb_put_stats(XDAG_RSDB* rsdb)
 {
-    char stats_k[1] = {[0] = SETTING_STATS};
+    char key[1] = {[0] = SETTING_STATS};
     size_t klen = 1;
-    xdag_rsdb_putkey(rsdb, stats_k, klen, (char*)&g_xdag_stats, sizeof(g_xdag_stats));
+    xdag_rsdb_putkey(rsdb, key, klen, (const char*)&g_xdag_stats, sizeof(g_xdag_stats));
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+int xdag_rsdb_get_stats(XDAG_RSDB* rsdb)
+{
+    char key[1] = {[0] = SETTING_STATS};
+    struct xdag_stats* p = NULL;
+    size_t vlen = 0;
+    size_t klen = 1;
+    p = xdag_rsdb_getkey(key, &klen, &vlen);
+    if(p) {
+        memcpy(&g_xdag_stats, p, sizeof(g_xdag_stats));
+        free(p);
+    }
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+int xdag_rsdb_put_extstats(XDAG_RSDB* rsdb)
+{
+    char key[1] = {[0] = SETTING_EXT_STATS};
+    size_t klen = 1;
+    xdag_rsdb_putkey(rsdb, key, klen, (const char*)&g_xdag_extstats, sizeof(g_xdag_extstats));
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+int xdag_rsdb_get_extstats(XDAG_RSDB* rsdb)
+{
+    char key[1] = {[0] = SETTING_EXT_STATS};
+    struct xdag_ext_stats* pexs = NULL;
+    size_t vlen = 0;
+    size_t klen = 1;
+    pexs = xdag_rsdb_getkey(key, &klen, &vlen);
+    if(pexs) {
+        memcpy(&g_xdag_extstats, pexs, sizeof(g_xdag_extstats));
+        free(pexs);
+    }
     return XDAG_RSDB_OP_SUCCESS;
 }
 
