@@ -1,11 +1,4 @@
 cmake_minimum_required(VERSION 3.10)
-include("cmake/HunterGate.cmake")
-
-HunterGate(
-        URL "https://github.com/ruslo/hunter/archive/v0.23.214.tar.gz"
-        SHA1 "e14bc153a7f16d6a5eeec845fb0283c8fad8c358"
-)
-
 project(xdag C CXX)
 enable_language(C ASM)
 
@@ -30,20 +23,32 @@ add_definitions(-DSHA256_OPENSSL_MBLOCK)
 #[1]end
 
 #[2]download and compile external project start
-include(cmake/ProjectSecp256k1.cmake)
 include(cmake/RocksDBConfig.cmake)
+include(cmake/Secp256k1Config.cmake)
+include(cmake/OpenSSLConfig.cmake)
 #[2]end
 
 #[3]download and compile projects in hunter
-#find_package(RocksDB CONFIG)
+find_package(RocksDB CONFIG)
 if(ROCKSDB_FOUND)
   message("-- Found RocksDB: include ${RocksDB_INCLUDE_DIR}  libraries ${RocksDB_LIBRARY}")
 else()
   message(FATAL_ERROR "Failed to find RocksDB dependency!")
 endif()
 
-hunter_add_package(OpenSSL)
-find_package(OpenSSL REQUIRED)
+find_package(Secp256k1 CONFIG)
+if(SECP256K1_FOUND)
+  message("-- Found Secp256k1: include ${SECP256K1_INCLUDE_DIR}  libraries ${SECP256K1_LIBRARY}")
+else()
+  message(FATAL_ERROR "Failed to find SECP256K1 dependency!")
+endif()
+
+find_package(OpenSSL CONFIG)
+if(OPENSSL_FOUND)
+  message("-- Found OPENSSL: include ${OPENSSL_INCLUDE_DIR}  libraries ${OPENSSL_LIBRARY}")
+else()
+  message(FATAL_ERROR "Failed to find OPENSSL dependency!")
+endif()
 #[3]end
 
 #[4]find original libraries in system start
@@ -116,14 +121,21 @@ add_executable(
 #[8]end
 
 #[9]link libraries start
+target_include_directories(
+        ${PROJECT_NAME}
+        PUBLIC
+        ${RocksDB_INCLUDE_DIR}
+        ${SECP256K1_INCLUDE_DIR}
+        ${OPENSSL_INCLUDE_DIR}
+)
 target_link_libraries(
         ${PROJECT_NAME}
         PUBLIC
         ${CMAKE_THREAD_LIBS_INIT}
-        Secp256k1
         ${RocksDB_LIBRARY}
-        OpenSSL::SSL
-        OpenSSL::Crypto
+        ${SECP256K1_LIBRARY}
+        ${OPENSSL_SSL_LIBRARY}
+        ${OPENSSL_CRYPTO_LIBRARY}
         m
 )
 #[9]end
