@@ -810,7 +810,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 				diff = xdag_diff_add(diff0, blockRef->difficulty);
 			} else {
 				diff = blockRef->difficulty;
-                struct block_internal *pbf = NULL;
+                		struct block_internal *pbf = NULL;
 				while(blockRef && MAIN_TIME(blockRef->time) == MAIN_TIME(tmpNodeBlock.time)) {
                     //blockRef = blockRef->link[blockRef->max_diff_link];
                     pbf = blockRef;

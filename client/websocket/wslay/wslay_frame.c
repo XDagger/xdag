@@ -27,7 +27,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>
-
+#include <arpa/inet.h>
 #include "wslay_net.h"
 
 #define wslay_min(A, B) (((A) < (B)) ? (A) : (B))

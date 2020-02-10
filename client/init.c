@@ -8,6 +8,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include<sys/types.h>
+#include<sys/wait.h>
 #ifndef _WIN32
 #include <signal.h>
 #endif

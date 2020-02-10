@@ -507,14 +507,14 @@ int xdag_rsdb_put_bi(XDAG_RSDB* rsdb, struct block_internal* bi)
     return XDAG_RSDB_OP_SUCCESS;
 }
 
-int xdag_rsdb_put_orpblock(XDAG_RSDB* rsdb, struct orphan_block* ob)
+int xdag_rsdb_put_orpbi(XDAG_RSDB* rsdb, struct block_internal* bi)
 {
-    if(!ob) return XDAG_RSDB_NULL;
+    if(!bi) return XDAG_RSDB_NULL;
     int retcode = 0;
     const size_t klen = 1 + sizeof(xdag_hashlow_t);
-    char key[ klen ] = {[0] = HASH_ORP_BLOCK};
-    memcpy(key + 1, ob->bi.hash, klen - 1);
-    retcode = xdag_rsdb_putkey(rsdb, key, klen, (const char*)ob, sizeof(struct orphan_block));
+    char key[ klen ] = {[0] = HASH_ORP_BLOCK_INTERNAL};
+    memcpy(key + 1, bi->hash, klen - 1);
+    retcode = xdag_rsdb_putkey(rsdb, key, klen, (const char*)bi, sizeof(struct block_internal));
     if(retcode) {
         return retcode;
     }
