@@ -195,15 +195,17 @@ static int process_transport_block(struct xdag_block *received_block, struct xco
 
 		case XDAG_MESSAGE_BLOCK_REQUEST:
 		{
-			struct xdag_block buf, *blk;
-			xtime_t t;
+            struct xdag_block buf;
+            struct xdag_block *blk = NULL;
+			xtime_t t = 0;
+
+			memset(&buf, 0 , sizeof(struct xdag_block));
+
 			int64_t pos = xdag_get_block_pos(received_block->field[1].hash, &t, &buf);
 
 			struct send_parameters send_parameters = {connection, time(NULL) + REQUEST_WAIT, 0, 0};
 
-			if (pos == -2l) {
-				dnet_send_xdag_packet(&buf, &send_parameters);
-			} else if (pos >= 0 && (blk = xdag_storage_load(received_block->field[1].hash, t, pos, &buf))) {
+			if (pos == -2l || (pos >= 0 && (blk = xdag_storage_load(received_block->field[1].hash, t, pos, &buf)))) {
 				dnet_send_xdag_packet(blk, &send_parameters);
 			}
 
