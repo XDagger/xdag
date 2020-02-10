@@ -384,59 +384,59 @@ int xdag_rsdb_del_bi(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
     return XDAG_RSDB_OP_SUCCESS;
 }
 
-struct block_internal* xdag_rsdb_seek_orpbi(XDAG_RSDB* rsdb)
+struct orphan_block* xdag_rsdb_seek_orpblock(XDAG_RSDB* rsdb)
 {
-    struct block_internal* bi = calloc(sizeof(struct block_internal), 1);
-    char key[1] = {[0] = HASH_ORP_BLOCK_INTERNAL};
+    struct orphan_block* ob = calloc(sizeof(struct orphan_block), 1);
+    char key[1] = {[0] = HASH_ORP_BLOCK};
     size_t klen = 1;
     size_t vlen = 0;
     rocksdb_iterator_t* iter = NULL;
-    
+
     iter = rocksdb_create_iterator(rsdb->db, rsdb->read_options);
-    
+
     rocksdb_iter_seek(iter, key, klen);
-    
+
     if(!rocksdb_iter_valid(iter)) {
        rocksdb_iter_destroy(iter);
        return NULL;
     }
-    
+
     const char* val = rocksdb_iter_value(iter, &vlen);
-    
+
     if(!val) {
         return NULL;
     }
-    memcpy(bi, val, sizeof(struct block_internal));
+    memcpy(ob, val, sizeof(struct orphan_block));
 //    memcpy(xb, val + sizeof(struct block_internal), sizeof(struct xdag_block));
     rocksdb_iter_destroy(iter);
-    return bi;
+    return ob;
 }
 
-struct block_internal* xdag_rsdb_get_orpbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
+struct orphan_block* xdag_rsdb_get_orpblock(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
 {
-    struct block_internal* bi = NULL;
+    struct orphan_block* ob = NULL;
     int retcode = 0;
     const size_t klen = 1 + sizeof(xdag_hashlow_t);
     size_t vlen = 0;
-    char key[ klen ] = {[0] = HASH_ORP_BLOCK_INTERNAL};
+    char key[ klen ] = {[0] = HASH_ORP_BLOCK};
     memcpy(key + 1, hash, klen - 1);
-    bi = xdag_rsdb_getkey(key, &klen, &vlen);
+    ob = xdag_rsdb_getkey(key, &klen, &vlen);
     if(retcode) {
-        if(bi) {
-            free(bi);
+        if(ob) {
+            free(ob);
         }
         return NULL;
     }
-    return bi;
+    return ob;
 }
 
-int xdag_rsdb_del_orpbi(XDAG_RSDB* rsdb, struct block_internal* bi)
+int xdag_rsdb_del_orpblock(XDAG_RSDB* rsdb, struct orphan_block* ob)
 {
-    if(!bi) return XDAG_RSDB_NULL;
+    if(!ob) return XDAG_RSDB_NULL;
     int retcode = 0;
     const size_t klen = 1 + sizeof(xdag_hashlow_t);
-    char key[ klen ] = {[0] = HASH_ORP_BLOCK_INTERNAL};
-    memcpy(key + 1, bi->hash, klen - 1);
+    char key[ klen ] = {[0] = HASH_ORP_BLOCK};
+    memcpy(key + 1, ob->bi.hash, klen - 1);
     retcode = xdag_rsdb_delkey(rsdb, key, klen);
     if(retcode) {
         return retcode;
@@ -507,14 +507,14 @@ int xdag_rsdb_put_bi(XDAG_RSDB* rsdb, struct block_internal* bi)
     return XDAG_RSDB_OP_SUCCESS;
 }
 
-int xdag_rsdb_put_orpbi(XDAG_RSDB* rsdb, struct block_internal* bi)
+int xdag_rsdb_put_orpblock(XDAG_RSDB* rsdb, struct orphan_block* ob)
 {
-    if(!bi) return XDAG_RSDB_NULL;
+    if(!ob) return XDAG_RSDB_NULL;
     int retcode = 0;
     const size_t klen = 1 + sizeof(xdag_hashlow_t);
-    char key[ klen ] = {[0] = HASH_ORP_BLOCK_INTERNAL};
-    memcpy(key + 1, bi->hash, klen - 1);
-    retcode = xdag_rsdb_putkey(rsdb, key, klen, (const char*)bi, sizeof(struct block_internal));
+    char key[ klen ] = {[0] = HASH_ORP_BLOCK};
+    memcpy(key + 1, ob->bi.hash, klen - 1);
+    retcode = xdag_rsdb_putkey(rsdb, key, klen, (const char*)ob, sizeof(struct orphan_block));
     if(retcode) {
         return retcode;
     }

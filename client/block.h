@@ -120,10 +120,10 @@ struct block_internal {
     xdag_amount_t amount, linkamount[MAX_LINKS], fee;
     xtime_t time;
     uint64_t storage_pos;
-    union {
-        xdag_hashlow_t ref;
-        struct orphan_block *oref;
-    };
+//    union {
+    xdag_hashlow_t ref;
+//        struct orphan_block *oref;
+//    };
     xdag_hashlow_t link[MAX_LINKS];
     //xdag_hashlow_t backrefs;
     atomic_uintptr_t remark;
@@ -142,6 +142,13 @@ struct block_internal_backref {
 //    xdag_hash_t hash;
 //    struct block_internal *bi;
 //};
+struct xdag_file_info {
+    char name[256];
+    int pos;
+};
+struct xdag_block_index {
+
+};
 
 #define N_BACKREFS      (sizeof(struct block_internal) / sizeof(struct block_internal *) - 1)
         
@@ -161,10 +168,8 @@ struct block_backrefs {
 //};
 
 struct orphan_block {
-    struct block_internal* orphan_bi;
-    struct orphan_block *next;
-    struct orphan_block *prev;
-    struct xdag_block block[0];
+    struct block_internal bi;
+    struct xdag_block xb;
 };
 
 enum orphan_remove_actions {
