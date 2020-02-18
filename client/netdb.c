@@ -6,10 +6,10 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "system.h"
-#include "../ldus/source/include/ldus/rbtree.h"
+#include "../ldus/rbtree.h"
 #include "transport.h"
 #include "netdb.h"
-#include "init.h"
+#include "global.h"
 #include "sync.h"
 #include "utils/log.h"
 #include "utils/utils.h"
@@ -18,7 +18,7 @@
 #define MAX_SELECTED_HOSTS  64
 #define MAX_BLOCKED_IPS     64
 #define MAX_WHITE_IPS       64
-#define MAX_ALLOWED_FROM_IP 4
+#define MAX_ALLOWED_FROM_IP 16
 #define DATABASE            (g_xdag_testnet ? "netdb-testnet.txt" : "netdb.txt")
 #define DATABASEWHITE       (g_xdag_testnet ? "netdb-white-testnet.txt" : "netdb-white.txt")
 
@@ -78,7 +78,7 @@ static struct host *find_add_host(struct host *h)
 		memcpy(h0, h, sizeof(struct host));
 		ldus_rbtree_insert(&root, &h0->node);
 		g_xdag_stats.nhosts++;
-		
+
 		if (g_xdag_stats.nhosts > g_xdag_stats.total_nhosts) {
 			g_xdag_stats.total_nhosts = g_xdag_stats.nhosts;
 		}
@@ -99,7 +99,7 @@ static struct host *find_add_host(struct host *h)
 	}
 
 	pthread_mutex_unlock(&host_mutex);
-	
+
 	return h0;
 }
 
@@ -148,11 +148,11 @@ static struct host *ipport2host(struct host *h, const char *ipport, int flags)
 static struct host *find_add_ipport(struct host *h, const char *ipport, int flags)
 {
 	if (!ipport) return 0;
-	
+
 	h = ipport2host(h, ipport, flags);
-	
+
 	if (!h) return 0;
-	
+
 	return find_add_host(h);
 }
 
@@ -170,10 +170,10 @@ static int read_database(const char *fname, int flags)
 	while (fscanf(f, "%63s", str) == 1) {
 		p = strchr(str, ':');
 		if (!p || !p[1]) continue;
-	
+
 		h0.flags = 0;
 		struct host *h = find_add_ipport(&h0, str, flags);
-		
+
 		if (flags & HOST_CONNECTED && h0.flags & HOST_CONNECTED) {
 			for (i = 0; i < n_ips && ips[i] != h0.ip; ++i);
 
@@ -190,20 +190,20 @@ static int read_database(const char *fname, int flags)
 		if (!h) continue;
 
 		xdag_debug("Netdb : host=%lx, flags=%x, read '%s'", (long)h, h->flags, str);
-		
+
 		if (flags & HOST_CONNECTED && n_selected_hosts < MAX_SELECTED_HOSTS / 2) {
 			selected_hosts[n_selected_hosts++] = h;
 		}
-		
+
 		n++;
 	}
 
 	xdag_close_file(f);
-	
+
 	if (flags & HOST_CONNECTED) {
 		g_xdag_n_blocked_ips = n_blocked;
 	}
-	
+
 	return n;
 }
 
@@ -227,17 +227,17 @@ static void *monitor_thread(void *arg)
 		if (!f) continue;
 
 		xdag_net_command("conn", f);
-		
+
 		xdag_close_file(f);
-		
+
 		pthread_mutex_lock(&host_mutex);
-		
+
 		ldus_rbtree_walk_right(root, reset_callback);
-		
+
 		pthread_mutex_unlock(&host_mutex);
-		
+
 		n_selected_hosts = 0;
-		
+
 		if (our_host) {
 			selected_hosts[n_selected_hosts++] = our_host;
 		}
@@ -266,16 +266,16 @@ static void *monitor_thread(void *arg)
 			}
 
 			h->flags |= HOST_CONNECTED;
-			
+
 			if (n_selected_hosts < MAX_SELECTED_HOSTS) {
 				selected_hosts[n_selected_hosts++] = h;
 			}
 		}
 
 		if (f) xdag_close_file(f);
-		
+
 		g_xdag_n_white_ips = 0;
-		
+
 		pthread_mutex_lock(&g_white_list_mutex);
 		read_database(DATABASEWHITE, HOST_WHITE);
 		pthread_mutex_unlock(&g_white_list_mutex);
@@ -345,12 +345,12 @@ static void *refresh_thread(void *arg)
 				free(resp);
 			}
 		}
-		
+
 		while (time(0) - prev_time < 900) { // refresh every 15 minutes
 			sleep(1);
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -363,15 +363,15 @@ int xdag_netdb_init(const char *our_host_str, int npairs, const char **addr_port
 
 	g_xdag_blocked_ips = malloc(MAX_BLOCKED_IPS * sizeof(uint32_t));
 	g_xdag_white_ips = malloc(MAX_WHITE_IPS * sizeof(uint32_t));
-	
+
 	if (!g_xdag_blocked_ips || !g_xdag_white_ips) return -1;
-	
+
 	if (read_database(DATABASE, HOST_INDB) < 0) {
 		xdag_fatal("Can't find file '%s'", DATABASE);
 	}
-	
+
 	read_database(DATABASEWHITE, HOST_WHITE);
-	
+
 	our_host = find_add_ipport(&h, our_host_str, HOST_OUR | HOST_SET);
 
 	for (int i = 0; i < npairs; ++i) {
@@ -407,9 +407,9 @@ unsigned xdag_netdb_send(uint8_t *data, unsigned len)
 		memcpy(data, &selected_hosts[i]->ip, 4);
 		memcpy(data + 4, &selected_hosts[i]->port, 2);
 	}
-	
+
 	memset(data, 0, len);
-	
+
 	return i * 6;
 }
 
@@ -427,7 +427,7 @@ unsigned xdag_netdb_receive(const uint8_t *data, unsigned len)
 		if (!h.ip || !h.port) continue;
 		find_add_host(&h);
 	}
-	
+
 	return 6 * i;
 }
 

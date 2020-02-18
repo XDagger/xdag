@@ -3,7 +3,7 @@
 #ifndef _UTILS_ATOMIC_H
 #define _UTILS_ATOMIC_H
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 
 /*******************  WINDOWS  *****************************
 Standard C11 atomic functions can take any atomic type without regards of the size
@@ -48,11 +48,13 @@ typedef volatile uint_least64_t atomic_uint_least64_t;
 
 #define atomic_store_explicit_uintptr(a,b,c) atomic_store_explicit(a,b,c)
 #define atomic_store_explicit_int(a,b,c) atomic_store_explicit(a,b,c)
+#define atomic_store_explicit_uint_least64(a,b,c) atomic_store_explicit(a,b,c)
 #define atomic_store_explicit(a,b,c) atomic_store(a,b)
 #define atomic_store(ptr, value) (void)(*(ptr) = (value))
 
 #define atomic_load_explicit_uintptr(a,b) atomic_load_explicit(a,b)
 #define atomic_load_explicit_int(a,b) atomic_load_explicit(a,b)
+#define atomic_load_explicit_uint_least64(a,b) atomic_load_explicit(a,b)
 #define atomic_load_explicit(a,b) atomic_load(a)
 #define atomic_load(ptr) *(ptr)
 
@@ -79,9 +81,11 @@ Add here new atomic function when needed
 
 #define atomic_store_explicit_uintptr(a,b,c) atomic_store_explicit(a,b,c)
 #define atomic_store_explicit_int(a,b,c) atomic_store_explicit(a,b,c)
+#define atomic_store_explicit_uint_least64(a,b,c) atomic_store_explicit(a,b,c)
 
 #define atomic_load_explicit_uintptr(a,b) atomic_load_explicit(a,b)
 #define atomic_load_explicit_int(a,b) atomic_load_explicit(a,b)
+#define atomic_load_explicit_uint_least64(a,b) atomic_load_explicit(a,b)
 
 #define atomic_compare_exchange_strong_explicit_uintptr(a,b,c,d,e) atomic_compare_exchange_strong_explicit(a,b,c,d,e)
 #define atomic_compare_exchange_strong_explicit_uint_least64(a,b,c,d,e) atomic_compare_exchange_strong_explicit(a,b,c,d,e)

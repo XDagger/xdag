@@ -52,7 +52,7 @@ enum bi_flags {
 
 #define XDAG_BLOCK_FIELDS 16
 
-#define REMARK_ENABLED 0
+#define REMARK_ENABLED 1
 
 #if CHAR_BIT != 8
 #error Your system hasn't exactly 8 bit for a char, it won't run.
@@ -94,7 +94,7 @@ extern "C" {
 extern int g_bi_index_enable;
 
 // start of regular block processing
-extern int xdag_blocks_start(int is_pool, int mining_threads_count, int miner_address);
+extern int xdag_blocks_start(int mining_threads_count, int miner_address);
 
 // checks and adds block to the storage. Returns non-zero value in case of error.
 extern int xdag_add_block(struct xdag_block *b);
@@ -133,12 +133,6 @@ extern int64_t xdag_get_block_pos(const xdag_hash_t hash, xtime_t *time, struct 
 // return state info string
 extern const char* xdag_get_block_state_info(uint8_t flag);
 
-// returns a number of the current period, period is 64 seconds
-extern xtime_t xdag_main_time(void);
-
-// returns the number of the time period corresponding to the start of the network
-extern xtime_t xdag_start_main_time(void);
-
 // returns a number of key by hash of block or -1 if block is not ours
 extern int xdag_get_key(xdag_hash_t hash);
 
@@ -162,9 +156,11 @@ void xdag_list_orphan_blocks(int, FILE*);
 
 // completes work with the blocks
 void xdag_block_finish(void);
+    
+void *add_block_callback_sync(void *block, void *data);
 	
 // get block info of specified address
-extern int xdag_get_block_info(xdag_hash_t, void *, int (*)(void*, int, xdag_hash_t, xdag_amount_t, xtime_t, const char*),
+extern int xdag_get_block_info(xdag_hash_t, void *, int (*)(void*, int, xdag_hash_t, xdag_amount_t, xtime_t, uint64_t, const char*),
 							void *, int (*)(void*, const char *, xdag_hash_t, xdag_amount_t));
 
 #ifdef __cplusplus

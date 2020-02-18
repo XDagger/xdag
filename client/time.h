@@ -4,6 +4,7 @@
 #define XDAG_TIME_H
 
 #include <stdint.h>
+#include <time.h>
 #include "types.h"
 
 /* the maximum period of time for which blocks are requested, not their amounts */
@@ -25,10 +26,10 @@ extern "C" {
 extern xtime_t g_xdag_era;
 
 // returns a time period index, where a period is 64 seconds long
-xtime_t xdag_main_time(void);
+xdag_frame_t xdag_get_frame(void);
 
 // returns the time period index corresponding to the start of the network
-xtime_t xdag_start_main_time(void);
+xdag_frame_t xdag_get_start_frame(void);
 
 // initialize time modeule
 int xdag_time_init(void);

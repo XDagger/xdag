@@ -6,19 +6,14 @@
 #include <stdint.h>
 #include "hash.h"
 
-#if defined (__MACOS__) || defined (__APPLE__) 
-//no need optimized secp256k1 for mac
-#define USE_OPTIMIZED_EC 0 // 0 disactivate, 1 activated, 2 test openssl vs secp256k1
-#else
-#define USE_OPTIMIZED_EC 1 // 0 disactivate, 1 activated, 2 test openssl vs secp256k1
-#endif
+#define USE_OPTIMIZED_EC 1 // 0 disactivate, 1 activated, 2 test openssl vs
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 	
 // initialization of the encryption system
-extern int xdag_crypt_init(int withrandom);
+extern int xdag_crypt_init(void);
 
 // creates a new pair of private and public keys
 extern void *xdag_create_key(xdag_hash_t privkey, xdag_hash_t pubkey, uint8_t *pubkey_bit);

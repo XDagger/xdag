@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "storage.h"
-#include "init.h"
+#include "global.h"
 #include "hash.h"
 #include "utils/log.h"
 #include "utils/utils.h"
@@ -193,7 +193,7 @@ static int sort_callback(const void *l, const void *r)
 }
 
 /* Calls a callback for all blocks from the repository that are in specified time interval; returns the number of blocks */
-uint64_t xdag_load_blocks(xtime_t start_time, xtime_t end_time, void *data, void *(*callback)(void *, void *))
+uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *data, void *(*callback)(void *, void *))
 {
 	struct xdag_block *buf, *pbuf[bufsize];
 	struct xdag_storage_sum s;
@@ -252,13 +252,11 @@ uint64_t xdag_load_blocks(xtime_t start_time, xtime_t end_time, void *data, void
 			}
 			sum++;
 		}
-
+        
 		if (todo != bufsize) {
 			if (f) {
 				pthread_mutex_lock(&storage_mutex);
-				
 				int res = correct_storage_sums(start_time, &s, 0);
-				
 				pthread_mutex_unlock(&storage_mutex);
 				
 				if (res) break;

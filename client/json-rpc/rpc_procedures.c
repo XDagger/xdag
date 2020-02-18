@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -29,14 +29,14 @@
 #include "rpc_procedure.h"
 #include "rpc_service.h"
 #include "../version.h"
-#include "../init.h"
+#include "../global.h"
 #include "../address.h"
 #include "../commands.h"
 #include "../wallet.h"
 #include "../math.h"
-#include "../../dus/programs/dfstools/source/dfslib/dfslib_random.h"
-#include "../../dus/programs/dfstools/source/dfslib/dfslib_crypt.h"
-#include "../../dus/programs/dfstools/source/dfslib/dfslib_string.h"
+#include "../../dfslib/dfslib_random.h"
+#include "../../dfslib/dfslib_crypt.h"
+#include "../../dfslib/dfslib_string.h"
 #include "../../dnet/dnet_main.h"
 #include "../utils/log.h"
 #include "../utils/utils.h"
@@ -60,8 +60,7 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
 cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
 /* method: xdag_get_block_info */
-int rpc_get_block_callback(void *data, int flag, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, const char* remark);
-int rpc_get_block_info_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, const char* remark);
+int rpc_get_block_info_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, uint64_t pos, const char* remark);
 int rpc_get_block_links_callback(void *data, const char *direction, xdag_hash_t hash, xdag_amount_t amount);
 cJSON * method_xdag_get_block_info(struct xdag_rpc_context * ctx, cJSON *params, cJSON *id, char *version);
 
@@ -188,7 +187,7 @@ cJSON * method_xdag_stats(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id
 	cJSON *item = cJSON_CreateObject();
 
 	char buf[128] = {0};
-	if(g_is_miner) {
+	if(is_wallet()) {
 		sprintf(buf, "%.2lf MHs", xdagGetHashRate());
 		cJSON *json_hashrate = cJSON_CreateString(buf);
 		cJSON_AddItemToObject(item, "hashrate", json_hashrate);
@@ -301,7 +300,7 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
 {
 	xdag_debug("rpc call method get_account, version %s",version);
 	struct rpc_account_callback_data cbdata;
-	cbdata.count = (g_is_miner ? 1 : 20);
+	cbdata.count = (is_wallet() ? 1 : 20);
 	if (params) {
 		if (cJSON_IsArray(params)) {
 			size_t size = cJSON_GetArraySize(params);
@@ -311,6 +310,12 @@ cJSON * method_xdag_get_account(struct xdag_rpc_context *ctx, cJSON *params, cJS
 				if(cJSON_IsString(item)) {
 					cbdata.count = atoi(item->valuestring);
 					break;
+				} else if(cJSON_IsNumber(item)) {
+					int n = item->valueint;
+					if(n>0) {
+						cbdata.count = item->valueint;
+						break;
+					}
 				}
 			}
 		} else {
@@ -411,7 +416,7 @@ cJSON * method_xdag_get_balance(struct xdag_rpc_context * ctx, cJSON *params, cJ
  "version":"1.1", "result":[{"address":"BLOCK ADDRESS", "amount":"BLOCK AMOUNT",  "flags":"BLOCK FLAGS", "state":"BLOCK STATE", "timestamp":"2018-06-03 03:36:33.866 UTC"}], "error":null, "id":1
  */
 
-int rpc_get_block_info_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, const char* remark)
+int rpc_get_block_info_callback(void *data, int flags, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, uint64_t pos, const char* remark)
 {
 	cJSON *callback_data = (cJSON *)data;
 
@@ -433,6 +438,16 @@ int rpc_get_block_info_callback(void *data, int flags, xdag_hash_t hash, xdag_am
 	sprintf(str, "%x", flags & ~BI_OURS);
 	cJSON *json_flags = cJSON_CreateString(str);
 	cJSON_AddItemToObject(callback_data, "flags", json_flags);
+	
+	
+	sprintf(str, "%llx", (unsigned long long)pos);
+	cJSON *json_storage_pos = cJSON_CreateString(str);
+	cJSON_AddItemToObject(callback_data, "file pos", json_storage_pos);
+	
+	sprintf(str, "storage%s/%02x/%02x/%02x/%02x.dat", (g_xdag_testnet ? "-testnet" : ""),
+		   (int)(time >> 40)&0xff, (int)(time >> 32)&0xff, (int)(time >> 24)&0xff, (int)(time >> 16)&0xff);
+	cJSON *json_storage_file = cJSON_CreateString(str);
+	cJSON_AddItemToObject(callback_data, "file", json_storage_file);
 
 	sprintf(str, "%s", xdag_get_block_state_info(flags));
 	cJSON *json_state = cJSON_CreateString(str);
@@ -540,8 +555,8 @@ cJSON * method_xdag_get_block_info(struct xdag_rpc_context * ctx, cJSON *params,
 	if(xdag_get_block_info(hash, (void *)info, rpc_get_block_info_callback, (void *)links, rpc_get_block_links_callback)) {
 		ctx->error_code = 1;
 		ctx->error_message = strdup("Block not found.");
-		free(info);
-		free(links);
+		cJSON_Delete(info);
+		cJSON_Delete(links);
 		return NULL;
 	}
 	cJSON_AddItemToObject(info, "transactions", links);

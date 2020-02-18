@@ -10,15 +10,6 @@
     <Filter Include="dnet">
       <UniqueIdentifier>{e0600286-cd86-4e15-bb59-cac50d0783ec}</UniqueIdentifier>
     </Filter>
-    <Filter Include="dus">
-      <UniqueIdentifier>{364450b2-14bf-4cc2-a8d3-316803397e70}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="dus\dar">
-      <UniqueIdentifier>{a54ad6cc-691f-4342-bef1-4b750923a6f5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="dus\dfstools">
-      <UniqueIdentifier>{cb67198a-32c9-4543-ae65-3172502cfe0d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ldus">
       <UniqueIdentifier>{04712346-68d9-489e-bed5-55f01b7c989a}</UniqueIdentifier>
     </Filter>
@@ -52,6 +43,12 @@
     <Filter Include="client\utils\moving_statitics">
       <UniqueIdentifier>{ebe447cf-4047-406a-b6a6-fb64570e8ed2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="client\algorithms">
+      <UniqueIdentifier>{7bee7620-4228-401a-bf41-9c99a524733e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dfslib">
+      <UniqueIdentifier>{2c34ba0c-7b66-4e05-8400-0226601d8de0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\client\address.c">
@@ -75,9 +72,6 @@
     <ClCompile Include="..\..\client\netdb.c">
       <Filter>client</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\client\sha256.c">
-      <Filter>client</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\client\storage.c">
       <Filter>client</Filter>
     </ClCompile>
@@ -92,21 +86,6 @@
     </ClCompile>
     <ClCompile Include="..\..\client\wallet.c">
       <Filter>client</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dus\programs\dar\source\lib\crc_c.c">
-      <Filter>dus\dar</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_crypt.c">
-      <Filter>dus\dfstools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_random.c">
-      <Filter>dus\dfstools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_string.c">
-      <Filter>dus\dfstools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\dus\programs\dfstools\source\lib\dfsrsa.c">
-      <Filter>dus\dfstools</Filter>
     </ClCompile>
     <ClCompile Include="..\system.c">
       <Filter>win</Filter>
@@ -177,6 +156,39 @@
     <ClCompile Include="..\..\client\json-rpc\rpc_commands.c">
       <Filter>client\json-rpc</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\client\xdag_config.c">
+      <Filter>client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\global.c">
+      <Filter>client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\algorithms\crc.c">
+      <Filter>client\algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\algorithms\sha256.c">
+      <Filter>client\algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\utils\string_utils.c">
+      <Filter>client\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dfslib\dfslib_crypt.c">
+      <Filter>dfslib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dfslib\dfslib_random.c">
+      <Filter>dfslib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dfslib\dfslib_string.c">
+      <Filter>dfslib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dfslib\dfsrsa.c">
+      <Filter>dfslib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\utils\random.c">
+      <Filter>client\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\client\utils\uuid.c">
+      <Filter>client\utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client\address.h">
@@ -198,9 +210,6 @@
       <Filter>client</Filter>
     </ClInclude>
     <ClInclude Include="..\..\client\netdb.h">
-      <Filter>client</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\client\sha256.h">
       <Filter>client</Filter>
     </ClInclude>
     <ClInclude Include="..\..\client\state.h">
@@ -229,36 +238,6 @@
     </ClInclude>
     <ClInclude Include="..\..\dnet\dnet_main.h">
       <Filter>dnet</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dnet\system.h">
-      <Filter>dnet</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dus\programs\dar\source\include\crc.h">
-      <Filter>dus\dar</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_crypt.h">
-      <Filter>dus\dfstools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_random.h">
-      <Filter>dus\dfstools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_string.h">
-      <Filter>dus\dfstools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dus\programs\dfstools\source\dfslib\dfslib_types.h">
-      <Filter>dus\dfstools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dus\programs\dfstools\source\include\dfsrsa.h">
-      <Filter>dus\dfstools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\ldus\source\include\ldus\atomic.h">
-      <Filter>ldus</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\ldus\source\include\ldus\list.h">
-      <Filter>ldus</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\ldus\source\include\ldus\rbtree.h">
-      <Filter>ldus</Filter>
     </ClInclude>
     <ClInclude Include="..\netdb.h">
       <Filter>win</Filter>
@@ -362,6 +341,54 @@
     </ClInclude>
     <ClInclude Include="..\..\client\json-rpc\rpc_commands.h">
       <Filter>client\json-rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\xdag_config.h">
+      <Filter>client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\global.h">
+      <Filter>client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\algorithms\crc.h">
+      <Filter>client\algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\algorithms\sha256.h">
+      <Filter>client\algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ldus\atomic.h">
+      <Filter>ldus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ldus\list.h">
+      <Filter>ldus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ldus\rbtree.h">
+      <Filter>ldus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\utils\string_utils.h">
+      <Filter>client\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dnet\dnet_system.h">
+      <Filter>dnet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dfslib\dfslib_crypt.h">
+      <Filter>dfslib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dfslib\dfslib_random.h">
+      <Filter>dfslib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dfslib\dfslib_string.h">
+      <Filter>dfslib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dfslib\dfslib_types.h">
+      <Filter>dfslib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dfslib\dfsrsa.h">
+      <Filter>dfslib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\utils\random.h">
+      <Filter>client\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\client\utils\uuid.h">
+      <Filter>client\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

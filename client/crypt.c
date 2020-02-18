@@ -10,17 +10,14 @@
 #include <openssl/err.h>
 #include <openssl/rand.h>
 #include <openssl/ecdsa.h>
+#include <secp256k1.h>
 #include "crypt.h"
 #include "transport.h"
 #include "utils/log.h"
 #include "system.h"
 
 #if USE_OPTIMIZED_EC == 1 || USE_OPTIMIZED_EC == 2
-
-#include "../secp256k1/include/secp256k1.h"
-
 secp256k1_context *ctx_noopenssl;
-
 #endif
 
 static EC_GROUP *group;
@@ -29,15 +26,9 @@ extern unsigned int xOPENSSL_ia32cap_P[4];
 extern int xOPENSSL_ia32_cpuid(unsigned int *);
 
 // initialization of the encryption system
-int xdag_crypt_init(int withrandom)
+int xdag_crypt_init()
 {
-	if(withrandom) {
-		uint64_t buf[64];
-		xOPENSSL_ia32_cpuid(xOPENSSL_ia32cap_P);
-		xdag_generate_random_array(buf, sizeof(buf));
-		xdag_debug("Seed  : [%s]", xdag_log_array(buf, sizeof(buf)));
-		RAND_seed(buf, sizeof(buf));
-	}
+	xOPENSSL_ia32_cpuid(xOPENSSL_ia32cap_P);
 
 #if USE_OPTIMIZED_EC == 1 || USE_OPTIMIZED_EC == 2
 	ctx_noopenssl = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
@@ -327,6 +318,7 @@ static uint8_t *add_number_to_sign(uint8_t *sign, const xdag_hash_t num)
 
 // verify that the signature (sign_r, sign_s) corresponds to a hash 'hash', a version for its own key
 // returns 0 on success
+//static int counter = 0;
 int xdag_verify_signature(const void *key, const xdag_hash_t hash, const xdag_hash_t sign_r, const xdag_hash_t sign_s)
 {
 	uint8_t buf[72], *ptr;
@@ -338,8 +330,8 @@ int xdag_verify_signature(const void *key, const xdag_hash_t hash, const xdag_ha
 	buf[1] = ptr - buf - 2;
 	res = ECDSA_verify(0, (const uint8_t*)hash, sizeof(xdag_hash_t), buf, ptr - buf, (EC_KEY*)key);
 
-	xdag_debug("Verify: res=%2d key=%lx hash=[%s] sign=[%s] r=[%s], s=[%s]", res, (long)key, xdag_log_hash(hash),
-		xdag_log_array(buf, ptr - buf), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
+    xdag_debug("Verify: res=%2d key=%lx hash=[%s] sign=[%s] r=[%s], s=[%s]", res, (long)key, xdag_log_hash(hash),
+        xdag_log_array(buf, ptr - buf), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
 
 	return res != 1;
 }

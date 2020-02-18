@@ -1,6 +1,7 @@
 # MSVC build stuff
 Release/
 Debug/
+build/
 .vs/
 
 /win/xdag.VC.db
@@ -35,3 +36,7 @@ xdag
 /client/dnet_key.dat
 /client/storage
 /client/wallet.dat
+
+# Mac OS
+*.DS_Store
+client/xdag.dSYM
