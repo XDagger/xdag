@@ -611,8 +611,8 @@ void processExitCommand()
 	xdag_block_finish();
 	xdag_mess("Closing storage module...");
 	xdag_storage_finish();
-	xdag_mess("Closing memory module...");
-	xdag_mem_finish();
+//	xdag_mess("Closing memory module...");
+//	xdag_mem_finish();
 }
 
 void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd)
@@ -945,7 +945,7 @@ int out_balances()
 	struct out_balances_data d;
 	unsigned i = 0;
 	xdag_set_log_level(0);
-	xdag_mem_init((xdag_get_frame() - xdag_get_start_frame()) << 17);
+//	xdag_mem_init((xdag_get_frame() - xdag_get_start_frame()) << 17);
 	xdag_crypt_init();
 	memset(&d, 0, sizeof(struct out_balances_data));
     if(xdag_rsdb_pre_init()) return -1;

@@ -182,7 +182,7 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 			return terminal();
 		} else if(ARG_EQUAL(argv[i], "-z", "")) { /* memory map  */
 			if(++i < argc) {
-				xdag_mem_tempfile_path(argv[i]);
+//				xdag_mem_tempfile_path(argv[i]);
 			}
         } else if(ARG_EQUAL(argv[i], "-m", "")) { /* mining thread number */
 			if(++i < argc) {

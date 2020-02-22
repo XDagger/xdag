@@ -8,17 +8,17 @@ extern "C" {
 #endif
 extern int g_use_tmpfile;
 
-extern void xdag_mem_tempfile_path(const char *tempfile_path);
+//extern void xdag_mem_tempfile_path(const char *tempfile_path);
 
-extern int xdag_mem_init(size_t size);
+//extern int xdag_mem_init(size_t size);
 
-extern void *xdag_malloc(size_t size);
+//extern void *xdag_malloc(size_t size);
 
-extern void xdag_free(void *mem);
+//extern void xdag_free(void *mem);
 
-extern void xdag_mem_finish(void);
+//extern void xdag_mem_finish(void);
 
-extern int xdag_free_all(void);
+//extern int xdag_free_all(void);
 
 extern char** xdagCreateStringArray(int count, int stringLen);
 extern void xdagFreeStringArray(char** stringArray, int count);
