@@ -1,6 +1,12 @@
 find_path(OPENSSL_ROOT_DIR
         NAMES include/openssl/crypto.h
-        PATHS /usr/local/opt/ /opt/local/ /usr/local/ /usr/
+        PATHS /usr/local/opt/openssl /opt/local/ /usr/local/ /usr/
+        NO_DEFAULT_PATH
+        )
+
+find_path(OpenSSL_DIR
+        NAMES include/openssl/crypto.h
+        PATHS /usr/local/opt/openssl /opt/local/ /usr/local/ /usr/
         NO_DEFAULT_PATH
         )
 
@@ -32,10 +38,12 @@ endif()
 
 mark_as_advanced(
         OPENSSL_ROOT_DIR
+        OPENSSL_DIR
         OPENSSL_INCLUDE_DIR
         OPENSSL_LIBRARY
 )
 
 set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
+set(CMAKE_REQUIRED_INCLUDES ${OpenSSL_DIR})
 set(CMAKE_REQUIRED_LIBRARIES ${OPENSSL_SSL_LIBRARY})
 set(CMAKE_REQUIRED_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY})
