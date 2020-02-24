@@ -3,9 +3,10 @@
 #include <string.h>
 #include <unistd.h>  // sysconf() - get CPU count
 #include <pthread.h>
-
 #include "rsdb.h"
 #include "global.h"
+
+#define RSDB_KEY_LEN (1 + sizeof(xdag_hashlow_t))
 
 int xdag_rsdb_conf_check(XDAG_RSDB  *rsdb)
 {
@@ -361,7 +362,7 @@ struct block_internal* xdag_rsdb_get_bi(const void* hp)
     struct block_internal* bi = NULL;
     uint64_t* hash = (uint64_t*)hp;
     if(hash[0] == 0 && hash[1] == 0 && hash[2] == 0) return NULL;
-    const size_t klen = 1 + sizeof(xdag_hashlow_t);
+    const size_t klen = RSDB_KEY_LEN;
     size_t vlen = 0;
     char* key = calloc(klen, 1);
     key[0] = HASH_BLOCK_INTERNAL;
@@ -374,8 +375,8 @@ struct block_internal* xdag_rsdb_get_bi(const void* hp)
 int xdag_rsdb_del_bi(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
 {
     int retcode = 0;
-    const size_t klen = 1 + sizeof(xdag_hashlow_t);
-    char key[ klen ] = {[0] = HASH_BLOCK_INTERNAL};
+    const size_t klen = RSDB_KEY_LEN;
+    char key[ RSDB_KEY_LEN ] = {[0] = HASH_BLOCK_INTERNAL};
     memcpy(key + 1, hash, klen - 1);
     retcode = xdag_rsdb_delkey(rsdb, key, klen);
     if(retcode) {
@@ -415,10 +416,10 @@ struct orphan_block* xdag_rsdb_seek_orpblock(XDAG_RSDB* rsdb)
 struct orphan_block* xdag_rsdb_get_orpblock(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
 {
     struct orphan_block* ob = NULL;
-    const size_t klen = 1 + sizeof(xdag_hashlow_t);
+    const size_t klen = RSDB_KEY_LEN;
     size_t vlen = 0;
-    char key[ klen ] = {[0] = HASH_ORP_BLOCK};
-    memcpy(key + 1, hash, klen - 1);
+    char key[RSDB_KEY_LEN] = {[0] = HASH_ORP_BLOCK};
+    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
     ob = xdag_rsdb_getkey(key, &klen, &vlen);
     return ob;
 }
@@ -427,8 +428,8 @@ int xdag_rsdb_del_orpblock(XDAG_RSDB* rsdb, struct orphan_block* ob)
 {
     if(!ob) return XDAG_RSDB_NULL;
     int retcode = 0;
-    const size_t klen = 1 + sizeof(xdag_hashlow_t);
-    char key[ klen ] = {[0] = HASH_ORP_BLOCK};
+    const size_t klen = RSDB_KEY_LEN;
+    char key[ RSDB_KEY_LEN ] = {[0] = HASH_ORP_BLOCK};
     memcpy(key + 1, ob->bi.hash, klen - 1);
     retcode = xdag_rsdb_delkey(rsdb, key, klen);
     if(retcode) {
@@ -440,9 +441,9 @@ int xdag_rsdb_del_orpblock(XDAG_RSDB* rsdb, struct orphan_block* ob)
 struct block_internal* xdag_rsdb_get_ourbi(xdag_hashlow_t hash)
 {
     struct block_internal* bi = NULL;
-    const size_t klen = 1 + sizeof(xdag_hashlow_t);
+    const size_t klen = RSDB_KEY_LEN;
     size_t vlen = 0;
-    char key[klen] = {[0] = HASH_OUR_BLOCK_INTERNAL};
+    char key[RSDB_KEY_LEN] = {[0] = HASH_OUR_BLOCK_INTERNAL};
     memcpy(key + 1, hash, klen - 1);
     bi = xdag_rsdb_getkey(key, &klen, &vlen);
     return bi;
@@ -451,9 +452,9 @@ struct block_internal* xdag_rsdb_get_ourbi(xdag_hashlow_t hash)
 uint8_t* xdag_rsdb_get_remark(xdag_hashlow_t hash)
 {
     uint8_t* remark = NULL;
-    const size_t klen = 1 + sizeof(xdag_hashlow_t);
+    const size_t klen = RSDB_KEY_LEN;
     size_t vlen = 0;
-    char key[ klen ] = {[0] = HASH_BLOCK_REMARK};
+    char key[ RSDB_KEY_LEN ] = {[0] = HASH_BLOCK_REMARK};
     memcpy(key + 1, hash, klen - 1);
     remark = xdag_rsdb_getkey(key, &klen, &vlen);
     return remark;
@@ -462,8 +463,8 @@ uint8_t* xdag_rsdb_get_remark(xdag_hashlow_t hash)
 int xdag_rsdb_del_ourbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
 {
     int retcode = 0;
-    const size_t klen = 1 + sizeof(xdag_hashlow_t);
-    char key[ klen ] = {[0] = HASH_OUR_BLOCK_INTERNAL};
+    const size_t klen = RSDB_KEY_LEN;
+    char key[ RSDB_KEY_LEN ] = {[0] = HASH_OUR_BLOCK_INTERNAL};
     memcpy(key + 1, hash, klen - 1);
     retcode = xdag_rsdb_delkey(rsdb, key, klen);
     if(retcode) {
@@ -475,8 +476,8 @@ int xdag_rsdb_del_ourbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
 int xdag_rsdb_del_remark(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
 {
     int retcode = 0;
-    const size_t klen = 1 + sizeof(xdag_hashlow_t);
-    char key[ klen ] = {[0] = HASH_BLOCK_REMARK};
+    const size_t klen = RSDB_KEY_LEN;
+    char key[ RSDB_KEY_LEN ] = {[0] = HASH_BLOCK_REMARK};
     memcpy(key + 1, hash, klen - 1);
     retcode = xdag_rsdb_delkey(rsdb, key, klen);
     if(retcode) {
@@ -507,8 +508,8 @@ int xdag_rsdb_put_bi(XDAG_RSDB* rsdb, struct block_internal* bi)
 {
     if(!bi) return XDAG_RSDB_NULL;
     int retcode = 0;
-    const size_t klen = 1 + sizeof(xdag_hashlow_t);
-    char key[ klen ] = {[0] = HASH_BLOCK_INTERNAL};
+    const size_t klen = RSDB_KEY_LEN;
+    char key[ RSDB_KEY_LEN ] = {[0] = HASH_BLOCK_INTERNAL};
     memcpy(key + 1, bi->hash, klen - 1);
     retcode = xdag_rsdb_putkey(rsdb, key, klen, (const char*)bi, sizeof(struct block_internal));
     if(retcode) {
@@ -521,8 +522,8 @@ int xdag_rsdb_put_orpblock(XDAG_RSDB* rsdb, struct orphan_block* ob)
 {
     if(!ob) return XDAG_RSDB_NULL;
     int retcode = 0;
-    const size_t klen = 1 + sizeof(xdag_hashlow_t);
-    char key[ klen ] = {[0] = HASH_ORP_BLOCK};
+    const size_t klen = RSDB_KEY_LEN;
+    char key[ RSDB_KEY_LEN ] = {[0] = HASH_ORP_BLOCK};
     memcpy(key + 1, ob->bi.hash, klen - 1);
     retcode = xdag_rsdb_putkey(rsdb, key, klen, (const char*)ob, sizeof(struct orphan_block));
     if(retcode) {
@@ -534,8 +535,8 @@ int xdag_rsdb_put_orpblock(XDAG_RSDB* rsdb, struct orphan_block* ob)
 int xdag_rsdb_put_ourbi(XDAG_RSDB* rsdb, struct block_internal* bi)
 {
     int retcode = 0;
-    const size_t klen = 1 + sizeof(xdag_hashlow_t);
-    char key[ klen ] = {[0] = HASH_OUR_BLOCK_INTERNAL};
+    const size_t klen = RSDB_KEY_LEN;
+    char key[ RSDB_KEY_LEN ] = {[0] = HASH_OUR_BLOCK_INTERNAL};
     memcpy(key + 1, bi->hash, klen - 1);
     retcode = xdag_rsdb_putkey(rsdb, key, klen, (const char*)bi, sizeof(struct block_internal));
     if(retcode) {
@@ -547,8 +548,8 @@ int xdag_rsdb_put_ourbi(XDAG_RSDB* rsdb, struct block_internal* bi)
 int xdag_rsdb_put_remark(XDAG_RSDB* rsdb, struct block_internal* bi, xdag_remark_t strbuf)
 {
     int retcode = 0;
-    const size_t klen = 1 + sizeof(xdag_hashlow_t);
-    char key[ klen ] = {[0] = HASH_BLOCK_REMARK};
+    const size_t klen = RSDB_KEY_LEN;
+    char key[ RSDB_KEY_LEN ] = {[0] = HASH_BLOCK_REMARK};
     memcpy(key + 1, bi->hash, klen - 1);
     retcode = xdag_rsdb_putkey(rsdb, key, klen, (const char*)strbuf, sizeof(xdag_remark_t));
     if(retcode) {
@@ -559,8 +560,8 @@ int xdag_rsdb_put_remark(XDAG_RSDB* rsdb, struct block_internal* bi, xdag_remark
 
 int xdag_rsdb_writebatch_put_bi(XDAG_RSDB_BATCH* batch, struct block_internal* bi)
 {
-    const size_t klen = 1 + sizeof(xdag_hashlow_t);
-    char key[ klen ] = {[0] = HASH_BLOCK_INTERNAL};
+    const size_t klen = RSDB_KEY_LEN;
+    char key[ RSDB_KEY_LEN ] = {[0] = HASH_BLOCK_INTERNAL};
     memcpy(key + 1, bi->hash, klen - 1);
     rocksdb_writebatch_put(batch->writebatch, key, klen, (const char*)bi, sizeof(struct block_internal));
     return XDAG_RSDB_OP_SUCCESS;

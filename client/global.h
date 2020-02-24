@@ -72,12 +72,8 @@ extern enum xdag_field_type g_block_header_type;
 
 extern xdag_time_t g_apollo_fork_time;
 
-#if defined (__MACOS__) || defined (__APPLE__)
 extern int is_pool(void);
 extern int is_wallet(void);
-#else
-inline int is_pool(void) { return g_xdag_type == XDAG_POOL; }
-inline int is_wallet(void) { return g_xdag_type == XDAG_WALLET; }
-#endif
+
 
 #endif
