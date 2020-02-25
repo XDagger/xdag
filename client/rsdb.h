@@ -9,6 +9,8 @@
 #include "system.h"
 #include "block.h"
 
+#define RSDB_KEY_LEN (1 + sizeof(xdag_hashlow_t))
+
 typedef struct xdag_rsdb_conf {
     char*                              db_name;
     char*                              db_path;

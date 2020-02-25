@@ -312,6 +312,11 @@ void *dnet_send_xdag_packet(void *block, void *data)
 	struct xconnection *conn = sp->connection;
 	struct xsector_extended *buf;
 
+	if(NULL == block || NULL == data){
+		fprintf(stderr,"fatal error packet %p or data %p send in dnet is NULL \n",block,data);
+		return 0;
+	}
+
 	if (sp->time_limit && time(NULL) > sp->time_limit) {
 		return (void*)(intptr_t)-1;
 	}

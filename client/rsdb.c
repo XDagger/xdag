@@ -6,7 +6,6 @@
 #include "rsdb.h"
 #include "global.h"
 
-#define RSDB_KEY_LEN (1 + sizeof(xdag_hashlow_t))
 
 int xdag_rsdb_conf_check(XDAG_RSDB  *rsdb)
 {
