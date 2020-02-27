@@ -205,7 +205,7 @@ static int process_transport_block(struct xdag_block *received_block, struct xco
 
 			struct send_parameters send_parameters = {connection, time(NULL) + REQUEST_WAIT, 0, 0};
 
-			if (pos == -2l || (pos >= 0 && (blk = xdag_storage_load(received_block->field[1].hash, t, pos, &buf)))) {
+			if (pos == -2l && (blk = xdag_storage_load(received_block->field[1].hash, t, pos, &buf))) {
 				dnet_send_xdag_packet(blk, &send_parameters);
 			}
 
