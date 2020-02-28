@@ -2,17 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>  // sysconf() - get CPU count
-#include <pthread.h>
 #include "rsdb.h"
 #include "global.h"
-
 
 int xdag_rsdb_conf_check(XDAG_RSDB  *rsdb)
 {
     if(rsdb == NULL ||
        !strlen(rsdb->config->db_name) ||
-       !strlen(rsdb->config->db_path) ||
-       !strlen(rsdb->config->db_backup_path)
+       !strlen(rsdb->config->db_path)
     )
     {
         return XDAG_RSDB_CONF_ERROR;
@@ -45,15 +42,7 @@ int xdag_rsdb_conf(XDAG_RSDB  *rsdb)
     rocksdb_readoptions_t* read_options = rocksdb_readoptions_create();
     rocksdb_flushoptions_t* flush_options = rocksdb_flushoptions_create();
     rocksdb_restore_options_t* restore_options = rocksdb_restore_options_create();
-    
-    
-    
-//    options.setCreateIfMissing(true);
-//    options.setCompressionType(CompressionType.LZ4_COMPRESSION);
-//    options.setBottommostCompressionType(CompressionType.ZSTD_COMPRESSION);
-//    options.setLevelCompactionDynamicLevelBytes(true);
-//    options.setMaxOpenFiles(settings.getMaxOpenFiles());
-//    options.setIncreaseParallelism(settings.getMaxThreads());
+
     // set max open file limit
     rocksdb_options_set_max_open_files(options, 1024);
     rocksdb_options_set_create_if_missing(options, 1);
@@ -67,18 +56,15 @@ int xdag_rsdb_conf(XDAG_RSDB  *rsdb)
     rocksdb_block_based_options_set_block_cache(block_based_table_options, block_cache);
     rocksdb_block_based_options_set_cache_index_and_filter_blocks(block_based_table_options, 1);
     rocksdb_block_based_options_set_pin_l0_filter_and_index_blocks_in_cache(block_based_table_options, 1);
-    
-    
+
     // Optimize RocksDB. This is the easiest way to
     // get RocksDB to perform well
     rocksdb_options_increase_parallelism(options, (int)(cpus));
     rocksdb_readoptions_set_prefix_same_as_start(read_options, 1);
     rocksdb_readoptions_set_verify_checksums(read_options, 0);
-    
-    
+
     // create the DB if it's not already present
     rocksdb_options_set_create_if_missing(options, 1);
-    
     rocksdb_options_set_block_based_table_factory(options, block_based_table_options);
     
     rsdb->options = options;
@@ -86,8 +72,10 @@ int xdag_rsdb_conf(XDAG_RSDB  *rsdb)
     rsdb->read_options = read_options;
     rsdb->flush_options = flush_options;
     rsdb->restore_options = restore_options;
-    
-    rsdb->backup_engine = rocksdb_backup_engine_open(rsdb->options, rsdb->config->db_backup_path, &errmsg);
+    if(rsdb->config->db_backup_path) {
+        rsdb->backup_engine = rocksdb_backup_engine_open(rsdb->options, rsdb->config->db_backup_path, &errmsg);
+    }
+
     if(errmsg)
     {
         return XDAG_RSDB_BKUP_ERROR;
@@ -144,7 +132,6 @@ int xdag_rsdb_close(XDAG_RSDB* rsdb)
     if(rsdb->db) rocksdb_close(rsdb->db);
     return XDAG_RSDB_OP_SUCCESS;
 }
-
 
 XDAG_RSDB* xdag_rsdb_new(char* db_name, char* db_path, char* db_backup_path)
 {
@@ -275,9 +262,9 @@ int xdag_rsdb_pre_init(void)
 
     rsdb->config = rsdb_config;
 
-    rsdb->config->db_name = strdup("rsdb");
-    rsdb->config->db_path = strdup("rsdb");
-    rsdb->config->db_backup_path = strdup("rsdb_backup");
+    rsdb->config->db_name = strdup("chainstate");
+    rsdb->config->db_path = strdup("chainstate");
+    //rsdb->config->db_backup_path = strdup("chainstate_backup");
 
     int error_code = 0;
     if((error_code = xdag_rsdb_conf(rsdb))) {
@@ -371,19 +358,6 @@ struct block_internal* xdag_rsdb_get_bi(const void* hp)
     return bi;
 }
 
-int xdag_rsdb_del_bi(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
-{
-    int retcode = 0;
-    const size_t klen = RSDB_KEY_LEN;
-    char key[ RSDB_KEY_LEN ] = {[0] = HASH_BLOCK_INTERNAL};
-    memcpy(key + 1, hash, klen - 1);
-    retcode = xdag_rsdb_delkey(rsdb, key, klen);
-    if(retcode) {
-        return retcode;
-    }
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
 struct orphan_block* xdag_rsdb_seek_orpblock(XDAG_RSDB* rsdb)
 {
     struct orphan_block* ob = calloc(sizeof(struct orphan_block), 1);
@@ -407,12 +381,11 @@ struct orphan_block* xdag_rsdb_seek_orpblock(XDAG_RSDB* rsdb)
         return NULL;
     }
     memcpy(ob, val, sizeof(struct orphan_block));
-//    memcpy(xb, val + sizeof(struct block_internal), sizeof(struct xdag_block));
     rocksdb_iter_destroy(iter);
     return ob;
 }
 
-struct orphan_block* xdag_rsdb_get_orpblock(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
+struct orphan_block* xdag_rsdb_get_orpblock(xdag_hashlow_t hash)
 {
     struct orphan_block* ob = NULL;
     const size_t klen = RSDB_KEY_LEN;
@@ -423,13 +396,13 @@ struct orphan_block* xdag_rsdb_get_orpblock(XDAG_RSDB* rsdb, xdag_hashlow_t hash
     return ob;
 }
 
-int xdag_rsdb_del_orpblock(XDAG_RSDB* rsdb, struct orphan_block* ob)
+int xdag_rsdb_del_orpblock(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
 {
-    if(!ob) return XDAG_RSDB_NULL;
+    if(!hash) return XDAG_RSDB_NULL;
     int retcode = 0;
     const size_t klen = RSDB_KEY_LEN;
     char key[ RSDB_KEY_LEN ] = {[0] = HASH_ORP_BLOCK};
-    memcpy(key + 1, ob->bi.hash, klen - 1);
+    memcpy(key + 1, hash, klen - 1);
     retcode = xdag_rsdb_delkey(rsdb, key, klen);
     if(retcode) {
         return retcode;
@@ -464,19 +437,6 @@ int xdag_rsdb_del_ourbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
     int retcode = 0;
     const size_t klen = RSDB_KEY_LEN;
     char key[ RSDB_KEY_LEN ] = {[0] = HASH_OUR_BLOCK_INTERNAL};
-    memcpy(key + 1, hash, klen - 1);
-    retcode = xdag_rsdb_delkey(rsdb, key, klen);
-    if(retcode) {
-        return retcode;
-    }
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
-int xdag_rsdb_del_remark(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
-{
-    int retcode = 0;
-    const size_t klen = RSDB_KEY_LEN;
-    char key[ RSDB_KEY_LEN ] = {[0] = HASH_BLOCK_REMARK};
     memcpy(key + 1, hash, klen - 1);
     retcode = xdag_rsdb_delkey(rsdb, key, klen);
     if(retcode) {
