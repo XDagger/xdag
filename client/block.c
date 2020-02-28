@@ -80,7 +80,7 @@ void append_block_info(struct block_internal *bi);
 int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
 static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
 int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t send_time);
-int remove_orphan(uint16_t flags, xdag_hashlow_t);
+int remove_orphan(xdag_hashlow_t);
 //struct orphan_block* seek_orphan(void);
 void add_orphan(struct block_internal*, struct xdag_block*);
 static inline size_t remark_acceptance(xdag_remark_t);
@@ -126,10 +126,10 @@ static uint64_t apply_block(struct block_internal* bi)
 	}
 
 	bi->flags |= BI_MAIN_REF;
-    remove_orphan(bi->flags, bi->hash);
+    remove_orphan(bi->hash);
 	for (int i = 0; i < bi->nlinks; ++i) {
         struct block_internal* lbi = xdag_rsdb_get_bi(bi->link[i]);
-        remove_orphan(lbi->flags,lbi->hash);
+        remove_orphan(lbi->hash);
 		xdag_amount_t ref_amount = apply_block(lbi);
 		if (ref_amount == -1l) {
             if(lbi) {
@@ -356,7 +356,7 @@ static void check_new_main(void)
             memset(pre_main_chain_bi, 0, sizeof(struct block_internal));
             memcpy(pre_main_chain_bi, bi, sizeof(struct block_internal));
             p = pre_main_chain_bi;
-            remove_orphan(p->flags, p->hash);
+            remove_orphan(p->hash);
             ++i;
         }
 
@@ -989,7 +989,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	}
 
     for(i = 0; i < tmpNodeBlock.nlinks; ++i) {
-        remove_orphan(tmpNodeBlock.flags, tmpNodeBlock.hash);
+        remove_orphan(tmpNodeBlock.hash);
     }
 
 	add_orphan(nodeBlock, newBlock);
@@ -1177,7 +1177,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
                 setfld(XDAG_FIELD_OUT, ob->bi.hash, xdag_hashlow_t);
                 res++;
             }
-            remove_orphan(ob->bi.flags, ob->bi.hash);
+            remove_orphan(ob->bi.hash);
             free(ob);
             ob = NULL;
             ob = xdag_rsdb_seek_orpblock(g_xdag_rsdb);
@@ -2274,7 +2274,7 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 	return n;
 }
 
-int remove_orphan(uint16_t flags, xdag_hashlow_t hash)
+int remove_orphan(xdag_hashlow_t hash)
 {
         struct orphan_block* ob = xdag_rsdb_get_orpblock(hash);
         if(ob) {
@@ -2320,6 +2320,9 @@ void add_orphan(struct block_internal* bi, struct xdag_block* xb)
 
     xdag_rsdb_put_orpblock(g_xdag_rsdb, ob);
     xdag_rsdb_put_extstats(g_xdag_rsdb);
+    if(ob) {
+        free(ob);
+    }
 }
 
 void xdag_list_orphan_blocks(int count, FILE *out)
@@ -2476,7 +2479,9 @@ static int load_remark(struct block_internal* bi) {
     //xdag_remark_t t;
     if(remark == NULL) {
         xdag_err("Remark field not found [function: load_remark]");
+        pthread_mutex_lock(&block_mutex);
         bi->flags &= ~BI_REMARK;
+        pthread_mutex_unlock(&block_mutex);
         return 0;
     }
 	return add_remark_bi(bi, remark);
