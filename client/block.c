@@ -346,12 +346,17 @@ static void check_new_main(void)
 //            ++i;
 //        }
 //    }
-    struct block_internal* bi = NULL, *p = NULL;
-    struct block_internal* current_bi = calloc(sizeof(struct block_internal), 1);
-    struct block_internal* pre_main_chain_bi = calloc(sizeof(struct block_internal), 1);
+    struct block_internal *bi = NULL, *pre_bi = NULL, *p = NULL;
+    struct block_internal *current_bi = calloc(sizeof(struct block_internal), 1);
+    struct block_internal *pre_main_chain_bi = calloc(sizeof(struct block_internal), 1);
     for(bi = top_main_chain, i = 0;
         bi && !(bi->flags & BI_MAIN);)
     {
+        if(pre_bi && pre_bi != top_main_chain) {
+            free(pre_bi);
+            pre_bi = NULL;
+        }
+
         if(bi->flags & BI_MAIN_CHAIN) {
             memset(pre_main_chain_bi, 0, sizeof(struct block_internal));
             memcpy(pre_main_chain_bi, bi, sizeof(struct block_internal));
@@ -380,7 +385,7 @@ static void check_new_main(void)
             memset(current_bi, 0, sizeof(struct block_internal));
             memcpy(current_bi, bi, sizeof(struct block_internal));
             if(bi != top_main_chain) {
-                free(bi);
+                pre_bi = bi;
                 bi = NULL;
             }
         }
