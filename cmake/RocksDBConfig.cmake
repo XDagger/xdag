@@ -1,11 +1,11 @@
 find_path(RocksDB_ROOT_DIR
         NAMES include/rocksdb/c.h
-        PATHS /usr/local/opt/rocksdb/ /opt/local/ /usr/local/ /usr/
+        PATHS /usr/local/ /usr/local/opt/rocksdb/ /opt/local/ /usr/
         NO_DEFAULT_PATH
         )
 find_path(RocksDB_DIR
         NAMES include/rocksdb/c.h
-        PATHS /usr/local/opt/rocksdb/ /opt/local/ /usr/local/ /usr/
+        PATHS /usr/local/ /usr/local/opt/rocksdb/ /opt/local/ /usr/
         NO_DEFAULT_PATH
         )
 

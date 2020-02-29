@@ -1,6 +1,6 @@
 find_path(SECP256K1_ROOT_DIR
         NAMES include/secp256k1.h
-        PATHS /usr/local/opt/ /opt/local/ /usr/local/ /usr/
+        PATHS /usr/local/ /usr/local/opt/ /opt/local/ /usr/
         NO_DEFAULT_PATH
         )
 

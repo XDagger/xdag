@@ -1534,7 +1534,30 @@ int xdag_blocks_start(int mining_threads_count, int miner_address)
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&block_mutex, &attr);
 	pthread_mutex_init(&rbtree_mutex, 0);
-	int err = pthread_create(&th, 0, work_thread, (void*)(uintptr_t)(unsigned)mining_threads_count);
+
+	pthread_attr_t * attr_work_thread = NULL;
+#if defined(__APPLE__)
+	pthread_attr_t attr_storage;
+	struct rlimit lim;
+#endif
+
+#if defined(__APPLE__)
+	if (getrlimit(RLIMIT_STACK, &lim))
+		abort();
+
+	attr_work_thread = &attr_storage;
+	if (pthread_attr_init(attr_work_thread)){
+		printf("set work thread stack size failed \n");
+		abort();
+	}
+
+	if (pthread_attr_setstacksize(attr_work_thread, lim.rlim_max)){
+		printf("set work thread stack size failed \n");
+		abort();
+	}
+#endif
+
+	int err = pthread_create(&th, attr_work_thread, work_thread, (void*)(uintptr_t)(unsigned)mining_threads_count);
 	if(err != 0) {
 		printf("create work_thread failed, error : %s\n", strerror(err));
 		return -1;
@@ -1544,6 +1567,13 @@ int xdag_blocks_start(int mining_threads_count, int miner_address)
 		printf("create pool_main_thread failed, error : %s\n", strerror(err));
 		return -1;
 	}
+
+#if defined(__APPLE__)
+	if (attr_work_thread != NULL){
+		printf("release the work thread attr \n");
+		pthread_attr_destroy(attr_work_thread);
+	}
+#endif
 
 	return 0;
 }

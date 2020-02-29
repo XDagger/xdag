@@ -1,12 +1,12 @@
 find_path(OPENSSL_ROOT_DIR
         NAMES include/openssl/crypto.h
-        PATHS /usr/local/opt/openssl /opt/local/ /usr/local/ /usr/
+        PATHS /usr/local/ /usr/local/opt/openssl /opt/local/ /usr/
         NO_DEFAULT_PATH
         )
 
 find_path(OpenSSL_DIR
         NAMES include/openssl/crypto.h
-        PATHS /usr/local/opt/openssl /opt/local/ /usr/local/ /usr/
+        PATHS /usr/local/ /usr/local/opt/openssl /opt/local/ /usr/
         NO_DEFAULT_PATH
         )
 
