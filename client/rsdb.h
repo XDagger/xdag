@@ -93,7 +93,7 @@ int xdag_rsdb_load(XDAG_RSDB* db);
 
 int xdag_rsdb_putkey(XDAG_RSDB* db, const char* key, size_t klen, const char* value, size_t vlen);
 
-void* xdag_rsdb_getkey(const char* key, const size_t* klen, size_t* vlen);
+void* xdag_rsdb_getkey(const char* key, const size_t klen, size_t* vlen);
 
 int xdag_rsdb_delkey(XDAG_RSDB* db, const char* key, size_t klen);
 
@@ -111,7 +111,7 @@ int xdag_rsdb_get_stats(XDAG_RSDB* rsdb);
 int xdag_rsdb_put_extstats(XDAG_RSDB* rsdb);
 int xdag_rsdb_get_extstats(XDAG_RSDB* rsdb);
 
-struct block_internal* xdag_rsdb_get_bi(const void* hp);
+struct block_internal* xdag_rsdb_get_bi(xdag_hashlow_t hash);
 struct orphan_block* xdag_rsdb_get_orpblock(xdag_hashlow_t hash);
 struct block_internal* xdag_rsdb_get_ourbi(xdag_hashlow_t hash);
 uint8_t* xdag_rsdb_get_remark(xdag_hashlow_t hash);

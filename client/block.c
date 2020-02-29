@@ -1788,7 +1788,7 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 }
 
 // returns position and time of block by hash; if block is extra and block != 0 also returns the whole block
-int64_t xdag_get_block_pos(const xdag_hash_t hash, xtime_t *t, struct xdag_block *block)
+int64_t xdag_get_block_pos(xdag_hash_t hash, xtime_t *t, struct xdag_block *block)
 {
     struct block_internal *bi = xdag_rsdb_get_bi(hash);
     int64_t pos = 0;
@@ -1831,12 +1831,12 @@ int xdag_get_key(xdag_hash_t hash)
 int xdag_blocks_reset(void)
 {
 	pthread_mutex_lock(&block_mutex);
-	if (g_xdag_state != XDAG_STATE_REST) {
-		xdag_crit("The local storage is corrupted. Resetting blocks engine.");
-		g_xdag_state = XDAG_STATE_REST;
-		xdag_show_state(0);
-	}
-	pthread_mutex_unlock(&block_mutex);
+    if (g_xdag_state != XDAG_STATE_REST) {
+        xdag_crit("The local storage is corrupted. Resetting blocks engine.");
+        g_xdag_state = XDAG_STATE_REST;
+        xdag_show_state(0);
+    }
+    pthread_mutex_unlock(&block_mutex);
 
 	return 0;
 }
@@ -2306,32 +2306,31 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 
 int remove_orphan(xdag_hashlow_t hash)
 {
-        struct orphan_block* ob = xdag_rsdb_get_orpblock(hash);
-        if(ob) {
-            ob->bi.flags |= BI_REF;
-            xdag_rsdb_put_bi(g_xdag_rsdb, &(ob->bi));
-            xdag_rsdb_del_orpblock(g_xdag_rsdb, hash);
-            int index = get_orphan_index(&(ob->bi));
-            if(index) {
-                ob->bi.storage_pos = xdag_storage_save(&(ob->xb));
-                ob->bi.flags &= ~BI_EXTRA;
-                g_xdag_extstats.nextra--;
-            } else {
-                g_xdag_extstats.nnoref--;
-            }
-            xdag_rsdb_put_extstats(g_xdag_rsdb);
-            free(ob);
-            return 0;
-
+    struct orphan_block* ob = xdag_rsdb_get_orpblock(hash);
+    if(ob) {
+        ob->bi.flags |= BI_REF;
+        int index = get_orphan_index(&(ob->bi));
+        if(index) {
+            ob->bi.storage_pos = xdag_storage_save(&(ob->xb));
+            ob->bi.flags &= ~BI_EXTRA;
+            g_xdag_extstats.nextra--;
         } else {
-            struct block_internal* bi = xdag_rsdb_get_bi(hash);
-            if(bi) {
-                bi->flags |= BI_REF;
-                xdag_rsdb_put_bi(g_xdag_rsdb, bi);
-                free(bi);
-            }
+            g_xdag_extstats.nnoref--;
         }
-        return 1;
+        xdag_rsdb_put_bi(g_xdag_rsdb, &(ob->bi));
+        xdag_rsdb_put_extstats(g_xdag_rsdb);
+        xdag_rsdb_del_orpblock(g_xdag_rsdb, hash);
+        free(ob);
+        return 0;
+    } else {
+        struct block_internal* bi = xdag_rsdb_get_bi(hash);
+        if(bi) {
+            bi->flags |= BI_REF;
+            xdag_rsdb_put_bi(g_xdag_rsdb, bi);
+            free(bi);
+        }
+    }
+    return 1;
 }
 
 void add_orphan(struct block_internal* bi, struct xdag_block* xb)

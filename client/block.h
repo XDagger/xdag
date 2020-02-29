@@ -221,7 +221,7 @@ extern int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance);
 extern xdag_amount_t xdag_get_supply(uint64_t nmain);
 
 // returns position and time of block by hash; if block is extra and block != 0 also returns the whole block
-extern int64_t xdag_get_block_pos(const xdag_hash_t hash, xtime_t *time, struct xdag_block *block);
+extern int64_t xdag_get_block_pos(xdag_hash_t hash, xtime_t *time, struct xdag_block *block);
 
 // return state info string
 extern const char* xdag_get_block_state_info(uint8_t flag);

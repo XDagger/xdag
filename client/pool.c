@@ -695,7 +695,7 @@ static int register_new_miner(connection_list_element *connection)
 	struct connection_pool_data *conn_data = &connection->connection_data;
 
 	xtime_t tm;
-	const int64_t position = xdag_get_block_pos((const uint64_t*)conn_data->data, &tm, 0);
+	const int64_t position = xdag_get_block_pos((uint64_t*)conn_data->data, &tm, 0);
 	if(position < 0) {
 		char address_buf[33] = {0};
 		char message[100] = {0};
