@@ -1385,6 +1385,8 @@ int pay_miners(xtime_t time)
 	} else if (pos < 0) {
 		return -6;
 	} else {
+		xdag_info("%s load block hash %016llx%016llx%016llx%016llx time %llu pos %llu ",__FUNCTION__,
+							hash[3],hash[2],hash[1],hash[0],time,pos);
 		struct xdag_block *block = xdag_storage_load(hash, time, pos, &buf);
 		if(!block) return -7;
 	}
