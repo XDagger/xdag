@@ -182,6 +182,8 @@ begin:
 		mess = "can't find the block";
 		goto err;
 	} else {
+		xdag_info("%s load block hash %016llx%016llx%016llx%016llx time %llu pos %llu ",__FUNCTION__,
+							hash[3],hash[2],hash[1],hash[0],t,pos);
 		struct xdag_block *blk = xdag_storage_load(hash, t, pos, &b);
 		if(!blk) {
 			mess = "can't load the block";
