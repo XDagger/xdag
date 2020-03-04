@@ -388,6 +388,9 @@ struct orphan_block* xdag_rsdb_get_orpblock(xdag_hashlow_t hash)
     key[0] = HASH_ORP_BLOCK;
     memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
     ob = xdag_rsdb_getkey(key, RSDB_KEY_LEN, &vlen);
+    if(key) {
+        free(key);
+    }
     return ob;
 }
 
@@ -444,6 +447,9 @@ int xdag_rsdb_del_ourbi(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
     key[0] = HASH_OUR_BLOCK_INTERNAL;
     memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
     retcode = xdag_rsdb_delkey(rsdb, key, RSDB_KEY_LEN);
+    if(key) {
+        free(key);
+    }
     if(retcode) {
         return retcode;
     }
