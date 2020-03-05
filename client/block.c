@@ -353,26 +353,10 @@ static void check_new_main(void)
         pre_b = b;
     }
 
-    if(pre_b && pre_b != top_main_chain && pre_b != p) {
-        free(pre_b);
-    }
-
-//    if (p && (p->flags & BI_REF) && i > MAX_WAITING_MAIN && xdag_get_xtimestamp() >= p->time + 2 * 1024) {
-//        set_main(p);
-//    }
-
-    int c2 = 0;
-    int c3 = i > MAX_WAITING_MAIN;
-    int c4 = 0;
-    if(p) {
-        c4 = xdag_get_xtimestamp() >= p->time + 2 * 1024;
-    }
-    if(p) {
-        c2 = p->flags & BI_REF;
-    }
-    if (p && c2 && c3 && c4) {
+    if (p && (p->flags & BI_REF) && i > MAX_WAITING_MAIN && xdag_get_xtimestamp() >= p->time + 2 * 1024) {
         set_main(p);
     }
+    if(pre_b && pre_b != top_main_chain && pre_b != p) free(pre_b);
     if(p && p != top_main_chain) free(p);
 }
 
@@ -549,11 +533,12 @@ static int check_block_header(struct xdag_block *newBlock, int *pi)
     return 0;
 }
 
-static int check_block_time(struct block_internal *pbi, xtime_t limit, int *pi)
+static int check_block_time(struct xdag_block *newBlock, xtime_t limit, int *pi)
 {
     const xtime_t timestamp = xdag_get_xtimestamp();
-    if(pbi->time > timestamp + MAIN_CHAIN_PERIOD / 4 || pbi->time < XDAG_TEST_ERA
-		|| (limit && timestamp - pbi->time > limit)) {
+    xtime_t t = newBlock->field[0].time;
+    if(t > timestamp + MAIN_CHAIN_PERIOD / 4 || t < XDAG_TEST_ERA
+		|| (limit && timestamp - t > limit)) {
         *pi = 0;
 		return 2;
 	}
@@ -593,12 +578,10 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
     xdag_hash(newBlock, sizeof(struct xdag_block), tmpNodeBlock.hash);
 
     if(check_block_exist(tmpNodeBlock.hash)) return 0;
-
     if(err = check_block_header(newBlock, &i)) goto end;
+    if(err = check_block_time(newBlock, limit, &i)) goto end;
 
 	tmpNodeBlock.time = newBlock->field[0].time;
-
-    if(err = check_block_time(&tmpNodeBlock, limit, &i)) goto end;
 
 	for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
 		switch((type = xdag_type(newBlock, i))) {
