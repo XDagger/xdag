@@ -174,7 +174,8 @@ struct xdag_block *xdag_storage_load(xdag_hash_t hash, xtime_t time, uint64_t po
 	}
 
 	if (!buf) {
-		xdag_blocks_reset();
+        xdag_info("can not found block: %016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0]);
+		//xdag_blocks_reset();
 	}
 
 	return buf;
@@ -223,7 +224,6 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 		} else {
 			todo = 0;
 		}
-		
 		pthread_mutex_unlock(&storage_mutex);
 		
 		uint64_t pos0 = pos;

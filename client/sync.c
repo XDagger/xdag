@@ -51,35 +51,36 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
 
 	xdag_hash(b, sizeof(struct xdag_block), hash);
 
+	//TODO store to rocksdb for wait list
 	for (p = get_list(b->field[nfield].hash), q = *p; q; q = q->next) {
 		if (!memcmp(&q->b, b, sizeof(struct xdag_block))) {
 			res = (t - q->t >= REQ_PERIOD);
-			
+
 			q->conn = conn;
 			q->nfield = nfield;
 			q->ttl = ttl;
-			
+
 			if (res) q->t = t;
-			
+
 			return res;
 		}
 	}
 
 	q = (struct sync_block *)malloc(sizeof(struct sync_block));
 	if (!q) return -1;
-	
+
 	memcpy(&q->b, b, sizeof(struct xdag_block));
 	memcpy(&q->hash, hash, sizeof(xdag_hash_t));
-	
+
 	q->conn = conn;
 	q->nfield = nfield;
 	q->ttl = ttl;
 	q->t = t;
 	q->next = *p;
-	
+
 	*p = q;
 	p = get_list_r(hash);
-	
+
 	q->next_r = *p;
 	*p = q;
 	
@@ -144,23 +145,24 @@ int xdag_sync_add_block_nolock(struct xdag_block *b, struct xconnection *conn)
 		res = (res >> 4) & 0xf;
 		if (push_block_nolock(b, conn, res, ttl)) {
 			struct sync_block **p, *q;
+			// this is not exist block's hash at this xdag_blocks
 			uint64_t *hash = b->field[res].hash;
 			time_t t = time(0);
  
 begin:
 			for (p = get_list_r(hash); (q = *p); p = &q->next_r) {
-				if (!memcmp(hash, q->hash, sizeof(xdag_hashlow_t))) {
-					if (t - q->t < REQ_PERIOD) {
-						return 0;
-					}
+                if (!memcmp(hash, q->hash, sizeof(xdag_hashlow_t))) {
+                    if (t - q->t < REQ_PERIOD) {
+                        return 0;
+                    }
 
-					q->t = t;
-					hash = q->b.field[q->nfield].hash;
+                    q->t = t;
+                    hash = q->b.field[q->nfield].hash;
 
-					goto begin;
-				}
-			}
-			
+                    goto begin;
+                }
+            }
+
 			xdag_request_block(hash, NULL, 1);
 			
 			xdag_info("ReqBlk: %016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0]);

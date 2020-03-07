@@ -357,7 +357,7 @@ static void check_new_main(void)
         set_main(p);
     }
     if(pre_b && pre_b != top_main_chain && pre_b != p) free(pre_b);
-    if(p && p != top_main_chain) free(p);
+    if(p && pre_b!= pre_b && p != top_main_chain) free(p);
 }
 
 static void unwind_main(struct block_internal *bi)
@@ -577,9 +577,14 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
     newBlock->field[0].transport_header = 0;
     xdag_hash(newBlock, sizeof(struct xdag_block), tmpNodeBlock.hash);
 
-    if(check_block_exist(tmpNodeBlock.hash)) return 0;
-    if(err = check_block_header(newBlock, &i)) goto end;
-    if(err = check_block_time(newBlock, limit, &i)) goto end;
+    if(check_block_exist(tmpNodeBlock.hash))
+        return 0;
+    if(err = check_block_header(newBlock, &i)) {
+        goto end;
+    }
+    if(err = check_block_time(newBlock, limit, &i)) {
+        goto end;
+    }
 
 	tmpNodeBlock.time = newBlock->field[0].time;
 
@@ -806,6 +811,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	}
 	else if (!(tmpNodeBlock.flags & BI_EXTRA)) {
 		tmpNodeBlock.storage_pos = xdag_storage_save(newBlock);
+        xdag_info("!(tmpNodeBlock.flags & BI_EXTRA)->save: %016llx%016llx%016llx%016llx", tmpNodeBlock.hash[3], tmpNodeBlock.hash[2], tmpNodeBlock.hash[1], tmpNodeBlock.hash[0]);
 	} else {
 		tmpNodeBlock.storage_pos = -2l;
 	}
@@ -915,7 +921,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
     }
 
 	add_orphan(nodeBlock, newBlock);
-
+    xdag_info("add_orphan: %016llx%016llx%016llx%016llx", nodeBlock->hash[3], nodeBlock->hash[2], nodeBlock->hash[1], nodeBlock->hash[0]);
 	//log_block((tmpNodeBlock.flags & BI_OURS ? "Good +" : "Good  "), tmpNodeBlock.hash, tmpNodeBlock.time, tmpNodeBlock.storage_pos);
 
 	i = MAIN_TIME(nodeBlock->time) & (HASHRATE_LAST_MAX_TIME - 1);
@@ -1305,7 +1311,25 @@ begin:
 	g_xdag_sync_on = 1;
 	if (is_pool() && !sync_thread_running) {
 		xdag_mess("Starting sync thread...");
-		int err = pthread_create(&th, 0, sync_thread, 0);
+#if defined(__APPLE__)
+        pthread_attr_t * attr_sync_thread = NULL;
+        pthread_attr_t attr_sync;
+        struct rlimit lim;
+        if (getrlimit(RLIMIT_STACK, &lim))
+            abort();
+
+        attr_sync_thread = &attr_sync;
+        if (pthread_attr_init(attr_sync_thread)){
+            printf("set sync thread stack size failed \n");
+            abort();
+        }
+
+        if (pthread_attr_setstacksize(attr_sync_thread, lim.rlim_max)){
+            printf("set sync thread stack size failed \n");
+            abort();
+        }
+#endif
+        int err = pthread_create(&th, attr_sync_thread, sync_thread, (void*)(uintptr_t)0);
 		if(err != 0) {
 			printf("create sync_thread failed, error : %s\n", strerror(err));
 			return 0;
@@ -2231,19 +2255,23 @@ int remove_orphan(xdag_hashlow_t hash)
 {
     struct orphan_block* ob = xdag_rsdb_get_orpblock(hash);
     if(ob) {
-        ob->bi.flags |= BI_REF;
-        xdag_rsdb_put_bi(g_xdag_rsdb, &(ob->bi));
+        struct block_internal *bi = &(ob->bi);
+        bi->flags |= BI_REF;
         int recode = xdag_rsdb_del_orpblock(g_xdag_rsdb, ob);
-
         if(!recode) {
             int index = get_orphan_index(&(ob->bi));
             if(index && !recode) {
                 ob->bi.storage_pos = xdag_storage_save(&(ob->xb));
+                for (int i = 0; i < bi->nlinks; ++i) {
+                    remove_orphan(bi->link[i]);
+                }
+                xdag_info("remove_orphan->save: %016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0]);
                 ob->bi.flags &= ~BI_EXTRA;
                 g_xdag_extstats.nextra--;
             } else {
                 g_xdag_extstats.nnoref--;
             }
+            xdag_rsdb_put_bi(g_xdag_rsdb, bi);
             xdag_rsdb_put_extstats(g_xdag_rsdb);
             free(ob);
             return 0;
