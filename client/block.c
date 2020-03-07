@@ -357,7 +357,7 @@ static void check_new_main(void)
         set_main(p);
     }
     if(pre_b && pre_b != top_main_chain && pre_b != p) free(pre_b);
-    if(p && pre_b!= pre_b && p != top_main_chain) free(p);
+    if(p && p!= pre_b && p != top_main_chain) free(p);
 }
 
 static void unwind_main(struct block_internal *bi)
@@ -543,11 +543,6 @@ static int check_block_time(struct xdag_block *newBlock, xtime_t limit, int *pi)
 		return 2;
 	}
     return 0;
-}
-
-static int check_block_fields(struct xdag_block *newBlock, int *pi)
-{
-
 }
 
 /* checks and adds a new block to the storage
@@ -2257,7 +2252,7 @@ int remove_orphan(xdag_hashlow_t hash)
     if(ob) {
         struct block_internal *bi = &(ob->bi);
         bi->flags |= BI_REF;
-        int recode = xdag_rsdb_del_orpblock(g_xdag_rsdb, ob);
+        int recode = xdag_rsdb_del_orpblock(g_xdag_rsdb, hash);
         if(!recode) {
             int index = get_orphan_index(&(ob->bi));
             if(index && !recode) {
