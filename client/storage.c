@@ -196,6 +196,7 @@ static int sort_callback(const void *l, const void *r)
 /* Calls a callback for all blocks from the repository that are in specified time interval; returns the number of blocks */
 uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *data, void *(*callback)(void *, void *))
 {
+	xdag_info("xdag load blocks start\n");
 	struct xdag_block *buf, *pbuf[bufsize];
 	struct xdag_storage_sum s;
 	char path[256] = {0};
@@ -212,6 +213,7 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 	}
 
 	while (start_time < end_time) {
+		xdag_info("xdag load blocks start time %lu end_time %lu \n",start_time,end_time);
 		sprintf(path, STORAGE_FILE, STORAGE_FILE_ARGS(start_time));
 
 		pthread_mutex_lock(&storage_mutex);

@@ -574,10 +574,10 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 
     if(check_block_exist(tmpNodeBlock.hash))
         return 0;
-    if(err = check_block_header(newBlock, &i)) {
+    if(err == check_block_header(newBlock, &i)) {
         goto end;
     }
-    if(err = check_block_time(newBlock, limit, &i)) {
+    if(err == check_block_time(newBlock, limit, &i)) {
         goto end;
     }
 
