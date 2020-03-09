@@ -64,7 +64,6 @@ int xdag_rsdb_conf(XDAG_RSDB  *rsdb)
     rocksdb_readoptions_set_verify_checksums(read_options, 0);
 
     // create the DB if it's not already present
-    rocksdb_options_set_create_if_missing(options, 1);
     rocksdb_options_set_block_based_table_factory(options, block_based_table_options);
     
     rsdb->options = options;
@@ -380,18 +379,18 @@ struct orphan_block* xdag_rsdb_seek_orpblock(XDAG_RSDB* rsdb)
     return ob;
 }
 
-struct orphan_block* xdag_rsdb_get_orpblock(xdag_hashlow_t hash)
+struct xdag_block* xdag_rsdb_get_orpblock(xdag_hashlow_t hash)
 {
-    struct orphan_block* ob = NULL;
+    struct xdag_block* xb = NULL;
     size_t vlen = 0;
     char* key = calloc(RSDB_KEY_LEN, 1);
     key[0] = HASH_ORP_BLOCK;
     memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
-    ob = xdag_rsdb_getkey(key, RSDB_KEY_LEN, &vlen);
+    xb = xdag_rsdb_getkey(key, RSDB_KEY_LEN, &vlen);
     if(key) {
         free(key);
     }
-    return ob;
+    return xb;
 }
 
 int xdag_rsdb_del_orpblock(XDAG_RSDB* rsdb, xdag_hashlow_t hash)
@@ -491,14 +490,15 @@ int xdag_rsdb_put_bi(XDAG_RSDB* rsdb, struct block_internal* bi)
     return XDAG_RSDB_OP_SUCCESS;
 }
 
-int xdag_rsdb_put_orpblock(XDAG_RSDB* rsdb, struct orphan_block* ob)
+int xdag_rsdb_put_orpblock(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct xdag_block* xb)
 {
-    if(!ob) return XDAG_RSDB_NULL;
+    if(!hash) return XDAG_RSDB_NULL;
+    if(!xb) return XDAG_RSDB_NULL;
     int retcode = 0;
     char* key = calloc(RSDB_KEY_LEN, 1);
     key[0] = HASH_ORP_BLOCK;
-    memcpy(key + 1, ob->bi.hash, RSDB_KEY_LEN - 1);
-    retcode = xdag_rsdb_putkey(rsdb, key, RSDB_KEY_LEN, (const char*)ob, sizeof(struct orphan_block));
+    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
+    retcode = xdag_rsdb_putkey(rsdb, key, RSDB_KEY_LEN, (const char*)xb, sizeof(struct xdag_block));
     if(key) {
         free(key);
     }

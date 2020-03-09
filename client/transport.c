@@ -204,8 +204,7 @@ static int process_transport_block(struct xdag_block *received_block, struct xco
 			int64_t pos = xdag_get_block_pos(received_block->field[1].hash, &t, &buf);
 
 			struct send_parameters send_parameters = {connection, time(NULL) + REQUEST_WAIT, 0, 0};
-			xdag_info("%s load block hash %016llx%016llx%016llx%016llx time %llu pos %llu ",__FUNCTION__,
-								received_block->field[1].hash[3],received_block->field[1].hash[2],received_block->field[1].hash[1],received_block->field[1].hash[0],t,pos);
+
             if (pos == -2l) {
                 dnet_send_xdag_packet(&buf, &send_parameters);
             } else if (pos >= 0 && (blk = xdag_storage_load(received_block->field[1].hash, t, pos, &buf))) {

@@ -833,7 +833,30 @@ int dnet_init(int argc, char **argv)
 
 	//angelize();
 	for(i = 0; i < nthreads; ++i) {
-		pthread_create(&t, 0, xthread_main, (void *)(long)i);
+        pthread_attr_t * attr_xthread_main = NULL;
+#if defined(__APPLE__)
+        pthread_attr_t attr_xthread;
+        struct rlimit lim;
+        if (getrlimit(RLIMIT_STACK, &lim))
+            abort();
+
+        attr_xthread_main = &attr_xthread;
+        if (pthread_attr_init(attr_xthread_main)){
+            printf("set xthread_main thread stack size failed \n");
+            abort();
+        }
+
+        if (pthread_attr_setstacksize(attr_xthread_main, lim.rlim_max)){
+            printf("set xthread_main thread stack size failed \n");
+            abort();
+        }
+#endif
+        int err = pthread_create(&t, attr_xthread_main, xthread_main, (void*)(uintptr_t)i);
+        if(err != 0) {
+            printf("create attr_xthread failed, error : %s\n", strerror(err));
+            return 0;
+        }
+		//pthread_create(&t, 0, xthread_main, (void *)(long)i);
 	}
 	if(bindto && nthreads >= 1) {
 		pthread_create(&t, 0, accept_thread_main, (void *)bindto);

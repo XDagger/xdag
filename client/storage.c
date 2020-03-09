@@ -169,12 +169,14 @@ struct xdag_block *xdag_storage_load(xdag_hash_t hash, xtime_t time, uint64_t po
 	if (buf) {
 		xdag_hash(buf, sizeof(struct xdag_block), hash0);
 		if (memcmp(hash, hash0, sizeof(xdag_hashlow_t))) {
-			buf = 0;
+            xdag_info("xdag_storage_load->hash (pos=%d): %016llx%016llx%016llx%016llx", pos, hash[3], hash[2], hash[1], hash[0]);
+            xdag_info("xdag_storage_load->hash0(pos=%d): %016llx%016llx%016llx%016llx", pos, hash[3], hash[2], hash[1], hash[0]);
+            buf = 0;
 		}
 	}
 
 	if (!buf) {
-        xdag_info("can not found block: %016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0]);
+        xdag_info("xdag_storage_load->err(pos=%d): %016llx%016llx%016llx%016llx", pos, hash[3], hash[2], hash[1], hash[0]);
 		//xdag_blocks_reset();
 	}
 

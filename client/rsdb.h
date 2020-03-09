@@ -112,13 +112,13 @@ int xdag_rsdb_put_extstats(XDAG_RSDB* rsdb);
 int xdag_rsdb_get_extstats(XDAG_RSDB* rsdb);
 
 struct block_internal* xdag_rsdb_get_bi(xdag_hashlow_t hash);
-struct orphan_block* xdag_rsdb_get_orpblock(xdag_hashlow_t hash);
+struct xdag_block* xdag_rsdb_get_orpblock(xdag_hashlow_t hash);
 struct block_internal* xdag_rsdb_get_ourbi(xdag_hashlow_t hash);
 uint8_t* xdag_rsdb_get_remark(xdag_hashlow_t hash);
 
 
 int xdag_rsdb_put_bi(XDAG_RSDB* rsdb, struct block_internal* bi);
-int xdag_rsdb_put_orpblock(XDAG_RSDB* rsdb, struct orphan_block* ob);
+int xdag_rsdb_put_orpblock(XDAG_RSDB* rsdb, xdag_hashlow_t hash, struct xdag_block* xb);
 int xdag_rsdb_put_ourbi(XDAG_RSDB* rsdb, struct block_internal* bi);
 int xdag_rsdb_put_remark(XDAG_RSDB* rsdb, struct block_internal* bi, xdag_remark_t strbuf);
 
