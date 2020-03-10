@@ -384,7 +384,7 @@ int setup_miner(struct startup_parameters *parameters, int isGui)
         daemonize();
     }
 
-    angelize();
+    //angelize();
 
 	//TODO: think of combining the logic with pool-initialization functions (after decision what to do with xdag_blocks_start)
 	if(parameters->is_rpc) {

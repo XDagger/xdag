@@ -215,7 +215,7 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 	}
 
 	while (start_time < end_time) {
-		xdag_info("xdag load blocks start time %lu end_time %lu \n",start_time,end_time);
+		//xdag_info("xdag load blocks start time %lu end_time %lu \n",start_time,end_time);
 		sprintf(path, STORAGE_FILE, STORAGE_FILE_ARGS(start_time));
 
 		pthread_mutex_lock(&storage_mutex);
