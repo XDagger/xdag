@@ -62,7 +62,7 @@ void processNetCommand(char *nextParam, FILE *out);
 void processTransportCommand(char *nextParam, FILE *out);
 void processPoolCommand(char *nextParam, FILE *out);
 void processStatsCommand(FILE *out);
-void processInternalStatsCommand(FILE *out);
+//void processInternalStatsCommand(FILE *out);
 void processExitCommand(void);
 void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd);
 void processLastBlocksCommand(char *nextParam, FILE *out);
@@ -124,7 +124,7 @@ XDAG_COMMAND commands[] = {
 	{ "run"         , 0, xdag_com_run },
 	{ "state"       , 0, xdag_com_state },
 	{ "stats"       , 0, xdag_com_stats },
-	{ "internals"   , 2, xdag_com_internal_stats },
+//	{ "internals"   , 2, xdag_com_internal_stats },
 	{ "terminate"   , 0, xdag_com_terminate },
 	{ "exit"        , 0, xdag_com_exit },
 	{ "xfer"        , 0, (xdag_com_func_t)NULL},
@@ -239,11 +239,11 @@ int xdag_com_state(char * args, FILE* out)
 	return 0;
 }
 
-int xdag_com_internal_stats(char * args, FILE* out)
-{
-	processInternalStatsCommand(out);
-	return 0;
-}
+//int xdag_com_internal_stats(char * args, FILE* out)
+//{
+//	processInternalStatsCommand(out);
+//	return 0;
+//}
 
 
 int xdag_com_run(char * args, FILE* out)
@@ -576,27 +576,27 @@ void processStatsCommand(FILE *out)
 	}
 }
 
-void processInternalStatsCommand(FILE *out)
-{
-	fprintf(out,
-		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-		"Temp file          :\n"
-		"              state: %s\n"
-		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-		"Block production   :\n"
-		"              state: %s\n"
-		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-		"Optimized ec       :\n"
-		"              state: %s\n"
-		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-		"Cache informations :\n"
-		"      cached blocks: target amount %u, actual amount %u, hitrate %f%%\n"
-		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n",
-		(g_use_tmpfile ? "Active" : "Inactive" ), (g_block_production_on ? "Started" : "Waiting"), 
-		(USE_OPTIMIZED_EC ? "Active" : "Inactive" ), 
-		g_xdag_extstats.cache_size, g_xdag_extstats.cache_usage, g_xdag_extstats.cache_hitrate*100
-	);
-}
+//void processInternalStatsCommand(FILE *out)
+//{
+//	fprintf(out,
+//		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+//		"Temp file          :\n"
+//		"              state: %s\n"
+//		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+//		"Block production   :\n"
+//		"              state: %s\n"
+//		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+//		"Optimized ec       :\n"
+//		"              state: %s\n"
+//		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+//		"Cache informations :\n"
+//		"      cached blocks: target amount %u, actual amount %u, hitrate %f%%\n"
+//		"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n",
+//		(g_use_tmpfile ? "Active" : "Inactive" ), (g_block_production_on ? "Started" : "Waiting"),
+//		(USE_OPTIMIZED_EC ? "Active" : "Inactive" ),
+//		g_xdag_extstats.cache_size, g_xdag_extstats.cache_usage, g_xdag_extstats.cache_hitrate*100
+//	);
+//}
 
 
 void processExitCommand()

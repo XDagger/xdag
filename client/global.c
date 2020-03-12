@@ -12,6 +12,7 @@ char *g_coinname, *g_progname;
 xdag_time_t g_apollo_fork_time = 0;
 XDAG_RSDB* g_xdag_rsdb = NULL;
 XDAG_BLOOM_FILTER* bloom_filter = NULL;
+xdag_hash_t g_top_main_chain_hash = {0};
 
 inline int is_pool(void) { return g_xdag_type == XDAG_POOL; }
 inline int is_wallet(void) { return g_xdag_type == XDAG_WALLET; }

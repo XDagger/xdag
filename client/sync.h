@@ -10,6 +10,14 @@
 extern "C" {
 #endif
 
+struct sync_block {
+    struct xdag_block b;
+    xdag_hash_t hash;
+    time_t t;
+    uint8_t nfield;
+    uint8_t ttl;
+};
+
 extern int g_xdag_sync_on;
 	
 /* checks a block and includes it in the database with synchronization, ruturs non-zero value in case of error */

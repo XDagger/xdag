@@ -66,6 +66,8 @@ extern int g_disable_mining;
 
 extern XDAG_RSDB* g_xdag_rsdb;
 
+extern xdag_hash_t g_top_main_chain_hash;
+
 //Default type of the block header
 //Test network and main network have different types of the block headers, so blocks from different networks are incompatible
 extern enum xdag_field_type g_block_header_type;
