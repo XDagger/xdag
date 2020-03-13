@@ -715,11 +715,11 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
     // refactor to connect_method like bitcoin
 	for(i = 1; i < XDAG_BLOCK_FIELDS; ++i) {
 		if(1 << i & (inmask | outmask)) {
-            blockRef = blockRefs[i-1];
+            struct block_internal tmpblockRef = *blockRefs[i-1];
 			if(1 << i & inmask) {
 				if(newBlock->field[i].amount) {
 					int32_t res = 1;
-                    res = check_signature_out(blockRef, public_keys, keysCount);
+                    res = check_signature_out(&tmpblockRef, public_keys, keysCount);
 					if(res) {
 						err = res;
 						goto end;
@@ -743,33 +743,32 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 
 			*psum += newBlock->field[i].amount;
 			//tmpNodeBlock.link[tmpNodeBlock.nlinks] = blockRef->hash;
-            memcpy(tmpNodeBlock.link[tmpNodeBlock.nlinks], blockRef->hash, sizeof(xdag_hashlow_t));
+            memcpy(tmpNodeBlock.link[tmpNodeBlock.nlinks], blockRefs[i-1]->hash, sizeof(xdag_hashlow_t));
 			tmpNodeBlock.linkamount[tmpNodeBlock.nlinks] = newBlock->field[i].amount;
 
 			// check ref block time
-			if(MAIN_TIME(blockRef->time) < MAIN_TIME(tmpNodeBlock.time)) {
-				diff = xdag_diff_add(diff0, blockRef->difficulty);
+			if(MAIN_TIME(blockRefs[i-1]->time) < MAIN_TIME(tmpNodeBlock.time)) {
+				diff = xdag_diff_add(diff0, blockRefs[i-1]->difficulty);
 			} else {
-				diff = blockRef->difficulty;
-                struct block_internal *pbf = NULL;
-				while(blockRef && MAIN_TIME(blockRef->time) == MAIN_TIME(tmpNodeBlock.time)) {
-                    if(pbf && pbf != blockRef && pbf != blockRefs[i-1]) {
-                        free(pbf);
-                    }
-				    pbf = blockRef;
-                    blockRef = xdag_rsdb_get_bi(pbf->link[pbf->max_diff_link]);
+				diff = blockRefs[i-1]->difficulty;
+                struct block_internal *pbf = calloc(sizeof(struct block_internal),1);
+                memcpy(pbf,blockRefs[i-1],sizeof(struct block_internal));
+                
+				while(pbf && MAIN_TIME(pbf->time) == MAIN_TIME(tmpNodeBlock.time)) {
+                    struct block_internal *tmp = xdag_rsdb_get_bi(pbf->link[pbf->max_diff_link]);
+					if(tmp){
+						memcpy(pbf,tmp, sizeof(struct block_internal));
+						free(tmp);
+					} else{
+						break;
+					}
+				}
+				
+				if(xdag_diff_gt(xdag_diff_add(diff0, pbf->difficulty), diff)) {
+					diff = xdag_diff_add(diff0, pbf->difficulty);
 				}
 
-                if(pbf && pbf != blockRef && pbf != blockRefs[i-1]) {
-                    free(pbf);
-                }
-
-				if(blockRef && xdag_diff_gt(xdag_diff_add(diff0, blockRef->difficulty), diff)) {
-					diff = xdag_diff_add(diff0, blockRef->difficulty);
-				}
-                if(blockRef && blockRef != blockRefs[i-1]) {
-                    free(blockRef);
-                }
+                free(pbf);
 			}
 
 			if(xdag_diff_gt(diff, tmpNodeBlock.difficulty)) {
