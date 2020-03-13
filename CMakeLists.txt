@@ -31,6 +31,7 @@ add_definitions(-DSHA256_OPENSSL_MBLOCK)
 include(cmake/RocksDBConfig.cmake)
 include(cmake/Secp256k1Config.cmake)
 include(cmake/OpenSSLConfig.cmake)
+include(cmake/TCMallocConfig.cmake)
 #[2]end
 
 #[3]download and compile projects in hunter
@@ -54,6 +55,14 @@ if(OPENSSL_FOUND)
 else()
   message(FATAL_ERROR "Failed to find OPENSSL dependency!")
 endif()
+
+find_package(TCMalloc CONFIG)
+if(TCMALLOC_FOUND)
+  message("-- Found TCMalloc: include ${TCMALLOC_INCLUDE_DIR}  libraries ${TCMALLOC_LIBRARY} ${PROFILER_LIBRARY}")
+else()
+  message(FATAL_ERROR "Failed to find TCMalloc dependency!")
+endif()
+
 #[3]end
 
 #[4]find original libraries in system start
@@ -132,6 +141,7 @@ target_include_directories(
         ${RocksDB_INCLUDE_DIR}
         ${SECP256K1_INCLUDE_DIR}
         ${OPENSSL_INCLUDE_DIR}
+        ${TCMALLOC_INCLUDE_DIR}
 )
 target_link_libraries(
         ${PROJECT_NAME}
@@ -141,7 +151,9 @@ target_link_libraries(
         ${SECP256K1_LIBRARY}
         ${OPENSSL_SSL_LIBRARY}
         ${OPENSSL_CRYPTO_LIBRARY}
+        ${TCMALLOC_LIBRARY}
+        ${PROFILER_LIBRARY}
         m
-	dl
+	    dl
 )
 #[9]end

@@ -12,6 +12,8 @@
 #include<sys/wait.h>
 #ifndef _WIN32
 #include <signal.h>
+#include <gperftools/profiler.h>
+#include <gperftools/heap-profiler.h>
 #endif
 #include "system.h"
 #include "address.h"
@@ -71,10 +73,24 @@ void set_xdag_name(void);
 static void daemonize(void);
 static void angelize(void);
 
+static void gprofStartAndStop(int signum) {
+	static int isStarted = 0;
+	if (signum != SIGUSR1) return;
+	
+	if (!isStarted){
+		isStarted = 1;
+		HeapProfilerStart("/tmp/heap_prof");
+		printf("ProfilerStart success\n");
+	}else{
+		HeapProfilerStop();
+		printf("ProfilerStop success\n");
+	}
+}
+
 int xdag_init(int argc, char **argv, int isGui)
 {
 	xdag_init_path(argv[0]);
-
+	signal(SIGUSR1, gprofStartAndStop);
 #ifndef _WIN32
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);

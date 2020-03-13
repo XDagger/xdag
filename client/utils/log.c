@@ -288,7 +288,7 @@ int xdag_log_init(void)
 	sa.sa_flags = SA_RESTART | SA_SIGINFO;
 
 	for (i = 1; i < 32; ++i) {
-		if (i != SIGURG && i != SIGCHLD && i != SIGCONT && i != SIGPIPE && i != SIGINT && i != SIGTERM && i != SIGWINCH && i != SIGHUP) {
+		if (i != SIGPROF && i != SIGUSR1 && i != SIGURG && i != SIGCHLD && i != SIGCONT && i != SIGPIPE && i != SIGINT && i != SIGTERM && i != SIGWINCH && i != SIGHUP) {
 			sigaction(i, &sa, 0);
 		}
 	}

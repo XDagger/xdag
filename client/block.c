@@ -113,6 +113,7 @@ static uint64_t apply_block(struct block_internal* bi)
 	bi->flags |= BI_MAIN_REF;
 	for (int i = 0; i < bi->nlinks; ++i) {
         struct block_internal* lbi = xdag_rsdb_get_bi(bi->link[i]);
+        
 		xdag_amount_t ref_amount = apply_block(lbi);
 		if (ref_amount == -1l) {
             if(lbi) {
