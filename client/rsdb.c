@@ -272,7 +272,7 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_seek_orpblock(struct xdag_block *xb)
     rocksdb_iter_seek(iter, key, 1);
     if(!rocksdb_iter_valid(iter)) {
        rocksdb_iter_destroy(iter);
-       return NULL;
+       return XDAG_RSDB_NULL;
     }
     const char *value = rocksdb_iter_value(iter, &vlen);
     if(value) {
@@ -281,7 +281,7 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_seek_orpblock(struct xdag_block *xb)
         memcpy(xb, value, sizeof(struct xdag_block));
     }
     rocksdb_iter_destroy(iter);
-    return xb;
+    return XDAG_RSDB_OP_SUCCESS;
 }
 
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_orpblock(xdag_hashlow_t hash, struct xdag_block *xb)
