@@ -3,876 +3,1459 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 48;
+	objectVersion = 46;
 	objects = {
 
+/* Begin PBXAggregateTarget section */
+		DE5943C11737473DAA6F4572 /* ZERO_CHECK */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 374A7338EEDB4A2F9A05CACD /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
+			buildPhases = (
+				E32A556B1FF44CF184E76165 /* CMake Rules */,
+			);
+			dependencies = (
+			);
+			name = ZERO_CHECK;
+			productName = ZERO_CHECK;
+		};
+		E3DD0AC9489643FFB81A1B2A /* ALL_BUILD */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 7378259F95024A8D936851C7 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+			buildPhases = (
+				0BF1922D515F49CA9543C0EA /* CMake Rules */,
+			);
+			dependencies = (
+				9F4191CC9C4A49009107411F /* PBXTargetDependency */,
+				66FC48E2BED943FD9F2F6039 /* PBXTargetDependency */,
+				5FE10DCFBC894307933E9904 /* PBXTargetDependency */,
+				101125B1CDF24F3B9B9B7F0E /* PBXTargetDependency */,
+			);
+			name = ALL_BUILD;
+			productName = ALL_BUILD;
+		};
+/* End PBXAggregateTarget section */
+
 /* Begin PBXBuildFile section */
-		385EB84221D3D64200287D2B /* address.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7A721D3D64200287D2B /* address.c */; };
-		385EB84321D3D64200287D2B /* crc.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7AA21D3D64200287D2B /* crc.c */; };
-		385EB84421D3D64200287D2B /* sha256-mb-x86_64-mac.s in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7AC21D3D64200287D2B /* sha256-mb-x86_64-mac.s */; };
-		385EB84621D3D64200287D2B /* sha256.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7AE21D3D64200287D2B /* sha256.c */; };
-		385EB84821D3D64200287D2B /* block.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7B121D3D64200287D2B /* block.c */; };
-		385EB84A21D3D64200287D2B /* commands.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7B421D3D64200287D2B /* commands.c */; };
-		385EB84B21D3D64200287D2B /* crypt.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7B621D3D64200287D2B /* crypt.c */; };
-		385EB84D21D3D64200287D2B /* example.pool.config in Resources */ = {isa = PBXBuildFile; fileRef = 385EB7B921D3D64200287D2B /* example.pool.config */; };
-		385EB84E21D3D64200287D2B /* global.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7BA21D3D64200287D2B /* global.c */; };
-		385EB84F21D3D64200287D2B /* hash.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7BC21D3D64200287D2B /* hash.c */; };
-		385EB85021D3D64200287D2B /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7BF21D3D64200287D2B /* http.c */; };
-		385EB85121D3D64200287D2B /* url.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7C121D3D64200287D2B /* url.c */; };
-		385EB85221D3D64200287D2B /* init.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7C321D3D64200287D2B /* init.c */; };
-		385EB85321D3D64200287D2B /* cJSON.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7C621D3D64200287D2B /* cJSON.c */; };
-		385EB85421D3D64200287D2B /* cJSON_Utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7C821D3D64200287D2B /* cJSON_Utils.c */; };
-		385EB85521D3D64200287D2B /* rpc_commands.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7CA21D3D64200287D2B /* rpc_commands.c */; };
-		385EB85621D3D64200287D2B /* rpc_procedure.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7CC21D3D64200287D2B /* rpc_procedure.c */; };
-		385EB85721D3D64200287D2B /* rpc_procedures.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7CE21D3D64200287D2B /* rpc_procedures.c */; };
-		385EB85821D3D64200287D2B /* rpc_service.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7D021D3D64200287D2B /* rpc_service.c */; };
-		385EB85921D3D64200287D2B /* rpc_wrapper.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7D221D3D64200287D2B /* rpc_wrapper.c */; };
-		385EB85A21D3D64200287D2B /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7D421D3D64200287D2B /* main.c */; };
-		385EB85C21D3D64200287D2B /* math.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7D621D3D64200287D2B /* math.c */; };
-		385EB85D21D3D64200287D2B /* memory.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7D821D3D64200287D2B /* memory.c */; };
-		385EB85E21D3D64200287D2B /* miner.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7DA21D3D64200287D2B /* miner.c */; };
-		385EB85F21D3D64200287D2B /* mining_common.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7DC21D3D64200287D2B /* mining_common.c */; };
-		385EB86021D3D64200287D2B /* netdb-testnet.txt in Resources */ = {isa = PBXBuildFile; fileRef = 385EB7DE21D3D64200287D2B /* netdb-testnet.txt */; };
-		385EB86121D3D64200287D2B /* netdb-white-testnet.txt in Resources */ = {isa = PBXBuildFile; fileRef = 385EB7DF21D3D64200287D2B /* netdb-white-testnet.txt */; };
-		385EB86221D3D64200287D2B /* netdb-white.txt in Resources */ = {isa = PBXBuildFile; fileRef = 385EB7E021D3D64200287D2B /* netdb-white.txt */; };
-		385EB86321D3D64200287D2B /* netdb.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7E121D3D64200287D2B /* netdb.c */; };
-		385EB86421D3D64200287D2B /* netdb.txt in Resources */ = {isa = PBXBuildFile; fileRef = 385EB7E321D3D64200287D2B /* netdb.txt */; };
-		385EB86521D3D64200287D2B /* network.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7E421D3D64200287D2B /* network.c */; };
-		385EB86621D3D64200287D2B /* pool.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7E621D3D64200287D2B /* pool.c */; };
-		385EB86721D3D64200287D2B /* pools-testnet.txt in Resources */ = {isa = PBXBuildFile; fileRef = 385EB7E821D3D64200287D2B /* pools-testnet.txt */; };
-		385EB86821D3D64200287D2B /* pools.txt in Resources */ = {isa = PBXBuildFile; fileRef = 385EB7E921D3D64200287D2B /* pools.txt */; };
-		385EB86A21D3D64200287D2B /* storage.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7F021D3D64200287D2B /* storage.c */; };
-		385EB86B21D3D64200287D2B /* sync.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7F221D3D64200287D2B /* sync.c */; };
-		385EB86C21D3D64200287D2B /* terminal.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7F521D3D64200287D2B /* terminal.c */; };
-		385EB86D21D3D64200287D2B /* time.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7F721D3D64200287D2B /* time.c */; };
-		385EB86E21D3D64200287D2B /* transport.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB7F921D3D64200287D2B /* transport.c */; };
-		385EB86F21D3D64200287D2B /* atomic.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB80021D3D64200287D2B /* atomic.c */; };
-		385EB87021D3D64200287D2B /* base64.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB80221D3D64200287D2B /* base64.c */; };
-		385EB87121D3D64200287D2B /* dirname.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB80421D3D64200287D2B /* dirname.c */; };
-		385EB87221D3D64200287D2B /* linenoise.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB80621D3D64200287D2B /* linenoise.c */; };
-		385EB87321D3D64200287D2B /* log.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB80821D3D64200287D2B /* log.c */; };
-		385EB87421D3D64200287D2B /* moving_average.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB80B21D3D64200287D2B /* moving_average.c */; };
-		385EB87521D3D64200287D2B /* random.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB80D21D3D64200287D2B /* random.c */; };
-		385EB87621D3D64200287D2B /* string_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB80F21D3D64200287D2B /* string_utils.c */; };
-		385EB87721D3D64200287D2B /* utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB81121D3D64200287D2B /* utils.c */; };
-		385EB87821D3D64200287D2B /* uuid.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB81321D3D64200287D2B /* uuid.c */; };
-		385EB87921D3D64200287D2B /* wallet.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB81621D3D64200287D2B /* wallet.c */; };
-		385EB87A21D3D64200287D2B /* websocket.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB81921D3D64200287D2B /* websocket.c */; };
-		385EB87B21D3D64200287D2B /* wslay_event.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB81E21D3D64200287D2B /* wslay_event.c */; };
-		385EB87C21D3D64200287D2B /* wslay_frame.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB82021D3D64200287D2B /* wslay_frame.c */; };
-		385EB87D21D3D64200287D2B /* wslay_net.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB82221D3D64200287D2B /* wslay_net.c */; };
-		385EB87E21D3D64200287D2B /* wslay_queue.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB82421D3D64200287D2B /* wslay_queue.c */; };
-		385EB87F21D3D64200287D2B /* wslay_stack.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB82621D3D64200287D2B /* wslay_stack.c */; };
-		385EB88021D3D64200287D2B /* x86_64cpuid-mac.s in Sources */ = {isa = PBXBuildFile; fileRef = 385EB82921D3D64200287D2B /* x86_64cpuid-mac.s */; };
-		385EB88221D3D64200287D2B /* xdag_config.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB82B21D3D64200287D2B /* xdag_config.c */; };
-		385EB88321D3D64200287D2B /* dfslib_crypt.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB82E21D3D64200287D2B /* dfslib_crypt.c */; };
-		385EB88421D3D64200287D2B /* dfslib_random.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB83021D3D64200287D2B /* dfslib_random.c */; };
-		385EB88521D3D64200287D2B /* dfslib_string.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB83221D3D64200287D2B /* dfslib_string.c */; };
-		385EB88621D3D64200287D2B /* dfsrsa.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB83521D3D64200287D2B /* dfsrsa.c */; };
-		385EB88721D3D64200287D2B /* dnet_crypt.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB83821D3D64200287D2B /* dnet_crypt.c */; };
-		385EB88921D3D64200287D2B /* dnet_xdag.c in Sources */ = {isa = PBXBuildFile; fileRef = 385EB83F21D3D64200287D2B /* dnet_xdag.c */; };
-		385EB88B21D3D76100287D2B /* dnet_keys.bin in Resources */ = {isa = PBXBuildFile; fileRef = 385EB83B21D3D64200287D2B /* dnet_keys.bin */; };
-		385EB88C21D3D83800287D2B /* dnet_keys.bin in CopyFiles */ = {isa = PBXBuildFile; fileRef = 385EB83B21D3D64200287D2B /* dnet_keys.bin */; };
-		385EB88D21D3D84000287D2B /* example.pool.config in CopyFiles */ = {isa = PBXBuildFile; fileRef = 385EB7B921D3D64200287D2B /* example.pool.config */; };
-		385EB88E21D3D84000287D2B /* pools-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 385EB7E821D3D64200287D2B /* pools-testnet.txt */; };
-		385EB88F21D3D84000287D2B /* pools.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 385EB7E921D3D64200287D2B /* pools.txt */; };
-		385EB89021D3D84900287D2B /* netdb-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 385EB7DE21D3D64200287D2B /* netdb-testnet.txt */; };
-		385EB89121D3D84900287D2B /* netdb-white-testnet.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 385EB7DF21D3D64200287D2B /* netdb-white-testnet.txt */; };
-		385EB89221D3D84900287D2B /* netdb-white.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 385EB7E021D3D64200287D2B /* netdb-white.txt */; };
-		385EB89321D3D84900287D2B /* netdb.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 385EB7E321D3D64200287D2B /* netdb.txt */; };
-		418AAFF6213BB3A900E96520 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 418AAFF5213BB3A900E96520 /* libcrypto.a */; };
-		418AAFF8213BB3B300E96520 /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 418AAFF7213BB3B300E96520 /* libssl.a */; };
-		41E00BED233D003E0031DA53 /* libsecp256k1.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41E00BEC233D003E0031DA53 /* libsecp256k1.a */; };
-		41E00BEF233D056E0031DA53 /* libgmp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41E00BEE233D056E0031DA53 /* libgmp.a */; };
+		021C6552E18D4454BA728282 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_wrapper.h */ = {isa = PBXBuildFile; fileRef = 4F66F15DD25347B9BC7DD1B7 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_wrapper.h */; };
+		08FB7A1DA4E6445CB4DD9E99 /* /Users/reymondtu/git/xdag/client/algorithms/sha256-mb-x86_64-mac.s */ = {isa = PBXBuildFile; fileRef = 63998908A82B428AA0598C49 /* /Users/reymondtu/git/xdag/client/algorithms/sha256-mb-x86_64-mac.s */; };
+		0C721356CFB6489E8589A4AD /* /Users/reymondtu/git/xdag/client/mining_common.h */ = {isa = PBXBuildFile; fileRef = 7564EC7E4C2C4797A3C729F0 /* /Users/reymondtu/git/xdag/client/mining_common.h */; };
+		107A79FFD297438BB49B1923 /* /Users/reymondtu/git/xdag/dnet/dnet_main.h */ = {isa = PBXBuildFile; fileRef = A43DFB34BE4A42948C71B5B9 /* /Users/reymondtu/git/xdag/dnet/dnet_main.h */; };
+		10C5D51C65CB4FEBA586CCF1 /* /Users/reymondtu/git/xdag/dfslib/dfslib_random.h */ = {isa = PBXBuildFile; fileRef = 52517E510E834107BF41AB96 /* /Users/reymondtu/git/xdag/dfslib/dfslib_random.h */; };
+		113F0872595D405DB10459BD /* /Users/reymondtu/git/xdag/dfslib/dfslib_crypt.h */ = {isa = PBXBuildFile; fileRef = 05989D6D982746AB94D3C42D /* /Users/reymondtu/git/xdag/dfslib/dfslib_crypt.h */; };
+		1392F1E928814538BEFABDFE /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_stack.h */ = {isa = PBXBuildFile; fileRef = 7B409973306F48948F24EF6F /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_stack.h */; };
+		14A340B6FC9743DBA9C54587 /* /Users/reymondtu/git/xdag/client/commands.h */ = {isa = PBXBuildFile; fileRef = A8DFD0C07DAF4387BEF6EB40 /* /Users/reymondtu/git/xdag/client/commands.h */; };
+		14F5E58AC9F041308324FAFC /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslayver.h */ = {isa = PBXBuildFile; fileRef = A51C79C275E24F8B8A8D213A /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslayver.h */; };
+		163AFDFC8CB946D6AA7245AB /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON.c */ = {isa = PBXBuildFile; fileRef = 2F50AA73D5424977A06A0EA9 /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON.c */; };
+		172B1AB8A7E741B09F9C1D81 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_event.c */ = {isa = PBXBuildFile; fileRef = 287C20F7BE5F42F6B34B4DE1 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_event.c */; };
+		18B5B84875AF4A0885C7BA77 /* /Users/reymondtu/git/xdag/client/utils/string_utils.c */ = {isa = PBXBuildFile; fileRef = B6C008805F03482791A5313E /* /Users/reymondtu/git/xdag/client/utils/string_utils.c */; };
+		1E373C253E8C440C82452D7B /* /Users/reymondtu/git/xdag/client/netdb.h */ = {isa = PBXBuildFile; fileRef = 91D071A66BF84BF9B7A11FE7 /* /Users/reymondtu/git/xdag/client/netdb.h */; };
+		1FA479DC1BE843A4B7EBB67F /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_commands.c */ = {isa = PBXBuildFile; fileRef = FD909D2266CB4C2CA8032D01 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_commands.c */; };
+		20A840143E2A4DAFBE4DE7AA /* /Users/reymondtu/git/xdag/client/memory.h */ = {isa = PBXBuildFile; fileRef = EDBF67B2DE8D4A83BD833BA2 /* /Users/reymondtu/git/xdag/client/memory.h */; };
+		21143B02A1E14EB78AE9A58F /* /Users/reymondtu/git/xdag/client/bloom_filter.h */ = {isa = PBXBuildFile; fileRef = AE79EC46F191436688E8ED8B /* /Users/reymondtu/git/xdag/client/bloom_filter.h */; };
+		21FF626560E148C6946A6341 /* /Users/reymondtu/git/xdag/client/utils/string_utils.h */ = {isa = PBXBuildFile; fileRef = 357BBF150AF149599289EB19 /* /Users/reymondtu/git/xdag/client/utils/string_utils.h */; };
+		24A3C4C418F34F32A1ACBD05 /* /Users/reymondtu/git/xdag/client/terminal.c */ = {isa = PBXBuildFile; fileRef = 45C9265FD2544729BA6B9CCA /* /Users/reymondtu/git/xdag/client/terminal.c */; };
+		2909E87C4708451AB6EB2C73 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_net.h */ = {isa = PBXBuildFile; fileRef = 0390EC8C4CC34F888DB7DA47 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_net.h */; };
+		298671155F3E41A9AC7CC279 /* /Users/reymondtu/git/xdag/client/utils/utils.c */ = {isa = PBXBuildFile; fileRef = 47FD4FBF4A80427F9CF1BF79 /* /Users/reymondtu/git/xdag/client/utils/utils.c */; };
+		2AD5F0303F804AFEB1D4DEA6 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_frame.c */ = {isa = PBXBuildFile; fileRef = D6C4F1CB33EF4F9DAEF58499 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_frame.c */; };
+		2BFBC5F766AA41848900D6A3 /* /Users/reymondtu/git/xdag/client/utils/moving_statistics/moving_average.h */ = {isa = PBXBuildFile; fileRef = 2A8EA67A92EC42FB93DFF8D1 /* /Users/reymondtu/git/xdag/client/utils/moving_statistics/moving_average.h */; };
+		2CA52D1C66074769BB6500A1 /* /Users/reymondtu/git/xdag/client/utils/base64.h */ = {isa = PBXBuildFile; fileRef = 8A95D3781F244DC884915718 /* /Users/reymondtu/git/xdag/client/utils/base64.h */; };
+		2E2AC59EC2C240AB99A521AC /* /Users/reymondtu/git/xdag/client/transport.c */ = {isa = PBXBuildFile; fileRef = C98D8F3A9AE84300ABBB757B /* /Users/reymondtu/git/xdag/client/transport.c */; };
+		2EE08BF391B8439791CEC030 /* /Users/reymondtu/git/xdag/client/time.c */ = {isa = PBXBuildFile; fileRef = C7E9B1591FCE469694C6500D /* /Users/reymondtu/git/xdag/client/time.c */; };
+		2F5AE708810D40E490107C23 /* /Users/reymondtu/git/xdag/client/netdb.c */ = {isa = PBXBuildFile; fileRef = 5A1CCE4164BE472B9BA11829 /* /Users/reymondtu/git/xdag/client/netdb.c */; };
+		3A6346A8019A412EB4F3F72B /* /Users/reymondtu/git/xdag/client/uthash/uthash.h */ = {isa = PBXBuildFile; fileRef = C1DBEA0D73D943218C2CD157 /* /Users/reymondtu/git/xdag/client/uthash/uthash.h */; };
+		3B6202699CF74E998432DF09 /* /Users/reymondtu/git/xdag/client/miner.c */ = {isa = PBXBuildFile; fileRef = 12ECA21502AB4D768B530119 /* /Users/reymondtu/git/xdag/client/miner.c */; };
+		3B8BBE8C74E34340920AB5DA /* /Users/reymondtu/git/xdag/client/network.h */ = {isa = PBXBuildFile; fileRef = 015759DE3E9B4D54BB229349 /* /Users/reymondtu/git/xdag/client/network.h */; };
+		3C8BA26E7075405C99A1BCB3 /* /Users/reymondtu/git/xdag/ldus/atomic.h */ = {isa = PBXBuildFile; fileRef = 5C36672DF6A74AA9850999D0 /* /Users/reymondtu/git/xdag/ldus/atomic.h */; };
+		3EF4F150627E4B9895B38F8F /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_queue.c */ = {isa = PBXBuildFile; fileRef = 7179977513624999988C833A /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_queue.c */; };
+		3EF7C85EFA084628BC77393D /* /Users/reymondtu/git/xdag/client/websocket/websocket.c */ = {isa = PBXBuildFile; fileRef = 7952F94296154A9F93C309A6 /* /Users/reymondtu/git/xdag/client/websocket/websocket.c */; };
+		43FE74A1664E4FAA89999891 /* /Users/reymondtu/git/xdag/client/memory.c */ = {isa = PBXBuildFile; fileRef = FA3817F7E49D4A4580ACD222 /* /Users/reymondtu/git/xdag/client/memory.c */; };
+		442F4EE24ACB4BF38076D469 /* /Users/reymondtu/git/xdag/client/xdag_config.c */ = {isa = PBXBuildFile; fileRef = C15A2DF87BC94D47AF02A84F /* /Users/reymondtu/git/xdag/client/xdag_config.c */; };
+		46CB179BBA9941F698AFE6E2 /* /Users/reymondtu/git/xdag/client/utils/utils.h */ = {isa = PBXBuildFile; fileRef = FC41DAA8F9E247369DDAA7E4 /* /Users/reymondtu/git/xdag/client/utils/utils.h */; };
+		4851C7432893404A92122904 /* /Users/reymondtu/git/xdag/client/bloom_filter.c */ = {isa = PBXBuildFile; fileRef = 091BE865D11943C6A6617328 /* /Users/reymondtu/git/xdag/client/bloom_filter.c */; };
+		4BA6F04D33A54C2CAEC8B849 /* /Users/reymondtu/git/xdag/client/state.h */ = {isa = PBXBuildFile; fileRef = 5259C009B26040B89DD5A453 /* /Users/reymondtu/git/xdag/client/state.h */; };
+		4D4178FE073B4B0BAF3502BC /* /Users/reymondtu/git/xdag/client/global.h */ = {isa = PBXBuildFile; fileRef = 2F4A128B2D604E0F97E53F52 /* /Users/reymondtu/git/xdag/client/global.h */; };
+		553C6808F840417CAF002F3C /* /Users/reymondtu/git/xdag/client/main.c */ = {isa = PBXBuildFile; fileRef = 38DF424CFF3946D08050D1B4 /* /Users/reymondtu/git/xdag/client/main.c */; };
+		57A3E4C2B9344396A731A42C /* /Users/reymondtu/git/xdag/client/utils/linenoise.c */ = {isa = PBXBuildFile; fileRef = F5B6464031A94794A273A195 /* /Users/reymondtu/git/xdag/client/utils/linenoise.c */; };
+		5A651F12CD7B483E81BD0CCE /* /Users/reymondtu/git/xdag/client/math.c */ = {isa = PBXBuildFile; fileRef = 0226391C0D1348A0AA35914D /* /Users/reymondtu/git/xdag/client/math.c */; };
+		5AB49994B0E64A338614C2CA /* /Users/reymondtu/git/xdag/client/utils/base64.c */ = {isa = PBXBuildFile; fileRef = 76A76425F63A44F1B6F5C731 /* /Users/reymondtu/git/xdag/client/utils/base64.c */; };
+		5E906BA7E7394E1CAA171686 /* /Users/reymondtu/git/xdag/client/types.h */ = {isa = PBXBuildFile; fileRef = AE5A0A32C9554CE9B66FD75A /* /Users/reymondtu/git/xdag/client/types.h */; };
+		6101969D47D2433387ECAAC3 /* /Users/reymondtu/git/xdag/client/hash.h */ = {isa = PBXBuildFile; fileRef = 3022B28AF8ED4269BCF05CAC /* /Users/reymondtu/git/xdag/client/hash.h */; };
+		6347889CD9094F3CA6475A3B /* /Users/reymondtu/git/xdag/client/address.h */ = {isa = PBXBuildFile; fileRef = 7D17270D90344AA4B00C4363 /* /Users/reymondtu/git/xdag/client/address.h */; };
+		63B4EBAD48904818B82337B8 /* /Users/reymondtu/git/xdag/client/math.h */ = {isa = PBXBuildFile; fileRef = 62075B52901B4BD4A101181D /* /Users/reymondtu/git/xdag/client/math.h */; };
+		662AA11955D24D77A1CC0818 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_event.h */ = {isa = PBXBuildFile; fileRef = F6C9B51DFBCD45A38AAB9C7F /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_event.h */; };
+		69FCCC15815A4934A3BD7781 /* /Users/reymondtu/git/xdag/dnet/dnet_crypt.c */ = {isa = PBXBuildFile; fileRef = 9FE7190F43E84764A2E5F167 /* /Users/reymondtu/git/xdag/dnet/dnet_crypt.c */; };
+		6A012146D3F84974877A5295 /* /Users/reymondtu/git/xdag/dfslib/dfslib_types.h */ = {isa = PBXBuildFile; fileRef = 814744EFDC9747078CA3B868 /* /Users/reymondtu/git/xdag/dfslib/dfslib_types.h */; };
+		6A772E475C93488F9F89BCEC /* /Users/reymondtu/git/xdag/dfslib/dfslib_string.c */ = {isa = PBXBuildFile; fileRef = 85C578DDBDB9418BBD3C2690 /* /Users/reymondtu/git/xdag/dfslib/dfslib_string.c */; };
+		6AB5C659AD6148D9B7B6E04F /* /Users/reymondtu/git/xdag/client/http/http.h */ = {isa = PBXBuildFile; fileRef = 1A2A06905953446381D5BB2A /* /Users/reymondtu/git/xdag/client/http/http.h */; };
+		6BEF69DF147C418B8DCBB197 /* /Users/reymondtu/git/xdag/client/utils/dirname.h */ = {isa = PBXBuildFile; fileRef = E78494A038814247A88D5385 /* /Users/reymondtu/git/xdag/client/utils/dirname.h */; };
+		6F942C1D1A69412198999417 /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON_Utils.c */ = {isa = PBXBuildFile; fileRef = 5FD9D7443C914FBFBC5D69AB /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON_Utils.c */; };
+		6FE6CE7472FF41CDAC2E98DF /* /Users/reymondtu/git/xdag/client/utils/log.c */ = {isa = PBXBuildFile; fileRef = 2159B8879E974E99A48BC9A5 /* /Users/reymondtu/git/xdag/client/utils/log.c */; };
+		7382E7A97DE34CD484848AC4 /* /Users/reymondtu/git/xdag/client/http/url.c */ = {isa = PBXBuildFile; fileRef = 0E16D0503B5E47CE9317DDB7 /* /Users/reymondtu/git/xdag/client/http/url.c */; };
+		7420FBDF7BA64B699147BB0F /* /Users/reymondtu/git/xdag/client/uthash/utlist.h */ = {isa = PBXBuildFile; fileRef = DD360E1E857046BE8D220336 /* /Users/reymondtu/git/xdag/client/uthash/utlist.h */; };
+		761046B6D0AB4D7784FAADA7 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_net.c */ = {isa = PBXBuildFile; fileRef = D86F66152AF947E2A89AF808 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_net.c */; };
+		76A527FCBC7C4395BC7AE82B /* /Users/reymondtu/git/xdag/dfslib/dfslib_string.h */ = {isa = PBXBuildFile; fileRef = F934D230F25E4909AC9B2C48 /* /Users/reymondtu/git/xdag/dfslib/dfslib_string.h */; };
+		7798347EA832466B858ADEF3 /* /Users/reymondtu/git/xdag/client/pool.c */ = {isa = PBXBuildFile; fileRef = 411E2113B6604594BEE5765E /* /Users/reymondtu/git/xdag/client/pool.c */; };
+		77F7F95F25614A3AAF836D8E /* /Users/reymondtu/git/xdag/client/block.c */ = {isa = PBXBuildFile; fileRef = 8421CD391B404624A838102B /* /Users/reymondtu/git/xdag/client/block.c */; };
+		7DF235E5E3244D40AD4D19D3 /* /Users/reymondtu/git/xdag/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = E6D692F91F5A4461BA62A821 /* /Users/reymondtu/git/xdag/CMakeLists.txt */; };
+		7EB51763327C4471805D9A4D /* /Users/reymondtu/git/xdag/client/global.c */ = {isa = PBXBuildFile; fileRef = FFB9051268FA4EA3BA01B48D /* /Users/reymondtu/git/xdag/client/global.c */; };
+		7F650396F6CA42AB8C6C1A07 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_queue.h */ = {isa = PBXBuildFile; fileRef = 2A5BA616DC82418394E7DDF3 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_queue.h */; };
+		80E051189FD340619A560AE0 /* /Users/reymondtu/git/xdag/client/algorithms/crc.c */ = {isa = PBXBuildFile; fileRef = AEF53C43DA134041B6779ACF /* /Users/reymondtu/git/xdag/client/algorithms/crc.c */; };
+		825BDA362BC549A7AF6E4E38 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_service.h */ = {isa = PBXBuildFile; fileRef = DC9AAE1AF11343DB93972606 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_service.h */; };
+		82B5B9E9C3074492BCE5D1DB /* /Users/reymondtu/git/xdag/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = E36C71657D02491DBA345E0D /* /Users/reymondtu/git/xdag/CMakeLists.txt */; };
+		832FE677EDED4D06A5B748FF /* /Users/reymondtu/git/xdag/dnet/dnet_history.h */ = {isa = PBXBuildFile; fileRef = EDC84F4CA12E4B6C9673D666 /* /Users/reymondtu/git/xdag/dnet/dnet_history.h */; };
+		84589F842BF943C9B9648E43 /* /Users/reymondtu/git/xdag/client/xdag_config.h */ = {isa = PBXBuildFile; fileRef = CC2FD76C1CFF42E98A24616F /* /Users/reymondtu/git/xdag/client/xdag_config.h */; };
+		87C97E4CAF5C447A8683CEFB /* /Users/reymondtu/git/xdag/dnet/dnet_packet.h */ = {isa = PBXBuildFile; fileRef = 03FA713F9A9A434C8699FB2D /* /Users/reymondtu/git/xdag/dnet/dnet_packet.h */; };
+		89A60FE20A484FCC8567B692 /* /Users/reymondtu/git/xdag/client/address.c */ = {isa = PBXBuildFile; fileRef = 521C2BABF21447FE8C2740E1 /* /Users/reymondtu/git/xdag/client/address.c */; };
+		8A0C7CE0C9D943508A0B6F3D /* /Users/reymondtu/git/xdag/client/block.h */ = {isa = PBXBuildFile; fileRef = A37078EA8C244EFC8E1AE3F0 /* /Users/reymondtu/git/xdag/client/block.h */; };
+		8A11AB097D0E4BDCB0BCA10C /* /Users/reymondtu/git/xdag/client/block.cgi.c */ = {isa = PBXBuildFile; fileRef = 90371AD4740A4941A7E8B525 /* /Users/reymondtu/git/xdag/client/block.cgi.c */; };
+		8B92467B52274303A67B347C /* /Users/reymondtu/git/xdag/client/utils/log.h */ = {isa = PBXBuildFile; fileRef = B8FE3627F20445FEB48DF9A3 /* /Users/reymondtu/git/xdag/client/utils/log.h */; };
+		8C91A33B78F74818B8A589CD /* /Users/reymondtu/git/xdag/client/init.h */ = {isa = PBXBuildFile; fileRef = 72D1FDC5F68840FE9B960F8A /* /Users/reymondtu/git/xdag/client/init.h */; };
+		8D27C1FCFD4F44ABA2A8688A /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedure.c */ = {isa = PBXBuildFile; fileRef = FEA920A3A33C4E22AB4EDA44 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedure.c */; };
+		8ED32AFD791D40288443643D /* /Users/reymondtu/git/xdag/dnet/dnet_xdag.c */ = {isa = PBXBuildFile; fileRef = 6F3502A8B50849889660187C /* /Users/reymondtu/git/xdag/dnet/dnet_xdag.c */; };
+		9159B701EE414096BAD3FBD1 /* /Users/reymondtu/git/xdag/client/algorithms/sha256.h */ = {isa = PBXBuildFile; fileRef = 9AA21301987543E399EC4253 /* /Users/reymondtu/git/xdag/client/algorithms/sha256.h */; };
+		925687C1ADA743C4907150BA /* /Users/reymondtu/git/xdag/dnet/dnet_system.h */ = {isa = PBXBuildFile; fileRef = 34A6295940B74AFB845960B8 /* /Users/reymondtu/git/xdag/dnet/dnet_system.h */; };
+		934831299B2944559E0C046B /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON.h */ = {isa = PBXBuildFile; fileRef = 9A6A09BEC93841DEB4F90554 /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON.h */; };
+		943E9EF408324160A4105EF9 /* /Users/reymondtu/git/xdag/client/wallet.c */ = {isa = PBXBuildFile; fileRef = 6DA82F64C0304A02B4B4F6BC /* /Users/reymondtu/git/xdag/client/wallet.c */; };
+		9622100EF5BA44AEB6E37ACB /* /Users/reymondtu/git/xdag/client/mining_common.c */ = {isa = PBXBuildFile; fileRef = 43F5E98D0621454A97DEC60C /* /Users/reymondtu/git/xdag/client/mining_common.c */; };
+		96BBA1828862499A9D7F180B /* /Users/reymondtu/git/xdag/client/utils/atomic.c */ = {isa = PBXBuildFile; fileRef = 733DE38DB2A5454BB9AE1009 /* /Users/reymondtu/git/xdag/client/utils/atomic.c */; };
+		96F5F96A4F81496881CFFAC9 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedures.c */ = {isa = PBXBuildFile; fileRef = 6FB9DB770FC649159F7514F4 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedures.c */; };
+		995D045C076F4AF991836389 /* /Users/reymondtu/git/xdag/client/version.h */ = {isa = PBXBuildFile; fileRef = D2BBBCA4F2D743FD9BD764BE /* /Users/reymondtu/git/xdag/client/version.h */; };
+		998570E536F94AC3837DEBCC /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_frame.h */ = {isa = PBXBuildFile; fileRef = CA7EC67B34CF49DA9F4FB17B /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_frame.h */; };
+		9B0AD2240A15446694247374 /* /Users/reymondtu/git/xdag/client/utils/atomic.h */ = {isa = PBXBuildFile; fileRef = 49BD6515861D493AB5F8BFA0 /* /Users/reymondtu/git/xdag/client/utils/atomic.h */; };
+		9B3AF14ED42144BEBE251EBA /* /Users/reymondtu/git/xdag/ldus/list.h */ = {isa = PBXBuildFile; fileRef = AF80B4B97FEE4A5C97A2F8DE /* /Users/reymondtu/git/xdag/ldus/list.h */; };
+		9C9E95A39526487AB39FB0A2 /* /Users/reymondtu/git/xdag/client/miner.h */ = {isa = PBXBuildFile; fileRef = 87650EDDD489490FB469F78D /* /Users/reymondtu/git/xdag/client/miner.h */; };
+		9D54C22B7C064B88B9018515 /* /Users/reymondtu/git/xdag/client/utils/moving_statistics/moving_average.c */ = {isa = PBXBuildFile; fileRef = 1F672629688549EC90439765 /* /Users/reymondtu/git/xdag/client/utils/moving_statistics/moving_average.c */; };
+		A004C40E66974D7F9B95AB8C /* /Users/reymondtu/git/xdag/client/wallet.h */ = {isa = PBXBuildFile; fileRef = 1E386C8E2F7147C79CF48E52 /* /Users/reymondtu/git/xdag/client/wallet.h */; };
+		A26112E0C7584328B56D268B /* /Users/reymondtu/git/xdag/client/http/http.c */ = {isa = PBXBuildFile; fileRef = 52BFEAA592724AF79463549F /* /Users/reymondtu/git/xdag/client/http/http.c */; };
+		A502C2876B8F4CBA81D8B5CB /* /Users/reymondtu/git/xdag/client/system.h */ = {isa = PBXBuildFile; fileRef = BE2B284BCD98447A8F5BA0E1 /* /Users/reymondtu/git/xdag/client/system.h */; };
+		A981FCF8250C43728D13C873 /* /Users/reymondtu/git/xdag/client/websocket/websocket.h */ = {isa = PBXBuildFile; fileRef = 15839546227745A6AD1C557E /* /Users/reymondtu/git/xdag/client/websocket/websocket.h */; };
+		AF9B1B62F4264BADBE733518 /* /Users/reymondtu/git/xdag/client/storage.h */ = {isa = PBXBuildFile; fileRef = 8327E6B3EC90445AAA9A0FBE /* /Users/reymondtu/git/xdag/client/storage.h */; };
+		B2F3A95BB083453793E1C4CE /* /Users/reymondtu/git/xdag/client/websocket/wslay/config.h */ = {isa = PBXBuildFile; fileRef = D9CB843DFB814285B47E4467 /* /Users/reymondtu/git/xdag/client/websocket/wslay/config.h */; };
+		B43B4FCC30C44719BFBD1B53 /* /Users/reymondtu/git/xdag/client/crypt.h */ = {isa = PBXBuildFile; fileRef = 7968BCE09E394F869698C3D8 /* /Users/reymondtu/git/xdag/client/crypt.h */; };
+		B5ABEF82472243D78E7F3937 /* /Users/reymondtu/git/xdag/client/statsdaemon.c */ = {isa = PBXBuildFile; fileRef = 81C1725137EA45DBA4BE6E41 /* /Users/reymondtu/git/xdag/client/statsdaemon.c */; };
+		B6BAAD9F14F24994AE18AB06 /* /Users/reymondtu/git/xdag/client/algorithms/sha256.c */ = {isa = PBXBuildFile; fileRef = 2695A6D395774BFD9CE1034B /* /Users/reymondtu/git/xdag/client/algorithms/sha256.c */; };
+		BBDD93163A8D47318F5F8558 /* /Users/reymondtu/git/xdag/client/rsdb.c */ = {isa = PBXBuildFile; fileRef = 904A2C2716AC4968A47ED31C /* /Users/reymondtu/git/xdag/client/rsdb.c */; };
+		BCF11A1250214ACD9F8111DA /* /Users/reymondtu/git/xdag/client/sync.c */ = {isa = PBXBuildFile; fileRef = 9177F7CF8F78494A98EE7828 /* /Users/reymondtu/git/xdag/client/sync.c */; };
+		BFA92D510E09465D81B64D5D /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON_Utils.h */ = {isa = PBXBuildFile; fileRef = D894530AA1544A8FBBB5167E /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON_Utils.h */; };
+		C250732C79414149B702DE2F /* /Users/reymondtu/git/xdag/client/algorithms/crc.h */ = {isa = PBXBuildFile; fileRef = CD4DD98863D74FD6B972310C /* /Users/reymondtu/git/xdag/client/algorithms/crc.h */; };
+		C29314F4BB89427FB684890E /* /Users/reymondtu/git/xdag/ldus/rbtree.h */ = {isa = PBXBuildFile; fileRef = 0D4F6533A3C74B47B6F23CE7 /* /Users/reymondtu/git/xdag/ldus/rbtree.h */; };
+		C2EF17C76ED64B4FA006D0AD /* /Users/reymondtu/git/xdag/client/utils/linenoise.h */ = {isa = PBXBuildFile; fileRef = B37F67A3BEF744CD8722A060 /* /Users/reymondtu/git/xdag/client/utils/linenoise.h */; };
+		CD87F1B6691B425D938338DF /* /Users/reymondtu/git/xdag/client/utils/random.h */ = {isa = PBXBuildFile; fileRef = B06D84379A334B73A0E0BA4B /* /Users/reymondtu/git/xdag/client/utils/random.h */; };
+		D04E6B44F5E24C138BEC806F /* /Users/reymondtu/git/xdag/client/x86_64cpuid-mac.s */ = {isa = PBXBuildFile; fileRef = 6D189A4557F54F26B1A5B637 /* /Users/reymondtu/git/xdag/client/x86_64cpuid-mac.s */; };
+		D3F5D3539317412F851454F4 /* /Users/reymondtu/git/xdag/dnet/dnet_crypt.h */ = {isa = PBXBuildFile; fileRef = 456918C449134823A11E5BE3 /* /Users/reymondtu/git/xdag/dnet/dnet_crypt.h */; };
+		D46B2B858374420093D898EC /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay.h */ = {isa = PBXBuildFile; fileRef = 67A9DB56AEE84AF5AC12BC63 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay.h */; };
+		D4DFBA6FCB964442A890484F /* /Users/reymondtu/git/xdag/client/pool.h */ = {isa = PBXBuildFile; fileRef = 4F4A4313029443D4B75EE7E0 /* /Users/reymondtu/git/xdag/client/pool.h */; };
+		D5C8DB2CA5B548EA812B5376 /* /Users/reymondtu/git/xdag/dfslib/dfslib_random.c */ = {isa = PBXBuildFile; fileRef = B4968A04E8E74BC4AA5B039D /* /Users/reymondtu/git/xdag/dfslib/dfslib_random.c */; };
+		D5E41681B8FC4FD3B39B3AF2 /* /Users/reymondtu/git/xdag/client/utils/uuid.h */ = {isa = PBXBuildFile; fileRef = A9B835FD12204A538ADE48C7 /* /Users/reymondtu/git/xdag/client/utils/uuid.h */; };
+		DB404FB7B3D6468CBC45E0BF /* /Users/reymondtu/git/xdag/client/crypt.c */ = {isa = PBXBuildFile; fileRef = A91ACA245D9E4ABD92116AE4 /* /Users/reymondtu/git/xdag/client/crypt.c */; };
+		DE30B40D6C9643A59F242B69 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedures.h */ = {isa = PBXBuildFile; fileRef = A006A79FA960477F8DF950E1 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedures.h */; };
+		DEF564EBB67A4E60B8F552B8 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_wrapper.c */ = {isa = PBXBuildFile; fileRef = 64B3EA46076846CF9D786F20 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_wrapper.c */; };
+		E0A57FF3A0214D8DB8DC9F59 /* /Users/reymondtu/git/xdag/client/hash.c */ = {isa = PBXBuildFile; fileRef = 289159FD58F44521BF3A9E09 /* /Users/reymondtu/git/xdag/client/hash.c */; };
+		E18DAD90292245DF90F80DDE /* /Users/reymondtu/git/xdag/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = B7BEEB0E2E09401D95BD1313 /* /Users/reymondtu/git/xdag/CMakeLists.txt */; };
+		E314B526FE0A45C394AEB43B /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_service.c */ = {isa = PBXBuildFile; fileRef = E128D2B918EF4E7CB8D6A80B /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_service.c */; };
+		E54FD55217D04296AA9F88A8 /* /Users/reymondtu/git/xdag/client/rsdb.h */ = {isa = PBXBuildFile; fileRef = 626DC884B6454583933C946E /* /Users/reymondtu/git/xdag/client/rsdb.h */; };
+		E70F37FC074F4EBE93551A8D /* /Users/reymondtu/git/xdag/client/init.c */ = {isa = PBXBuildFile; fileRef = AADA5E62A5694CA8A583DF9E /* /Users/reymondtu/git/xdag/client/init.c */; };
+		E89606A49FB7484E902B23D0 /* /Users/reymondtu/git/xdag/client/network.c */ = {isa = PBXBuildFile; fileRef = 4E0302398D74496B872F7A6A /* /Users/reymondtu/git/xdag/client/network.c */; };
+		E918D7C5D21946AA82784995 /* /Users/reymondtu/git/xdag/client/http/url.h */ = {isa = PBXBuildFile; fileRef = 5534524163764E6E9212F368 /* /Users/reymondtu/git/xdag/client/http/url.h */; };
+		EA12A61BECBF473C9BE1CDAE /* /Users/reymondtu/git/xdag/client/commands.c */ = {isa = PBXBuildFile; fileRef = ED028E0787AF4D21A810DFB6 /* /Users/reymondtu/git/xdag/client/commands.c */; };
+		EABCCDE35F444C6C9E9636F2 /* /Users/reymondtu/git/xdag/client/utils/random.c */ = {isa = PBXBuildFile; fileRef = 6E3A6CD835524DB697E98905 /* /Users/reymondtu/git/xdag/client/utils/random.c */; };
+		EBB578C479E5483FB672517B /* /Users/reymondtu/git/xdag/client/sync.h */ = {isa = PBXBuildFile; fileRef = 42AF68E65C0A44F48F2A6E1F /* /Users/reymondtu/git/xdag/client/sync.h */; };
+		F0136F695D514FD1A629A419 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_stack.c */ = {isa = PBXBuildFile; fileRef = 61AB7633B58D4193815D1325 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_stack.c */; };
+		F0EFA0818E4E4B49B3963F64 /* /Users/reymondtu/git/xdag/client/time.h */ = {isa = PBXBuildFile; fileRef = 87DFC80FE19E44F9A078000E /* /Users/reymondtu/git/xdag/client/time.h */; };
+		F48FA8EED9C1443EBAC1C55B /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedure.h */ = {isa = PBXBuildFile; fileRef = BCFCCBEF3BDD4628A829C2E3 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedure.h */; };
+		F714DB87F2374AD7A5FD8662 /* /Users/reymondtu/git/xdag/client/utils/dirname.c */ = {isa = PBXBuildFile; fileRef = 30D38C04BFBE4251B2FEAA3D /* /Users/reymondtu/git/xdag/client/utils/dirname.c */; };
+		F8B3531FFBC84C76BD6C515C /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_commands.h */ = {isa = PBXBuildFile; fileRef = DE62A40C698048719DA139DA /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_commands.h */; };
+		F8E4E1F288814A35A9FB108C /* /Users/reymondtu/git/xdag/client/terminal.h */ = {isa = PBXBuildFile; fileRef = 9EFA1518A3404C9A9A0BD49C /* /Users/reymondtu/git/xdag/client/terminal.h */; };
+		F9B2FD27D4274812A7A82961 /* /Users/reymondtu/git/xdag/client/storage.c */ = {isa = PBXBuildFile; fileRef = B3FD48048D474459B8FBC241 /* /Users/reymondtu/git/xdag/client/storage.c */; };
+		F9D893EF6AB2456A8744DD2C /* /Users/reymondtu/git/xdag/client/utils/uuid.c */ = {isa = PBXBuildFile; fileRef = 7887C1530C764558B0DDD51A /* /Users/reymondtu/git/xdag/client/utils/uuid.c */; };
+		FC0418EF8AE24F4B8592CD1A /* /Users/reymondtu/git/xdag/client/transport.h */ = {isa = PBXBuildFile; fileRef = F27207DFEE254092882A0383 /* /Users/reymondtu/git/xdag/client/transport.h */; };
+		FD03FA45D02645CB984DFFE1 /* /Users/reymondtu/git/xdag/dfslib/dfsrsa.c */ = {isa = PBXBuildFile; fileRef = B89C4D8C32B845F987C86D50 /* /Users/reymondtu/git/xdag/dfslib/dfsrsa.c */; };
+		FFED1ABCBB6649D881526B3A /* /Users/reymondtu/git/xdag/dfslib/dfslib_crypt.c */ = {isa = PBXBuildFile; fileRef = A441A6934D3E4CFFB976929B /* /Users/reymondtu/git/xdag/dfslib/dfslib_crypt.c */; };
+		FFED37DE0A624FD4A5775660 /* /Users/reymondtu/git/xdag/dfslib/dfsrsa.h */ = {isa = PBXBuildFile; fileRef = 4BF4393AC18446E785CCAFF4 /* /Users/reymondtu/git/xdag/dfslib/dfsrsa.h */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXCopyFilesBuildPhase section */
-		389F043420544EDC003F3084 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 12;
-			dstPath = .;
-			dstSubfolderSpec = 6;
-			files = (
-				385EB89021D3D84900287D2B /* netdb-testnet.txt in CopyFiles */,
-				385EB89121D3D84900287D2B /* netdb-white-testnet.txt in CopyFiles */,
-				385EB89221D3D84900287D2B /* netdb-white.txt in CopyFiles */,
-				385EB89321D3D84900287D2B /* netdb.txt in CopyFiles */,
-				385EB88D21D3D84000287D2B /* example.pool.config in CopyFiles */,
-				385EB88E21D3D84000287D2B /* pools-testnet.txt in CopyFiles */,
-				385EB88F21D3D84000287D2B /* pools.txt in CopyFiles */,
-				385EB88C21D3D83800287D2B /* dnet_keys.bin in CopyFiles */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
+/* Begin PBXBuildStyle section */
+		00044DCB4F544A74B9366505 /* Debug */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Debug;
 		};
-/* End PBXCopyFilesBuildPhase section */
+		0C95A1F73E7841E5B2BAE190 /* MinSizeRel */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = MinSizeRel;
+		};
+		F4DBF52AA8194AC1B4AF19D3 /* Release */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Release;
+		};
+		FF400299D35F4E4EB32C38F8 /* RelWithDebInfo */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = RelWithDebInfo;
+		};
+/* End PBXBuildStyle section */
+
+/* Begin PBXContainerItemProxy section */
+		2471DDFD183D41D8A14686EE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EC518486E16F447AA68F2838 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CEAF0D6BCF74476AB3DA49CA;
+			remoteInfo = xdag;
+		};
+		4F6F71CE749F41D8B9B4127A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EC518486E16F447AA68F2838 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DE5943C11737473DAA6F4572;
+			remoteInfo = ZERO_CHECK;
+		};
+		81CEADDAEBB542DBB75EE3D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EC518486E16F447AA68F2838 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DE5943C11737473DAA6F4572;
+			remoteInfo = ZERO_CHECK;
+		};
+		A4FBFABEF0B94ECF9D46AD71 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EC518486E16F447AA68F2838 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DE5943C11737473DAA6F4572;
+			remoteInfo = ZERO_CHECK;
+		};
+		BBF5A16834F1499897F77CF5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EC518486E16F447AA68F2838 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DE5943C11737473DAA6F4572;
+			remoteInfo = ZERO_CHECK;
+		};
+		E10DA5283505434386526732 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EC518486E16F447AA68F2838 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CB669EB4602B4022B7C08364;
+			remoteInfo = cgi_block;
+		};
+		EAA5B5BDCC2B4F91AFCC2AE5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EC518486E16F447AA68F2838 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4535520C7C4443D1B134FEBA;
+			remoteInfo = cgi_stats;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		385EB7A321D3D64200287D2B /* atomic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = atomic.h; sourceTree = "<group>"; };
-		385EB7A421D3D64200287D2B /* list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = list.h; sourceTree = "<group>"; };
-		385EB7A521D3D64200287D2B /* rbtree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rbtree.h; sourceTree = "<group>"; };
-		385EB7A721D3D64200287D2B /* address.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = address.c; sourceTree = "<group>"; };
-		385EB7A821D3D64200287D2B /* address.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = address.h; sourceTree = "<group>"; };
-		385EB7AA21D3D64200287D2B /* crc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = crc.c; sourceTree = "<group>"; };
-		385EB7AB21D3D64200287D2B /* crc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crc.h; sourceTree = "<group>"; };
-		385EB7AC21D3D64200287D2B /* sha256-mb-x86_64-mac.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = "sha256-mb-x86_64-mac.s"; sourceTree = "<group>"; };
-		385EB7AE21D3D64200287D2B /* sha256.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sha256.c; sourceTree = "<group>"; };
-		385EB7AF21D3D64200287D2B /* sha256.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sha256.h; sourceTree = "<group>"; };
-		385EB7B121D3D64200287D2B /* block.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = block.c; sourceTree = "<group>"; };
-		385EB7B321D3D64200287D2B /* block.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = block.h; sourceTree = "<group>"; };
-		385EB7B421D3D64200287D2B /* commands.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = commands.c; sourceTree = "<group>"; };
-		385EB7B521D3D64200287D2B /* commands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = commands.h; sourceTree = "<group>"; };
-		385EB7B621D3D64200287D2B /* crypt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = crypt.c; sourceTree = "<group>"; };
-		385EB7B721D3D64200287D2B /* crypt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crypt.h; sourceTree = "<group>"; };
-		385EB7B921D3D64200287D2B /* example.pool.config */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = example.pool.config; sourceTree = "<group>"; };
-		385EB7BA21D3D64200287D2B /* global.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = global.c; sourceTree = "<group>"; };
-		385EB7BB21D3D64200287D2B /* global.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = global.h; sourceTree = "<group>"; };
-		385EB7BC21D3D64200287D2B /* hash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = hash.c; sourceTree = "<group>"; };
-		385EB7BD21D3D64200287D2B /* hash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hash.h; sourceTree = "<group>"; };
-		385EB7BF21D3D64200287D2B /* http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = http.c; sourceTree = "<group>"; };
-		385EB7C021D3D64200287D2B /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = http.h; sourceTree = "<group>"; };
-		385EB7C121D3D64200287D2B /* url.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = url.c; sourceTree = "<group>"; };
-		385EB7C221D3D64200287D2B /* url.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = url.h; sourceTree = "<group>"; };
-		385EB7C321D3D64200287D2B /* init.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = init.c; sourceTree = "<group>"; };
-		385EB7C421D3D64200287D2B /* init.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = init.h; sourceTree = "<group>"; };
-		385EB7C621D3D64200287D2B /* cJSON.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cJSON.c; sourceTree = "<group>"; };
-		385EB7C721D3D64200287D2B /* cJSON.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cJSON.h; sourceTree = "<group>"; };
-		385EB7C821D3D64200287D2B /* cJSON_Utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cJSON_Utils.c; sourceTree = "<group>"; };
-		385EB7C921D3D64200287D2B /* cJSON_Utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cJSON_Utils.h; sourceTree = "<group>"; };
-		385EB7CA21D3D64200287D2B /* rpc_commands.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rpc_commands.c; sourceTree = "<group>"; };
-		385EB7CB21D3D64200287D2B /* rpc_commands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_commands.h; sourceTree = "<group>"; };
-		385EB7CC21D3D64200287D2B /* rpc_procedure.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rpc_procedure.c; sourceTree = "<group>"; };
-		385EB7CD21D3D64200287D2B /* rpc_procedure.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_procedure.h; sourceTree = "<group>"; };
-		385EB7CE21D3D64200287D2B /* rpc_procedures.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rpc_procedures.c; sourceTree = "<group>"; };
-		385EB7CF21D3D64200287D2B /* rpc_procedures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_procedures.h; sourceTree = "<group>"; };
-		385EB7D021D3D64200287D2B /* rpc_service.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rpc_service.c; sourceTree = "<group>"; };
-		385EB7D121D3D64200287D2B /* rpc_service.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_service.h; sourceTree = "<group>"; };
-		385EB7D221D3D64200287D2B /* rpc_wrapper.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rpc_wrapper.c; sourceTree = "<group>"; };
-		385EB7D321D3D64200287D2B /* rpc_wrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_wrapper.h; sourceTree = "<group>"; };
-		385EB7D421D3D64200287D2B /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; wrapsLines = 0; };
-		385EB7D621D3D64200287D2B /* math.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = math.c; sourceTree = "<group>"; };
-		385EB7D721D3D64200287D2B /* math.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = math.h; sourceTree = "<group>"; };
-		385EB7D821D3D64200287D2B /* memory.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = memory.c; sourceTree = "<group>"; };
-		385EB7D921D3D64200287D2B /* memory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = memory.h; sourceTree = "<group>"; };
-		385EB7DA21D3D64200287D2B /* miner.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = miner.c; sourceTree = "<group>"; };
-		385EB7DB21D3D64200287D2B /* miner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = miner.h; sourceTree = "<group>"; };
-		385EB7DC21D3D64200287D2B /* mining_common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mining_common.c; sourceTree = "<group>"; };
-		385EB7DD21D3D64200287D2B /* mining_common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mining_common.h; sourceTree = "<group>"; };
-		385EB7DE21D3D64200287D2B /* netdb-testnet.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "netdb-testnet.txt"; sourceTree = "<group>"; };
-		385EB7DF21D3D64200287D2B /* netdb-white-testnet.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "netdb-white-testnet.txt"; sourceTree = "<group>"; };
-		385EB7E021D3D64200287D2B /* netdb-white.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "netdb-white.txt"; sourceTree = "<group>"; };
-		385EB7E121D3D64200287D2B /* netdb.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = netdb.c; sourceTree = "<group>"; };
-		385EB7E221D3D64200287D2B /* netdb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = netdb.h; sourceTree = "<group>"; };
-		385EB7E321D3D64200287D2B /* netdb.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = netdb.txt; sourceTree = "<group>"; };
-		385EB7E421D3D64200287D2B /* network.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = network.c; sourceTree = "<group>"; };
-		385EB7E521D3D64200287D2B /* network.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = network.h; sourceTree = "<group>"; };
-		385EB7E621D3D64200287D2B /* pool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pool.c; sourceTree = "<group>"; };
-		385EB7E721D3D64200287D2B /* pool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pool.h; sourceTree = "<group>"; };
-		385EB7E821D3D64200287D2B /* pools-testnet.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "pools-testnet.txt"; sourceTree = "<group>"; };
-		385EB7E921D3D64200287D2B /* pools.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = pools.txt; sourceTree = "<group>"; };
-		385EB7EA21D3D64200287D2B /* state.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = state.h; sourceTree = "<group>"; };
-		385EB7F021D3D64200287D2B /* storage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = storage.c; sourceTree = "<group>"; };
-		385EB7F121D3D64200287D2B /* storage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = storage.h; sourceTree = "<group>"; };
-		385EB7F221D3D64200287D2B /* sync.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sync.c; sourceTree = "<group>"; };
-		385EB7F321D3D64200287D2B /* sync.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sync.h; sourceTree = "<group>"; };
-		385EB7F421D3D64200287D2B /* system.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = system.h; sourceTree = "<group>"; };
-		385EB7F521D3D64200287D2B /* terminal.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = terminal.c; sourceTree = "<group>"; };
-		385EB7F621D3D64200287D2B /* terminal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = terminal.h; sourceTree = "<group>"; };
-		385EB7F721D3D64200287D2B /* time.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = time.c; sourceTree = "<group>"; };
-		385EB7F821D3D64200287D2B /* time.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = time.h; sourceTree = "<group>"; };
-		385EB7F921D3D64200287D2B /* transport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = transport.c; sourceTree = "<group>"; };
-		385EB7FA21D3D64200287D2B /* transport.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = transport.h; sourceTree = "<group>"; };
-		385EB7FB21D3D64200287D2B /* types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
-		385EB7FD21D3D64200287D2B /* uthash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uthash.h; sourceTree = "<group>"; };
-		385EB7FE21D3D64200287D2B /* utlist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utlist.h; sourceTree = "<group>"; };
-		385EB80021D3D64200287D2B /* atomic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = atomic.c; sourceTree = "<group>"; };
-		385EB80121D3D64200287D2B /* atomic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = atomic.h; sourceTree = "<group>"; };
-		385EB80221D3D64200287D2B /* base64.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = base64.c; sourceTree = "<group>"; };
-		385EB80321D3D64200287D2B /* base64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = base64.h; sourceTree = "<group>"; };
-		385EB80421D3D64200287D2B /* dirname.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dirname.c; sourceTree = "<group>"; };
-		385EB80521D3D64200287D2B /* dirname.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dirname.h; sourceTree = "<group>"; };
-		385EB80621D3D64200287D2B /* linenoise.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = linenoise.c; sourceTree = "<group>"; };
-		385EB80721D3D64200287D2B /* linenoise.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = linenoise.h; sourceTree = "<group>"; };
-		385EB80821D3D64200287D2B /* log.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = log.c; sourceTree = "<group>"; };
-		385EB80921D3D64200287D2B /* log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = log.h; sourceTree = "<group>"; };
-		385EB80B21D3D64200287D2B /* moving_average.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = moving_average.c; sourceTree = "<group>"; };
-		385EB80C21D3D64200287D2B /* moving_average.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = moving_average.h; sourceTree = "<group>"; };
-		385EB80D21D3D64200287D2B /* random.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = random.c; sourceTree = "<group>"; };
-		385EB80E21D3D64200287D2B /* random.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = random.h; sourceTree = "<group>"; };
-		385EB80F21D3D64200287D2B /* string_utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = string_utils.c; sourceTree = "<group>"; };
-		385EB81021D3D64200287D2B /* string_utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = string_utils.h; sourceTree = "<group>"; };
-		385EB81121D3D64200287D2B /* utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = utils.c; sourceTree = "<group>"; };
-		385EB81221D3D64200287D2B /* utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
-		385EB81321D3D64200287D2B /* uuid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = uuid.c; sourceTree = "<group>"; };
-		385EB81421D3D64200287D2B /* uuid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uuid.h; sourceTree = "<group>"; };
-		385EB81521D3D64200287D2B /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
-		385EB81621D3D64200287D2B /* wallet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = wallet.c; sourceTree = "<group>"; };
-		385EB81721D3D64200287D2B /* wallet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wallet.h; sourceTree = "<group>"; };
-		385EB81921D3D64200287D2B /* websocket.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = websocket.c; sourceTree = "<group>"; };
-		385EB81A21D3D64200287D2B /* websocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = websocket.h; sourceTree = "<group>"; };
-		385EB81C21D3D64200287D2B /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
-		385EB81D21D3D64200287D2B /* wslay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wslay.h; sourceTree = "<group>"; };
-		385EB81E21D3D64200287D2B /* wslay_event.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = wslay_event.c; sourceTree = "<group>"; };
-		385EB81F21D3D64200287D2B /* wslay_event.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wslay_event.h; sourceTree = "<group>"; };
-		385EB82021D3D64200287D2B /* wslay_frame.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = wslay_frame.c; sourceTree = "<group>"; };
-		385EB82121D3D64200287D2B /* wslay_frame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wslay_frame.h; sourceTree = "<group>"; };
-		385EB82221D3D64200287D2B /* wslay_net.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = wslay_net.c; sourceTree = "<group>"; };
-		385EB82321D3D64200287D2B /* wslay_net.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wslay_net.h; sourceTree = "<group>"; };
-		385EB82421D3D64200287D2B /* wslay_queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = wslay_queue.c; sourceTree = "<group>"; };
-		385EB82521D3D64200287D2B /* wslay_queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wslay_queue.h; sourceTree = "<group>"; };
-		385EB82621D3D64200287D2B /* wslay_stack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = wslay_stack.c; sourceTree = "<group>"; };
-		385EB82721D3D64200287D2B /* wslay_stack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wslay_stack.h; sourceTree = "<group>"; };
-		385EB82821D3D64200287D2B /* wslayver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wslayver.h; sourceTree = "<group>"; };
-		385EB82921D3D64200287D2B /* x86_64cpuid-mac.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = "x86_64cpuid-mac.s"; sourceTree = "<group>"; };
-		385EB82B21D3D64200287D2B /* xdag_config.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = xdag_config.c; sourceTree = "<group>"; };
-		385EB82C21D3D64200287D2B /* xdag_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xdag_config.h; sourceTree = "<group>"; };
-		385EB82E21D3D64200287D2B /* dfslib_crypt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dfslib_crypt.c; sourceTree = "<group>"; };
-		385EB82F21D3D64200287D2B /* dfslib_crypt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dfslib_crypt.h; sourceTree = "<group>"; };
-		385EB83021D3D64200287D2B /* dfslib_random.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dfslib_random.c; sourceTree = "<group>"; };
-		385EB83121D3D64200287D2B /* dfslib_random.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dfslib_random.h; sourceTree = "<group>"; };
-		385EB83221D3D64200287D2B /* dfslib_string.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dfslib_string.c; sourceTree = "<group>"; };
-		385EB83321D3D64200287D2B /* dfslib_string.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dfslib_string.h; sourceTree = "<group>"; };
-		385EB83421D3D64200287D2B /* dfslib_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dfslib_types.h; sourceTree = "<group>"; };
-		385EB83521D3D64200287D2B /* dfsrsa.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dfsrsa.c; sourceTree = "<group>"; };
-		385EB83621D3D64200287D2B /* dfsrsa.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dfsrsa.h; sourceTree = "<group>"; };
-		385EB83821D3D64200287D2B /* dnet_crypt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dnet_crypt.c; sourceTree = "<group>"; };
-		385EB83921D3D64200287D2B /* dnet_crypt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dnet_crypt.h; sourceTree = "<group>"; };
-		385EB83A21D3D64200287D2B /* dnet_history.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dnet_history.h; sourceTree = "<group>"; };
-		385EB83B21D3D64200287D2B /* dnet_keys.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = dnet_keys.bin; sourceTree = "<group>"; };
-		385EB83C21D3D64200287D2B /* dnet_main.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dnet_main.h; sourceTree = "<group>"; };
-		385EB83D21D3D64200287D2B /* dnet_packet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dnet_packet.h; sourceTree = "<group>"; };
-		385EB83E21D3D64200287D2B /* dnet_system.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dnet_system.h; sourceTree = "<group>"; };
-		385EB83F21D3D64200287D2B /* dnet_xdag.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dnet_xdag.c; sourceTree = "<group>"; };
-		389F043620544EDC003F3084 /* xdag */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xdag; sourceTree = BUILT_PRODUCTS_DIR; };
-		418AAFF5213BB3A900E96520 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = lib/openssl/lib/libcrypto.a; sourceTree = "<group>"; };
-		418AAFF7213BB3B300E96520 /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libssl.a; path = lib/openssl/lib/libssl.a; sourceTree = "<group>"; };
-		41E00BEC233D003E0031DA53 /* libsecp256k1.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsecp256k1.a; path = lib/secp256k1/lib/libsecp256k1.a; sourceTree = "<group>"; };
-		41E00BEE233D056E0031DA53 /* libgmp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgmp.a; path = lib/gmp/lib/libgmp.a; sourceTree = "<group>"; };
+		015759DE3E9B4D54BB229349 /* /Users/reymondtu/git/xdag/client/network.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = network.h; path = client/network.h; sourceTree = SOURCE_ROOT; };
+		0226391C0D1348A0AA35914D /* /Users/reymondtu/git/xdag/client/math.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = math.c; path = client/math.c; sourceTree = SOURCE_ROOT; };
+		0390EC8C4CC34F888DB7DA47 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_net.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = wslay_net.h; path = client/websocket/wslay/wslay_net.h; sourceTree = SOURCE_ROOT; };
+		03FA713F9A9A434C8699FB2D /* /Users/reymondtu/git/xdag/dnet/dnet_packet.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = dnet_packet.h; path = dnet/dnet_packet.h; sourceTree = SOURCE_ROOT; };
+		05989D6D982746AB94D3C42D /* /Users/reymondtu/git/xdag/dfslib/dfslib_crypt.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = dfslib_crypt.h; path = dfslib/dfslib_crypt.h; sourceTree = SOURCE_ROOT; };
+		091BE865D11943C6A6617328 /* /Users/reymondtu/git/xdag/client/bloom_filter.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = bloom_filter.c; path = client/bloom_filter.c; sourceTree = SOURCE_ROOT; };
+		0D4F6533A3C74B47B6F23CE7 /* /Users/reymondtu/git/xdag/ldus/rbtree.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = rbtree.h; path = ldus/rbtree.h; sourceTree = SOURCE_ROOT; };
+		0E16D0503B5E47CE9317DDB7 /* /Users/reymondtu/git/xdag/client/http/url.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = url.c; path = client/http/url.c; sourceTree = SOURCE_ROOT; };
+		110AAD876E074B2DAE36A136 /* /Users/reymondtu/git/xdag/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		12ECA21502AB4D768B530119 /* /Users/reymondtu/git/xdag/client/miner.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = miner.c; path = client/miner.c; sourceTree = SOURCE_ROOT; };
+		15839546227745A6AD1C557E /* /Users/reymondtu/git/xdag/client/websocket/websocket.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = websocket.h; path = client/websocket/websocket.h; sourceTree = SOURCE_ROOT; };
+		1A2A06905953446381D5BB2A /* /Users/reymondtu/git/xdag/client/http/http.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = http.h; path = client/http/http.h; sourceTree = SOURCE_ROOT; };
+		1E386C8E2F7147C79CF48E52 /* /Users/reymondtu/git/xdag/client/wallet.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = wallet.h; path = client/wallet.h; sourceTree = SOURCE_ROOT; };
+		1F672629688549EC90439765 /* /Users/reymondtu/git/xdag/client/utils/moving_statistics/moving_average.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = moving_average.c; path = client/utils/moving_statistics/moving_average.c; sourceTree = SOURCE_ROOT; };
+		2159B8879E974E99A48BC9A5 /* /Users/reymondtu/git/xdag/client/utils/log.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = log.c; path = client/utils/log.c; sourceTree = SOURCE_ROOT; };
+		2695A6D395774BFD9CE1034B /* /Users/reymondtu/git/xdag/client/algorithms/sha256.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = sha256.c; path = client/algorithms/sha256.c; sourceTree = SOURCE_ROOT; };
+		287C20F7BE5F42F6B34B4DE1 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_event.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = wslay_event.c; path = client/websocket/wslay/wslay_event.c; sourceTree = SOURCE_ROOT; };
+		289159FD58F44521BF3A9E09 /* /Users/reymondtu/git/xdag/client/hash.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = hash.c; path = client/hash.c; sourceTree = SOURCE_ROOT; };
+		2A5BA616DC82418394E7DDF3 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_queue.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = wslay_queue.h; path = client/websocket/wslay/wslay_queue.h; sourceTree = SOURCE_ROOT; };
+		2A8EA67A92EC42FB93DFF8D1 /* /Users/reymondtu/git/xdag/client/utils/moving_statistics/moving_average.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = moving_average.h; path = client/utils/moving_statistics/moving_average.h; sourceTree = SOURCE_ROOT; };
+		2F4A128B2D604E0F97E53F52 /* /Users/reymondtu/git/xdag/client/global.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = global.h; path = client/global.h; sourceTree = SOURCE_ROOT; };
+		2F50AA73D5424977A06A0EA9 /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = cJSON.c; path = "client/json-rpc/cJSON.c"; sourceTree = SOURCE_ROOT; };
+		3022B28AF8ED4269BCF05CAC /* /Users/reymondtu/git/xdag/client/hash.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = hash.h; path = client/hash.h; sourceTree = SOURCE_ROOT; };
+		30D38C04BFBE4251B2FEAA3D /* /Users/reymondtu/git/xdag/client/utils/dirname.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = dirname.c; path = client/utils/dirname.c; sourceTree = SOURCE_ROOT; };
+		34A6295940B74AFB845960B8 /* /Users/reymondtu/git/xdag/dnet/dnet_system.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = dnet_system.h; path = dnet/dnet_system.h; sourceTree = SOURCE_ROOT; };
+		357BBF150AF149599289EB19 /* /Users/reymondtu/git/xdag/client/utils/string_utils.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = string_utils.h; path = client/utils/string_utils.h; sourceTree = SOURCE_ROOT; };
+		38DF424CFF3946D08050D1B4 /* /Users/reymondtu/git/xdag/client/main.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = main.c; path = client/main.c; sourceTree = SOURCE_ROOT; };
+		3E2BE828DDA54B0EB5872866 /* cgi_block */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = cgi_block; sourceTree = BUILT_PRODUCTS_DIR; };
+		411E2113B6604594BEE5765E /* /Users/reymondtu/git/xdag/client/pool.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = pool.c; path = client/pool.c; sourceTree = SOURCE_ROOT; };
+		42AF68E65C0A44F48F2A6E1F /* /Users/reymondtu/git/xdag/client/sync.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = sync.h; path = client/sync.h; sourceTree = SOURCE_ROOT; };
+		43F5E98D0621454A97DEC60C /* /Users/reymondtu/git/xdag/client/mining_common.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = mining_common.c; path = client/mining_common.c; sourceTree = SOURCE_ROOT; };
+		456918C449134823A11E5BE3 /* /Users/reymondtu/git/xdag/dnet/dnet_crypt.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = dnet_crypt.h; path = dnet/dnet_crypt.h; sourceTree = SOURCE_ROOT; };
+		45C9265FD2544729BA6B9CCA /* /Users/reymondtu/git/xdag/client/terminal.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = terminal.c; path = client/terminal.c; sourceTree = SOURCE_ROOT; };
+		47FD4FBF4A80427F9CF1BF79 /* /Users/reymondtu/git/xdag/client/utils/utils.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = utils.c; path = client/utils/utils.c; sourceTree = SOURCE_ROOT; };
+		49BD6515861D493AB5F8BFA0 /* /Users/reymondtu/git/xdag/client/utils/atomic.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = atomic.h; path = client/utils/atomic.h; sourceTree = SOURCE_ROOT; };
+		4BF4393AC18446E785CCAFF4 /* /Users/reymondtu/git/xdag/dfslib/dfsrsa.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = dfsrsa.h; path = dfslib/dfsrsa.h; sourceTree = SOURCE_ROOT; };
+		4E0302398D74496B872F7A6A /* /Users/reymondtu/git/xdag/client/network.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = network.c; path = client/network.c; sourceTree = SOURCE_ROOT; };
+		4F4A4313029443D4B75EE7E0 /* /Users/reymondtu/git/xdag/client/pool.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = pool.h; path = client/pool.h; sourceTree = SOURCE_ROOT; };
+		4F66F15DD25347B9BC7DD1B7 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_wrapper.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = rpc_wrapper.h; path = "client/json-rpc/rpc_wrapper.h"; sourceTree = SOURCE_ROOT; };
+		521C2BABF21447FE8C2740E1 /* /Users/reymondtu/git/xdag/client/address.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = address.c; path = client/address.c; sourceTree = SOURCE_ROOT; };
+		52517E510E834107BF41AB96 /* /Users/reymondtu/git/xdag/dfslib/dfslib_random.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = dfslib_random.h; path = dfslib/dfslib_random.h; sourceTree = SOURCE_ROOT; };
+		5259C009B26040B89DD5A453 /* /Users/reymondtu/git/xdag/client/state.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = state.h; path = client/state.h; sourceTree = SOURCE_ROOT; };
+		52BFEAA592724AF79463549F /* /Users/reymondtu/git/xdag/client/http/http.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = http.c; path = client/http/http.c; sourceTree = SOURCE_ROOT; };
+		5534524163764E6E9212F368 /* /Users/reymondtu/git/xdag/client/http/url.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = url.h; path = client/http/url.h; sourceTree = SOURCE_ROOT; };
+		5A1CCE4164BE472B9BA11829 /* /Users/reymondtu/git/xdag/client/netdb.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = netdb.c; path = client/netdb.c; sourceTree = SOURCE_ROOT; };
+		5C36672DF6A74AA9850999D0 /* /Users/reymondtu/git/xdag/ldus/atomic.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = atomic.h; path = ldus/atomic.h; sourceTree = SOURCE_ROOT; };
+		5FD9D7443C914FBFBC5D69AB /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON_Utils.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = cJSON_Utils.c; path = "client/json-rpc/cJSON_Utils.c"; sourceTree = SOURCE_ROOT; };
+		61AB7633B58D4193815D1325 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_stack.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = wslay_stack.c; path = client/websocket/wslay/wslay_stack.c; sourceTree = SOURCE_ROOT; };
+		62075B52901B4BD4A101181D /* /Users/reymondtu/git/xdag/client/math.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = math.h; path = client/math.h; sourceTree = SOURCE_ROOT; };
+		626DC884B6454583933C946E /* /Users/reymondtu/git/xdag/client/rsdb.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = rsdb.h; path = client/rsdb.h; sourceTree = SOURCE_ROOT; };
+		63998908A82B428AA0598C49 /* /Users/reymondtu/git/xdag/client/algorithms/sha256-mb-x86_64-mac.s */ = {isa = PBXFileReference; explicitFileType = sourcecode.asm; fileEncoding = 4; name = "sha256-mb-x86_64-mac.s"; path = "client/algorithms/sha256-mb-x86_64-mac.s"; sourceTree = SOURCE_ROOT; };
+		64B3EA46076846CF9D786F20 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_wrapper.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = rpc_wrapper.c; path = "client/json-rpc/rpc_wrapper.c"; sourceTree = SOURCE_ROOT; };
+		67A9DB56AEE84AF5AC12BC63 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = wslay.h; path = client/websocket/wslay/wslay.h; sourceTree = SOURCE_ROOT; };
+		6D189A4557F54F26B1A5B637 /* /Users/reymondtu/git/xdag/client/x86_64cpuid-mac.s */ = {isa = PBXFileReference; explicitFileType = sourcecode.asm; fileEncoding = 4; name = "x86_64cpuid-mac.s"; path = "client/x86_64cpuid-mac.s"; sourceTree = SOURCE_ROOT; };
+		6DA82F64C0304A02B4B4F6BC /* /Users/reymondtu/git/xdag/client/wallet.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = wallet.c; path = client/wallet.c; sourceTree = SOURCE_ROOT; };
+		6E3A6CD835524DB697E98905 /* /Users/reymondtu/git/xdag/client/utils/random.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = random.c; path = client/utils/random.c; sourceTree = SOURCE_ROOT; };
+		6F3502A8B50849889660187C /* /Users/reymondtu/git/xdag/dnet/dnet_xdag.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = dnet_xdag.c; path = dnet/dnet_xdag.c; sourceTree = SOURCE_ROOT; };
+		6FB9DB770FC649159F7514F4 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedures.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = rpc_procedures.c; path = "client/json-rpc/rpc_procedures.c"; sourceTree = SOURCE_ROOT; };
+		7179977513624999988C833A /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_queue.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = wslay_queue.c; path = client/websocket/wslay/wslay_queue.c; sourceTree = SOURCE_ROOT; };
+		72D1FDC5F68840FE9B960F8A /* /Users/reymondtu/git/xdag/client/init.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = init.h; path = client/init.h; sourceTree = SOURCE_ROOT; };
+		733DE38DB2A5454BB9AE1009 /* /Users/reymondtu/git/xdag/client/utils/atomic.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = atomic.c; path = client/utils/atomic.c; sourceTree = SOURCE_ROOT; };
+		7564EC7E4C2C4797A3C729F0 /* /Users/reymondtu/git/xdag/client/mining_common.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = mining_common.h; path = client/mining_common.h; sourceTree = SOURCE_ROOT; };
+		76A76425F63A44F1B6F5C731 /* /Users/reymondtu/git/xdag/client/utils/base64.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = base64.c; path = client/utils/base64.c; sourceTree = SOURCE_ROOT; };
+		7887C1530C764558B0DDD51A /* /Users/reymondtu/git/xdag/client/utils/uuid.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = uuid.c; path = client/utils/uuid.c; sourceTree = SOURCE_ROOT; };
+		7952F94296154A9F93C309A6 /* /Users/reymondtu/git/xdag/client/websocket/websocket.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = websocket.c; path = client/websocket/websocket.c; sourceTree = SOURCE_ROOT; };
+		7968BCE09E394F869698C3D8 /* /Users/reymondtu/git/xdag/client/crypt.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = crypt.h; path = client/crypt.h; sourceTree = SOURCE_ROOT; };
+		7B409973306F48948F24EF6F /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_stack.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = wslay_stack.h; path = client/websocket/wslay/wslay_stack.h; sourceTree = SOURCE_ROOT; };
+		7D17270D90344AA4B00C4363 /* /Users/reymondtu/git/xdag/client/address.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = address.h; path = client/address.h; sourceTree = SOURCE_ROOT; };
+		814744EFDC9747078CA3B868 /* /Users/reymondtu/git/xdag/dfslib/dfslib_types.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = dfslib_types.h; path = dfslib/dfslib_types.h; sourceTree = SOURCE_ROOT; };
+		81C1725137EA45DBA4BE6E41 /* /Users/reymondtu/git/xdag/client/statsdaemon.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = statsdaemon.c; path = client/statsdaemon.c; sourceTree = SOURCE_ROOT; };
+		8327E6B3EC90445AAA9A0FBE /* /Users/reymondtu/git/xdag/client/storage.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = storage.h; path = client/storage.h; sourceTree = SOURCE_ROOT; };
+		8421CD391B404624A838102B /* /Users/reymondtu/git/xdag/client/block.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = block.c; path = client/block.c; sourceTree = SOURCE_ROOT; };
+		85C578DDBDB9418BBD3C2690 /* /Users/reymondtu/git/xdag/dfslib/dfslib_string.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = dfslib_string.c; path = dfslib/dfslib_string.c; sourceTree = SOURCE_ROOT; };
+		87650EDDD489490FB469F78D /* /Users/reymondtu/git/xdag/client/miner.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = miner.h; path = client/miner.h; sourceTree = SOURCE_ROOT; };
+		87DFC80FE19E44F9A078000E /* /Users/reymondtu/git/xdag/client/time.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = time.h; path = client/time.h; sourceTree = SOURCE_ROOT; };
+		8A95D3781F244DC884915718 /* /Users/reymondtu/git/xdag/client/utils/base64.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = base64.h; path = client/utils/base64.h; sourceTree = SOURCE_ROOT; };
+		90371AD4740A4941A7E8B525 /* /Users/reymondtu/git/xdag/client/block.cgi.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = block.cgi.c; path = client/block.cgi.c; sourceTree = SOURCE_ROOT; };
+		904A2C2716AC4968A47ED31C /* /Users/reymondtu/git/xdag/client/rsdb.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = rsdb.c; path = client/rsdb.c; sourceTree = SOURCE_ROOT; };
+		9177F7CF8F78494A98EE7828 /* /Users/reymondtu/git/xdag/client/sync.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = sync.c; path = client/sync.c; sourceTree = SOURCE_ROOT; };
+		91D071A66BF84BF9B7A11FE7 /* /Users/reymondtu/git/xdag/client/netdb.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = netdb.h; path = client/netdb.h; sourceTree = SOURCE_ROOT; };
+		9A6A09BEC93841DEB4F90554 /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = cJSON.h; path = "client/json-rpc/cJSON.h"; sourceTree = SOURCE_ROOT; };
+		9AA21301987543E399EC4253 /* /Users/reymondtu/git/xdag/client/algorithms/sha256.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = sha256.h; path = client/algorithms/sha256.h; sourceTree = SOURCE_ROOT; };
+		9EFA1518A3404C9A9A0BD49C /* /Users/reymondtu/git/xdag/client/terminal.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = terminal.h; path = client/terminal.h; sourceTree = SOURCE_ROOT; };
+		9FE7190F43E84764A2E5F167 /* /Users/reymondtu/git/xdag/dnet/dnet_crypt.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = dnet_crypt.c; path = dnet/dnet_crypt.c; sourceTree = SOURCE_ROOT; };
+		A006A79FA960477F8DF950E1 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedures.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = rpc_procedures.h; path = "client/json-rpc/rpc_procedures.h"; sourceTree = SOURCE_ROOT; };
+		A37078EA8C244EFC8E1AE3F0 /* /Users/reymondtu/git/xdag/client/block.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = block.h; path = client/block.h; sourceTree = SOURCE_ROOT; };
+		A43DFB34BE4A42948C71B5B9 /* /Users/reymondtu/git/xdag/dnet/dnet_main.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = dnet_main.h; path = dnet/dnet_main.h; sourceTree = SOURCE_ROOT; };
+		A441A6934D3E4CFFB976929B /* /Users/reymondtu/git/xdag/dfslib/dfslib_crypt.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = dfslib_crypt.c; path = dfslib/dfslib_crypt.c; sourceTree = SOURCE_ROOT; };
+		A51C79C275E24F8B8A8D213A /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslayver.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = wslayver.h; path = client/websocket/wslay/wslayver.h; sourceTree = SOURCE_ROOT; };
+		A8DFD0C07DAF4387BEF6EB40 /* /Users/reymondtu/git/xdag/client/commands.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = commands.h; path = client/commands.h; sourceTree = SOURCE_ROOT; };
+		A91ACA245D9E4ABD92116AE4 /* /Users/reymondtu/git/xdag/client/crypt.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = crypt.c; path = client/crypt.c; sourceTree = SOURCE_ROOT; };
+		A9B835FD12204A538ADE48C7 /* /Users/reymondtu/git/xdag/client/utils/uuid.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = uuid.h; path = client/utils/uuid.h; sourceTree = SOURCE_ROOT; };
+		AADA5E62A5694CA8A583DF9E /* /Users/reymondtu/git/xdag/client/init.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = init.c; path = client/init.c; sourceTree = SOURCE_ROOT; };
+		AE5A0A32C9554CE9B66FD75A /* /Users/reymondtu/git/xdag/client/types.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = types.h; path = client/types.h; sourceTree = SOURCE_ROOT; };
+		AE79EC46F191436688E8ED8B /* /Users/reymondtu/git/xdag/client/bloom_filter.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = bloom_filter.h; path = client/bloom_filter.h; sourceTree = SOURCE_ROOT; };
+		AEF53C43DA134041B6779ACF /* /Users/reymondtu/git/xdag/client/algorithms/crc.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = crc.c; path = client/algorithms/crc.c; sourceTree = SOURCE_ROOT; };
+		AF80B4B97FEE4A5C97A2F8DE /* /Users/reymondtu/git/xdag/ldus/list.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = list.h; path = ldus/list.h; sourceTree = SOURCE_ROOT; };
+		B06D84379A334B73A0E0BA4B /* /Users/reymondtu/git/xdag/client/utils/random.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = random.h; path = client/utils/random.h; sourceTree = SOURCE_ROOT; };
+		B2F74B141F044C9D8E9ACBD6 /* xdag */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = xdag; sourceTree = BUILT_PRODUCTS_DIR; };
+		B37F67A3BEF744CD8722A060 /* /Users/reymondtu/git/xdag/client/utils/linenoise.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = linenoise.h; path = client/utils/linenoise.h; sourceTree = SOURCE_ROOT; };
+		B3FD48048D474459B8FBC241 /* /Users/reymondtu/git/xdag/client/storage.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = storage.c; path = client/storage.c; sourceTree = SOURCE_ROOT; };
+		B4968A04E8E74BC4AA5B039D /* /Users/reymondtu/git/xdag/dfslib/dfslib_random.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = dfslib_random.c; path = dfslib/dfslib_random.c; sourceTree = SOURCE_ROOT; };
+		B6C008805F03482791A5313E /* /Users/reymondtu/git/xdag/client/utils/string_utils.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = string_utils.c; path = client/utils/string_utils.c; sourceTree = SOURCE_ROOT; };
+		B7BEEB0E2E09401D95BD1313 /* /Users/reymondtu/git/xdag/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		B89C4D8C32B845F987C86D50 /* /Users/reymondtu/git/xdag/dfslib/dfsrsa.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = dfsrsa.c; path = dfslib/dfsrsa.c; sourceTree = SOURCE_ROOT; };
+		B8FE3627F20445FEB48DF9A3 /* /Users/reymondtu/git/xdag/client/utils/log.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = log.h; path = client/utils/log.h; sourceTree = SOURCE_ROOT; };
+		BCFCCBEF3BDD4628A829C2E3 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedure.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = rpc_procedure.h; path = "client/json-rpc/rpc_procedure.h"; sourceTree = SOURCE_ROOT; };
+		BE2B284BCD98447A8F5BA0E1 /* /Users/reymondtu/git/xdag/client/system.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = system.h; path = client/system.h; sourceTree = SOURCE_ROOT; };
+		C15A2DF87BC94D47AF02A84F /* /Users/reymondtu/git/xdag/client/xdag_config.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = xdag_config.c; path = client/xdag_config.c; sourceTree = SOURCE_ROOT; };
+		C1DBEA0D73D943218C2CD157 /* /Users/reymondtu/git/xdag/client/uthash/uthash.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = uthash.h; path = client/uthash/uthash.h; sourceTree = SOURCE_ROOT; };
+		C7E9B1591FCE469694C6500D /* /Users/reymondtu/git/xdag/client/time.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = time.c; path = client/time.c; sourceTree = SOURCE_ROOT; };
+		C98D8F3A9AE84300ABBB757B /* /Users/reymondtu/git/xdag/client/transport.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = transport.c; path = client/transport.c; sourceTree = SOURCE_ROOT; };
+		CA7EC67B34CF49DA9F4FB17B /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_frame.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = wslay_frame.h; path = client/websocket/wslay/wslay_frame.h; sourceTree = SOURCE_ROOT; };
+		CC2FD76C1CFF42E98A24616F /* /Users/reymondtu/git/xdag/client/xdag_config.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = xdag_config.h; path = client/xdag_config.h; sourceTree = SOURCE_ROOT; };
+		CD4DD98863D74FD6B972310C /* /Users/reymondtu/git/xdag/client/algorithms/crc.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = crc.h; path = client/algorithms/crc.h; sourceTree = SOURCE_ROOT; };
+		D2BBBCA4F2D743FD9BD764BE /* /Users/reymondtu/git/xdag/client/version.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = version.h; path = client/version.h; sourceTree = SOURCE_ROOT; };
+		D6C4F1CB33EF4F9DAEF58499 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_frame.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = wslay_frame.c; path = client/websocket/wslay/wslay_frame.c; sourceTree = SOURCE_ROOT; };
+		D86F66152AF947E2A89AF808 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_net.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = wslay_net.c; path = client/websocket/wslay/wslay_net.c; sourceTree = SOURCE_ROOT; };
+		D894530AA1544A8FBBB5167E /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON_Utils.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = cJSON_Utils.h; path = "client/json-rpc/cJSON_Utils.h"; sourceTree = SOURCE_ROOT; };
+		D9CB843DFB814285B47E4467 /* /Users/reymondtu/git/xdag/client/websocket/wslay/config.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = config.h; path = client/websocket/wslay/config.h; sourceTree = SOURCE_ROOT; };
+		DC9AAE1AF11343DB93972606 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_service.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = rpc_service.h; path = "client/json-rpc/rpc_service.h"; sourceTree = SOURCE_ROOT; };
+		DD360E1E857046BE8D220336 /* /Users/reymondtu/git/xdag/client/uthash/utlist.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = utlist.h; path = client/uthash/utlist.h; sourceTree = SOURCE_ROOT; };
+		DE62A40C698048719DA139DA /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_commands.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = rpc_commands.h; path = "client/json-rpc/rpc_commands.h"; sourceTree = SOURCE_ROOT; };
+		E128D2B918EF4E7CB8D6A80B /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_service.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = rpc_service.c; path = "client/json-rpc/rpc_service.c"; sourceTree = SOURCE_ROOT; };
+		E36C71657D02491DBA345E0D /* /Users/reymondtu/git/xdag/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		E6D692F91F5A4461BA62A821 /* /Users/reymondtu/git/xdag/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		E78494A038814247A88D5385 /* /Users/reymondtu/git/xdag/client/utils/dirname.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = dirname.h; path = client/utils/dirname.h; sourceTree = SOURCE_ROOT; };
+		ED028E0787AF4D21A810DFB6 /* /Users/reymondtu/git/xdag/client/commands.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = commands.c; path = client/commands.c; sourceTree = SOURCE_ROOT; };
+		ED9507A07A5E435AB1E5F39E /* cgi_stats */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = cgi_stats; sourceTree = BUILT_PRODUCTS_DIR; };
+		EDBF67B2DE8D4A83BD833BA2 /* /Users/reymondtu/git/xdag/client/memory.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = memory.h; path = client/memory.h; sourceTree = SOURCE_ROOT; };
+		EDC84F4CA12E4B6C9673D666 /* /Users/reymondtu/git/xdag/dnet/dnet_history.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = dnet_history.h; path = dnet/dnet_history.h; sourceTree = SOURCE_ROOT; };
+		F27207DFEE254092882A0383 /* /Users/reymondtu/git/xdag/client/transport.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = transport.h; path = client/transport.h; sourceTree = SOURCE_ROOT; };
+		F5B6464031A94794A273A195 /* /Users/reymondtu/git/xdag/client/utils/linenoise.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = linenoise.c; path = client/utils/linenoise.c; sourceTree = SOURCE_ROOT; };
+		F6C9B51DFBCD45A38AAB9C7F /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_event.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = wslay_event.h; path = client/websocket/wslay/wslay_event.h; sourceTree = SOURCE_ROOT; };
+		F934D230F25E4909AC9B2C48 /* /Users/reymondtu/git/xdag/dfslib/dfslib_string.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = dfslib_string.h; path = dfslib/dfslib_string.h; sourceTree = SOURCE_ROOT; };
+		FA3817F7E49D4A4580ACD222 /* /Users/reymondtu/git/xdag/client/memory.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = memory.c; path = client/memory.c; sourceTree = SOURCE_ROOT; };
+		FC41DAA8F9E247369DDAA7E4 /* /Users/reymondtu/git/xdag/client/utils/utils.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = utils.h; path = client/utils/utils.h; sourceTree = SOURCE_ROOT; };
+		FD909D2266CB4C2CA8032D01 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_commands.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = rpc_commands.c; path = "client/json-rpc/rpc_commands.c"; sourceTree = SOURCE_ROOT; };
+		FEA920A3A33C4E22AB4EDA44 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedure.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = rpc_procedure.c; path = "client/json-rpc/rpc_procedure.c"; sourceTree = SOURCE_ROOT; };
+		FFB9051268FA4EA3BA01B48D /* /Users/reymondtu/git/xdag/client/global.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = global.c; path = client/global.c; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
-/* Begin PBXFrameworksBuildPhase section */
-		389F043320544EDC003F3084 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				418AAFF8213BB3B300E96520 /* libssl.a in Frameworks */,
-				418AAFF6213BB3A900E96520 /* libcrypto.a in Frameworks */,
-				41E00BEF233D056E0031DA53 /* libgmp.a in Frameworks */,
-				41E00BED233D003E0031DA53 /* libsecp256k1.a in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
-
 /* Begin PBXGroup section */
-		385EB7A221D3D64200287D2B /* ldus */ = {
+		00DD9671908E49988A216774 /* CMake Rules */ = {
 			isa = PBXGroup;
 			children = (
-				385EB7A321D3D64200287D2B /* atomic.h */,
-				385EB7A421D3D64200287D2B /* list.h */,
-				385EB7A521D3D64200287D2B /* rbtree.h */,
 			);
-			name = ldus;
-			path = ../ldus;
+			name = "CMake Rules";
 			sourceTree = "<group>";
 		};
-		385EB7A621D3D64200287D2B /* client */ = {
+		332EC6EA9C254423A0D1556D /* Source Files */ = {
 			isa = PBXGroup;
 			children = (
-				385EB7A721D3D64200287D2B /* address.c */,
-				385EB7A821D3D64200287D2B /* address.h */,
-				385EB7A921D3D64200287D2B /* algorithms */,
-				385EB7B121D3D64200287D2B /* block.c */,
-				385EB7B321D3D64200287D2B /* block.h */,
-				385EB7B421D3D64200287D2B /* commands.c */,
-				385EB7B521D3D64200287D2B /* commands.h */,
-				385EB7B621D3D64200287D2B /* crypt.c */,
-				385EB7B721D3D64200287D2B /* crypt.h */,
-				385EB7B921D3D64200287D2B /* example.pool.config */,
-				385EB7BA21D3D64200287D2B /* global.c */,
-				385EB7BB21D3D64200287D2B /* global.h */,
-				385EB7BC21D3D64200287D2B /* hash.c */,
-				385EB7BD21D3D64200287D2B /* hash.h */,
-				385EB7BE21D3D64200287D2B /* http */,
-				385EB7C321D3D64200287D2B /* init.c */,
-				385EB7C421D3D64200287D2B /* init.h */,
-				385EB7C521D3D64200287D2B /* json-rpc */,
-				385EB7D421D3D64200287D2B /* main.c */,
-				385EB7D621D3D64200287D2B /* math.c */,
-				385EB7D721D3D64200287D2B /* math.h */,
-				385EB7D821D3D64200287D2B /* memory.c */,
-				385EB7D921D3D64200287D2B /* memory.h */,
-				385EB7DA21D3D64200287D2B /* miner.c */,
-				385EB7DB21D3D64200287D2B /* miner.h */,
-				385EB7DC21D3D64200287D2B /* mining_common.c */,
-				385EB7DD21D3D64200287D2B /* mining_common.h */,
-				385EB7DE21D3D64200287D2B /* netdb-testnet.txt */,
-				385EB7DF21D3D64200287D2B /* netdb-white-testnet.txt */,
-				385EB7E021D3D64200287D2B /* netdb-white.txt */,
-				385EB7E121D3D64200287D2B /* netdb.c */,
-				385EB7E221D3D64200287D2B /* netdb.h */,
-				385EB7E321D3D64200287D2B /* netdb.txt */,
-				385EB7E421D3D64200287D2B /* network.c */,
-				385EB7E521D3D64200287D2B /* network.h */,
-				385EB7E621D3D64200287D2B /* pool.c */,
-				385EB7E721D3D64200287D2B /* pool.h */,
-				385EB7E821D3D64200287D2B /* pools-testnet.txt */,
-				385EB7E921D3D64200287D2B /* pools.txt */,
-				385EB7EA21D3D64200287D2B /* state.h */,
-				385EB7F021D3D64200287D2B /* storage.c */,
-				385EB7F121D3D64200287D2B /* storage.h */,
-				385EB7F221D3D64200287D2B /* sync.c */,
-				385EB7F321D3D64200287D2B /* sync.h */,
-				385EB7F421D3D64200287D2B /* system.h */,
-				385EB7F521D3D64200287D2B /* terminal.c */,
-				385EB7F621D3D64200287D2B /* terminal.h */,
-				385EB7F721D3D64200287D2B /* time.c */,
-				385EB7F821D3D64200287D2B /* time.h */,
-				385EB7F921D3D64200287D2B /* transport.c */,
-				385EB7FA21D3D64200287D2B /* transport.h */,
-				385EB7FB21D3D64200287D2B /* types.h */,
-				385EB7FC21D3D64200287D2B /* uthash */,
-				385EB7FF21D3D64200287D2B /* utils */,
-				385EB81521D3D64200287D2B /* version.h */,
-				385EB81621D3D64200287D2B /* wallet.c */,
-				385EB81721D3D64200287D2B /* wallet.h */,
-				385EB81821D3D64200287D2B /* websocket */,
-				385EB82921D3D64200287D2B /* x86_64cpuid-mac.s */,
-				385EB82B21D3D64200287D2B /* xdag_config.c */,
-				385EB82C21D3D64200287D2B /* xdag_config.h */,
+				81C1725137EA45DBA4BE6E41 /* /Users/reymondtu/git/xdag/client/statsdaemon.c */,
 			);
-			name = client;
-			path = ../client;
+			name = "Source Files";
 			sourceTree = "<group>";
 		};
-		385EB7A921D3D64200287D2B /* algorithms */ = {
+		430047F7E23B4F019AD84063 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				385EB7AA21D3D64200287D2B /* crc.c */,
-				385EB7AB21D3D64200287D2B /* crc.h */,
-				385EB7AC21D3D64200287D2B /* sha256-mb-x86_64-mac.s */,
-				385EB7AE21D3D64200287D2B /* sha256.c */,
-				385EB7AF21D3D64200287D2B /* sha256.h */,
-			);
-			path = algorithms;
-			sourceTree = "<group>";
-		};
-		385EB7BE21D3D64200287D2B /* http */ = {
-			isa = PBXGroup;
-			children = (
-				385EB7BF21D3D64200287D2B /* http.c */,
-				385EB7C021D3D64200287D2B /* http.h */,
-				385EB7C121D3D64200287D2B /* url.c */,
-				385EB7C221D3D64200287D2B /* url.h */,
-			);
-			path = http;
-			sourceTree = "<group>";
-		};
-		385EB7C521D3D64200287D2B /* json-rpc */ = {
-			isa = PBXGroup;
-			children = (
-				385EB7C621D3D64200287D2B /* cJSON.c */,
-				385EB7C721D3D64200287D2B /* cJSON.h */,
-				385EB7C821D3D64200287D2B /* cJSON_Utils.c */,
-				385EB7C921D3D64200287D2B /* cJSON_Utils.h */,
-				385EB7CA21D3D64200287D2B /* rpc_commands.c */,
-				385EB7CB21D3D64200287D2B /* rpc_commands.h */,
-				385EB7CC21D3D64200287D2B /* rpc_procedure.c */,
-				385EB7CD21D3D64200287D2B /* rpc_procedure.h */,
-				385EB7CE21D3D64200287D2B /* rpc_procedures.c */,
-				385EB7CF21D3D64200287D2B /* rpc_procedures.h */,
-				385EB7D021D3D64200287D2B /* rpc_service.c */,
-				385EB7D121D3D64200287D2B /* rpc_service.h */,
-				385EB7D221D3D64200287D2B /* rpc_wrapper.c */,
-				385EB7D321D3D64200287D2B /* rpc_wrapper.h */,
-			);
-			path = "json-rpc";
-			sourceTree = "<group>";
-		};
-		385EB7FC21D3D64200287D2B /* uthash */ = {
-			isa = PBXGroup;
-			children = (
-				385EB7FD21D3D64200287D2B /* uthash.h */,
-				385EB7FE21D3D64200287D2B /* utlist.h */,
-			);
-			path = uthash;
-			sourceTree = "<group>";
-		};
-		385EB7FF21D3D64200287D2B /* utils */ = {
-			isa = PBXGroup;
-			children = (
-				385EB80021D3D64200287D2B /* atomic.c */,
-				385EB80121D3D64200287D2B /* atomic.h */,
-				385EB80221D3D64200287D2B /* base64.c */,
-				385EB80321D3D64200287D2B /* base64.h */,
-				385EB80421D3D64200287D2B /* dirname.c */,
-				385EB80521D3D64200287D2B /* dirname.h */,
-				385EB80621D3D64200287D2B /* linenoise.c */,
-				385EB80721D3D64200287D2B /* linenoise.h */,
-				385EB80821D3D64200287D2B /* log.c */,
-				385EB80921D3D64200287D2B /* log.h */,
-				385EB80A21D3D64200287D2B /* moving_statistics */,
-				385EB80D21D3D64200287D2B /* random.c */,
-				385EB80E21D3D64200287D2B /* random.h */,
-				385EB80F21D3D64200287D2B /* string_utils.c */,
-				385EB81021D3D64200287D2B /* string_utils.h */,
-				385EB81121D3D64200287D2B /* utils.c */,
-				385EB81221D3D64200287D2B /* utils.h */,
-				385EB81321D3D64200287D2B /* uuid.c */,
-				385EB81421D3D64200287D2B /* uuid.h */,
-			);
-			path = utils;
-			sourceTree = "<group>";
-		};
-		385EB80A21D3D64200287D2B /* moving_statistics */ = {
-			isa = PBXGroup;
-			children = (
-				385EB80B21D3D64200287D2B /* moving_average.c */,
-				385EB80C21D3D64200287D2B /* moving_average.h */,
-			);
-			path = moving_statistics;
-			sourceTree = "<group>";
-		};
-		385EB81821D3D64200287D2B /* websocket */ = {
-			isa = PBXGroup;
-			children = (
-				385EB81921D3D64200287D2B /* websocket.c */,
-				385EB81A21D3D64200287D2B /* websocket.h */,
-				385EB81B21D3D64200287D2B /* wslay */,
-			);
-			path = websocket;
-			sourceTree = "<group>";
-		};
-		385EB81B21D3D64200287D2B /* wslay */ = {
-			isa = PBXGroup;
-			children = (
-				385EB81C21D3D64200287D2B /* config.h */,
-				385EB81D21D3D64200287D2B /* wslay.h */,
-				385EB81E21D3D64200287D2B /* wslay_event.c */,
-				385EB81F21D3D64200287D2B /* wslay_event.h */,
-				385EB82021D3D64200287D2B /* wslay_frame.c */,
-				385EB82121D3D64200287D2B /* wslay_frame.h */,
-				385EB82221D3D64200287D2B /* wslay_net.c */,
-				385EB82321D3D64200287D2B /* wslay_net.h */,
-				385EB82421D3D64200287D2B /* wslay_queue.c */,
-				385EB82521D3D64200287D2B /* wslay_queue.h */,
-				385EB82621D3D64200287D2B /* wslay_stack.c */,
-				385EB82721D3D64200287D2B /* wslay_stack.h */,
-				385EB82821D3D64200287D2B /* wslayver.h */,
-			);
-			path = wslay;
-			sourceTree = "<group>";
-		};
-		385EB82D21D3D64200287D2B /* dfslib */ = {
-			isa = PBXGroup;
-			children = (
-				385EB82E21D3D64200287D2B /* dfslib_crypt.c */,
-				385EB82F21D3D64200287D2B /* dfslib_crypt.h */,
-				385EB83021D3D64200287D2B /* dfslib_random.c */,
-				385EB83121D3D64200287D2B /* dfslib_random.h */,
-				385EB83221D3D64200287D2B /* dfslib_string.c */,
-				385EB83321D3D64200287D2B /* dfslib_string.h */,
-				385EB83421D3D64200287D2B /* dfslib_types.h */,
-				385EB83521D3D64200287D2B /* dfsrsa.c */,
-				385EB83621D3D64200287D2B /* dfsrsa.h */,
-			);
-			name = dfslib;
-			path = ../dfslib;
-			sourceTree = "<group>";
-		};
-		385EB83721D3D64200287D2B /* dnet */ = {
-			isa = PBXGroup;
-			children = (
-				385EB83821D3D64200287D2B /* dnet_crypt.c */,
-				385EB83921D3D64200287D2B /* dnet_crypt.h */,
-				385EB83A21D3D64200287D2B /* dnet_history.h */,
-				385EB83B21D3D64200287D2B /* dnet_keys.bin */,
-				385EB83C21D3D64200287D2B /* dnet_main.h */,
-				385EB83D21D3D64200287D2B /* dnet_packet.h */,
-				385EB83E21D3D64200287D2B /* dnet_system.h */,
-				385EB83F21D3D64200287D2B /* dnet_xdag.c */,
-			);
-			name = dnet;
-			path = ../dnet;
-			sourceTree = "<group>";
-		};
-		389F042D20544EDC003F3084 = {
-			isa = PBXGroup;
-			children = (
-				385EB7A621D3D64200287D2B /* client */,
-				385EB82D21D3D64200287D2B /* dfslib */,
-				385EB83721D3D64200287D2B /* dnet */,
-				385EB7A221D3D64200287D2B /* ldus */,
-				389F043720544EDC003F3084 /* Products */,
-				38A15E9E20545CCE00598EC2 /* Frameworks */,
-			);
-			sourceTree = "<group>";
-		};
-		389F043720544EDC003F3084 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				389F043620544EDC003F3084 /* xdag */,
+				3E2BE828DDA54B0EB5872866 /* cgi_block */,
+				ED9507A07A5E435AB1E5F39E /* cgi_stats */,
+				B2F74B141F044C9D8E9ACBD6 /* xdag */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		38A15E9E20545CCE00598EC2 /* Frameworks */ = {
+		5F5A5D282322479282DB2C4B = {
 			isa = PBXGroup;
 			children = (
-				41E00BEE233D056E0031DA53 /* libgmp.a */,
-				41E00BEC233D003E0031DA53 /* libsecp256k1.a */,
-				418AAFF7213BB3B300E96520 /* libssl.a */,
-				418AAFF5213BB3A900E96520 /* libcrypto.a */,
+				CFA8AC6597A2484DB1750230 /* cgi_block */,
+				B89631251030440CB8D5B538 /* cgi_stats */,
+				A9F821B73BF142E4BD5A2E18 /* xdag */,
+				8BDEE342CC644F73A2218FA0 /* ALL_BUILD */,
+				430047F7E23B4F019AD84063 /* Products */,
 			);
-			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		707735600D424B4890068EB0 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				90371AD4740A4941A7E8B525 /* /Users/reymondtu/git/xdag/client/block.cgi.c */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		8BDEE342CC644F73A2218FA0 /* ALL_BUILD */ = {
+			isa = PBXGroup;
+			children = (
+				00DD9671908E49988A216774 /* CMake Rules */,
+				110AAD876E074B2DAE36A136 /* /Users/reymondtu/git/xdag/CMakeLists.txt */,
+			);
+			name = ALL_BUILD;
+			sourceTree = "<group>";
+		};
+		A9F821B73BF142E4BD5A2E18 /* xdag */ = {
+			isa = PBXGroup;
+			children = (
+				B0FAF801FC61463EADAFF89B /* Header Files */,
+				FBCB85C8BD9540568A2EB25F /* Source Files */,
+				E6D692F91F5A4461BA62A821 /* /Users/reymondtu/git/xdag/CMakeLists.txt */,
+				63998908A82B428AA0598C49 /* /Users/reymondtu/git/xdag/client/algorithms/sha256-mb-x86_64-mac.s */,
+				6D189A4557F54F26B1A5B637 /* /Users/reymondtu/git/xdag/client/x86_64cpuid-mac.s */,
+			);
+			name = xdag;
+			sourceTree = "<group>";
+		};
+		B0FAF801FC61463EADAFF89B /* Header Files */ = {
+			isa = PBXGroup;
+			children = (
+				7D17270D90344AA4B00C4363 /* /Users/reymondtu/git/xdag/client/address.h */,
+				CD4DD98863D74FD6B972310C /* /Users/reymondtu/git/xdag/client/algorithms/crc.h */,
+				9AA21301987543E399EC4253 /* /Users/reymondtu/git/xdag/client/algorithms/sha256.h */,
+				A37078EA8C244EFC8E1AE3F0 /* /Users/reymondtu/git/xdag/client/block.h */,
+				AE79EC46F191436688E8ED8B /* /Users/reymondtu/git/xdag/client/bloom_filter.h */,
+				A8DFD0C07DAF4387BEF6EB40 /* /Users/reymondtu/git/xdag/client/commands.h */,
+				7968BCE09E394F869698C3D8 /* /Users/reymondtu/git/xdag/client/crypt.h */,
+				2F4A128B2D604E0F97E53F52 /* /Users/reymondtu/git/xdag/client/global.h */,
+				3022B28AF8ED4269BCF05CAC /* /Users/reymondtu/git/xdag/client/hash.h */,
+				1A2A06905953446381D5BB2A /* /Users/reymondtu/git/xdag/client/http/http.h */,
+				5534524163764E6E9212F368 /* /Users/reymondtu/git/xdag/client/http/url.h */,
+				72D1FDC5F68840FE9B960F8A /* /Users/reymondtu/git/xdag/client/init.h */,
+				9A6A09BEC93841DEB4F90554 /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON.h */,
+				D894530AA1544A8FBBB5167E /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON_Utils.h */,
+				DE62A40C698048719DA139DA /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_commands.h */,
+				BCFCCBEF3BDD4628A829C2E3 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedure.h */,
+				A006A79FA960477F8DF950E1 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedures.h */,
+				DC9AAE1AF11343DB93972606 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_service.h */,
+				4F66F15DD25347B9BC7DD1B7 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_wrapper.h */,
+				62075B52901B4BD4A101181D /* /Users/reymondtu/git/xdag/client/math.h */,
+				EDBF67B2DE8D4A83BD833BA2 /* /Users/reymondtu/git/xdag/client/memory.h */,
+				87650EDDD489490FB469F78D /* /Users/reymondtu/git/xdag/client/miner.h */,
+				7564EC7E4C2C4797A3C729F0 /* /Users/reymondtu/git/xdag/client/mining_common.h */,
+				91D071A66BF84BF9B7A11FE7 /* /Users/reymondtu/git/xdag/client/netdb.h */,
+				015759DE3E9B4D54BB229349 /* /Users/reymondtu/git/xdag/client/network.h */,
+				4F4A4313029443D4B75EE7E0 /* /Users/reymondtu/git/xdag/client/pool.h */,
+				626DC884B6454583933C946E /* /Users/reymondtu/git/xdag/client/rsdb.h */,
+				5259C009B26040B89DD5A453 /* /Users/reymondtu/git/xdag/client/state.h */,
+				8327E6B3EC90445AAA9A0FBE /* /Users/reymondtu/git/xdag/client/storage.h */,
+				42AF68E65C0A44F48F2A6E1F /* /Users/reymondtu/git/xdag/client/sync.h */,
+				BE2B284BCD98447A8F5BA0E1 /* /Users/reymondtu/git/xdag/client/system.h */,
+				9EFA1518A3404C9A9A0BD49C /* /Users/reymondtu/git/xdag/client/terminal.h */,
+				87DFC80FE19E44F9A078000E /* /Users/reymondtu/git/xdag/client/time.h */,
+				F27207DFEE254092882A0383 /* /Users/reymondtu/git/xdag/client/transport.h */,
+				AE5A0A32C9554CE9B66FD75A /* /Users/reymondtu/git/xdag/client/types.h */,
+				C1DBEA0D73D943218C2CD157 /* /Users/reymondtu/git/xdag/client/uthash/uthash.h */,
+				DD360E1E857046BE8D220336 /* /Users/reymondtu/git/xdag/client/uthash/utlist.h */,
+				49BD6515861D493AB5F8BFA0 /* /Users/reymondtu/git/xdag/client/utils/atomic.h */,
+				8A95D3781F244DC884915718 /* /Users/reymondtu/git/xdag/client/utils/base64.h */,
+				E78494A038814247A88D5385 /* /Users/reymondtu/git/xdag/client/utils/dirname.h */,
+				B37F67A3BEF744CD8722A060 /* /Users/reymondtu/git/xdag/client/utils/linenoise.h */,
+				B8FE3627F20445FEB48DF9A3 /* /Users/reymondtu/git/xdag/client/utils/log.h */,
+				2A8EA67A92EC42FB93DFF8D1 /* /Users/reymondtu/git/xdag/client/utils/moving_statistics/moving_average.h */,
+				B06D84379A334B73A0E0BA4B /* /Users/reymondtu/git/xdag/client/utils/random.h */,
+				357BBF150AF149599289EB19 /* /Users/reymondtu/git/xdag/client/utils/string_utils.h */,
+				FC41DAA8F9E247369DDAA7E4 /* /Users/reymondtu/git/xdag/client/utils/utils.h */,
+				A9B835FD12204A538ADE48C7 /* /Users/reymondtu/git/xdag/client/utils/uuid.h */,
+				D2BBBCA4F2D743FD9BD764BE /* /Users/reymondtu/git/xdag/client/version.h */,
+				1E386C8E2F7147C79CF48E52 /* /Users/reymondtu/git/xdag/client/wallet.h */,
+				15839546227745A6AD1C557E /* /Users/reymondtu/git/xdag/client/websocket/websocket.h */,
+				D9CB843DFB814285B47E4467 /* /Users/reymondtu/git/xdag/client/websocket/wslay/config.h */,
+				67A9DB56AEE84AF5AC12BC63 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay.h */,
+				F6C9B51DFBCD45A38AAB9C7F /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_event.h */,
+				CA7EC67B34CF49DA9F4FB17B /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_frame.h */,
+				0390EC8C4CC34F888DB7DA47 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_net.h */,
+				2A5BA616DC82418394E7DDF3 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_queue.h */,
+				7B409973306F48948F24EF6F /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_stack.h */,
+				A51C79C275E24F8B8A8D213A /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslayver.h */,
+				CC2FD76C1CFF42E98A24616F /* /Users/reymondtu/git/xdag/client/xdag_config.h */,
+				05989D6D982746AB94D3C42D /* /Users/reymondtu/git/xdag/dfslib/dfslib_crypt.h */,
+				52517E510E834107BF41AB96 /* /Users/reymondtu/git/xdag/dfslib/dfslib_random.h */,
+				F934D230F25E4909AC9B2C48 /* /Users/reymondtu/git/xdag/dfslib/dfslib_string.h */,
+				814744EFDC9747078CA3B868 /* /Users/reymondtu/git/xdag/dfslib/dfslib_types.h */,
+				4BF4393AC18446E785CCAFF4 /* /Users/reymondtu/git/xdag/dfslib/dfsrsa.h */,
+				456918C449134823A11E5BE3 /* /Users/reymondtu/git/xdag/dnet/dnet_crypt.h */,
+				EDC84F4CA12E4B6C9673D666 /* /Users/reymondtu/git/xdag/dnet/dnet_history.h */,
+				A43DFB34BE4A42948C71B5B9 /* /Users/reymondtu/git/xdag/dnet/dnet_main.h */,
+				03FA713F9A9A434C8699FB2D /* /Users/reymondtu/git/xdag/dnet/dnet_packet.h */,
+				34A6295940B74AFB845960B8 /* /Users/reymondtu/git/xdag/dnet/dnet_system.h */,
+				5C36672DF6A74AA9850999D0 /* /Users/reymondtu/git/xdag/ldus/atomic.h */,
+				AF80B4B97FEE4A5C97A2F8DE /* /Users/reymondtu/git/xdag/ldus/list.h */,
+				0D4F6533A3C74B47B6F23CE7 /* /Users/reymondtu/git/xdag/ldus/rbtree.h */,
+			);
+			name = "Header Files";
+			sourceTree = "<group>";
+		};
+		B89631251030440CB8D5B538 /* cgi_stats */ = {
+			isa = PBXGroup;
+			children = (
+				332EC6EA9C254423A0D1556D /* Source Files */,
+				E36C71657D02491DBA345E0D /* /Users/reymondtu/git/xdag/CMakeLists.txt */,
+			);
+			name = cgi_stats;
+			sourceTree = "<group>";
+		};
+		CFA8AC6597A2484DB1750230 /* cgi_block */ = {
+			isa = PBXGroup;
+			children = (
+				707735600D424B4890068EB0 /* Source Files */,
+				B7BEEB0E2E09401D95BD1313 /* /Users/reymondtu/git/xdag/CMakeLists.txt */,
+			);
+			name = cgi_block;
+			sourceTree = "<group>";
+		};
+		FBCB85C8BD9540568A2EB25F /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				521C2BABF21447FE8C2740E1 /* /Users/reymondtu/git/xdag/client/address.c */,
+				AEF53C43DA134041B6779ACF /* /Users/reymondtu/git/xdag/client/algorithms/crc.c */,
+				2695A6D395774BFD9CE1034B /* /Users/reymondtu/git/xdag/client/algorithms/sha256.c */,
+				8421CD391B404624A838102B /* /Users/reymondtu/git/xdag/client/block.c */,
+				091BE865D11943C6A6617328 /* /Users/reymondtu/git/xdag/client/bloom_filter.c */,
+				ED028E0787AF4D21A810DFB6 /* /Users/reymondtu/git/xdag/client/commands.c */,
+				A91ACA245D9E4ABD92116AE4 /* /Users/reymondtu/git/xdag/client/crypt.c */,
+				FFB9051268FA4EA3BA01B48D /* /Users/reymondtu/git/xdag/client/global.c */,
+				289159FD58F44521BF3A9E09 /* /Users/reymondtu/git/xdag/client/hash.c */,
+				52BFEAA592724AF79463549F /* /Users/reymondtu/git/xdag/client/http/http.c */,
+				0E16D0503B5E47CE9317DDB7 /* /Users/reymondtu/git/xdag/client/http/url.c */,
+				AADA5E62A5694CA8A583DF9E /* /Users/reymondtu/git/xdag/client/init.c */,
+				2F50AA73D5424977A06A0EA9 /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON.c */,
+				5FD9D7443C914FBFBC5D69AB /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON_Utils.c */,
+				FD909D2266CB4C2CA8032D01 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_commands.c */,
+				FEA920A3A33C4E22AB4EDA44 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedure.c */,
+				6FB9DB770FC649159F7514F4 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedures.c */,
+				E128D2B918EF4E7CB8D6A80B /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_service.c */,
+				64B3EA46076846CF9D786F20 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_wrapper.c */,
+				38DF424CFF3946D08050D1B4 /* /Users/reymondtu/git/xdag/client/main.c */,
+				0226391C0D1348A0AA35914D /* /Users/reymondtu/git/xdag/client/math.c */,
+				FA3817F7E49D4A4580ACD222 /* /Users/reymondtu/git/xdag/client/memory.c */,
+				12ECA21502AB4D768B530119 /* /Users/reymondtu/git/xdag/client/miner.c */,
+				43F5E98D0621454A97DEC60C /* /Users/reymondtu/git/xdag/client/mining_common.c */,
+				5A1CCE4164BE472B9BA11829 /* /Users/reymondtu/git/xdag/client/netdb.c */,
+				4E0302398D74496B872F7A6A /* /Users/reymondtu/git/xdag/client/network.c */,
+				411E2113B6604594BEE5765E /* /Users/reymondtu/git/xdag/client/pool.c */,
+				904A2C2716AC4968A47ED31C /* /Users/reymondtu/git/xdag/client/rsdb.c */,
+				B3FD48048D474459B8FBC241 /* /Users/reymondtu/git/xdag/client/storage.c */,
+				9177F7CF8F78494A98EE7828 /* /Users/reymondtu/git/xdag/client/sync.c */,
+				45C9265FD2544729BA6B9CCA /* /Users/reymondtu/git/xdag/client/terminal.c */,
+				C7E9B1591FCE469694C6500D /* /Users/reymondtu/git/xdag/client/time.c */,
+				C98D8F3A9AE84300ABBB757B /* /Users/reymondtu/git/xdag/client/transport.c */,
+				733DE38DB2A5454BB9AE1009 /* /Users/reymondtu/git/xdag/client/utils/atomic.c */,
+				76A76425F63A44F1B6F5C731 /* /Users/reymondtu/git/xdag/client/utils/base64.c */,
+				30D38C04BFBE4251B2FEAA3D /* /Users/reymondtu/git/xdag/client/utils/dirname.c */,
+				F5B6464031A94794A273A195 /* /Users/reymondtu/git/xdag/client/utils/linenoise.c */,
+				2159B8879E974E99A48BC9A5 /* /Users/reymondtu/git/xdag/client/utils/log.c */,
+				1F672629688549EC90439765 /* /Users/reymondtu/git/xdag/client/utils/moving_statistics/moving_average.c */,
+				6E3A6CD835524DB697E98905 /* /Users/reymondtu/git/xdag/client/utils/random.c */,
+				B6C008805F03482791A5313E /* /Users/reymondtu/git/xdag/client/utils/string_utils.c */,
+				47FD4FBF4A80427F9CF1BF79 /* /Users/reymondtu/git/xdag/client/utils/utils.c */,
+				7887C1530C764558B0DDD51A /* /Users/reymondtu/git/xdag/client/utils/uuid.c */,
+				6DA82F64C0304A02B4B4F6BC /* /Users/reymondtu/git/xdag/client/wallet.c */,
+				7952F94296154A9F93C309A6 /* /Users/reymondtu/git/xdag/client/websocket/websocket.c */,
+				287C20F7BE5F42F6B34B4DE1 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_event.c */,
+				D6C4F1CB33EF4F9DAEF58499 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_frame.c */,
+				D86F66152AF947E2A89AF808 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_net.c */,
+				7179977513624999988C833A /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_queue.c */,
+				61AB7633B58D4193815D1325 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_stack.c */,
+				C15A2DF87BC94D47AF02A84F /* /Users/reymondtu/git/xdag/client/xdag_config.c */,
+				A441A6934D3E4CFFB976929B /* /Users/reymondtu/git/xdag/dfslib/dfslib_crypt.c */,
+				B4968A04E8E74BC4AA5B039D /* /Users/reymondtu/git/xdag/dfslib/dfslib_random.c */,
+				85C578DDBDB9418BBD3C2690 /* /Users/reymondtu/git/xdag/dfslib/dfslib_string.c */,
+				B89C4D8C32B845F987C86D50 /* /Users/reymondtu/git/xdag/dfslib/dfsrsa.c */,
+				9FE7190F43E84764A2E5F167 /* /Users/reymondtu/git/xdag/dnet/dnet_crypt.c */,
+				6F3502A8B50849889660187C /* /Users/reymondtu/git/xdag/dnet/dnet_xdag.c */,
+			);
+			name = "Source Files";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		389F043520544EDC003F3084 /* xdag */ = {
+		4535520C7C4443D1B134FEBA /* cgi_stats */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 389F043D20544EDC003F3084 /* Build configuration list for PBXNativeTarget "xdag" */;
+			buildConfigurationList = DEFF50550B194AEF95838A7C /* Build configuration list for PBXNativeTarget "cgi_stats" */;
 			buildPhases = (
-				389F043220544EDC003F3084 /* Sources */,
-				389F043320544EDC003F3084 /* Frameworks */,
-				389F043420544EDC003F3084 /* CopyFiles */,
-				384A29E02062194F00DD9D3B /* Resources */,
+				14EE3E21EF064266942A5D02 /* Sources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				5E2D412DCD3B41F983AE1466 /* PBXTargetDependency */,
+			);
+			name = cgi_stats;
+			productName = cgi_stats;
+			productReference = ED9507A07A5E435AB1E5F39E /* cgi_stats */;
+			productType = "com.apple.product-type.tool";
+		};
+		CB669EB4602B4022B7C08364 /* cgi_block */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 79E217E7D6A44CF78F10D34E /* Build configuration list for PBXNativeTarget "cgi_block" */;
+			buildPhases = (
+				F2111E0F99CB4380B841807B /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C92EDA780AEA42CB8B5A1434 /* PBXTargetDependency */,
+			);
+			name = cgi_block;
+			productName = cgi_block;
+			productReference = 3E2BE828DDA54B0EB5872866 /* cgi_block */;
+			productType = "com.apple.product-type.tool";
+		};
+		CEAF0D6BCF74476AB3DA49CA /* xdag */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 66D2619666DC48C4AC6172C1 /* Build configuration list for PBXNativeTarget "xdag" */;
+			buildPhases = (
+				41052F6E762A4803ADE447B4 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				74B4BBC1D2414AF394681CDD /* PBXTargetDependency */,
 			);
 			name = xdag;
 			productName = xdag;
-			productReference = 389F043620544EDC003F3084 /* xdag */;
+			productReference = B2F74B141F044C9D8E9ACBD6 /* xdag */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		389F042E20544EDC003F3084 /* Project object */ = {
+		EC518486E16F447AA68F2838 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				KnownAssetTags = (
-					New,
-				);
-				LastUpgradeCheck = 0920;
-				ORGANIZATIONNAME = xrdavies;
-				TargetAttributes = {
-					389F043520544EDC003F3084 = {
-						CreatedOnToolsVersion = 9.2;
-						ProvisioningStyle = Automatic;
-					};
-				};
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1130;
 			};
-			buildConfigurationList = 389F043120544EDC003F3084 /* Build configuration list for PBXProject "xdag" */;
-			compatibilityVersion = "Xcode 8.0";
-			developmentRegion = en;
-			hasScannedForEncodings = 0;
-			knownRegions = (
-				en,
+			buildConfigurationList = 1763050D89DC47BD9BBD8F44 /* Build configuration list for PBXProject "xdag" */;
+			buildSettings = {
+			};
+			buildStyles = (
+				00044DCB4F544A74B9366505 /* Debug */,
+				F4DBF52AA8194AC1B4AF19D3 /* Release */,
+				0C95A1F73E7841E5B2BAE190 /* MinSizeRel */,
+				FF400299D35F4E4EB32C38F8 /* RelWithDebInfo */,
 			);
-			mainGroup = 389F042D20544EDC003F3084;
-			productRefGroup = 389F043720544EDC003F3084 /* Products */;
-			projectDirPath = "";
+			compatibilityVersion = "Xcode 3.2";
+			hasScannedForEncodings = 0;
+			mainGroup = 5F5A5D282322479282DB2C4B;
+			projectDirPath = ../;
 			projectRoot = "";
 			targets = (
-				389F043520544EDC003F3084 /* xdag */,
+				E3DD0AC9489643FFB81A1B2A /* ALL_BUILD */,
+				DE5943C11737473DAA6F4572 /* ZERO_CHECK */,
+				CB669EB4602B4022B7C08364 /* cgi_block */,
+				4535520C7C4443D1B134FEBA /* cgi_stats */,
+				CEAF0D6BCF74476AB3DA49CA /* xdag */,
 			);
 		};
 /* End PBXProject section */
 
-/* Begin PBXResourcesBuildPhase section */
-		384A29E02062194F00DD9D3B /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
+/* Begin PBXShellScriptBuildPhase section */
+		0BF1922D515F49CA9543C0EA /* CMake Rules */ = {
+			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				385EB88B21D3D76100287D2B /* dnet_keys.bin in Resources */,
-				385EB86721D3D64200287D2B /* pools-testnet.txt in Resources */,
-				385EB86221D3D64200287D2B /* netdb-white.txt in Resources */,
-				385EB86421D3D64200287D2B /* netdb.txt in Resources */,
-				385EB86021D3D64200287D2B /* netdb-testnet.txt in Resources */,
-				385EB86121D3D64200287D2B /* netdb-white-testnet.txt in Resources */,
-				385EB86821D3D64200287D2B /* pools.txt in Resources */,
-				385EB84D21D3D64200287D2B /* example.pool.config in Resources */,
+			);
+			name = "CMake Rules";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/reymondtu/git/xdag/mac -f /Users/reymondtu/git/xdag/mac/CMakeScripts/ALL_BUILD_cmakeRulesBuildPhase.make$CONFIGURATION OBJDIR=$(basename \"$OBJECT_FILE_DIR_normal\") all";
+			showEnvVarsInLog = 0;
+		};
+		441017C893C24806A899B130 = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
 		};
-/* End PBXResourcesBuildPhase section */
+		4DA67C9241A44E2E9108FEE4 = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		E32A556B1FF44CF184E76165 /* CMake Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake Rules";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/reymondtu/git/xdag/mac -f /Users/reymondtu/git/xdag/mac/CMakeScripts/ZERO_CHECK_cmakeRulesBuildPhase.make$CONFIGURATION OBJDIR=$(basename \"$OBJECT_FILE_DIR_normal\") all";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		389F043220544EDC003F3084 /* Sources */ = {
+		14EE3E21EF064266942A5D02 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				385EB84F21D3D64200287D2B /* hash.c in Sources */,
-				385EB86A21D3D64200287D2B /* storage.c in Sources */,
-				385EB85521D3D64200287D2B /* rpc_commands.c in Sources */,
-				385EB87921D3D64200287D2B /* wallet.c in Sources */,
-				385EB84821D3D64200287D2B /* block.c in Sources */,
-				385EB86B21D3D64200287D2B /* sync.c in Sources */,
-				385EB87B21D3D64200287D2B /* wslay_event.c in Sources */,
-				385EB84A21D3D64200287D2B /* commands.c in Sources */,
-				385EB86C21D3D64200287D2B /* terminal.c in Sources */,
-				385EB88921D3D64200287D2B /* dnet_xdag.c in Sources */,
-				385EB88521D3D64200287D2B /* dfslib_string.c in Sources */,
-				385EB87E21D3D64200287D2B /* wslay_queue.c in Sources */,
-				385EB84621D3D64200287D2B /* sha256.c in Sources */,
-				385EB88321D3D64200287D2B /* dfslib_crypt.c in Sources */,
-				385EB88021D3D64200287D2B /* x86_64cpuid-mac.s in Sources */,
-				385EB86521D3D64200287D2B /* network.c in Sources */,
-				385EB85921D3D64200287D2B /* rpc_wrapper.c in Sources */,
-				385EB87221D3D64200287D2B /* linenoise.c in Sources */,
-				385EB87521D3D64200287D2B /* random.c in Sources */,
-				385EB85121D3D64200287D2B /* url.c in Sources */,
-				385EB87D21D3D64200287D2B /* wslay_net.c in Sources */,
-				385EB86321D3D64200287D2B /* netdb.c in Sources */,
-				385EB84B21D3D64200287D2B /* crypt.c in Sources */,
-				385EB85721D3D64200287D2B /* rpc_procedures.c in Sources */,
-				385EB84E21D3D64200287D2B /* global.c in Sources */,
-				385EB85D21D3D64200287D2B /* memory.c in Sources */,
-				385EB85C21D3D64200287D2B /* math.c in Sources */,
-				385EB88421D3D64200287D2B /* dfslib_random.c in Sources */,
-				385EB86621D3D64200287D2B /* pool.c in Sources */,
-				385EB87721D3D64200287D2B /* utils.c in Sources */,
-				385EB87121D3D64200287D2B /* dirname.c in Sources */,
-				385EB87621D3D64200287D2B /* string_utils.c in Sources */,
-				385EB85E21D3D64200287D2B /* miner.c in Sources */,
-				385EB84421D3D64200287D2B /* sha256-mb-x86_64-mac.s in Sources */,
-				385EB86F21D3D64200287D2B /* atomic.c in Sources */,
-				385EB85221D3D64200287D2B /* init.c in Sources */,
-				385EB87A21D3D64200287D2B /* websocket.c in Sources */,
-				385EB88721D3D64200287D2B /* dnet_crypt.c in Sources */,
-				385EB87821D3D64200287D2B /* uuid.c in Sources */,
-				385EB84321D3D64200287D2B /* crc.c in Sources */,
-				385EB87C21D3D64200287D2B /* wslay_frame.c in Sources */,
-				385EB85021D3D64200287D2B /* http.c in Sources */,
-				385EB84221D3D64200287D2B /* address.c in Sources */,
-				385EB85F21D3D64200287D2B /* mining_common.c in Sources */,
-				385EB87021D3D64200287D2B /* base64.c in Sources */,
-				385EB87F21D3D64200287D2B /* wslay_stack.c in Sources */,
-				385EB85821D3D64200287D2B /* rpc_service.c in Sources */,
-				385EB88621D3D64200287D2B /* dfsrsa.c in Sources */,
-				385EB87421D3D64200287D2B /* moving_average.c in Sources */,
-				385EB86E21D3D64200287D2B /* transport.c in Sources */,
-				385EB85A21D3D64200287D2B /* main.c in Sources */,
-				385EB86D21D3D64200287D2B /* time.c in Sources */,
-				385EB85621D3D64200287D2B /* rpc_procedure.c in Sources */,
-				385EB85321D3D64200287D2B /* cJSON.c in Sources */,
-				385EB85421D3D64200287D2B /* cJSON_Utils.c in Sources */,
-				385EB88221D3D64200287D2B /* xdag_config.c in Sources */,
-				385EB87321D3D64200287D2B /* log.c in Sources */,
+				B5ABEF82472243D78E7F3937 /* /Users/reymondtu/git/xdag/client/statsdaemon.c */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		41052F6E762A4803ADE447B4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				89A60FE20A484FCC8567B692 /* /Users/reymondtu/git/xdag/client/address.c */,
+				80E051189FD340619A560AE0 /* /Users/reymondtu/git/xdag/client/algorithms/crc.c */,
+				08FB7A1DA4E6445CB4DD9E99 /* /Users/reymondtu/git/xdag/client/algorithms/sha256-mb-x86_64-mac.s */,
+				B6BAAD9F14F24994AE18AB06 /* /Users/reymondtu/git/xdag/client/algorithms/sha256.c */,
+				77F7F95F25614A3AAF836D8E /* /Users/reymondtu/git/xdag/client/block.c */,
+				4851C7432893404A92122904 /* /Users/reymondtu/git/xdag/client/bloom_filter.c */,
+				EA12A61BECBF473C9BE1CDAE /* /Users/reymondtu/git/xdag/client/commands.c */,
+				DB404FB7B3D6468CBC45E0BF /* /Users/reymondtu/git/xdag/client/crypt.c */,
+				7EB51763327C4471805D9A4D /* /Users/reymondtu/git/xdag/client/global.c */,
+				E0A57FF3A0214D8DB8DC9F59 /* /Users/reymondtu/git/xdag/client/hash.c */,
+				A26112E0C7584328B56D268B /* /Users/reymondtu/git/xdag/client/http/http.c */,
+				7382E7A97DE34CD484848AC4 /* /Users/reymondtu/git/xdag/client/http/url.c */,
+				E70F37FC074F4EBE93551A8D /* /Users/reymondtu/git/xdag/client/init.c */,
+				163AFDFC8CB946D6AA7245AB /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON.c */,
+				6F942C1D1A69412198999417 /* /Users/reymondtu/git/xdag/client/json-rpc/cJSON_Utils.c */,
+				1FA479DC1BE843A4B7EBB67F /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_commands.c */,
+				8D27C1FCFD4F44ABA2A8688A /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedure.c */,
+				96F5F96A4F81496881CFFAC9 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_procedures.c */,
+				E314B526FE0A45C394AEB43B /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_service.c */,
+				DEF564EBB67A4E60B8F552B8 /* /Users/reymondtu/git/xdag/client/json-rpc/rpc_wrapper.c */,
+				553C6808F840417CAF002F3C /* /Users/reymondtu/git/xdag/client/main.c */,
+				5A651F12CD7B483E81BD0CCE /* /Users/reymondtu/git/xdag/client/math.c */,
+				43FE74A1664E4FAA89999891 /* /Users/reymondtu/git/xdag/client/memory.c */,
+				3B6202699CF74E998432DF09 /* /Users/reymondtu/git/xdag/client/miner.c */,
+				9622100EF5BA44AEB6E37ACB /* /Users/reymondtu/git/xdag/client/mining_common.c */,
+				2F5AE708810D40E490107C23 /* /Users/reymondtu/git/xdag/client/netdb.c */,
+				E89606A49FB7484E902B23D0 /* /Users/reymondtu/git/xdag/client/network.c */,
+				7798347EA832466B858ADEF3 /* /Users/reymondtu/git/xdag/client/pool.c */,
+				BBDD93163A8D47318F5F8558 /* /Users/reymondtu/git/xdag/client/rsdb.c */,
+				F9B2FD27D4274812A7A82961 /* /Users/reymondtu/git/xdag/client/storage.c */,
+				BCF11A1250214ACD9F8111DA /* /Users/reymondtu/git/xdag/client/sync.c */,
+				24A3C4C418F34F32A1ACBD05 /* /Users/reymondtu/git/xdag/client/terminal.c */,
+				2EE08BF391B8439791CEC030 /* /Users/reymondtu/git/xdag/client/time.c */,
+				2E2AC59EC2C240AB99A521AC /* /Users/reymondtu/git/xdag/client/transport.c */,
+				96BBA1828862499A9D7F180B /* /Users/reymondtu/git/xdag/client/utils/atomic.c */,
+				5AB49994B0E64A338614C2CA /* /Users/reymondtu/git/xdag/client/utils/base64.c */,
+				F714DB87F2374AD7A5FD8662 /* /Users/reymondtu/git/xdag/client/utils/dirname.c */,
+				57A3E4C2B9344396A731A42C /* /Users/reymondtu/git/xdag/client/utils/linenoise.c */,
+				6FE6CE7472FF41CDAC2E98DF /* /Users/reymondtu/git/xdag/client/utils/log.c */,
+				9D54C22B7C064B88B9018515 /* /Users/reymondtu/git/xdag/client/utils/moving_statistics/moving_average.c */,
+				EABCCDE35F444C6C9E9636F2 /* /Users/reymondtu/git/xdag/client/utils/random.c */,
+				18B5B84875AF4A0885C7BA77 /* /Users/reymondtu/git/xdag/client/utils/string_utils.c */,
+				298671155F3E41A9AC7CC279 /* /Users/reymondtu/git/xdag/client/utils/utils.c */,
+				F9D893EF6AB2456A8744DD2C /* /Users/reymondtu/git/xdag/client/utils/uuid.c */,
+				943E9EF408324160A4105EF9 /* /Users/reymondtu/git/xdag/client/wallet.c */,
+				3EF7C85EFA084628BC77393D /* /Users/reymondtu/git/xdag/client/websocket/websocket.c */,
+				172B1AB8A7E741B09F9C1D81 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_event.c */,
+				2AD5F0303F804AFEB1D4DEA6 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_frame.c */,
+				761046B6D0AB4D7784FAADA7 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_net.c */,
+				3EF4F150627E4B9895B38F8F /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_queue.c */,
+				F0136F695D514FD1A629A419 /* /Users/reymondtu/git/xdag/client/websocket/wslay/wslay_stack.c */,
+				D04E6B44F5E24C138BEC806F /* /Users/reymondtu/git/xdag/client/x86_64cpuid-mac.s */,
+				442F4EE24ACB4BF38076D469 /* /Users/reymondtu/git/xdag/client/xdag_config.c */,
+				FFED1ABCBB6649D881526B3A /* /Users/reymondtu/git/xdag/dfslib/dfslib_crypt.c */,
+				D5C8DB2CA5B548EA812B5376 /* /Users/reymondtu/git/xdag/dfslib/dfslib_random.c */,
+				6A772E475C93488F9F89BCEC /* /Users/reymondtu/git/xdag/dfslib/dfslib_string.c */,
+				FD03FA45D02645CB984DFFE1 /* /Users/reymondtu/git/xdag/dfslib/dfsrsa.c */,
+				69FCCC15815A4934A3BD7781 /* /Users/reymondtu/git/xdag/dnet/dnet_crypt.c */,
+				8ED32AFD791D40288443643D /* /Users/reymondtu/git/xdag/dnet/dnet_xdag.c */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2111E0F99CB4380B841807B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8A11AB097D0E4BDCB0BCA10C /* /Users/reymondtu/git/xdag/client/block.cgi.c */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		101125B1CDF24F3B9B9B7F0E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DE5943C11737473DAA6F4572 /* ZERO_CHECK */;
+			targetProxy = 81CEADDAEBB542DBB75EE3D5 /* PBXContainerItemProxy */;
+		};
+		5E2D412DCD3B41F983AE1466 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DE5943C11737473DAA6F4572 /* ZERO_CHECK */;
+			targetProxy = BBF5A16834F1499897F77CF5 /* PBXContainerItemProxy */;
+		};
+		5FE10DCFBC894307933E9904 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CB669EB4602B4022B7C08364 /* cgi_block */;
+			targetProxy = E10DA5283505434386526732 /* PBXContainerItemProxy */;
+		};
+		66FC48E2BED943FD9F2F6039 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CEAF0D6BCF74476AB3DA49CA /* xdag */;
+			targetProxy = 2471DDFD183D41D8A14686EE /* PBXContainerItemProxy */;
+		};
+		74B4BBC1D2414AF394681CDD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DE5943C11737473DAA6F4572 /* ZERO_CHECK */;
+			targetProxy = A4FBFABEF0B94ECF9D46AD71 /* PBXContainerItemProxy */;
+		};
+		9F4191CC9C4A49009107411F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4535520C7C4443D1B134FEBA /* cgi_stats */;
+			targetProxy = EAA5B5BDCC2B4F91AFCC2AE5 /* PBXContainerItemProxy */;
+		};
+		C92EDA780AEA42CB8B5A1434 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DE5943C11737473DAA6F4572 /* ZERO_CHECK */;
+			targetProxy = 4F6F71CE749F41D8B9B4127A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
-		389F043B20544EDC003F3084 /* Debug */ = {
+		0362B1F9E04F4AEC8CD5159F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_IDENTITY = "-";
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_NO_COMMON_BLOCKS = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_ENABLE_DEBUG_INFO = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = Debug;
+		};
+		05446C348F8941818D5AA5B0 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",NDEBUG,DFSTOOLS,SHA256_USE_OPENSSL_TXFM,SHA256_OPENSSL_MBLOCK);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/usr/local/include);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "-std=gnu11        -Wall -Wmissing-prototypes -Wno-unused-result -Wno-unused-function -Wno-unused-variable        -DNDEBUG '-std=gnu11'  ";
+				OTHER_LDFLAGS = " -Wl,-search_paths_first -Wl,-headerpad_max_install_names  ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = cgi_stats;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		19909834DBFB4021AA22F3F2 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",NDEBUG,DFSTOOLS,SHA256_USE_OPENSSL_TXFM,SHA256_OPENSSL_MBLOCK);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/usr/local/include);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "-std=gnu11        -Wall -Wmissing-prototypes -Wno-unused-result -Wno-unused-function -Wno-unused-variable     -DNDEBUG '-std=gnu11'  ";
+				OTHER_LDFLAGS = " -Wl,-search_paths_first -Wl,-headerpad_max_install_names  ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = cgi_stats;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		24E0397FC134433C881AA1DE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = Release;
+		};
+		265ADC978A7D4955A4FEE503 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",NDEBUG,DFSTOOLS,SHA256_USE_OPENSSL_TXFM,SHA256_OPENSSL_MBLOCK);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/usr/local/include,/usr/local/opt/openssl/include,/usr/local/opt/gperftools/include);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "-std=gnu11        -Wall -Wmissing-prototypes -Wno-unused-result -Wno-unused-function -Wno-unused-variable     -DNDEBUG '-std=gnu11' -g  ";
+				OTHER_LDFLAGS = " -Wl,-search_paths_first -Wl,-headerpad_max_install_names  /usr/local/lib/librocksdb.dylib /usr/local/lib/libsecp256k1.dylib /usr/local/opt/openssl/lib/libssl.dylib /usr/local/opt/openssl/lib/libcrypto.dylib /usr/local/opt/gperftools/lib/libtcmalloc.dylib /usr/local/opt/gperftools/lib/libprofiler.dylib -lm -ldl";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = xdag;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		2DEB5492B31C4213B46F01DB /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
 				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = macosx;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk;
+				SYMROOT = /Users/reymondtu/git/xdag/mac/build;
 			};
-			name = Debug;
+			name = MinSizeRel;
 		};
-		389F043C20544EDC003F3084 /* Release */ = {
+		2EDCEC3C8E3945FE89A8AEFB /* MinSizeRel */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_IDENTITY = "-";
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_NS_ASSERTIONS = NO;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				SDKROOT = macosx;
-			};
-			name = Release;
-		};
-		389F043E20544EDC003F3084 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD)";
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_STYLE = Automatic;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					__MACOS__,
-					SHA256_USE_OPENSSL_TXFM,
-					SHA256_OPENSSL_MBLOCK,
-					DFSTOOLS,
-				);
-				GCC_THREADSAFE_STATICS = YES;
-				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
-				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
-				GCC_WARN_UNUSED_PARAMETER = YES;
-				HEADER_SEARCH_PATHS = (
-					/usr/local/opt/openssl/include,
-					/usr/local/opt/gmp/include,
-					/usr/local/include,
-					"$(PROJECT_DIR)/../secp256k1/include",
-				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/lib/openssl/lib",
-					"$(PROJECT_DIR)/lib/secp256k1/lib",
-					"$(PROJECT_DIR)/lib/gmp/lib",
-				);
-				OTHER_CFLAGS = "";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
-				SYSTEM_FRAMEWORK_SEARCH_PATHS = "";
-				SYSTEM_HEADER_SEARCH_PATHS = /usr/local/opt/openssl/include;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		378C29B90760482D9DE71FAE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",NDEBUG,DFSTOOLS,SHA256_USE_OPENSSL_TXFM,SHA256_OPENSSL_MBLOCK);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/usr/local/include,/usr/local/opt/openssl/include,/usr/local/opt/gperftools/include);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "-std=gnu11        -Wall -Wmissing-prototypes -Wno-unused-result -Wno-unused-function -Wno-unused-variable    '-std=gnu11'  ";
+				OTHER_LDFLAGS = " -Wl,-search_paths_first -Wl,-headerpad_max_install_names  /usr/local/lib/librocksdb.dylib /usr/local/lib/libsecp256k1.dylib /usr/local/opt/openssl/lib/libssl.dylib /usr/local/opt/openssl/lib/libcrypto.dylib /usr/local/opt/gperftools/lib/libtcmalloc.dylib /usr/local/opt/gperftools/lib/libprofiler.dylib -lm -ldl";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = xdag;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
 			};
 			name = Debug;
 		};
-		389F043F20544EDC003F3084 /* Release */ = {
+		3833351010B6483F9672F093 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD)";
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_STYLE = Automatic;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_OPTIMIZATION_LEVEL = 3;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					__MACOS__,
-					SHA256_USE_OPENSSL_TXFM,
-					SHA256_OPENSSL_MBLOCK,
-					DFSTOOLS,
-					NDEBUG,
-				);
-				GCC_THREADSAFE_STATICS = YES;
-				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
-				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
-				GCC_WARN_UNUSED_PARAMETER = YES;
-				HEADER_SEARCH_PATHS = (
-					/usr/local/opt/openssl/include,
-					/usr/local/opt/gmp/include,
-					/usr/local/include,
-					"$(PROJECT_DIR)/../secp256k1/include",
-				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/lib/openssl/lib",
-					"$(PROJECT_DIR)/lib/secp256k1/lib",
-					"$(PROJECT_DIR)/lib/gmp/lib",
-				);
-				OTHER_CFLAGS = "";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
-				SYSTEM_FRAMEWORK_SEARCH_PATHS = "";
-				SYSTEM_HEADER_SEARCH_PATHS = /usr/local/opt/openssl/include;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk;
+				SYMROOT = /Users/reymondtu/git/xdag/mac/build;
 			};
 			name = Release;
+		};
+		39567625EDF54D408400BFD1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",NDEBUG,DFSTOOLS,SHA256_USE_OPENSSL_TXFM,SHA256_OPENSSL_MBLOCK);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/usr/local/include);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "-std=gnu11        -Wall -Wmissing-prototypes -Wno-unused-result -Wno-unused-function -Wno-unused-variable     -DNDEBUG '-std=gnu11'  ";
+				OTHER_LDFLAGS = " -Wl,-search_paths_first -Wl,-headerpad_max_install_names  ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = cgi_stats;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = Release;
+		};
+		3B40825AD6774ACCB8D0B3D9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = Debug;
+		};
+		4F563CEDE7944495811EC38A /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",NDEBUG,DFSTOOLS,SHA256_USE_OPENSSL_TXFM,SHA256_OPENSSL_MBLOCK);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/usr/local/include,/usr/local/opt/openssl/include,/usr/local/opt/gperftools/include);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "-std=gnu11        -Wall -Wmissing-prototypes -Wno-unused-result -Wno-unused-function -Wno-unused-variable        -DNDEBUG '-std=gnu11'  ";
+				OTHER_LDFLAGS = " -Wl,-search_paths_first -Wl,-headerpad_max_install_names  /usr/local/lib/librocksdb.dylib /usr/local/lib/libsecp256k1.dylib /usr/local/opt/openssl/lib/libssl.dylib /usr/local/opt/openssl/lib/libcrypto.dylib /usr/local/opt/gperftools/lib/libtcmalloc.dylib /usr/local/opt/gperftools/lib/libprofiler.dylib -lm -ldl";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = xdag;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		52CD48786BEC40AF8EA30159 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		681A3D17C3334EC19ADBC2CE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",NDEBUG,DFSTOOLS,SHA256_USE_OPENSSL_TXFM,SHA256_OPENSSL_MBLOCK);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/usr/local/include);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "-std=gnu11        -Wall -Wmissing-prototypes -Wno-unused-result -Wno-unused-function -Wno-unused-variable    '-std=gnu11'  ";
+				OTHER_LDFLAGS = " -Wl,-search_paths_first -Wl,-headerpad_max_install_names  ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = cgi_block;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = Debug;
+		};
+		719D53228D974E1E9F168A44 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = Release;
+		};
+		737229CBD75243D3976EA7F2 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		8857CCE0303849409B464F5E /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		93F0CD8439964FE8B5D8CD05 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",NDEBUG,DFSTOOLS,SHA256_USE_OPENSSL_TXFM,SHA256_OPENSSL_MBLOCK);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/usr/local/include);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "-std=gnu11        -Wall -Wmissing-prototypes -Wno-unused-result -Wno-unused-function -Wno-unused-variable     -DNDEBUG '-std=gnu11'  ";
+				OTHER_LDFLAGS = " -Wl,-search_paths_first -Wl,-headerpad_max_install_names  ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = cgi_block;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		A2B4BF608F2E41F69CBA998D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",NDEBUG,DFSTOOLS,SHA256_USE_OPENSSL_TXFM,SHA256_OPENSSL_MBLOCK);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/usr/local/include);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "-std=gnu11        -Wall -Wmissing-prototypes -Wno-unused-result -Wno-unused-function -Wno-unused-variable     -DNDEBUG '-std=gnu11'  ";
+				OTHER_LDFLAGS = " -Wl,-search_paths_first -Wl,-headerpad_max_install_names  ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = cgi_block;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = Release;
+		};
+		B49F8BBB052C41869E337A98 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",NDEBUG,DFSTOOLS,SHA256_USE_OPENSSL_TXFM,SHA256_OPENSSL_MBLOCK);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/usr/local/include,/usr/local/opt/openssl/include,/usr/local/opt/gperftools/include);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "-std=gnu11        -Wall -Wmissing-prototypes -Wno-unused-result -Wno-unused-function -Wno-unused-variable     -DNDEBUG '-std=gnu11' -g  ";
+				OTHER_LDFLAGS = " -Wl,-search_paths_first -Wl,-headerpad_max_install_names  /usr/local/lib/librocksdb.dylib /usr/local/lib/libsecp256k1.dylib /usr/local/opt/openssl/lib/libssl.dylib /usr/local/opt/openssl/lib/libcrypto.dylib /usr/local/opt/gperftools/lib/libtcmalloc.dylib /usr/local/opt/gperftools/lib/libprofiler.dylib -lm -ldl";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = xdag;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = Release;
+		};
+		BBF3DF350D374B9EA399CACF /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",NDEBUG,DFSTOOLS,SHA256_USE_OPENSSL_TXFM,SHA256_OPENSSL_MBLOCK);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/usr/local/include);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "-std=gnu11        -Wall -Wmissing-prototypes -Wno-unused-result -Wno-unused-function -Wno-unused-variable        -DNDEBUG '-std=gnu11'  ";
+				OTHER_LDFLAGS = " -Wl,-search_paths_first -Wl,-headerpad_max_install_names  ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = cgi_block;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		E5B42D2A16064E8E92E9BD59 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",NDEBUG,DFSTOOLS,SHA256_USE_OPENSSL_TXFM,SHA256_OPENSSL_MBLOCK);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/usr/local/include);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "-std=gnu11        -Wall -Wmissing-prototypes -Wno-unused-result -Wno-unused-function -Wno-unused-variable    '-std=gnu11'  ";
+				OTHER_LDFLAGS = " -Wl,-search_paths_first -Wl,-headerpad_max_install_names  ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = cgi_stats;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/reymondtu/git/xdag/mac;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("-Wmost","-Wno-four-char-constants","-Wno-unknown-pragmas","$(inherited)");
+			};
+			name = Debug;
+		};
+		EFEF5B6F01A6425CB9C5A307 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk;
+				SYMROOT = /Users/reymondtu/git/xdag/mac/build;
+			};
+			name = RelWithDebInfo;
+		};
+		FD675871FEDB49FD93414A1C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk;
+				SYMROOT = /Users/reymondtu/git/xdag/mac/build;
+			};
+			name = Debug;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		389F043120544EDC003F3084 /* Build configuration list for PBXProject "xdag" */ = {
+		1763050D89DC47BD9BBD8F44 /* Build configuration list for PBXProject "xdag" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				389F043B20544EDC003F3084 /* Debug */,
-				389F043C20544EDC003F3084 /* Release */,
+				FD675871FEDB49FD93414A1C /* Debug */,
+				3833351010B6483F9672F093 /* Release */,
+				2DEB5492B31C4213B46F01DB /* MinSizeRel */,
+				EFEF5B6F01A6425CB9C5A307 /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
-		389F043D20544EDC003F3084 /* Build configuration list for PBXNativeTarget "xdag" */ = {
+		374A7338EEDB4A2F9A05CACD /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				389F043E20544EDC003F3084 /* Debug */,
-				389F043F20544EDC003F3084 /* Release */,
+				0362B1F9E04F4AEC8CD5159F /* Debug */,
+				719D53228D974E1E9F168A44 /* Release */,
+				2EDCEC3C8E3945FE89A8AEFB /* MinSizeRel */,
+				52CD48786BEC40AF8EA30159 /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
+		};
+		66D2619666DC48C4AC6172C1 /* Build configuration list for PBXNativeTarget "xdag" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				378C29B90760482D9DE71FAE /* Debug */,
+				B49F8BBB052C41869E337A98 /* Release */,
+				265ADC978A7D4955A4FEE503 /* MinSizeRel */,
+				4F563CEDE7944495811EC38A /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7378259F95024A8D936851C7 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3B40825AD6774ACCB8D0B3D9 /* Debug */,
+				24E0397FC134433C881AA1DE /* Release */,
+				737229CBD75243D3976EA7F2 /* MinSizeRel */,
+				8857CCE0303849409B464F5E /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		79E217E7D6A44CF78F10D34E /* Build configuration list for PBXNativeTarget "cgi_block" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				681A3D17C3334EC19ADBC2CE /* Debug */,
+				A2B4BF608F2E41F69CBA998D /* Release */,
+				93F0CD8439964FE8B5D8CD05 /* MinSizeRel */,
+				BBF3DF350D374B9EA399CACF /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DEFF50550B194AEF95838A7C /* Build configuration list for PBXNativeTarget "cgi_stats" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E5B42D2A16064E8E92E9BD59 /* Debug */,
+				39567625EDF54D408400BFD1 /* Release */,
+				19909834DBFB4021AA22F3F2 /* MinSizeRel */,
+				05446C348F8941818D5AA5B0 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 389F042E20544EDC003F3084 /* Project object */;
+	rootObject = EC518486E16F447AA68F2838 /* Project object */;
 }
