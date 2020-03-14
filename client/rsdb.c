@@ -6,7 +6,7 @@
 #include "global.h"
 #include "utils/log.h"
 
-#define RSDB_LOG_FREE_ERRMSG(errmsg) xdag_info("%s %lu %s \n",errmsg);free(errmsg)
+#define RSDB_LOG_FREE_ERRMSG(errmsg) xdag_info("%s %lu %s \n",__FUNCTION__, __LINE__,errmsg);free(errmsg)
 
 XDAG_RSDB_OP_TYPE xdag_rsdb_pre_init(void)
 {
