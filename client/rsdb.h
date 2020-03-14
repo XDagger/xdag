@@ -69,6 +69,7 @@ int xdag_rsdb_close(XDAG_RSDB* db);
 
 void* xdag_rsdb_getkey(const char* key, const size_t klen, size_t* vlen);
 struct block_internal* xdag_rsdb_get_bi(xdag_hashlow_t hash);
+XDAG_RSDB_OP_TYPE xdag_rsdb_get_bi_st(xdag_hashlow_t hash,struct block_internal* bi);
 struct xdag_block* xdag_rsdb_get_orpblock(xdag_hashlow_t hash);
 struct block_internal* xdag_rsdb_get_ourbi(xdag_hashlow_t hash);
 int xdag_rsdb_get_stats(void);

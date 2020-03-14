@@ -112,55 +112,64 @@ static uint64_t apply_block(struct block_internal* bi)
 
 	bi->flags |= BI_MAIN_REF;
 	for (int i = 0; i < bi->nlinks; ++i) {
-        struct block_internal* lbi = xdag_rsdb_get_bi(bi->link[i]);
-        
-		xdag_amount_t ref_amount = apply_block(lbi);
-		if (ref_amount == -1l) {
-            if(lbi) {
-                free(lbi);
-            }
-			continue;
-		}
-
-        //bi->link[i]->ref = bi;
-        memcpy(lbi->ref, bi->hash, sizeof(xdag_hashlow_t));
-
-		if (bi->amount + ref_amount >= bi->amount) {
-			accept_amount(bi, ref_amount);
-		}
-        xdag_rsdb_put_bi(lbi);
-        free(lbi);
+        //struct block_internal* lbi = xdag_rsdb_get_bi(bi->link[i]);
+		struct block_internal lbi;
+        if(XDAG_RSDB_OP_SUCCESS == xdag_rsdb_get_bi_st(bi->link[i],&lbi)){
+			xdag_amount_t ref_amount = apply_block(&lbi);
+			if (ref_amount == -1l) {
+//				if(lbi) {
+//					free(lbi);
+//				}
+				continue;
+			}
+	
+			//bi->link[i]->ref = bi;
+			memcpy(lbi.ref, bi->hash, sizeof(xdag_hashlow_t));
+	
+			if (bi->amount + ref_amount >= bi->amount) {
+				accept_amount(bi, ref_amount);
+			}
+			xdag_rsdb_put_bi(&lbi);
+			//free(lbi);
+        } else{
+        	return -1l;
+        }
 	}
 
     sum_in = 0;
     sum_out = bi->fee;
 
 	for (int i = 0; i < bi->nlinks; ++i) {
-        struct block_internal* lbi = xdag_rsdb_get_bi(bi->link[i]);
-		if (1 << i & bi->in_mask) {
-			if (lbi->amount < bi->linkamount[i]) {
-                if(lbi) {
-                    free(lbi);
-                }
-				return 0;
+        //struct block_internal* lbi = xdag_rsdb_get_bi(bi->link[i]);
+		struct block_internal lbi;
+		if(XDAG_RSDB_OP_SUCCESS == xdag_rsdb_get_bi_st(bi->link[i],&lbi)) {
+			if (1 << i & bi->in_mask) {
+				if (lbi.amount < bi->linkamount[i]) {
+//					if (lbi) {
+//						free(lbi);
+//					}
+					return 0;
+				}
+				if (sum_in + bi->linkamount[i] < sum_in) {
+//					if (lbi) {
+//						free(lbi);
+//					}
+					return 0;
+				}
+				sum_in += bi->linkamount[i];
+			} else {
+				if (sum_out + bi->linkamount[i] < sum_out) {
+//					if (lbi) {
+//						free(lbi);
+//					}
+					return 0;
+				}
+				sum_out += bi->linkamount[i];
 			}
-			if (sum_in + bi->linkamount[i] < sum_in) {
-                if(lbi) {
-                    free(lbi);
-                }
-				return 0;
-			}
-			sum_in += bi->linkamount[i];
-		} else {
-			if (sum_out + bi->linkamount[i] < sum_out) {
-                if(lbi) {
-                    free(lbi);
-                }
-				return 0;
-			}
-			sum_out += bi->linkamount[i];
+//			free(lbi);
+		}else{
+			return -1l;
 		}
-        free(lbi);
 	}
 
 	if (sum_in + bi->amount < sum_in || sum_in + bi->amount < sum_out) {
@@ -168,14 +177,19 @@ static uint64_t apply_block(struct block_internal* bi)
 	}
 
 	for (int i = 0; i < bi->nlinks; ++i) {
-        struct block_internal* lbi = xdag_rsdb_get_bi(bi->link[i]);
-		if (1 << i & bi->in_mask) {
-            accept_amount(lbi, (xdag_amount_t)0 - bi->linkamount[i]);
-		} else {
-            accept_amount(lbi, bi->linkamount[i]);
+        //struct block_internal* lbi = xdag_rsdb_get_bi(bi->link[i]);
+		struct block_internal lbi;
+		if(XDAG_RSDB_OP_SUCCESS == xdag_rsdb_get_bi_st(bi->link[i],&lbi)) {
+			if (1 << i & bi->in_mask) {
+				accept_amount(&lbi, (xdag_amount_t) 0 - bi->linkamount[i]);
+			} else {
+				accept_amount(&lbi, bi->linkamount[i]);
+			}
+			xdag_rsdb_put_bi(&lbi);
+//			free(lbi);
+		}else{
+			return -1l;
 		}
-        xdag_rsdb_put_bi(lbi);
-        free(lbi);
 	}
 
     accept_amount(bi, sum_in - sum_out);

@@ -250,6 +250,29 @@ struct block_internal* xdag_rsdb_get_bi(xdag_hashlow_t hash)
     return (struct block_internal*)value;
 }
 
+XDAG_RSDB_OP_TYPE xdag_rsdb_get_bi_st(xdag_hashlow_t hash,struct block_internal* bi)
+{
+	if (!hash || !bi) return XDAG_RSDB_NULL;
+	
+	if(hash[0] == 0 && hash[1] == 0 && hash[2] == 0) return XDAG_RSDB_NULL;
+	size_t vlen = 0;
+	char key[RSDB_KEY_LEN] = {[0] = HASH_BLOCK_INTERNAL};
+	memcpy(key + 1, hash, RSDB_KEY_LEN - 1 );
+	char *value = xdag_rsdb_getkey(key, RSDB_KEY_LEN, &vlen);
+	if(!value)
+		return XDAG_RSDB_NULL;
+	
+	if(vlen != sizeof(struct block_internal)){
+		fprintf(stderr,"vlen is not math size of block_internal\n");
+		free(value);
+		return XDAG_RSDB_NULL;
+	}
+	memcpy(bi,value,vlen);
+	free(value);
+
+	return XDAG_RSDB_OP_SUCCESS;
+}
+
 struct xdag_block* xdag_rsdb_seek_orpblock(void)
 {
     struct xdag_block* xb = NULL;
