@@ -4,6 +4,9 @@
 #include <unistd.h>  // sysconf() - get CPU count
 #include "rsdb.h"
 #include "global.h"
+#include "utils/log.h"
+
+#define RSDB_LOG_FREE_ERRMSG(errmsg) xdag_info("%s %lu %s \n",errmsg);free(errmsg)
 
 XDAG_RSDB_OP_TYPE xdag_rsdb_pre_init(void)
 {
@@ -104,6 +107,7 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_conf(XDAG_RSDB  *rsdb)
 
     if(errmsg)
     {
+		RSDB_LOG_FREE_ERRMSG(errmsg);
         return XDAG_RSDB_BKUP_ERROR;
     }
     return XDAG_RSDB_OP_SUCCESS;
@@ -116,6 +120,7 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_open(XDAG_RSDB* rsdb)
     rsdb->db = rocksdb_open(rsdb->options, rsdb->config->db_path, &errmsg);
     if(errmsg)
     {
+		RSDB_LOG_FREE_ERRMSG(errmsg);
         return XDAG_RSDB_OPEN_ERROR;
     }
     return XDAG_RSDB_OP_SUCCESS;
@@ -163,6 +168,7 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_putkey(const char* key, const size_t klen, const cha
                 &errmsg);
     if(errmsg)
     {
+		RSDB_LOG_FREE_ERRMSG(errmsg);
         return XDAG_RSDB_PUT_ERROR;
     }
     return XDAG_RSDB_OP_SUCCESS;
@@ -182,6 +188,7 @@ void* xdag_rsdb_getkey(const char* key, size_t klen, size_t* vlen)
 
     if(errmsg)
     {
+		RSDB_LOG_FREE_ERRMSG(errmsg);
         if(rocksdb_return_value) {
             free(rocksdb_return_value);
         }
@@ -196,6 +203,7 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_delkey(const char* key, const size_t klen)
     rocksdb_delete(g_xdag_rsdb->db, g_xdag_rsdb->write_options, key, klen, &errmsg);
     if(errmsg)
     {
+		RSDB_LOG_FREE_ERRMSG(errmsg);
         return XDAG_RSDB_DELETE_ERROR;
     }
     return XDAG_RSDB_OP_SUCCESS;

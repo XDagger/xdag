@@ -545,9 +545,10 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	int verified_keys_mask = 0, err = 0, type = 0;
     struct block_internal tmpNodeBlock, blockRef, blockRef0, *pt = NULL;
     struct block_internal *nodeBlock = NULL;
-	struct block_internal blockRefs[XDAG_BLOCK_FIELDS-1] = {0};
+	struct block_internal blockRefs[XDAG_BLOCK_FIELDS-1];
 	xdag_diff_t diff0, diff;
-
+	
+	memset(blockRefs,0, sizeof(blockRefs));
     memset(&tmpNodeBlock, 0, sizeof(struct block_internal));
     newBlock->field[0].transport_header = 0;
     xdag_hash(newBlock, sizeof(struct xdag_block), tmpNodeBlock.hash);
