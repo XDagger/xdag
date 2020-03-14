@@ -82,6 +82,7 @@ static void gprofStartAndStop(int signum) {
 		HeapProfilerStart("/tmp/heap_prof");
 		printf("ProfilerStart success\n");
 	}else{
+		isStarted = 0;
 		HeapProfilerStop();
 		printf("ProfilerStop success\n");
 	}
