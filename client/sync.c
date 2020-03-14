@@ -35,7 +35,7 @@ void *sync_thread(void*);
 static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int nfield, int ttl)
 {
 	xdag_hash_t hash = {0};
-	struct sync_block *p = NULL, *q = NULL;
+	struct sync_block p, *q = NULL;
 	int res = 0;
 	time_t t = time(0);
 
@@ -55,17 +55,14 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
 //        }
 //    }
 
-    p = xdag_rsdb_get_syncblock(hash);
-	if(p)
+	if(!xdag_rsdb_get_syncblock(hash, &p))
     {
-        res = (t - p->t >= REQ_PERIOD);
-        p->nfield = nfield;
-        p->ttl = ttl;
-        if (res) p->t = t;
-        free(p);
+        res = (t - p.t >= REQ_PERIOD);
+        p.nfield = nfield;
+        p.ttl = ttl;
+        if (res) p.t = t;
         return res;
     }
-
 
 	q = (struct sync_block *)malloc(sizeof(struct sync_block));
 	if (!q) return -1;
@@ -92,7 +89,7 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
 /* notifies synchronization mechanism about found block */
 int xdag_sync_pop_block_nolock(struct xdag_block *b)
 {
-	struct sync_block *p = NULL;
+	struct sync_block p;
 	xdag_hash_t hash = {0};
 	xdag_hash(b, sizeof(struct xdag_block), hash);
  
@@ -117,15 +114,13 @@ int xdag_sync_pop_block_nolock(struct xdag_block *b)
 //			goto begin;
 //		}
 //	}
-    p = xdag_rsdb_get_syncblock(hash);
-    if(p)
+    if(!xdag_rsdb_get_syncblock(hash, &p))
     {
-        xdag_rsdb_del_syncblock(p->hash);
+        xdag_rsdb_del_syncblock(p.hash);
         g_xdag_extstats.nwaitsync--;
         xdag_rsdb_put_extstats();
-        p->b.field[0].transport_header = p->ttl << 8 | 1;
-        xdag_sync_add_block_nolock(&(p->b), NULL);
-        free(p);
+        p.b.field[0].transport_header = p.ttl << 8 | 1;
+        xdag_sync_add_block_nolock(&(p.b), NULL);
 //        goto begin;
     }
 
@@ -155,7 +150,7 @@ int xdag_sync_add_block_nolock(struct xdag_block *b, struct xconnection *conn)
 	} else if (g_xdag_sync_on && ((res = -res) & 0xf) == 5) {
 		res = (res >> 4) & 0xf;
 		if (push_block_nolock(b, conn, res, ttl)) {
-			struct sync_block *p = NULL;
+			struct sync_block p;
 			// this is not exist block's hash at this xdag_blocks
 //			uint64_t *hash = b->field[res].hash;
             xdag_hash_t hash = {0};
@@ -175,16 +170,14 @@ int xdag_sync_add_block_nolock(struct xdag_block *b, struct xconnection *conn)
 //                    goto begin;
 //                }
 //            }
-            p = xdag_rsdb_get_syncblock(hash);
-            if(p)
+            if(!xdag_rsdb_get_syncblock(hash, &p))
             {
-                if (t - p->t < REQ_PERIOD) {
+                if (t - p.t < REQ_PERIOD) {
                         return 0;
                 }
-                p->t = t;
+                p.t = t;
 //                hash = q->b.field[q->nfield].hash;
-                memcpy(hash, p->b.field[p->nfield].hash, sizeof(hash));
-                free(p);
+                memcpy(hash, p.b.field[p.nfield].hash, sizeof(hash));
 //                goto begin;
             }
 			xdag_request_block(hash, NULL, 1);
