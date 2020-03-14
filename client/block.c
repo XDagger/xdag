@@ -2414,7 +2414,7 @@ static int load_remark(struct block_internal* bi) {
 //	if(bref == NULL) {
 //		return 0;
 //	}
-    uint8_t remark[33];
+    xdag_remark_t remark;
     if(!xdag_rsdb_get_remark(bi->hash, remark)) {
         xdag_err("Remark field not found [function: load_remark]");
         pthread_mutex_lock(&block_mutex);

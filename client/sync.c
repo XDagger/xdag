@@ -35,7 +35,7 @@ void *sync_thread(void*);
 static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int nfield, int ttl)
 {
 	xdag_hash_t hash = {0};
-	struct sync_block p, *q = NULL;
+	struct sync_block p, q;
 	int res = 0;
 	time_t t = time(0);
 
@@ -56,33 +56,30 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
 //    }
 
 	if(!xdag_rsdb_get_syncblock(hash, &p))
-    {
-        res = (t - p.t >= REQ_PERIOD);
-        p.nfield = nfield;
-        p.ttl = ttl;
-        if (res) p.t = t;
-        return res;
-    }
+	{
+		res = (t - p.t >= REQ_PERIOD);
+		p.nfield = nfield;
+		p.ttl = ttl;
+		if (res) p.t = t;
+		return res;
+    	}
 
-	q = (struct sync_block *)malloc(sizeof(struct sync_block));
-	if (!q) return -1;
-
-	memcpy(&q->b, b, sizeof(struct xdag_block));
-	memcpy(&q->hash, hash, sizeof(xdag_hash_t));
+	memcpy(&q.b, b, sizeof(struct xdag_block));
+	memcpy(&q.hash, hash, sizeof(xdag_hash_t));
 
 //	q->conn = conn;
 //  q->next = *p;
 
-	q->nfield = nfield;
-	q->ttl = ttl;
-	q->t = t;
-    xdag_rsdb_put_syncblock(q);
+	q.nfield = nfield;
+	q.ttl = ttl;
+	q.t = t;
+    	xdag_rsdb_put_syncblock(&q);
 //	*p = q;
 //	p = get_list_r(hash);
 //	q->next_r = *p;
 //	*p = q;
 	g_xdag_extstats.nwaitsync++;
-    xdag_rsdb_put_extstats();
+    	xdag_rsdb_put_extstats();
 	return 1;
 }
 

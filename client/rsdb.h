@@ -73,7 +73,7 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_get_orpblock(xdag_hashlow_t hash, struct xdag_block*
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_ourbi(xdag_hashlow_t hash, struct block_internal*);
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_stats(void);
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_extstats(void);
-XDAG_RSDB_OP_TYPE xdag_rsdb_get_remark(xdag_hashlow_t hash, uint8_t*);
+XDAG_RSDB_OP_TYPE xdag_rsdb_get_remark(xdag_hashlow_t hash, xdag_remark_t);
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_syncblock(xdag_hashlow_t hash, struct sync_block*);
 
 XDAG_RSDB_OP_TYPE xdag_rsdb_putkey(const char* key, size_t klen, const char* value, size_t vlen);

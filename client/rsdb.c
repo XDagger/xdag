@@ -316,7 +316,7 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_get_syncblock(xdag_hashlow_t hash, struct sync_block
     if(!value)
         return XDAG_RSDB_NULL;
 
-    if(vlen != sizeof(struct block_internal)){
+    if(vlen != sizeof(struct sync_block)){
         fprintf(stderr,"vlen is not math size of sync_block\n");
         free(value);
         return XDAG_RSDB_NULL;
@@ -373,7 +373,7 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_get_ourbi(xdag_hashlow_t hash, struct block_internal
     return XDAG_RSDB_OP_SUCCESS;
 }
 
-XDAG_RSDB_OP_TYPE xdag_rsdb_get_remark(xdag_hashlow_t hash, uint8_t *remark)
+XDAG_RSDB_OP_TYPE xdag_rsdb_get_remark(xdag_hashlow_t hash, xdag_remark_t remark)
 {
     if(!remark) return XDAG_RSDB_NULL;
     size_t vlen = 0;
@@ -384,8 +384,8 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_get_remark(xdag_hashlow_t hash, uint8_t *remark)
     if(!value)
         return XDAG_RSDB_NULL;
 
-    if(vlen != sizeof(struct block_internal)){
-        fprintf(stderr,"vlen is not math size of block_internal\n");
+    if(vlen != sizeof(xdag_remark_t)){
+        fprintf(stderr,"vlen is not math size of xdag_remark_t\n");
         free(value);
         return XDAG_RSDB_NULL;
     }
