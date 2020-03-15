@@ -284,7 +284,6 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_seek_orpblock(struct xdag_block *xb)
     }
     const char *value = rocksdb_iter_value(iter, &vlen);
     if(value) {
-        xb = malloc(sizeof(struct xdag_block));
         memset(xb, 0, sizeof(struct xdag_block));
         memcpy(xb, value, sizeof(struct xdag_block));
     }
