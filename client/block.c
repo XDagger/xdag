@@ -633,11 +633,23 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 				verified_keys_mask |= 1 << keyNumber;
 			}
              
-			if(1 << i & signoutmask && !(tmpNodeBlock.flags & BI_OURS) && (keyNumber = valid_signature(newBlock, i, ourKeysCount, our_keys)) >= 0) {
-				tmpNodeBlock.flags |= BI_OURS;
-				tmpNodeBlock.n_our_key = keyNumber;
-			}
-            
+//			if(1 << i & signoutmask && !(tmpNodeBlock.flags & BI_OURS) && (keyNumber = valid_signature(newBlock, i, ourKeysCount, our_keys)) >= 0) {
+//				tmpNodeBlock.flags |= BI_OURS;
+//				tmpNodeBlock.n_our_key = keyNumber;
+//			}
+            if(1 << i & signoutmask && !(tmpNodeBlock.flags & BI_OURS)) {
+                for(int n = 0; n < ourKeysCount; n++) {
+                    for(int m = 0; m < keysCount; m++) {
+                        if(!memcmp(public_keys[m].pub, our_keys[n].pub, sizeof(xdag_hash_t))) {
+                            tmpNodeBlock.flags |= BI_OURS;
+                            tmpNodeBlock.n_our_key = n;
+                            goto ourout;
+                        }
+                    }
+                }
+            }
+        ourout:
+            continue;
 		}
         
 	}
@@ -843,8 +855,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
         remove_orphan(tmpNodeBlock.link[i]);
     }
 	add_orphan(nodeBlock, newBlock);
-    //xdag_info("add_orphan: hash(%016llx%016llx%016llx%016llx),pos=%llx,flags=%d", nodeBlock->hash[3], nodeBlock->hash[2], nodeBlock->hash[1], nodeBlock->hash[0], nodeBlock->storage_pos, nodeBlock->flags);
-	//log_block((tmpNodeBlock.flags & BI_OURS ? "Good +" : "Good  "), tmpNodeBlock.hash, tmpNodeBlock.time, tmpNodeBlock.storage_pos);
+//    xdag_info("add_orphan: hash(%016llx%016llx%016llx%016llx),pos=%llx,flags=%d", nodeBlock->hash[3], nodeBlock->hash[2], nodeBlock->hash[1], nodeBlock->hash[0], nodeBlock->storage_pos, nodeBlock->flags);
+	log_block((tmpNodeBlock.flags & BI_OURS ? "Good +" : "Good  "), tmpNodeBlock.hash, tmpNodeBlock.time, tmpNodeBlock.storage_pos);
 
 	i = MAIN_TIME(nodeBlock->time) & (HASHRATE_LAST_MAX_TIME - 1);
 	if(MAIN_TIME(nodeBlock->time) > MAIN_TIME(g_xdag_extstats.hashrate_last_time)) {
