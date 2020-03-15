@@ -2166,49 +2166,37 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 
 int remove_orphan(xdag_hashlow_t hash)
 {
-    struct xdag_block xb;
-    struct block_internal bi;
-    int return_code = 1;
-    int xb_retcode = xdag_rsdb_get_orpblock(hash, &xb);
-    int bi_retcode = xdag_rsdb_get_bi(hash, &bi);
-    if(!xb_retcode && !bi_retcode) {
-        bi.flags |= BI_REF;
-        int recode = xdag_rsdb_del_orpblock(hash);
-        if(!recode) {
-            int index = get_orphan_index(&bi);
-            if(index) {
-                bi.storage_pos = xdag_storage_save(&xb);
-                for (int i = 0; i < bi.nlinks; ++i) {
-                    remove_orphan(bi.link[i]);
+    struct block_internal b;
+    if(!xdag_rsdb_get_bi(hash, &b)) {
+        if(!(b.flags & BI_REF) ) {
+            b.flags |= BI_REF;
+            struct xdag_block xb;
+            if(!xdag_rsdb_get_orpblock(hash, &xb)) {
+                if((&b)->flags & BI_EXTRA) {
+                    b.storage_pos = xdag_storage_save(&xb);
+                    for (int i = 0; i < b.nlinks; ++i) {
+                        remove_orphan(b.link[i]);
+                    }
+                    b.flags &= ~BI_EXTRA;
+                    g_xdag_extstats.nextra--;
+                } else {
+                    g_xdag_extstats.nnoref--;
                 }
-                //xdag_info("remove_orphan->save pos=%llx: %016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0]);
-                bi.flags &= ~BI_EXTRA;
-                g_xdag_extstats.nextra--;
-            } else {
-                g_xdag_extstats.nnoref--;
             }
-            xdag_rsdb_put_bi(&bi);
-            return_code = 0;
-        }
-    } else {
-        if(!bi_retcode) {
-            bi.flags |= BI_REF;
-            //xdag_info("rm->put_bi_2291: hash(%016llx%016llx%016llx%016llx),pos=%llx,flags=%d", bi->hash[3], bi->hash[2], bi->hash[1], bi->hash[0], bi->storage_pos, bi->flags);
-            xdag_rsdb_put_bi(&bi);
+            xdag_rsdb_put_bi(&b);
         }
     }
-    return return_code;
+    return 0;
 }
 
 void add_orphan(struct block_internal* bi, struct xdag_block* xb)
 {
-	int index = get_orphan_index(bi);
-    if (index) {
+    if (bi && (bi->flags & BI_EXTRA)) {
         g_xdag_extstats.nextra++;
     } else {
+        xdag_rsdb_put_orpblock(bi->hash, xb);
         g_xdag_extstats.nnoref++;
     }
-    xdag_rsdb_put_orpblock(bi->hash, xb);
 }
 
 void xdag_list_orphan_blocks(int count, FILE *out)
