@@ -2081,11 +2081,10 @@ void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out)
 int32_t check_signature_out(struct block_internal *bi, struct xdag_public_key *public_keys, const int keysCount)
 {
 	struct xdag_block buf;
-	struct xdag_block *bref = xdag_storage_load(bi->hash, bi->time, bi->storage_pos, &buf);
-	if(!bref) {
+	if(xdag_rsdb_get_orpblock(bi->hash, &buf)) {
 		return 8;
 	}
-	return find_and_verify_signature_out(bref, public_keys, keysCount);
+	return find_and_verify_signature_out(&buf, public_keys, keysCount);
 }
 
 static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xdag_public_key *public_keys, const int keysCount)
