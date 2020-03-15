@@ -39,7 +39,7 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
 	int res = 0;
 	time_t t = time(0);
 
-	xdag_hash(b, sizeof(struct xdag_block), hash);
+	
 
 //    for (p = get_list(b->field[nfield].hash), q = *p; q; q = q->next) {
 //        if (!memcmp(&q->b, b, sizeof(struct xdag_block))) {
@@ -54,7 +54,7 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
 //            return res;
 //        }
 //    }
-
+    memcpy(hash, b->field[nfield].hash, sizeof(hash));
 	if(!xdag_rsdb_get_syncblock(hash, &p))
 	{
 		res = (t - p.t >= REQ_PERIOD);
@@ -62,10 +62,10 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
 		p.ttl = ttl;
 		if (res) p.t = t;
 		return res;
-    	}
+    }
 
 	memcpy(&q.b, b, sizeof(struct xdag_block));
-	memcpy(&q.hash, hash, sizeof(xdag_hash_t));
+    xdag_hash(b, sizeof(struct xdag_block), q.hash);
 
 //	q->conn = conn;
 //  q->next = *p;
@@ -73,13 +73,14 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
 	q.nfield = nfield;
 	q.ttl = ttl;
 	q.t = t;
-    	xdag_rsdb_put_syncblock(&q);
+    xdag_rsdb_put_syncblock(hash, &q);
+    xdag_info("sync push: ref_hash:%016llx%016llx%016llx%016llx, hash:%016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0], q.hash[3],q.hash[2],q.hash[1],q.hash[0]);
 //	*p = q;
 //	p = get_list_r(hash);
 //	q->next_r = *p;
 //	*p = q;
 	g_xdag_extstats.nwaitsync++;
-    	xdag_rsdb_put_extstats();
+    xdag_rsdb_put_extstats();
 	return 1;
 }
 
@@ -111,14 +112,17 @@ int xdag_sync_pop_block_nolock(struct xdag_block *b)
 //			goto begin;
 //		}
 //	}
-    if(!xdag_rsdb_get_syncblock(hash, &p))
+
+begin:
+    if(!xdag_rsdb_seek_syncblock(hash, &p))
     {
-        xdag_rsdb_del_syncblock(p.hash);
+        xdag_info("sync pop: ref_hash:%016llx%016llx%016llx%016llx, hash:%016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0], p.hash[3],p.hash[2],p.hash[1],p.hash[0]);
         g_xdag_extstats.nwaitsync--;
         xdag_rsdb_put_extstats();
         p.b.field[0].transport_header = p.ttl << 8 | 1;
         xdag_sync_add_block_nolock(&(p.b), NULL);
-//        goto begin;
+        xdag_rsdb_del_syncblock(hash, &p);
+        goto begin;
     }
 
 	return 0;
@@ -150,8 +154,9 @@ int xdag_sync_add_block_nolock(struct xdag_block *b, struct xconnection *conn)
 			struct sync_block p;
 			// this is not exist block's hash at this xdag_blocks
 //			uint64_t *hash = b->field[res].hash;
-            xdag_hash_t hash = {0};
-            memcpy(hash, b->field[res].hash, sizeof(hash));
+            xdag_hash_t ref_hash = {0};
+            memcpy(ref_hash, b->field[res].hash, sizeof(xdag_hash_t));
+            xdag_hash(b, sizeof(struct xdag_block), p.hash);
 			time_t t = time(0);
  
 //begin:
@@ -167,18 +172,20 @@ int xdag_sync_add_block_nolock(struct xdag_block *b, struct xconnection *conn)
 //                    goto begin;
 //                }
 //            }
-            if(!xdag_rsdb_get_syncblock(hash, &p))
+begin:
+            if(!xdag_rsdb_get_syncblock(ref_hash, &p))
             {
                 if (t - p.t < REQ_PERIOD) {
-                        return 0;
+                    return 0;
                 }
                 p.t = t;
 //                hash = q->b.field[q->nfield].hash;
-                memcpy(hash, p.b.field[p.nfield].hash, sizeof(hash));
-//                goto begin;
+                memcpy(ref_hash, p.b.field[p.nfield].hash, sizeof(ref_hash));
+                xdag_rsdb_put_syncblock(ref_hash, &p);
+                goto begin;
             }
-			xdag_request_block(hash, NULL, 1);
-			xdag_info("ReqBlk: %016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0]);
+			xdag_request_block(ref_hash, NULL, 1);
+			xdag_info("ReqBlk: %016llx%016llx%016llx%016llx", ref_hash[3], ref_hash[2], ref_hash[1], ref_hash[0]);
 		}
 	}
 
