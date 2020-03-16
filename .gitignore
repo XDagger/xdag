@@ -2,6 +2,9 @@
 Release/
 Debug/
 build/
+cmake-build-debug/
+cmake-build-release/
+.idea/
 .vs/
 
 /win/xdag.VC.db
