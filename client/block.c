@@ -633,23 +633,21 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 				verified_keys_mask |= 1 << keyNumber;
 			}
              
-//			if(1 << i & signoutmask && !(tmpNodeBlock.flags & BI_OURS) && (keyNumber = valid_signature(newBlock, i, ourKeysCount, our_keys)) >= 0) {
-//				tmpNodeBlock.flags |= BI_OURS;
-//				tmpNodeBlock.n_our_key = keyNumber;
-//			}
-            if(1 << i & signoutmask && !(tmpNodeBlock.flags & BI_OURS)) {
-                for(int n = 0; n < ourKeysCount; n++) {
-                    for(int m = 0; m < keysCount; m++) {
-                        if(!memcmp(public_keys[m].pub, our_keys[n].pub, sizeof(xdag_hash_t))) {
-                            tmpNodeBlock.flags |= BI_OURS;
-                            tmpNodeBlock.n_our_key = n;
-                            goto ourout;
-                        }
-                    }
-                }
-            }
-        ourout:
-            continue;
+			if(1 << i & signoutmask && !(tmpNodeBlock.flags & BI_OURS) && (keyNumber = valid_signature(newBlock, i, ourKeysCount, our_keys)) >= 0) {
+				tmpNodeBlock.flags |= BI_OURS;
+				tmpNodeBlock.n_our_key = keyNumber;
+			}
+//            if(1 << i & signoutmask && !(tmpNodeBlock.flags & BI_OURS)) {
+//                for(int n = 0; n < ourKeysCount; n++) {
+//                    for(int m = 0; m < keysCount; m++) {
+//                        if(!memcmp(public_keys[m].pub, our_keys[n].pub, sizeof(xdag_hash_t))) {
+//                            tmpNodeBlock.flags |= BI_OURS;
+//                            tmpNodeBlock.n_our_key = n;
+//                            goto ourout;
+//                        }
+//                    }
+//                }
+//            }
 		}
         
 	}
@@ -2205,9 +2203,9 @@ void add_orphan(struct block_internal* bi, struct xdag_block* xb)
     if (bi && (bi->flags & BI_EXTRA)) {
         g_xdag_extstats.nextra++;
     } else {
-        xdag_rsdb_put_orpblock(bi->hash, xb);
         g_xdag_extstats.nnoref++;
     }
+    xdag_rsdb_put_orpblock(bi->hash, xb);
 }
 
 void xdag_list_orphan_blocks(int count, FILE *out)

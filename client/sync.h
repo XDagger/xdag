@@ -12,7 +12,6 @@ extern "C" {
 
 struct sync_block {
     struct xdag_block b;
-    xdag_hash_t hash;
     time_t t;
     uint8_t nfield;
     uint8_t ttl;

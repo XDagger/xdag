@@ -34,12 +34,14 @@ void *sync_thread(void*);
  (original russian comment was unclear too) */
 static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int nfield, int ttl)
 {
-	xdag_hash_t hash = {0};
-	struct sync_block p, q;
+	xdag_hash_t ref_hash = {0};
+	xdag_hash_t block_hash = {0};
+	struct sync_block p = {0}, q = {0};
 	int res = 0;
 	time_t t = time(0);
 
-	
+    memcpy(ref_hash, b->field[nfield].hash, sizeof(ref_hash));
+    xdag_hash(b, sizeof(struct xdag_block), block_hash);
 
 //    for (p = get_list(b->field[nfield].hash), q = *p; q; q = q->next) {
 //        if (!memcmp(&q->b, b, sizeof(struct xdag_block))) {
@@ -54,27 +56,23 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
 //            return res;
 //        }
 //    }
-    memcpy(hash, b->field[nfield].hash, sizeof(hash));
-	if(!xdag_rsdb_get_syncblock(hash, &p))
+
+	if(!xdag_rsdb_get_syncblock(ref_hash, block_hash, &p))
 	{
 		res = (t - p.t >= REQ_PERIOD);
 		p.nfield = nfield;
 		p.ttl = ttl;
 		if (res) p.t = t;
+		xdag_rsdb_put_syncblock(ref_hash, block_hash, &p);
 		return res;
     }
 
 	memcpy(&q.b, b, sizeof(struct xdag_block));
-    xdag_hash(b, sizeof(struct xdag_block), q.hash);
-
-//	q->conn = conn;
-//  q->next = *p;
-
 	q.nfield = nfield;
 	q.ttl = ttl;
 	q.t = t;
-    xdag_rsdb_put_syncblock(hash, &q);
-    xdag_info("sync push: ref_hash:%016llx%016llx%016llx%016llx, hash:%016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0], q.hash[3],q.hash[2],q.hash[1],q.hash[0]);
+    xdag_rsdb_put_syncblock(ref_hash, block_hash, &q);
+    xdag_info("sync push: ref_hash:%016llx%016llx%016llx%016llx, hash:%016llx%016llx%016llx%016llx", ref_hash[3], ref_hash[2], ref_hash[1], ref_hash[0], block_hash[3],block_hash[2],block_hash[1],block_hash[0]);
 //	*p = q;
 //	p = get_list_r(hash);
 //	q->next_r = *p;
@@ -116,12 +114,14 @@ int xdag_sync_pop_block_nolock(struct xdag_block *b)
 begin:
     if(!xdag_rsdb_seek_syncblock(hash, &p))
     {
-        xdag_info("sync pop: ref_hash:%016llx%016llx%016llx%016llx, hash:%016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0], p.hash[3],p.hash[2],p.hash[1],p.hash[0]);
+        xdag_hash_t block_hash = {0};
+        xdag_hash(&(p.b), sizeof(struct xdag_block), block_hash);
+        xdag_info("sync pop: ref_hash:%016llx%016llx%016llx%016llx, hash:%016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0], block_hash[3],block_hash[2],block_hash[1],block_hash[0]);
         g_xdag_extstats.nwaitsync--;
         xdag_rsdb_put_extstats();
         p.b.field[0].transport_header = p.ttl << 8 | 1;
         xdag_sync_add_block_nolock(&(p.b), NULL);
-        xdag_rsdb_del_syncblock(hash, &p);
+        xdag_rsdb_del_syncblock(hash, block_hash);
         goto begin;
     }
 
@@ -151,12 +151,13 @@ int xdag_sync_add_block_nolock(struct xdag_block *b, struct xconnection *conn)
 	} else if (g_xdag_sync_on && ((res = -res) & 0xf) == 5) {
 		res = (res >> 4) & 0xf;
 		if (push_block_nolock(b, conn, res, ttl)) {
-			struct sync_block p;
+			struct sync_block q = {0};
 			// this is not exist block's hash at this xdag_blocks
 //			uint64_t *hash = b->field[res].hash;
             xdag_hash_t ref_hash = {0};
+            xdag_hash_t block_hash = {0};
             memcpy(ref_hash, b->field[res].hash, sizeof(xdag_hash_t));
-            xdag_hash(b, sizeof(struct xdag_block), p.hash);
+            xdag_hash(b, sizeof(struct xdag_block), block_hash);
 			time_t t = time(0);
  
 //begin:
@@ -173,15 +174,15 @@ int xdag_sync_add_block_nolock(struct xdag_block *b, struct xconnection *conn)
 //                }
 //            }
 begin:
-            if(!xdag_rsdb_get_syncblock(ref_hash, &p))
+            if(!xdag_rsdb_seek_syncblock(ref_hash, &q))
             {
-                if (t - p.t < REQ_PERIOD) {
+                if (t - q.t < REQ_PERIOD) {
                     return 0;
                 }
-                p.t = t;
-//                hash = q->b.field[q->nfield].hash;
-                memcpy(ref_hash, p.b.field[p.nfield].hash, sizeof(ref_hash));
-                xdag_rsdb_put_syncblock(ref_hash, &p);
+                q.t = t;
+                memcpy(ref_hash, q.b.field[q.nfield].hash, sizeof(ref_hash));
+                xdag_hash(&(q.b), sizeof(struct xdag_block), block_hash);
+                xdag_rsdb_put_syncblock(ref_hash, block_hash, &q);
                 goto begin;
             }
 			xdag_request_block(ref_hash, NULL, 1);

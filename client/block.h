@@ -160,31 +160,9 @@ struct block_backrefs {
     struct block_backrefs *next;
 };
 
-//struct cache_block {
-//    struct ldus_rbtree node;
-//    xdag_hash_t hash;
-//    struct xdag_block block;
-//    struct cache_block *next;
-//};
-
-struct orphan_block {
-    struct block_internal bi;
-    struct xdag_block xb;
-};
-
-enum orphan_remove_actions {
-    ORPHAN_REMOVE_NORMAL,
-    ORPHAN_REMOVE_REUSE,
-    ORPHAN_REMOVE_EXTRA
-};
-
-#define get_orphan_index(bi)      (!!((bi)->flags & BI_EXTRA))
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-extern int g_bi_index_enable;
 
 // start of regular block processing
 extern int xdag_blocks_start(int mining_threads_count, int miner_address);
