@@ -56,7 +56,8 @@ typedef enum xdag_rsdb_key_type {
     HASH_OUR_BLOCK_INTERNAL               =  0x08,
     HASH_BLOCK_INTERNAL                   =  0x09,
     HASH_BLOCK_REMARK                     =  0x0a,
-    HASH_BLOCK_SYNC                       =  0x0b
+    HASH_BLOCK_SYNC                       =  0x0b,
+    HASH_BLOCK_CACHE                      =  0x0c
 } XDAG_RSDB_KEY_TYPE;
 
 XDAG_RSDB_OP_TYPE xdag_rsdb_pre_init(void);
@@ -75,6 +76,7 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_get_stats(void);
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_extstats(void);
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_remark(xdag_hashlow_t hash, xdag_remark_t);
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_syncblock(xdag_hashlow_t ref_hash, xdag_hashlow_t block_hash, struct sync_block*);
+XDAG_RSDB_OP_TYPE xdag_rsdb_get_cacheblock(xdag_hashlow_t hash, struct xdag_block *xb);
 
 XDAG_RSDB_OP_TYPE xdag_rsdb_putkey(const char* key, size_t klen, const char* value, size_t vlen);
 XDAG_RSDB_OP_TYPE xdag_rsdb_put_setting(XDAG_RSDB_KEY_TYPE type, const char* value, size_t vlen);
@@ -85,12 +87,11 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_put_stats(void);
 XDAG_RSDB_OP_TYPE xdag_rsdb_put_extstats(void);
 XDAG_RSDB_OP_TYPE xdag_rsdb_put_remark(struct block_internal *bi, xdag_remark_t strbuf);
 XDAG_RSDB_OP_TYPE xdag_rsdb_put_syncblock(xdag_hashlow_t ref_hash, xdag_hashlow_t block_hash, struct sync_block *sb);
+XDAG_RSDB_OP_TYPE xdag_rsdb_put_cacheblock(xdag_hashlow_t hash, struct xdag_block *xb);
 
 XDAG_RSDB_OP_TYPE xdag_rsdb_delkey(const char* key, size_t klen);
 XDAG_RSDB_OP_TYPE xdag_rsdb_del_orpblock(xdag_hashlow_t hash);
 XDAG_RSDB_OP_TYPE xdag_rsdb_del_syncblock(xdag_hashlow_t ref_hash, xdag_hashlow_t block_hash);
 
-XDAG_RSDB_OP_TYPE xdag_rsdb_seek_orpblock(struct xdag_block*);
-XDAG_RSDB_OP_TYPE xdag_rsdb_seek_syncblock(xdag_hashlow_t ref_hash, struct sync_block*);
 
 #endif

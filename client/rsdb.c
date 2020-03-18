@@ -269,39 +269,32 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_get_bi(xdag_hashlow_t hash,struct block_internal* bi
 	return XDAG_RSDB_OP_SUCCESS;
 }
 
-XDAG_RSDB_OP_TYPE xdag_rsdb_seek_orpblock(struct xdag_block *xb)
-{
-    if(!xb) return XDAG_RSDB_NULL;
-    char key[1] = {[0] = HASH_ORP_BLOCK};
-    size_t vlen = 0;
-    size_t klen = 0;
-    rocksdb_iterator_t* iter = NULL;
-
-    iter = rocksdb_create_iterator(g_xdag_rsdb->db, g_xdag_rsdb->read_options);
-    rocksdb_iter_seek(iter, key, 1);
-    if(!rocksdb_iter_valid(iter)) {
-       rocksdb_iter_destroy(iter);
-       return XDAG_RSDB_NULL;
-    }
-    const char *seek_key = rocksdb_iter_key(iter, &klen);
-    if(memcmp(key, seek_key + 1, sizeof(key))) {
-        rocksdb_iter_destroy(iter);
-        return XDAG_RSDB_NULL;
-    }
-    const char *value = rocksdb_iter_value(iter, &vlen);
-    if(value) {
-        memset(xb, 0, sizeof(struct xdag_block));
-        memcpy(xb, value, sizeof(struct xdag_block));
-    }
-    rocksdb_iter_destroy(iter);
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_orpblock(xdag_hashlow_t hash, struct xdag_block *xb)
 {
     if(!xb) return XDAG_RSDB_NULL;
     size_t vlen = 0;
     char key[RSDB_KEY_LEN] = {[0] = HASH_ORP_BLOCK};
+    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
+    char *value = xdag_rsdb_getkey(key, RSDB_KEY_LEN, &vlen);
+
+    if(!value)
+        return XDAG_RSDB_NULL;
+
+    if(vlen != sizeof(struct xdag_block)){
+        fprintf(stderr,"vlen is not math size of xdag_block\n");
+        free(value);
+        return XDAG_RSDB_NULL;
+    }
+    memcpy(xb, value, vlen);
+    free(value);
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+XDAG_RSDB_OP_TYPE xdag_rsdb_get_cacheblock(xdag_hashlow_t hash, struct xdag_block *xb)
+{
+    if(!xb) return XDAG_RSDB_NULL;
+    size_t vlen = 0;
+    char key[RSDB_KEY_LEN] = {[0] = HASH_BLOCK_CACHE};
     memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
     char *value = xdag_rsdb_getkey(key, RSDB_KEY_LEN, &vlen);
 
@@ -337,36 +330,6 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_get_syncblock(xdag_hashlow_t ref_hash, xdag_hashlow_
     }
     memcpy(sb, value, vlen);
     free(value);
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
-XDAG_RSDB_OP_TYPE xdag_rsdb_seek_syncblock(xdag_hashlow_t ref_hash, struct sync_block* sb)
-{
-    if(!ref_hash || !sb) return XDAG_RSDB_NULL;
-    char key[1 + sizeof(xdag_hashlow_t)] = {[0] = HASH_BLOCK_SYNC};
-    memcpy(key + 1, ref_hash, sizeof(xdag_hashlow_t));
-    size_t vlen = 0;
-    size_t klen = 0;
-    rocksdb_iterator_t* iter = NULL;
-
-    iter = rocksdb_create_iterator(g_xdag_rsdb->db, g_xdag_rsdb->read_options);
-    rocksdb_iter_seek(iter, key, 1 + sizeof(xdag_hashlow_t));
-    if(!rocksdb_iter_valid(iter)) {
-       rocksdb_iter_destroy(iter);
-       return XDAG_RSDB_NULL;
-    }
-
-    const char *seek_key = rocksdb_iter_key(iter, &klen);
-    if(memcmp(ref_hash, seek_key + 1, sizeof(xdag_hashlow_t))) {
-        rocksdb_iter_destroy(iter);
-        return XDAG_RSDB_NULL;
-    }
-    const char *value = rocksdb_iter_value(iter, &vlen);
-    if(value) {
-        memset(sb, 0, sizeof(struct sync_block));
-        memcpy(sb, value, sizeof(struct sync_block));
-    }
-    rocksdb_iter_destroy(iter);
     return XDAG_RSDB_OP_SUCCESS;
 }
 
@@ -458,6 +421,20 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_put_orpblock(xdag_hashlow_t hash, struct xdag_block*
     if(!xb) return XDAG_RSDB_NULL;
     int retcode = 0;
     char key[RSDB_KEY_LEN] = {[0] = HASH_ORP_BLOCK};
+    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
+    retcode = xdag_rsdb_putkey(key, RSDB_KEY_LEN, (const char*)xb, sizeof(struct xdag_block));
+    if(retcode) {
+        return retcode;
+    }
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+XDAG_RSDB_OP_TYPE xdag_rsdb_put_cacheblock(xdag_hashlow_t hash, struct xdag_block* xb)
+{
+    if(!hash) return XDAG_RSDB_NULL;
+    if(!xb) return XDAG_RSDB_NULL;
+    int retcode = 0;
+    char key[RSDB_KEY_LEN] = {[0] = HASH_BLOCK_CACHE};
     memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
     retcode = xdag_rsdb_putkey(key, RSDB_KEY_LEN, (const char*)xb, sizeof(struct xdag_block));
     if(retcode) {
