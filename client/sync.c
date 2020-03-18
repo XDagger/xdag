@@ -36,7 +36,7 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
 {
 	xdag_hash_t ref_hash = {0};
 	xdag_hash_t block_hash = {0};
-	struct sync_block p = {0}, q = {0};
+	struct sync_block p, q;
 	int res = 0;
 	time_t t = time(0);
 
@@ -72,7 +72,7 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
 	q.ttl = ttl;
 	q.t = t;
     xdag_rsdb_put_syncblock(ref_hash, block_hash, &q);
-    xdag_info("sync push: ref_hash:%016llx%016llx%016llx%016llx, hash:%016llx%016llx%016llx%016llx", ref_hash[3], ref_hash[2], ref_hash[1], ref_hash[0], block_hash[3],block_hash[2],block_hash[1],block_hash[0]);
+    xdag_debug("sync push: ref_hash:%016llx%016llx%016llx%016llx, hash:%016llx%016llx%016llx%016llx", ref_hash[3], ref_hash[2], ref_hash[1], ref_hash[0], block_hash[3],block_hash[2],block_hash[1],block_hash[0]);
 //	*p = q;
 //	p = get_list_r(hash);
 //	q->next_r = *p;
@@ -110,20 +110,27 @@ int xdag_sync_pop_block_nolock(struct xdag_block *b)
 //			goto begin;
 //		}
 //	}
+    char seek_key[1 + sizeof(xdag_hashlow_t)] = {[0] = HASH_BLOCK_SYNC};
+    memcpy(seek_key + 1, hash, sizeof(xdag_hashlow_t));
+    rocksdb_iterator_t* iter = rocksdb_create_iterator(g_xdag_rsdb->db, g_xdag_rsdb->read_options);
+    size_t vlen = 0;
+    for (rocksdb_iter_seek(iter, seek_key, sizeof(seek_key));
+         rocksdb_iter_valid(iter) && !memcmp(seek_key, rocksdb_iter_key(iter, &vlen), sizeof(seek_key));
+         rocksdb_iter_next(iter)) {
+        const char *value = rocksdb_iter_value(iter, &vlen);
+        if(value) {
+            xdag_hash_t block_hash = {0};
+            memcpy(&p, value, sizeof(struct sync_block));
+            xdag_hash(&p, sizeof(struct xdag_block), block_hash);
+            g_xdag_extstats.nwaitsync--;
+            p.b.field[0].transport_header = p.ttl << 8 | 1;
+            xdag_rsdb_put_extstats();
+            xdag_rsdb_del_syncblock(hash, block_hash);
+            xdag_sync_add_block_nolock(&(p.b), NULL);
+        }
 
-begin:
-    if(!xdag_rsdb_seek_syncblock(hash, &p))
-    {
-        xdag_hash_t block_hash = {0};
-        xdag_hash(&(p.b), sizeof(struct xdag_block), block_hash);
-        xdag_info("sync pop: ref_hash:%016llx%016llx%016llx%016llx, hash:%016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0], block_hash[3],block_hash[2],block_hash[1],block_hash[0]);
-        g_xdag_extstats.nwaitsync--;
-        xdag_rsdb_put_extstats();
-        p.b.field[0].transport_header = p.ttl << 8 | 1;
-        xdag_sync_add_block_nolock(&(p.b), NULL);
-        xdag_rsdb_del_syncblock(hash, block_hash);
-        goto begin;
     }
+    if(iter) rocksdb_iter_destroy(iter);
 
 	return 0;
 }
@@ -151,7 +158,7 @@ int xdag_sync_add_block_nolock(struct xdag_block *b, struct xconnection *conn)
 	} else if (g_xdag_sync_on && ((res = -res) & 0xf) == 5) {
 		res = (res >> 4) & 0xf;
 		if (push_block_nolock(b, conn, res, ttl)) {
-			struct sync_block q = {0};
+			struct sync_block q;
 			// this is not exist block's hash at this xdag_blocks
 //			uint64_t *hash = b->field[res].hash;
             xdag_hash_t ref_hash = {0};
@@ -173,18 +180,27 @@ int xdag_sync_add_block_nolock(struct xdag_block *b, struct xconnection *conn)
 //                    goto begin;
 //                }
 //            }
-begin:
-            if(!xdag_rsdb_seek_syncblock(ref_hash, &q))
-            {
-                if (t - q.t < REQ_PERIOD) {
-                    return 0;
+            char seek_key[1 + sizeof(xdag_hashlow_t)] = {[0] = HASH_BLOCK_SYNC};
+            memcpy(seek_key + 1, ref_hash, sizeof(xdag_hashlow_t));
+            rocksdb_iterator_t* iter = rocksdb_create_iterator(g_xdag_rsdb->db, g_xdag_rsdb->read_options);
+            size_t vlen = 0;
+            for (rocksdb_iter_seek(iter, seek_key, sizeof(seek_key));
+                 rocksdb_iter_valid(iter) && !memcmp(seek_key, rocksdb_iter_key(iter, &vlen), sizeof(seek_key));
+                 rocksdb_iter_next(iter)) {
+                const char *value = rocksdb_iter_value(iter, &vlen);
+                if(value) {
+                    memcpy(&q, value, sizeof(struct sync_block));
+                    if (t - q.t < REQ_PERIOD) {
+                        continue;
+                    }
+                    q.t = t;
+                    xdag_hash(&q, sizeof(struct xdag_block), block_hash);
+                    xdag_rsdb_put_syncblock(ref_hash, block_hash, &q);
                 }
-                q.t = t;
-                memcpy(ref_hash, q.b.field[q.nfield].hash, sizeof(ref_hash));
-                xdag_hash(&(q.b), sizeof(struct xdag_block), block_hash);
-                xdag_rsdb_put_syncblock(ref_hash, block_hash, &q);
-                goto begin;
+
             }
+            if(iter) rocksdb_iter_destroy(iter);
+
 			xdag_request_block(ref_hash, NULL, 1);
 			xdag_info("ReqBlk: %016llx%016llx%016llx%016llx", ref_hash[3], ref_hash[2], ref_hash[1], ref_hash[0]);
 		}

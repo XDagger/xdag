@@ -229,18 +229,7 @@ static int block_arrive_callback(void *packet, void *connection)
 
 	const enum xdag_field_type first_field_type = xdag_type(received_block, 0);
 	if(first_field_type == g_block_header_type) {
-	    // drop new block ( 10 * MAIN_CHAIN_PERIOD ) when node sync data from other pool
-	    // must > 8 MAIN_CHAIN_PERIOD, XDAG_STATE_CTST and XDAG_STATE_CONN state change
-        const xtime_t now = xdag_get_xtimestamp();
-        xtime_t block_time = received_block->field[0].time;
-	    if( (g_xdag_state == XDAG_STATE_CTST ||  g_xdag_state == XDAG_STATE_CONN ) &&
-	         block_time + (MAIN_CHAIN_PERIOD * 10) >= now)
-	    {
-            xdag_info("sync from other pool, not process new create block!.");
-	    } else {
-            xdag_sync_add_block(received_block, connection);
-	    }
-
+        xdag_sync_add_block(received_block, connection);
 	}
 	else if(first_field_type == XDAG_FIELD_NONCE) {
 		process_transport_block(received_block, connection);
