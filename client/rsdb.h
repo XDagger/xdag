@@ -53,11 +53,10 @@ typedef enum xdag_rsdb_key_type {
     SETTING_OUR_FIRST_HASH                =  0x05,
     SETTING_OUR_LAST_HASH                 =  0x06,
     HASH_ORP_BLOCK                        =  0x07,
-    HASH_OUR_BLOCK_INTERNAL               =  0x08,
-    HASH_BLOCK_INTERNAL                   =  0x09,
-    HASH_BLOCK_REMARK                     =  0x0a,
-    HASH_BLOCK_SYNC                       =  0x0b,
-    HASH_BLOCK_CACHE                      =  0x0c
+    HASH_BLOCK_INTERNAL                   =  0x08,
+    HASH_BLOCK_REMARK                     =  0x09,
+    HASH_BLOCK_SYNC                       =  0x0a,
+    HASH_BLOCK_CACHE                      =  0x0b
 } XDAG_RSDB_KEY_TYPE;
 
 XDAG_RSDB_OP_TYPE xdag_rsdb_pre_init(void);
@@ -71,7 +70,6 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_close(XDAG_RSDB* db);
 void* xdag_rsdb_getkey(const char* key, const size_t klen, size_t* vlen);
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_bi(xdag_hashlow_t hash,struct block_internal*);
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_orpblock(xdag_hashlow_t hash, struct xdag_block*);
-XDAG_RSDB_OP_TYPE xdag_rsdb_get_ourbi(xdag_hashlow_t hash, struct block_internal*);
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_stats(void);
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_extstats(void);
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_remark(xdag_hashlow_t hash, xdag_remark_t);
@@ -82,7 +80,6 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_putkey(const char* key, size_t klen, const char* val
 XDAG_RSDB_OP_TYPE xdag_rsdb_put_setting(XDAG_RSDB_KEY_TYPE type, const char* value, size_t vlen);
 XDAG_RSDB_OP_TYPE xdag_rsdb_put_bi(struct block_internal* bi);
 XDAG_RSDB_OP_TYPE xdag_rsdb_put_orpblock(xdag_hashlow_t hash, struct xdag_block* xb);
-XDAG_RSDB_OP_TYPE xdag_rsdb_put_ourbi(struct block_internal* bi);
 XDAG_RSDB_OP_TYPE xdag_rsdb_put_stats(void);
 XDAG_RSDB_OP_TYPE xdag_rsdb_put_extstats(void);
 XDAG_RSDB_OP_TYPE xdag_rsdb_put_remark(struct block_internal *bi, xdag_remark_t strbuf);

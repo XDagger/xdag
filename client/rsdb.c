@@ -360,27 +360,6 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_del_syncblock(xdag_hashlow_t ref_hash, xdag_hashlow_
     return XDAG_RSDB_OP_SUCCESS;
 }
 
-XDAG_RSDB_OP_TYPE xdag_rsdb_get_ourbi(xdag_hashlow_t hash, struct block_internal *bi)
-{
-    if(!bi) return XDAG_RSDB_NULL;
-    size_t vlen = 0;
-    char key[RSDB_KEY_LEN] = {[0] = HASH_OUR_BLOCK_INTERNAL};
-    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
-    char *value = xdag_rsdb_getkey(key, RSDB_KEY_LEN, &vlen);
-
-    if(!value)
-        return XDAG_RSDB_NULL;
-
-    if(vlen != sizeof(struct block_internal)){
-        fprintf(stderr,"vlen is not math size of block_internal\n");
-        free(value);
-        return XDAG_RSDB_NULL;
-    }
-    memcpy(bi, value, vlen);
-    free(value);
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
 XDAG_RSDB_OP_TYPE xdag_rsdb_get_remark(xdag_hashlow_t hash, xdag_remark_t remark)
 {
     if(!remark) return XDAG_RSDB_NULL;
@@ -437,18 +416,6 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_put_cacheblock(xdag_hashlow_t hash, struct xdag_bloc
     char key[RSDB_KEY_LEN] = {[0] = HASH_BLOCK_CACHE};
     memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
     retcode = xdag_rsdb_putkey(key, RSDB_KEY_LEN, (const char*)xb, sizeof(struct xdag_block));
-    if(retcode) {
-        return retcode;
-    }
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
-XDAG_RSDB_OP_TYPE xdag_rsdb_put_ourbi(struct block_internal* bi)
-{
-    int retcode = 0;
-    char key[RSDB_KEY_LEN] = {[0] = HASH_OUR_BLOCK_INTERNAL};
-    memcpy(key + 1, bi->hash, RSDB_KEY_LEN - 1);
-    retcode = xdag_rsdb_putkey(key, RSDB_KEY_LEN, (const char*)bi, sizeof(struct block_internal));
     if(retcode) {
         return retcode;
     }

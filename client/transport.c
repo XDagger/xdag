@@ -195,24 +195,14 @@ static int process_transport_block(struct xdag_block *received_block, struct xco
 
 		case XDAG_MESSAGE_BLOCK_REQUEST:
 		{
-            struct xdag_block buf;
-            struct xdag_block *blk = NULL;
-			xtime_t t = 0;
+            struct xdag_block b;
+            if(!xdag_rsdb_get_cacheblock(received_block->field[1].hash, &b) || !xdag_rsdb_get_orpblock(received_block->field[1].hash, &b))
+            {
+                struct send_parameters send_parameters = {connection, time(NULL) + REQUEST_WAIT, 0, 0};
 
-			memset(&buf, 0 , sizeof(struct xdag_block));
-
-			int64_t pos = xdag_get_block_pos(received_block->field[1].hash, &t, &buf);
-
-			struct send_parameters send_parameters = {connection, time(NULL) + REQUEST_WAIT, 0, 0};
-
-            if (pos == -2l) {
-                dnet_send_xdag_packet(&buf, &send_parameters);
-            } else if (pos >= 0 && (blk = xdag_storage_load(received_block->field[1].hash, t, pos, &buf))) {
-                dnet_send_xdag_packet(blk, &send_parameters);
+                dnet_send_xdag_packet(&b, &send_parameters);
+                 ++g_task_info[dnet_get_nconnection(connection)].block_req_counter;
             }
-
-			++g_task_info[dnet_get_nconnection(connection)].block_req_counter;
-
 			break;
 		}
 
@@ -229,12 +219,20 @@ static int block_arrive_callback(void *packet, void *connection)
 
 	const enum xdag_field_type first_field_type = xdag_type(received_block, 0);
 	if(first_field_type == g_block_header_type) {
-        xdag_sync_add_block(received_block, connection);
-	}
-	else if(first_field_type == XDAG_FIELD_NONCE) {
+        // drop new block ( 1 * MAIN_CHAIN_PERIOD ) when node sync data from other pool
+        // must < 8 MAIN_CHAIN_PERIOD, XDAG_STATE_CTST and XDAG_STATE_CONN state change
+        const xtime_t now = xdag_get_xtimestamp();
+        xtime_t block_time = received_block->field[0].time;
+        if( (g_xdag_state == XDAG_STATE_CTST ||  g_xdag_state == XDAG_STATE_CONN ) &&
+             block_time + MAIN_CHAIN_PERIOD >= now)
+        {
+            xdag_info("sync from other pool, not process new create block!.");
+        } else {
+            xdag_sync_add_block(received_block, connection);
+        }
+    } else if(first_field_type == XDAG_FIELD_NONCE) {
 		process_transport_block(received_block, connection);
-	}
-	else {
+	} else {
 		return  -1;
 	}
 

@@ -34,13 +34,13 @@ void *sync_thread(void*);
  (original russian comment was unclear too) */
 static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int nfield, int ttl)
 {
-	xdag_hash_t ref_hash = {0};
+	xdag_hashlow_t ref_hash = {0};
 	xdag_hash_t block_hash = {0};
 	struct sync_block p, q;
 	int res = 0;
 	time_t t = time(0);
 
-    memcpy(ref_hash, b->field[nfield].hash, sizeof(ref_hash));
+    memcpy(ref_hash, b->field[nfield].hash, sizeof(xdag_hashlow_t));
     xdag_hash(b, sizeof(struct xdag_block), block_hash);
 
 //    for (p = get_list(b->field[nfield].hash), q = *p; q; q = q->next) {
@@ -72,7 +72,7 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
 	q.ttl = ttl;
 	q.t = t;
     xdag_rsdb_put_syncblock(ref_hash, block_hash, &q);
-    xdag_debug("sync push: ref_hash:%016llx%016llx%016llx%016llx, hash:%016llx%016llx%016llx%016llx", ref_hash[3], ref_hash[2], ref_hash[1], ref_hash[0], block_hash[3],block_hash[2],block_hash[1],block_hash[0]);
+    xdag_info("sync push: ref_hash:%016llx%016llx%016llx%016llx, hash:%016llx%016llx%016llx%016llx", ref_hash[3], ref_hash[2], ref_hash[1], ref_hash[0], block_hash[3],block_hash[2],block_hash[1],block_hash[0]);
 //	*p = q;
 //	p = get_list_r(hash);
 //	q->next_r = *p;
@@ -161,9 +161,9 @@ int xdag_sync_add_block_nolock(struct xdag_block *b, struct xconnection *conn)
 			struct sync_block q;
 			// this is not exist block's hash at this xdag_blocks
 //			uint64_t *hash = b->field[res].hash;
-            xdag_hash_t ref_hash = {0};
+            xdag_hashlow_t ref_hash = {0};
             xdag_hash_t block_hash = {0};
-            memcpy(ref_hash, b->field[res].hash, sizeof(xdag_hash_t));
+            memcpy(ref_hash, b->field[res].hash, sizeof(xdag_hashlow_t));
             xdag_hash(b, sizeof(struct xdag_block), block_hash);
 			time_t t = time(0);
  

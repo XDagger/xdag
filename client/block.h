@@ -111,19 +111,12 @@ struct orphan_block;
 struct block_internal_index;
 
 struct block_internal {
-    //    union {
-    //        struct ldus_rbtree node;
-    //        struct block_internal_index *index;
-    //    };
     xdag_hash_t hash;
     xdag_diff_t difficulty;
     xdag_amount_t amount, linkamount[MAX_LINKS], fee;
     xtime_t time;
     uint64_t storage_pos;
-//    union {
     xdag_hashlow_t ref;
-//        struct orphan_block *oref;
-//    };
     xdag_hashlow_t link[MAX_LINKS];
     //xdag_hashlow_t backrefs;
     atomic_uintptr_t remark;
@@ -131,23 +124,9 @@ struct block_internal {
     uint8_t nlinks:4, max_diff_link:4, reserved;
 };
 
-
 struct block_internal_backref {
     xdag_hash_t hash;
     xdag_hashlow_t backref;
-};
-
-//struct block_internal_index {
-//    struct ldus_rbtree node;
-//    xdag_hash_t hash;
-//    struct block_internal *bi;
-//};
-struct xdag_file_info {
-    char name[256];
-    int pos;
-};
-struct xdag_block_index {
-
 };
 
 #define N_BACKREFS      (sizeof(struct block_internal) / sizeof(struct block_internal *) - 1)
