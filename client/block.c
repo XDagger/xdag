@@ -878,12 +878,12 @@ end:
 		xdag_free_key(public_keys[j].key);
 	}
 
-//	if(err > 0) {
-//		char buf[32] = {0};
-//		err |= i << 4;
-//		sprintf(buf, "Err %2x", err & 0xff);
-//		log_block(buf, tmpNodeBlock.hash, tmpNodeBlock.time, transportHeader);
-//	}
+	if(err > 0) {
+		char buf[32] = {0};
+		err |= i << 4;
+		sprintf(buf, "Err %2x", err & 0xff);
+		log_block(buf, tmpNodeBlock.hash, tmpNodeBlock.time, transportHeader);
+	}
     
     // free nodeBlock
     if(nodeBlock != NULL && nodeBlock != top_main_chain) {
@@ -1178,8 +1178,6 @@ int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t 
 		sleep(1);
 		pthread_mutex_lock(&g_create_block_mutex);
         struct block_internal *pretop_new = pretop_block();
-
-
 		pthread_mutex_unlock(&g_create_block_mutex);
 		if(*pretop != pretop_new && xdag_get_xtimestamp() < send_time) {
 			*pretop = pretop_new;
@@ -1472,21 +1470,20 @@ int xdag_blocks_start(int mining_threads_count, int miner_address)
 int xdag_get_our_block(xdag_hash_t hash)
 {
 	pthread_mutex_lock(&block_mutex);
-
-    struct block_internal bi;
+    struct block_internal b;
 	pthread_mutex_unlock(&block_mutex);
 
-	if (xdag_rsdb_get_bi(ourfirst_hash, &bi)) {
+	if (xdag_rsdb_get_bi(ourfirst_hash, &b)) {
 	    // TODO rethink address block
 		xdag_create_and_send_block(0, 0, 0, 0, 0, 0, NULL);
 		pthread_mutex_lock(&block_mutex);
-        int retcode = xdag_rsdb_get_bi(ourfirst_hash, &bi);
+        int retcode = xdag_rsdb_get_bi(ourfirst_hash, &b);
 		pthread_mutex_unlock(&block_mutex);
 		if (retcode) {
 			return -1;
 		}
 	}
-	memcpy(hash, bi.hash, sizeof(xdag_hash_t));
+	memcpy(hash, b.hash, sizeof(xdag_hash_t));
 	return 0;
 }
 
@@ -1498,10 +1495,12 @@ int xdag_traverse_our_blocks(void *data,
 
 	pthread_mutex_lock(&block_mutex);
     struct block_internal b;
-    int retcode = xdag_rsdb_get_bi(ourfirst_hash, &b);
-	for (;!res && !retcode; ) {
+    int retcode = 1;
+	for (retcode = xdag_rsdb_get_bi(ourfirst_hash, &b);
+         !res && !retcode;
+         retcode = xdag_rsdb_get_bi(b.ournext, &b))
+    {
 		res = (*callback)(data, b.hash, b.amount, b.time, b.n_our_key);
-        retcode = xdag_rsdb_get_bi(b.ournext, &b);
 	}
 	pthread_mutex_unlock(&block_mutex);
 	return res;
@@ -1538,8 +1537,8 @@ int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag_hash_t
          rocksdb_iter_next(iter))
     {
         size_t vlen = 0;
-        struct block_internal* bi = (struct block_internal*)rocksdb_iter_value(iter, &vlen);
-        if(bi) {
+        struct block_internal *bi = (struct block_internal*)rocksdb_iter_value(iter, &vlen);
+        if(vlen) {
             xdag_hash2address(bi->hash, address);
             printf("%s  %20.9Lf\n", address, amount2xdags(bi->amount));
         }
@@ -1568,6 +1567,7 @@ xdag_amount_t xdag_get_balance(xdag_hash_t hash)
 int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 {
 	if (!hash) return -1;
+    
     struct block_internal b, ourfirst_b, *ourlast_bi= NULL;
     //    if (bi->flags & BI_OURS && bi != ourfirst) {
     //        if (bi->ourprev) {
@@ -1673,13 +1673,14 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 // returns position and time of block by hash; if block is extra and block != 0 also returns the whole block
 int64_t xdag_get_block_pos(xdag_hash_t hash, xtime_t *t, struct xdag_block *block)
 {
+    if(block)  pthread_mutex_lock(&block_mutex);
     struct block_internal bi;
-    int64_t pos = 0;
-
+   
 	if (xdag_rsdb_get_bi(hash, &bi)) {
+        if (block) pthread_mutex_unlock(&block_mutex);
 		return -1;
 	}
-
+    
 	if (block && bi.flags & BI_EXTRA) {
         struct xdag_block xb;
         if(!xdag_rsdb_get_cacheblock(hash, &xb) || !xdag_rsdb_get_orpblock(hash, &xb)) {
@@ -1690,20 +1691,19 @@ int64_t xdag_get_block_pos(xdag_hash_t hash, xtime_t *t, struct xdag_block *bloc
 	if (block) pthread_mutex_unlock(&block_mutex);
 
 	*t = bi.time;
-    pos = bi.storage_pos;
-	return pos;
+    
+	return bi.storage_pos;
 }
 
 //returns a number of key by hash of block, or -1 if block is not ours
 int xdag_get_key(xdag_hash_t hash)
 {
     struct block_internal b;
-    int n_our_key = 0;
 	if (xdag_rsdb_get_bi(hash, &b) || !(b.flags & BI_OURS)) {
 		return -1;
 	}
-    n_our_key = b.n_our_key;
-	return n_our_key;
+    
+	return b.n_our_key;
 }
 
 /* reinitialization of block processing */
@@ -1965,14 +1965,18 @@ void xdag_list_main_blocks(int count, int print_only_addresses, FILE *out)
 		print_header_block_list(out);
 	}
     struct block_internal b;
-	int retcode = xdag_rsdb_get_bi(g_top_main_chain_hash, &b);
-    for (; !retcode && i < count; ) {
+    int retcode = 1;
+    pthread_mutex_lock(&block_mutex);
+    for (retcode = xdag_rsdb_get_bi(g_top_main_chain_hash, &b);
+         !retcode && (i < count);
+         retcode = xdag_rsdb_get_bi(b.link[b.max_diff_link], &b))
+    {
         if (b.flags & BI_MAIN) {
             print_block(&b, print_only_addresses, out);
             ++i;
         }
-        retcode = xdag_rsdb_get_bi(b.link[b.max_diff_link], &b);
     }
+    pthread_mutex_unlock(&block_mutex);
 }
 
 // prints list of N last blocks mined by current pool
@@ -1983,12 +1987,14 @@ void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out)
 	print_header_block_list(out);
     struct block_internal b;
     int retcode = xdag_rsdb_get_bi(ourfirst_hash, &b);
-    for(; !retcode && i < count;) {
+    for(retcode = xdag_rsdb_get_bi(ourfirst_hash, &b);
+        !retcode && (i < count);
+        retcode = xdag_rsdb_get_bi(b.ournext, &b))
+    {
         if(b.flags & BI_MAIN && b.flags & BI_OURS) {
             print_block(&b, 0, out);
             ++i;
         }
-        retcode = xdag_rsdb_get_bi(b.ournext, &b);
     }
 }
 
@@ -2139,46 +2145,38 @@ int xdag_get_block_info(xdag_hash_t hash, void *info, int (*info_callback)(void*
 						void *links, int (*links_callback)(void*, const char *, xdag_hash_t, xdag_amount_t))
 {
 	pthread_mutex_lock(&block_mutex);
-    struct block_internal bi;
-    int retcode = xdag_rsdb_get_bi(hash, &bi);
+    struct block_internal b;
+    int retcode = xdag_rsdb_get_bi(hash, &b);
 	pthread_mutex_unlock(&block_mutex);
 
 	if(info_callback && !retcode) {
-		info_callback(info, bi.flags & ~BI_OURS,  bi.hash, bi.amount, bi.time, bi.storage_pos, get_remark(&bi));
+		info_callback(info, b.flags & ~BI_OURS,  b.hash, b.amount, b.time, b.storage_pos, get_remark(&b));
 	}
 
 	if(links_callback && !retcode) {
 		int flags;
-		xdag_hash_t ref_hash = {0};
+		xdag_hashlow_t ref_hash = {0};
 		pthread_mutex_lock(&block_mutex);
-		//ref = bi->ref;
-		memcpy(&ref_hash, bi.ref, sizeof(bi.ref));
-
-		flags = bi.flags;
+		memcpy(&ref_hash, b.ref, sizeof(b.ref));
+		flags = b.flags;
 		pthread_mutex_unlock(&block_mutex);
 
-		xdag_hash_t link_hash = {0};
+		xdag_hashlow_t link_hash = {0};
 		if((flags & BI_REF)) {
-			memcpy(link_hash, ref_hash, sizeof(xdag_hash_t));
+			memcpy(link_hash, ref_hash, sizeof(ref_hash));
 		}
-		links_callback(links, "fee", link_hash, bi.fee);
-
-		struct block_internal *bi_links[MAX_LINKS] = {0};
-		int bi_nlinks = 0;
+		links_callback(links, "fee", link_hash, b.fee);
 
 		if(flags & BI_EXTRA) {
 			pthread_mutex_lock(&block_mutex);
 		}
 
-		bi_nlinks = bi.nlinks;
-		memcpy(bi_links, bi.link, bi_nlinks * sizeof(struct block_internal *));
-
 		if(flags & BI_EXTRA) {
 			pthread_mutex_unlock(&block_mutex);
 		}
 
-		for (int i = 0; i < bi_nlinks; ++i) {
-			links_callback(links, (1 << i & bi.in_mask ? "input" : "output"), bi_links[i]->hash, bi.linkamount[i]);
+		for (int i = 0; i < b.nlinks; ++i) {
+			links_callback(links, (1 << i & b.in_mask ? "input" : "output"), b.link[i], b.linkamount[i]);
 		}
 	}
 	return 0;
