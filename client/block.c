@@ -83,10 +83,10 @@ extern void *sync_thread(void *arg);
 static void log_block(const char *mess, xdag_hash_t h, xtime_t t, uint64_t pos)
 {
 	/* Do not log blocks as we are loading from local storage */
-    if(g_xdag_state != XDAG_STATE_LOAD) {
-        xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess,
-            ((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t, pos);
-    }
+//    if(g_xdag_state != XDAG_STATE_LOAD) {
+//        xdag_info("%s tid=%lu height=%lu: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess, pthread_self(),g_xdag_stats.nmain,
+//            ((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t,pos);
+//    }
 }
 
 static inline void accept_amount(struct block_internal *bi, xdag_amount_t sum)
@@ -448,10 +448,7 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int keysLeng
 static int check_block_exist(xdag_hashlow_t hash)
 {
     struct block_internal b;
-    struct xdag_block xb;
-    if(!xdag_rsdb_get_bi(hash, &b) ||
-       !xdag_rsdb_get_cacheblock(hash, &xb) ||
-       !xdag_rsdb_get_orpblock(hash, &xb)){
+    if(!xdag_rsdb_get_bi(hash, &b)){
         return 1;
     }
     return 0;
@@ -1341,21 +1338,26 @@ begin:
 			}
 		}
 
+		pthread_mutex_lock(&block_mutex);
+
 		if (g_xdag_state == XDAG_STATE_REST) {
 			g_xdag_sync_on = 0;
-
+			pthread_mutex_unlock(&block_mutex);
 			xdag_mining_start(0);
 
 			while (xdag_get_xtimestamp() - t < MAIN_CHAIN_PERIOD + (3 << 10)) {
 				sleep(1);
 			}
+
+			pthread_mutex_lock(&block_mutex);
+
 			g_balance = 0;
 			top_main_chain = pretop_main_chain = 0;
             memset(g_top_main_chain_hash, 0, sizeof(xdag_hash_t));
 			memset(&g_xdag_stats, 0, sizeof(g_xdag_stats));
 			memset(&g_xdag_extstats, 0, sizeof(g_xdag_extstats));
+			pthread_mutex_unlock(&block_mutex);
 			conn_time = sync_time = 0;
-
 			goto begin;
 		} else {
 			time_t last_received = atomic_load_explicit_uint_least64(&g_xdag_last_received, memory_order_relaxed);
@@ -1391,9 +1393,8 @@ begin:
 		if (is_pool()) {
 			check_new_main();
 		}
-
-        struct block_internal ours;
 		pthread_mutex_unlock(&block_mutex);
+        struct block_internal ours;
 		xdag_show_state(!xdag_rsdb_get_bi(ourlast_hash, &ours) ? ours.hash : 0);
 
 		while (xdag_get_xtimestamp() - t < 1024) {
