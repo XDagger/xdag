@@ -137,7 +137,7 @@ int xdag_sync_add_block_nolock(struct xdag_block *b, struct xconnection *conn)
             uint64_t *hash = b->field[res].hash;
             time_t t = time(0);
 
-            begin:
+begin:
             for (p = get_list_r(hash); (q = *p); p = &q->next_r) {
                 if (!memcmp(hash, q->hash, sizeof(xdag_hashlow_t))) {
                     if (t - q->t < REQ_PERIOD) {
@@ -189,7 +189,7 @@ static int request_blocks(xtime_t t, xtime_t dt)
 		xtime_t t0 = g_time_limit;
 
 		for (i = 0;
-			xdag_info("QueryB: t=%llx dt=%llx", t, dt),
+//			xdag_debug("QueryB: t=%llx dt=%llx", t, dt),
 			i < QUERY_RETRIES && (res = xdag_request_blocks(t, t + dt, &t0, add_block_callback_sync)) < 0;
 			++i);
 
@@ -205,7 +205,7 @@ static int request_blocks(xtime_t t, xtime_t dt)
 		xdag_debug("Local : [%s]", xdag_log_array(lsums, 16 * sizeof(struct xdag_storage_sum)));
 
 		for (i = 0;
-			xdag_info("QueryS: t=%llx dt=%llx", t, dt),
+//			xdag_debug("QueryS: t=%llx dt=%llx", t, dt),
 			i < QUERY_RETRIES && (res = xdag_request_sums(t, t + dt, rsums)) < 0;
 			++i);
 
