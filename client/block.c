@@ -954,7 +954,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 	struct block_internal ref, *pretop = pretop_block();
 
 	for (i = 0; i < inputsCount; ++i) {
-        if(!xdag_rsdb_get_bi(fields[i].hash, &ref) || !(ref.flags & BI_OURS))
+        if(xdag_rsdb_get_bi(fields[i].hash, &ref) || !(ref.flags & BI_OURS))
         {
             pthread_mutex_unlock(&g_create_block_mutex);
             return NULL;
@@ -1043,7 +1043,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
                 memcpy(xb_hash, key + 1, sizeof(xdag_hashlow_t));
                 if(!(b_retcode = xdag_rsdb_get_bi(xb_hash, &b))) {
                     if (b.time < send_time) {
-                        setfld(XDAG_FIELD_OUT, b.hash, xdag_hashlow_t);
+                        setfld(XDAG_FIELD_OUT, xb_hash, xdag_hashlow_t);
                         res++;
                     }
                     remove_orphan(xb_hash);
@@ -1670,14 +1670,14 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 int64_t xdag_get_block_pos(xdag_hash_t hash, xtime_t *t, struct xdag_block *block)
 {
     if(block)  pthread_mutex_lock(&block_mutex);
-    struct block_internal bi;
+    struct block_internal b;
    
-	if (xdag_rsdb_get_bi(hash, &bi)) {
+	if (xdag_rsdb_get_bi(hash, &b)) {
         if (block) pthread_mutex_unlock(&block_mutex);
 		return -1;
 	}
     
-	if (block && bi.flags & BI_EXTRA) {
+	if (block && b.flags & BI_EXTRA) {
         struct xdag_block xb;
         if(!xdag_rsdb_get_cacheblock(hash, &xb) || !xdag_rsdb_get_orpblock(hash, &xb)) {
             memcpy(block, &xb, sizeof(struct xdag_block));
@@ -1686,9 +1686,9 @@ int64_t xdag_get_block_pos(xdag_hash_t hash, xtime_t *t, struct xdag_block *bloc
 
 	if (block) pthread_mutex_unlock(&block_mutex);
 
-	*t = bi.time;
+	*t = b.time;
     
-	return bi.storage_pos;
+	return b.storage_pos;
 }
 
 //returns a number of key by hash of block, or -1 if block is not ours
