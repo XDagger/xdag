@@ -305,20 +305,17 @@ static void check_new_main(void)
 //            ++i;
 //        }
 //    }
-    struct block_internal bi;
-    struct block_internal pre_bi;
-    XDAG_RSDB_OP_TYPE retcode = 0;
+    struct block_internal b;
+    struct block_internal pre_b;
+    XDAG_RSDB_OP_TYPE retcode = 1;
     struct block_internal *p = NULL;
-    memset(&bi, 0, sizeof(struct block_internal));
-    memset(&pre_bi, 0, sizeof(struct block_internal));
-    if(top_main_chain ) memcpy(&bi, top_main_chain, sizeof(struct block_internal));
-    for(i = 0;
-        !retcode && !(bi.flags & BI_MAIN);
-        retcode = xdag_rsdb_get_bi(pre_bi.link[pre_bi.max_diff_link], &bi))
+    for(retcode = xdag_rsdb_get_bi(g_top_main_chain_hash, &b), i = 0;
+        !retcode && !(b.flags & BI_MAIN);
+        retcode = xdag_rsdb_get_bi(b.link[b.max_diff_link], &b))
     {
-        memcpy(&pre_bi, &bi, sizeof(struct block_internal));
-        if(bi.flags & BI_MAIN_CHAIN) {
-            p = &pre_bi;
+        if(b.flags & BI_MAIN_CHAIN) {
+            memcpy(&pre_b, &b, sizeof(struct block_internal));
+            p = &pre_b;
             ++i;
         }
     }
@@ -336,24 +333,19 @@ static void unwind_main(struct block_internal *bi)
 //            unset_main(t);
 //        }
 //    }
-    struct block_internal tbi;
-    struct block_internal tpre_bi;
+    struct block_internal b;
     XDAG_RSDB_OP_TYPE retcode = 1;
-    memset(&tbi, 0, sizeof(struct block_internal));
-    memset(&tpre_bi, 0, sizeof(struct block_internal));
-    if(top_main_chain) {
-        retcode = 1;
-        memcpy(&tbi, top_main_chain, sizeof(struct block_internal));
-    }
-    for (;!retcode && memcmp(tbi.hash, bi->hash, sizeof(xdag_hashlow_t));
-         retcode = xdag_rsdb_get_bi(tpre_bi.link[tpre_bi.max_diff_link], &tbi))
+    for (retcode = xdag_rsdb_get_bi(g_top_main_chain_hash, &b)
+         ;!retcode && memcmp(b.hash, bi->hash, sizeof(xdag_hashlow_t));
+         retcode = xdag_rsdb_get_bi(b.link[b.max_diff_link], &b))
     {
-        tbi.flags &= ~BI_MAIN_CHAIN;
-        xdag_rsdb_put_bi(&tbi);
-        if (tbi.flags & BI_MAIN) {
-            unset_main(&tbi);
+        if(b.flags & BI_MAIN_CHAIN) {
+            b.flags &= ~BI_MAIN_CHAIN;
+            xdag_rsdb_put_bi(&b);
         }
-        memcpy(&tpre_bi, &tbi, sizeof(struct block_internal));
+        if (b.flags & BI_MAIN) {
+            unset_main(&b);
+        }
     }
 }
 
@@ -1035,26 +1027,26 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 //				res++;
 //			}
 //		}
-        struct xdag_block xb;
 		struct block_internal b;
 		int b_retcode = 0;
 		xdag_hash_t xb_hash = {0};
         char seek_key[1] = {[0] = HASH_ORP_BLOCK};
         size_t vlen = 0;
+        size_t klen = 0;
         rocksdb_iterator_t* iter = rocksdb_create_iterator(g_xdag_rsdb->db, g_xdag_rsdb->read_options);
         for (rocksdb_iter_seek(iter, seek_key, sizeof(seek_key));
-             rocksdb_iter_valid(iter) && !memcmp(seek_key, rocksdb_iter_key(iter, &vlen), sizeof(seek_key)) && !b_retcode && res < XDAG_BLOCK_FIELDS;
+             rocksdb_iter_valid(iter) && !memcmp(seek_key, rocksdb_iter_key(iter, &klen), sizeof(seek_key)) && !b_retcode && res < XDAG_BLOCK_FIELDS;
              rocksdb_iter_next(iter)) {
             const char *value = rocksdb_iter_value(iter, &vlen);
-            if(value) {
-                memcpy(&xb, value, sizeof(struct xdag_block));
-                xdag_hash(&xb, sizeof(struct xdag_block), xb_hash);
+            const char *key = rocksdb_iter_key(iter, &klen);
+            if(value && klen) {
+                memcpy(xb_hash, key + 1, sizeof(xdag_hashlow_t));
                 if(!(b_retcode = xdag_rsdb_get_bi(xb_hash, &b))) {
                     if (b.time < send_time) {
                         setfld(XDAG_FIELD_OUT, b.hash, xdag_hashlow_t);
                         res++;
                     }
-                    remove_orphan(b.hash);
+                    remove_orphan(xb_hash);
                 }
             }
 
