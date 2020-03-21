@@ -404,6 +404,7 @@ int dnet_set_xdag_callback(int(*callback)(void *block, void *connection_from))
 
 static void *xthread_main(void *arg)
 {
+	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	long nthread = (long)arg;
 	struct xthread *t = g_threads + nthread;
 	struct xsector buf, *xs;
@@ -646,6 +647,7 @@ skip_in:
 
 static void *accept_thread_main(void *arg)
 {
+	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	struct linger linger_opt = { 1, 0 }; // Linger active, timeout 5
 	struct sockaddr_in peeraddr;
 	socklen_t peeraddr_len = sizeof(peeraddr);

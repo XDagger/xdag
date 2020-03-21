@@ -496,24 +496,28 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
     struct block_internal tmpNodeBlock, blockRef, blockRef0, *pt = NULL;
     struct block_internal *nodeBlock = NULL;
 	struct block_internal blockRefs[XDAG_BLOCK_FIELDS-1];
+	char hash_str[1024] = {0};
 	xdag_diff_t diff0, diff;
 	
 	memset(blockRefs,0, sizeof(blockRefs));
     memset(&tmpNodeBlock, 0, sizeof(struct block_internal));
     newBlock->field[0].transport_header = 0;
     xdag_hash(newBlock, sizeof(struct xdag_block), tmpNodeBlock.hash);
-
+	
+    sprintf(hash_str,"%016llx%016llx%016llx%016llx",tmpNodeBlock.hash[3],tmpNodeBlock.hash[2],tmpNodeBlock.hash[1],tmpNodeBlock.hash[0]);
+    xdag_info("add block hash %s \n",hash_str);
+    
     if(check_block_exist(tmpNodeBlock.hash)) {
-        xdag_err("err-check_block_exist");
+        xdag_err("err-check_block_exist hash %s",hash_str);
         return 0;
     }
         
     if((err = check_block_header(newBlock, &i))) {
-        xdag_err("err-check_block_header");
+        xdag_err("err-check_block_header hash %s ",hash_str);
         goto end;
     }
     if((err = check_block_time(newBlock, limit, &i))) {
-        xdag_err("err-check_block_time");
+        xdag_err("err-check_block_time hash %s ",hash_str);
         goto end;
     }
 
@@ -1223,6 +1227,7 @@ int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t 
 // main thread which works with block
 static void *work_thread(void *arg)
 {
+	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	xtime_t t = XDAG_ERA, conn_time = 0, sync_time = 0, t0;
 	int n_mining_threads = (int)(unsigned)(uintptr_t)arg, sync_thread_running = 0;
 	uint64_t nhashes0 = 0, nhashes = 0;

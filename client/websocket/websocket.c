@@ -456,6 +456,7 @@ int ws_session_init(ws_session *session)
 
 void *ws_handler_thread(void *args)
 {
+	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	pthread_cleanup_push(cleanup_threads, args);
 
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
@@ -602,6 +603,7 @@ void *ws_handler_thread(void *args)
 
 void *ws_server_thread(void *args)
 {
+	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	pthread_cleanup_push(cleanup_threads, args);
 
 	int port = g_websocket_port;

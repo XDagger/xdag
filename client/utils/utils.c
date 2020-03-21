@@ -231,6 +231,7 @@ static void check_deadlock(void)
 
 static void* check_deadlock_thread(void* argv)
 {
+	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	while(1) {
 		xdag_debug("check dead lock thread loop...\n");
 		check_deadlock();

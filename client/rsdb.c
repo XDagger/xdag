@@ -384,6 +384,9 @@ XDAG_RSDB_OP_TYPE xdag_rsdb_get_remark(xdag_hashlow_t hash, xdag_remark_t remark
 XDAG_RSDB_OP_TYPE xdag_rsdb_put_bi(struct block_internal* bi)
 {
     if(!bi) return XDAG_RSDB_NULL;
+	char hash_str[1024] = {0};
+	sprintf(hash_str,"%016llx%016llx%016llx%016llx",bi->hash[3],bi->hash[2],bi->hash[1],bi->hash[0]);
+    xdag_info("xdag put bi hash %s ",hash_str);
     int retcode = 0;
     char key[RSDB_KEY_LEN] = {[0] = HASH_BLOCK_INTERNAL};
     memcpy(key + 1, bi->hash, RSDB_KEY_LEN - 1);

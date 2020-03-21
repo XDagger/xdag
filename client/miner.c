@@ -143,6 +143,7 @@ static int send_to_pool(struct xdag_field *fld, int nfld)
 
 void *miner_net_thread(void *arg)
 {
+	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	struct xdag_block b;
 	struct xdag_field data[2];
 	xdag_hash_t hash;
@@ -338,6 +339,7 @@ err:
 
 static void *mining_thread(void *arg)
 {
+	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	xdag_hash_t hash;
 	struct xdag_field last;
 	const int nthread = (int)(uintptr_t)arg;

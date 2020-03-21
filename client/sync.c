@@ -230,6 +230,7 @@ static int request_blocks(xtime_t t, xtime_t dt)
 /* a long procedure of synchronization */
 void *sync_thread(void *arg)
 {
+	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	xtime_t t = 0;
 
 	for (;;) {
