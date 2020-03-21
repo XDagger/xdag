@@ -273,7 +273,6 @@ int xdag_initialize_pool(const char *pool_arg)
 
 void *general_mining_thread(void *arg)
 {
-	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	while(!g_block_production_on && !g_stop_general_mining) {
 		sleep(1);
 	}
@@ -504,7 +503,7 @@ static int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 
 void *pool_net_thread(void *arg)
 {
-	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
+	
 	const char *pool_arg = (const char*)arg;
 	struct sockaddr_in peeraddr;
 	socklen_t peeraddr_len = sizeof(peeraddr);
@@ -986,7 +985,6 @@ static int send_data_to_connection(connection_list_element *connection, int *pro
 
 void *pool_main_thread(void *arg)
 {
-	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	pthread_cleanup_push(thread_finish_routine, &g_pool_main_thread_status);
 	pthread_mutex_lock(&g_pool_thread_status_mutex);
 	atomic_store_explicit_int(&g_pool_main_thread_status, THREAD_CANCELLABLE, memory_order_relaxed);
@@ -1082,7 +1080,6 @@ void *pool_main_thread(void *arg)
 
 void *pool_block_thread(void *arg)
 {
-	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	while(!g_xdag_sync_on) {
 		sleep(1);
 	}
@@ -1111,7 +1108,6 @@ void *pool_block_thread(void *arg)
 
 void *pool_payment_thread(void *arg)
 {
-	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	pthread_cleanup_push(thread_finish_routine, &g_pool_payment_thread_status);
 	pthread_mutex_lock(&g_pool_thread_status_mutex);
 	atomic_store_explicit_int(&g_pool_main_thread_status, THREAD_CANCELLABLE, memory_order_relaxed);
@@ -1597,7 +1593,6 @@ void disconnect_connections(enum disconnect_type type, char *value)
 
 void* pool_remove_inactive_connections(void* arg)
 {
-	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	connection_list_element *elt;
 
 	for(;;) {

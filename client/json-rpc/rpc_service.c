@@ -119,7 +119,6 @@ static void close_connection(struct xdag_rpc_connection* conn)
 /* handle rpc request thread */
 static void* rpc_handle_thread(void *arg)
 {
-	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	struct xdag_rpc_connection* conn = (struct xdag_rpc_connection *)arg;
 
 	char req_buffer[BUFFER_SIZE] = {0};
@@ -154,7 +153,6 @@ static void* rpc_handle_thread(void *arg)
 /* rpc service thread */
 static void *rpc_service_thread(void *arg)
 {
-	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	int rpc_port = *(int*)arg;
 	struct sockaddr_in peeraddr;
 	socklen_t peeraddr_len = sizeof(peeraddr);

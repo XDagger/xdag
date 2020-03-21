@@ -1227,7 +1227,6 @@ int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t 
 // main thread which works with block
 static void *work_thread(void *arg)
 {
-	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	xtime_t t = XDAG_ERA, conn_time = 0, sync_time = 0, t0;
 	int n_mining_threads = (int)(unsigned)(uintptr_t)arg, sync_thread_running = 0;
 	uint64_t nhashes0 = 0, nhashes = 0;

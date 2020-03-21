@@ -216,7 +216,6 @@ static void reset_callback(struct ldus_rbtree *node)
 
 static void *monitor_thread(void *arg)
 {
-	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	while (!g_xdag_sync_on) {
 		sleep(1);
 	}
@@ -316,7 +315,6 @@ static int is_valid_whitelist(char *content)
 
 static void *refresh_thread(void *arg)
 {
-	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	while (!g_xdag_sync_on) {
 		sleep(1);
 	}

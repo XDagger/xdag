@@ -57,7 +57,6 @@ enum task_type {
 
 static void *xdag_send_thread(void *arg)
 {
-	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	struct xdag_send_data *d = (struct xdag_send_data *)arg;
 
 	d->b.field[0].time = xdag_load_blocks(d->b.field[0].time, d->b.field[0].end_time, &d->send_parameters, &dnet_send_xdag_packet);
@@ -465,7 +464,6 @@ int xdag_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned 
 /* thread to change reply_id_private after REPLY_ID_PVT_TTL */
 static void *xdag_update_rip_thread(void *arg)
 {
-	xdag_info("[%s] [%x] created",__FUNCTION__,pthread_self());
 	time_t last_change_time = 0;
 	while(1) {
 		if (time(NULL) - last_change_time > REPLY_ID_PVT_TTL) {
