@@ -51,9 +51,23 @@ enum bi_flags {
 	BI_REMARK     = 0x80
 };
 
-#define XDAG_BLOCK_FIELDS 16
+#define XDAG_BLOCK_FIELDS            16
+#define REMARK_ENABLED               1
+#define MAX_WAITING_MAIN             1
+#define MAIN_START_AMOUNT            (1ll << 42)
+#define MAIN_APOLLO_AMOUNT           (1ll << 39)
+// nmain = 976487, hash is WENN9ZgvXA+vNaslRLFQPgBKIbJVaMsu
+//                         at 2019-12-30 18:01:35 UTC
+//                         get this info from https://explorer.xdag.io/
+//
+// Apollo plans to upgrade on 2020-01-30 00:00:00 UTC
+//
+#define MAIN_APOLLO_HEIGHT           1017323
+#define MAIN_APOLLO_TESTNET_HEIGHT   196250
+#define MAIN_BIG_PERIOD_LOG          21
+#define MAX_LINKS                    15
 
-#define REMARK_ENABLED 1
+#define xdag_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)
 
 #if CHAR_BIT != 8
 #error Your system hasn't exactly 8 bit for a char, it won't run.
@@ -86,29 +100,7 @@ struct xdag_block {
 	struct xdag_field field[XDAG_BLOCK_FIELDS];
 };
 
-#define xdag_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)
-
-#define MAX_WAITING_MAIN        1
-#define MAIN_START_AMOUNT       (1ll << 42)
-#define MAIN_APOLLO_AMOUNT      (1ll << 39)
-// 13500 is 10 days
-// nmain = 834646 ,          at 2019-09-17 00:30:00
-// nmain = 834646 + 4*13500, at 2019-10-27 00:30:00
-#define MAIN_APOLLO_HIGHT       (834646 + 4*13500)
-//#define MAIN_APOLLO_HIGHT       2  // for test
-#define MAIN_BIG_PERIOD_LOG     21
-#define MAX_LINKS               15
-#define MAKE_BLOCK_PERIOD       13
-
-#define CACHE            1
-#define CACHE_MAX_SIZE        600000
-#define CACHE_MAX_SAMPLES    100
-#define ORPHAN_HASH_SIZE    2
-#define MAX_ALLOWED_EXTRA    0x10000
-
 struct block_backrefs;
-struct orphan_block;
-struct block_internal_index;
 
 struct block_internal {
     xdag_hash_t hash;

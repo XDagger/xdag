@@ -269,7 +269,7 @@ xd_rsdb_op_t xdag_rsdb_get_bi(xdag_hashlow_t hash,struct block_internal* bi)
 	return XDAG_RSDB_OP_SUCCESS;
 }
 
-xd_rsdb_op_t xdag_rsdb_get_ourbi(xdag_hashlow_t hash,struct block_internal* bi)
+xd_rsdb_op_t xdag_rsdb_get_ourbi(xdag_hashlow_t hash, struct block_internal *bi)
 {
     if (!hash || !bi) return XDAG_RSDB_NULL;
     

@@ -5,7 +5,6 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <math.h>
 #include "system.h"
 #include "../ldus/rbtree.h"
 #include "block.h"
@@ -15,15 +14,12 @@
 #include "storage.h"
 #include "transport.h"
 #include "utils/log.h"
-#include "init.h"
 #include "sync.h"
 #include "pool.h"
 #include "miner.h"
-#include "memory.h"
 #include "address.h"
 #include "commands.h"
 #include "utils/utils.h"
-#include "utils/moving_statistics/moving_average.h"
 #include "mining_common.h"
 #include "time.h"
 #include "math.h"
@@ -31,27 +27,6 @@
 #include "utils/random.h"
 #include "websocket/websocket.h"
 #include "global.h"
-
-#define MAX_WAITING_MAIN        1
-#define MAIN_START_AMOUNT       (1ll << 42)
-#define MAIN_APOLLO_AMOUNT      (1ll << 39)
-// nmain = 976487, hash is WENN9ZgvXA+vNaslRLFQPgBKIbJVaMsu
-//                         at 2019-12-30 18:01:35 UTC
-//                         get this info from https://explorer.xdag.io/
-//
-// Apollo plans to upgrade on 2020-01-30 00:00:00 UTC
-//
-#define MAIN_APOLLO_HEIGHT           1017323
-#define MAIN_APOLLO_TESTNET_HEIGHT   196250
-#define MAIN_BIG_PERIOD_LOG     21
-#define MAX_LINKS               15
-#define MAKE_BLOCK_PERIOD       13
-
-#define CACHE			1
-#define CACHE_MAX_SIZE		600000
-#define CACHE_MAX_SAMPLES	100
-#define ORPHAN_HASH_SIZE	2
-#define MAX_ALLOWED_EXTRA	0x10000
 
 int g_block_production_on;
 static pthread_mutex_t g_create_block_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -76,7 +51,7 @@ static inline size_t remark_acceptance(xdag_remark_t);
 static int add_remark_bi(struct block_internal*, xdag_remark_t);
 static inline const char* get_remark(struct block_internal*);
 static int load_remark(struct block_internal*);
-//static void order_ourblocks_by_amount(struct block_internal *bi);
+static void order_ourblocks_by_amount(struct block_internal *bi);
 static inline void add_ourblock(struct block_internal *nodeBlock);
 extern void *sync_thread(void *arg);
 
@@ -96,9 +71,10 @@ static inline void accept_amount(struct block_internal *bi, xdag_amount_t sum)
 	}
 
 	bi->amount += sum;
+	xdag_rsdb_put_bi(bi);
 	if (bi->flags & BI_OURS) {
 		g_balance += sum;
-		//order_ourblocks_by_amount(bi);
+		order_ourblocks_by_amount(bi);
 	}
 }
 
@@ -164,8 +140,8 @@ static uint64_t apply_block(struct block_internal *bi)
 		}
 	}
 
+    bi->flags |= BI_APPLIED;
     accept_amount(bi, sum_in - sum_out);
-	bi->flags |= BI_APPLIED;
     xdag_rsdb_put_bi(bi);
 	append_block_info(bi); //TODO: figure out how to detect when the block is rejected.
 	return bi->fee;
@@ -173,7 +149,6 @@ static uint64_t apply_block(struct block_internal *bi)
 
 static uint64_t unapply_block(struct block_internal* bi)
 {
-    int retcode = 0;
 	if (bi->flags & BI_APPLIED) {
 		xdag_amount_t sum = bi->fee;
 
@@ -995,13 +970,11 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 	block[0].field[0].amount = fee;
 
 
-    struct block_internal ourfirst_b;
-    int retcode = xdag_rsdb_get_ourbi(ourfirst_hash, &ourfirst_b);
-
-	if (is_wallet()) {
+    struct block_internal b;
+    if (is_wallet()) {
 		pthread_mutex_lock(&g_create_block_mutex);
-		if (res < XDAG_BLOCK_FIELDS && !retcode) {
-			setfld(XDAG_FIELD_OUT, ourfirst_b.hash, xdag_hashlow_t);
+		if (res < XDAG_BLOCK_FIELDS && !xdag_rsdb_get_ourbi(ourfirst_hash, &b)) {
+			setfld(XDAG_FIELD_OUT, ourfirst_hash, xdag_hashlow_t);
 			res++;
 		}
 		pthread_mutex_unlock(&g_create_block_mutex);
@@ -1029,7 +1002,8 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
         rocksdb_iterator_t* iter = rocksdb_create_iterator(g_xdag_rsdb->db, g_xdag_rsdb->read_options);
         for (rocksdb_iter_seek(iter, seek_key, sizeof(seek_key));
              rocksdb_iter_valid(iter) && !memcmp(seek_key, rocksdb_iter_key(iter, &klen), sizeof(seek_key)) && !b_retcode && res < XDAG_BLOCK_FIELDS;
-             rocksdb_iter_next(iter)) {
+             rocksdb_iter_next(iter))
+        {
             const char *value = rocksdb_iter_value(iter, &vlen);
             const char *key = rocksdb_iter_key(iter, &klen);
             if(value && klen) {
@@ -1924,7 +1898,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	return 0;
 }
 
-static inline void print_block(struct block_internal *block, int print_only_addresses, FILE *out)
+static void print_block(struct block_internal *block, int print_only_addresses, FILE *out)
 {
 	char address[33] = {0};
 	char time_buf[64] = {0};
@@ -1975,7 +1949,7 @@ void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out)
 	int i = 0;
 	print_header_block_list(out);
     struct block_internal b;
-    int retcode = xdag_rsdb_get_ourbi(ourfirst_hash, &b);
+    int retcode = 1;
     for(retcode = xdag_rsdb_get_ourbi(ourfirst_hash, &b);
         !retcode && (i < count);
         retcode = xdag_rsdb_get_ourbi(b.ournext, &b))
@@ -2246,9 +2220,19 @@ static int load_remark(struct block_internal* bi) {
 	return add_remark_bi(bi, remark);
 }
 
-//void order_ourblocks_by_amount(struct block_internal *bi)
-//{
-//    struct block_internal *ti = xdag_rsdb_get_ourbi(bi->hash);
+void order_ourblocks_by_amount(struct block_internal *bi)
+{
+    struct block_internal b;
+    if(!xdag_rsdb_get_ourbi(bi->hash, &b) )  {
+        b.flags = bi->flags;
+        b.amount = bi->amount;
+        b.fee = bi->fee;
+        b.difficulty = bi->difficulty;
+        b.time = bi->time;
+        b.storage_pos = bi->storage_pos;
+        xdag_rsdb_put_ourbi(&b);
+    }
+
 //
 //    //TODO use rocksdb key sort rule
 ////	while ((ti = bi->ourprev) && bi->amount > ti->amount) {
@@ -2269,7 +2253,7 @@ static int load_remark(struct block_internal* bi) {
 ////	}
 //    if(ti) free(ti);
 //    ti = NULL;
-// }
+ }
 
 // add ourblock should only save hash of block_internal
 static inline void add_ourblock(struct block_internal *nodeBlock)
