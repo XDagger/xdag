@@ -1,12 +1,12 @@
 find_path(OPENSSL_ROOT_DIR
         NAMES include/openssl/crypto.h
-        PATHS /usr/local/ /usr/local/opt/openssl /opt/local/ /usr/
+        PATHS /usr/local/opt/openssl /opt/local/ /usr/
         NO_DEFAULT_PATH
         )
 
 find_path(OpenSSL_DIR
         NAMES include/openssl/crypto.h
-        PATHS /usr/local/ /usr/local/opt/openssl /opt/local/ /usr/
+        PATHS /usr/local/opt/openssl/ /opt/local/ /usr/
         NO_DEFAULT_PATH
         )
 
@@ -18,7 +18,7 @@ find_path(OPENSSL_INCLUDE_DIR
 
 find_library(OPENSSL_SSL_LIBRARY
         NAMES ssl
-        PATHS ${OPENSSL_ROOT_DIR}/lib /usr/lib/x86_64-linux-gnu
+        PATHS ${OPENSSL_ROOT_DIR}/lib/ /usr/lib/x86_64-linux-gnu
         NO_DEFAULT_PATH
         )
 
@@ -35,6 +35,9 @@ else()
 endif()
 
 #set(OPENSSL_LIBRARY ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY} )
+message("OPENSSL_INCLUDE_DIR found ${OPENSSL_INCLUDE_DIR}")
+message("OPENSSL_SSL_LIBRARY found ${OPENSSL_SSL_LIBRARY}")
+message("OPENSSL_CRYPTO_LIBRARY found ${OPENSSL_CRYPTO_LIBRARY}")
 
 mark_as_advanced(
         OPENSSL_ROOT_DIR
