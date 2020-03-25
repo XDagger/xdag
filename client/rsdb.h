@@ -51,20 +51,21 @@ typedef enum xd_rsdb_op_result {
 } xd_rsdb_op_t;
 
 typedef enum xd_rsdb_key_type {
-    SETTING_VERSION                       =  0x00,
-    SETTING_CREATED                       =  0x01,
-    SETTING_STATS                         =  0x02,
-    SETTING_EXT_STATS                     =  0x03,
-    SETTING_PRE_TOP_MAIN_HASH             =  0x04,
-    SETTING_TOP_MAIN_HASH                 =  0x05,
-    SETTING_OUR_FIRST_HASH                =  0x06,
-    SETTING_OUR_LAST_HASH                 =  0x07,
-    HASH_ORP_BLOCK                        =  0x08,
-    HASH_BLOCK_INTERNAL                   =  0x09,
-    HASH_BLOCK_OUR                        =  0x0a,
-    HASH_BLOCK_REMARK                     =  0x0b,
-    HASH_BLOCK_SYNC                       =  0x0c,
-    HASH_BLOCK_CACHE                      =  0x0d
+    SETTING_VERSION                       =  0x10,
+    SETTING_CREATED                       =  0x11,
+    SETTING_STATS                         =  0x12,
+    SETTING_EXT_STATS                     =  0x13,
+    SETTING_PRE_TOP_MAIN_HASH             =  0x14,
+    SETTING_TOP_MAIN_HASH                 =  0x15,
+    SETTING_OUR_FIRST_HASH                =  0x16,
+    SETTING_OUR_LAST_HASH                 =  0x17,
+    SETTING_OUR_BALANCE                   =  0x18,
+    HASH_ORP_BLOCK                        =  0x20,
+    HASH_BLOCK_INTERNAL                   =  0x21,
+    HASH_BLOCK_OUR                        =  0x22,
+    HASH_BLOCK_REMARK                     =  0x23,
+    HASH_BLOCK_SYNC                       =  0x24,
+    HASH_BLOCK_CACHE                      =  0x25
 } xd_rsdb_key_t;
 
 char* xd_rsdb_full_merge(void* state, const char* key, size_t key_length,

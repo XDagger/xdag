@@ -5,6 +5,7 @@
 #include "rsdb.h"
 #include "global.h"
 #include "utils/log.h"
+#include "version.h"
 
 #define RSDB_LOG_FREE_ERRMSG(errmsg) xdag_info("%s %lu %s \n",__FUNCTION__, __LINE__,errmsg);free(errmsg)
 
@@ -90,6 +91,7 @@ xd_rsdb_op_t xd_rsdb_init(void)
     size_t vlen = 0;
     value = xd_rsdb_getkey(key, 1, &vlen);
     if(!value) {
+        xd_rsdb_put_setting(SETTING_VERSION, XDAG_VERSION, strlen(XDAG_VERSION));
         xd_rsdb_put_setting(SETTING_CREATED, "done", strlen("done"));
         return XDAG_RSDB_INIT_NEW;
     } else if (strncmp("done", value, strlen("done")) == 0) {
@@ -188,16 +190,54 @@ xd_rsdb_op_t xd_rsdb_load(xd_rsdb_t* db)
     g_xdag_extstats.nwaitsync = 0;
 
     // read top_main_chain hash
-    char key[1] ={[0]=SETTING_TOP_MAIN_HASH};
+    char top_main_chain_hash_key[1] ={[0]=SETTING_TOP_MAIN_HASH};
     char *value = NULL;
     size_t vlen = 0;
 
-    value = xd_rsdb_getkey(key, 1, &vlen);
+    value = xd_rsdb_getkey(top_main_chain_hash_key, 1, &vlen);
     if(value)
     {
         memcpy(g_top_main_chain_hash, value, sizeof(g_top_main_chain_hash));
         free(value);
+        value = NULL;
     }
+
+    char pre_top_main_chain_hash_key[1] ={[0]=SETTING_PRE_TOP_MAIN_HASH};
+    value = xd_rsdb_getkey(pre_top_main_chain_hash_key, 1, &vlen);
+    if(value)
+    {
+        memcpy(g_pre_top_main_chain_hash, value, sizeof(g_pre_top_main_chain_hash));
+        free(value);
+        value = NULL;
+    }
+
+    char ourfirst_hash_key[1] ={[0]=SETTING_OUR_FIRST_HASH};
+    value = xd_rsdb_getkey(ourfirst_hash_key, 1, &vlen);
+    if(value)
+    {
+        memcpy(g_ourfirst_hash, value, sizeof(g_ourfirst_hash));
+        free(value);
+        value = NULL;
+    }
+
+    char ourlast_hash_key[1] ={[0]=SETTING_OUR_LAST_HASH};
+    value = xd_rsdb_getkey(ourlast_hash_key, 1, &vlen);
+    if(value)
+    {
+        memcpy(g_ourlast_hash, value, sizeof(g_ourlast_hash));
+        free(value);
+        value = NULL;
+    }
+
+    char balance_key[1] ={[0]=SETTING_OUR_BALANCE};
+    value = xd_rsdb_getkey(balance_key, 1, &vlen);
+    if(value)
+    {
+        memcpy(&g_balance, value, sizeof(g_balance));
+        free(value);
+        value = NULL;
+    }
+
     return XDAG_RSDB_OP_SUCCESS;
 }
 

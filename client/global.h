@@ -7,7 +7,6 @@
 #include "system.h"
 #include "block.h"
 #include "rsdb.h"
-#include "bloom_filter.h"
 
 enum xdag_states {
 #define xdag_state(n,s) XDAG_STATE_##n ,
@@ -67,7 +66,10 @@ extern int g_disable_mining;
 extern xd_rsdb_t* g_xdag_rsdb;
 
 extern xdag_hash_t g_top_main_chain_hash;
-
+extern xdag_hash_t g_pre_top_main_chain_hash;
+extern xdag_hashlow_t g_ourfirst_hash;
+extern xdag_hashlow_t g_ourlast_hash;
+extern xdag_amount_t g_balance;
 //Default type of the block header
 //Test network and main network have different types of the block headers, so blocks from different networks are incompatible
 extern enum xdag_field_type g_block_header_type;
