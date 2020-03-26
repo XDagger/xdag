@@ -105,6 +105,7 @@ int terminal(void)
 
 void *terminal_thread(void *arg)
 {
+	xdag_info("[%s] [%x] created", __FUNCTION__, pthread_self());
 	int sock;
 #ifndef _WIN32
 	struct sockaddr_un addr;

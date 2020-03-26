@@ -503,11 +503,12 @@ static int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 
 void *pool_net_thread(void *arg)
 {
+	
 	const char *pool_arg = (const char*)arg;
 	struct sockaddr_in peeraddr;
 	socklen_t peeraddr_len = sizeof(peeraddr);
 	int rcvbufsize = 1024;
-
+	
 	while(!g_block_production_on) {
 		sleep(1);
 	}
@@ -1137,7 +1138,7 @@ void *pool_payment_thread(void *arg)
 			remove_inactive_miners();
 			pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old_state_type);
 
-			xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
+			xdag_info("payminer thread %s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
 				hash[3], hash[2], hash[1], hash[0], (current_task_time - CONFIRMATIONS_COUNT + 1) << 16 | 0xffff, res);
 		}
 

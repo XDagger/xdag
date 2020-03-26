@@ -11,12 +11,16 @@ file(GLOB_RECURSE XDAG_TEST_RSDB_SRC
   rsdb_test.c
 )
 
+file(LIBUV_TEST_SC tcp_server.c common.h)
+
 include_directories("/usr/local/include")
 
 find_library(ROCKSDB librocksdb.a "/usr/local/lib")
+find_library(UV libuv.a "/usr/local/lib")
 
 add_executable(
   rsdb_test ${XDAG_TEST_RSDB_SRC}
+  tcp_server ${LIBUV_TEST_SC}
 )
 
 target_link_libraries(

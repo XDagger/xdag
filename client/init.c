@@ -323,7 +323,7 @@ int setup_common(void)
 	
 	if(xdag_wallet_init()) return -1;
     
-    if(xdag_rsdb_pre_init()) return -1;
+    if(xd_rsdb_pre_init()) return -1;
 
 	return 0;
 }
