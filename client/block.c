@@ -244,6 +244,18 @@ static void set_main(struct block_internal *m)
 	accept_amount(m, apply_block(m));
     memcpy(m->ref, m->hash, sizeof(xdag_hashlow_t));
     xd_rsdb_merge_bi(m);
+    if(m->flags & BI_OURS) {
+        struct block_internal b;
+        if(!xd_rsdb_get_ourbi(m->hash, &b) )  {
+            b.flags = m->flags;
+            b.amount = m->amount;
+            b.fee = m->fee;
+            b.difficulty = m->difficulty;
+            b.time = m->time;
+            b.storage_pos = m->storage_pos;
+            xd_rsdb_put_ourbi(&b);
+        }
+    }
 	log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time, m->storage_pos);
 }
 
@@ -1551,18 +1563,18 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
     if(!xd_rsdb_get_ourbi(hash, &b) && (b.flags & BI_OURS) && memcmp(g_ourfirst_hash, b.hash, sizeof(g_ourfirst_hash))) {
         struct block_internal ourprev_b;
         
-        if (!xd_rsdb_get_bi(b.ourprev, &ourprev_b)) {
+        if (!xd_rsdb_get_ourbi(b.ourprev, &ourprev_b)) {
             memcpy(ourprev_b.ournext, b.ournext, sizeof(xdag_hashlow_t));
-            xd_rsdb_merge_bi(&ourprev_b);
+            xd_rsdb_put_ourbi(&ourprev_b);
         } else {
             memcpy(g_ourfirst_hash, b.ournext, sizeof(xdag_hashlow_t));
             xd_rsdb_put_setting(SETTING_OUR_FIRST_HASH, (const char *) g_ourfirst_hash, sizeof(g_ourfirst_hash));
         }
         
         struct block_internal ournext_b;
-        if(!xd_rsdb_get_bi(b.ournext, &ournext_b)) {
+        if(!xd_rsdb_get_ourbi(b.ournext, &ournext_b)) {
             memcpy(ournext_b.ourprev, b.ourprev, sizeof(xdag_hashlow_t));
-            xd_rsdb_merge_bi(&ournext_b);
+            xd_rsdb_put_ourbi(&ournext_b);
         } else {
             memcpy(g_ourlast_hash, ourprev_b.hash, sizeof(xdag_hashlow_t));
             xd_rsdb_put_setting(SETTING_OUR_LAST_HASH, (const char *) g_ourlast_hash, sizeof(g_ourlast_hash));
@@ -1945,9 +1957,9 @@ void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out)
 	print_header_block_list(out);
     struct block_internal b;
     int retcode = 1;
-    for(retcode = xd_rsdb_get_ourbi(g_ourfirst_hash, &b);
+    for(retcode = xd_rsdb_get_ourbi(g_ourlast_hash, &b);
         !retcode && (i < count);
-        retcode = xd_rsdb_get_ourbi(b.ournext, &b))
+        retcode = xd_rsdb_get_ourbi(b.ourprev, &b))
     {
         if(b.flags & BI_MAIN && b.flags & BI_OURS) {
             print_block(&b, 0, out);
