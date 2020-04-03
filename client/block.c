@@ -69,6 +69,7 @@ static inline void accept_amount(struct block_internal *bi, xdag_amount_t sum)
     xd_rsdb_merge_bi(bi);
 	if (bi->flags & BI_OURS) {
 		g_balance += sum;
+        xd_rsdb_put_setting(SETTING_OUR_BALANCE, (const char *)&g_balance, sizeof(g_balance));
 //		order_ourblocks_by_amount(bi);
 	}
 }
@@ -1549,37 +1550,7 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
     struct block_internal b;
 	pthread_mutex_lock(&block_mutex);
     if(!xd_rsdb_get_bi(hash, &b) && (b.flags & BI_OURS) && memcmp(g_ourfirst_hash, b.hash, sizeof(g_ourfirst_hash))) {
-        struct block_internal ourprev_b;
-        
-        if (!xd_rsdb_get_bi(b.ourprev, &ourprev_b)) {
-            memcpy(ourprev_b.ournext, b.ournext, sizeof(xdag_hashlow_t));
-            xd_rsdb_merge_bi(&ourprev_b);
-        } else {
-            memcpy(g_ourfirst_hash, b.ournext, sizeof(xdag_hashlow_t));
-            xd_rsdb_put_setting(SETTING_OUR_FIRST_HASH, (const char *) g_ourfirst_hash, sizeof(g_ourfirst_hash));
-        }
-        
-        struct block_internal ournext_b;
-        if(!xd_rsdb_get_bi(b.ournext, &ournext_b)) {
-            memcpy(ournext_b.ourprev, b.ourprev, sizeof(xdag_hashlow_t));
-            xd_rsdb_merge_bi(&ournext_b);
-        } else {
-            memcpy(g_ourlast_hash, ourprev_b.hash, sizeof(xdag_hashlow_t));
-            xd_rsdb_put_setting(SETTING_OUR_LAST_HASH, (const char *) g_ourlast_hash, sizeof(g_ourlast_hash));
-        }
-        
-        memset(b.ourprev, 0, sizeof(xdag_hashlow_t));
-        memcpy(b.ournext, g_ourfirst_hash, sizeof(xdag_hashlow_t));
-        xd_rsdb_merge_bi(&b);
-
-        struct block_internal ourfirst_b;
-        if (!xd_rsdb_get_bi(g_ourfirst_hash, &ourfirst_b)) {
-            memcpy(ourfirst_b.ourprev, b.hash, sizeof(xdag_hashlow_t));
-            xd_rsdb_merge_bi(&ourfirst_b);
-        } else {
-            memcpy(g_ourlast_hash, b.hash, sizeof(xdag_hashlow_t));
-            xd_rsdb_put_setting(SETTING_OUR_LAST_HASH, (const char *) g_ourlast_hash, sizeof(g_ourlast_hash));
-        }
+        xd_rsdb_put_ournext(g_ourfirst_hash, hash);
         memcpy(g_ourfirst_hash, b.hash, sizeof(xdag_hashlow_t));
         xd_rsdb_put_setting(SETTING_OUR_FIRST_HASH, (const char *) g_ourfirst_hash, sizeof(g_ourfirst_hash));
     }
@@ -1625,6 +1596,7 @@ int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance)
 			}
 		}
 		b.amount = balance;
+        xd_rsdb_put_setting(SETTING_OUR_BALANCE, (const char *)&g_balance, sizeof(g_balance));
         xd_rsdb_merge_bi(&b);
 	}
 	return 0;
