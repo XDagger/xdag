@@ -63,6 +63,7 @@ else()
   message(FATAL_ERROR "Failed to find TCMalloc dependency!")
 endif()
 
+find_library(LIBUV libuv.a "/usr/local/lib")
 #[3]end
 
 #[4]find original libraries in system start
@@ -153,6 +154,7 @@ target_link_libraries(
         ${OPENSSL_CRYPTO_LIBRARY}
         ${TCMALLOC_LIBRARY}
         ${PROFILER_LIBRARY}
+        ${LIBUV}
         m
 	    dl
 )
