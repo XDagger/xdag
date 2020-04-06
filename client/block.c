@@ -1105,7 +1105,6 @@ int xdag_create_and_send_block(struct xdag_field *fields, int inputsCount, int o
 	block->field[0].transport_header = 1;
 	int res = xdag_add_block(block);
 	if(res > 0) {
-	    xdag_err("xdag_add_block err %d", res);
 		xdag_send_new_block(block);
 		res = 1;
 	} else {
