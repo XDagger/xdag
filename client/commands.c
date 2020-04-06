@@ -340,7 +340,7 @@ int xdag_command(char *cmd, FILE *out)
 
 	cmd = strtok_r(cmd, " \t\r\n", &nextParam);
 	if(!cmd) return 0;
-	if(sscanf(cmd, "pwd=%8x%8x%8x%8x", pwd, pwd + 1, pwd + 2, pwd + 3) == 4) {
+	if(sscanf(cmd, "pwd=%08x%08x%08x%08x", pwd, pwd + 1, pwd + 2, pwd + 3) == 4) {
 		ispwd = 1;
 		cmd = strtok_r(0, " \t\r\n", &nextParam);
 	}
