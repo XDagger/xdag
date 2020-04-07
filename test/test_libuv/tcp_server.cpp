@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <uv.h>
+#include <gtest/gtest.h>
 
 #define DEFAULT_ADDR "127.0.0.1"
 #define DEFAULT_PORT 7000
@@ -58,24 +59,22 @@ void on_new_connection(uv_stream_t *server, int status) {
     printf("on new connection, status:%d\r\n", status);
 }
 
-int main(int argc, char **argv) {
+TEST(libUV, tcpServer) {
 
     printf("buliding tcp\n");
     loop = uv_default_loop();
+    //ASSERT_NE(0,loop) << "uv default loop init success";
 
     uv_tcp_t server;
-    uv_tcp_init(loop, &server);
+    ASSERT_EQ(0,uv_tcp_init(loop, &server)) << "uv tcp init success";
 
     printf("port:%d\n", DEFAULT_PORT);
-
-    uv_ip4_addr(DEFAULT_ADDR, DEFAULT_PORT, &addr);
-
-    uv_tcp_bind(&server, (const struct sockaddr*)&addr, 0);
+	
+	ASSERT_EQ(0,uv_ip4_addr(DEFAULT_ADDR, DEFAULT_PORT, &addr)) << "uv ip v4 addr success";
+	
+	ASSERT_EQ(0,uv_tcp_bind(&server, (const struct sockaddr*)&addr, 0)) << "uv tcp bind success";
     fprintf(stdin, "listening:%d\n", DEFAULT_PORT);
     int r = uv_listen((uv_stream_t*) &server, DEFAULT_BACKLOG, on_new_connection);
-    if (r) {
-        fprintf(stderr, "Listen error %s\n", uv_strerror(r));
-        return 1;
-    }
-    return uv_run(loop, UV_RUN_DEFAULT);
+    ASSERT_EQ(0,r) << "Listen error" << uv_strerror(r);
+	ASSERT_EQ(0,uv_run(loop, UV_RUN_DEFAULT)) << "uv run loop success";
 }

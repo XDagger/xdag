@@ -13,6 +13,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 endif()
 
 OPTION(DEBUG "Build the project using debugging code" OFF)
+OPTION(BUILD_TEST "Build Test Cases" OFF)
 
 if(DEBUG)
   MESSAGE("Adding Debug flag...")
@@ -32,6 +33,7 @@ include(cmake/RocksDBConfig.cmake)
 include(cmake/Secp256k1Config.cmake)
 include(cmake/OpenSSLConfig.cmake)
 include(cmake/TCMallocConfig.cmake)
+include(cmake/UVConfig.cmake)
 #[2]end
 
 #[3]download and compile projects in hunter
@@ -63,7 +65,14 @@ else()
   message(FATAL_ERROR "Failed to find TCMalloc dependency!")
 endif()
 
-find_library(LIBUV libuv.a "/usr/local/lib")
+find_package(TCMalloc CONFIG)
+if(TCMALLOC_FOUND)
+  message("-- Found TCMalloc: include ${TCMALLOC_INCLUDE_DIR}  libraries ${TCMALLOC_LIBRARY} ${PROFILER_LIBRARY}")
+else()
+  message(FATAL_ERROR "Failed to find TCMalloc dependency!")
+endif()
+
+find_package(UV CONFIG)
 #[3]end
 
 #[4]find original libraries in system start
@@ -123,7 +132,6 @@ else(UNIX)
   )
 endif()
 
-
 add_executable(
         cgi_stats
         client/statsdaemon.c
@@ -143,6 +151,7 @@ target_include_directories(
         ${SECP256K1_INCLUDE_DIR}
         ${OPENSSL_INCLUDE_DIR}
         ${TCMALLOC_INCLUDE_DIR}
+        ${UV_INCLUDE_DIR}
 )
 target_link_libraries(
         ${PROJECT_NAME}
@@ -154,8 +163,22 @@ target_link_libraries(
         ${OPENSSL_CRYPTO_LIBRARY}
         ${TCMALLOC_LIBRARY}
         ${PROFILER_LIBRARY}
-        ${LIBUV}
+        ${UV_LIBRARY}
         m
 	    dl
 )
 #[9]end
+
+#[10]build test case
+if(BUILD_TEST)
+  enable_testing()
+  include(cmake/GTestConfig.cmake)
+  find_package(GTest CONFIG)
+  if(GTEST_FOUND)
+    message("-- Found GTest: include ${GTEST_INCLUDE_DIR}  libraries ${GTEST_LIBRARY}")
+    add_subdirectory(test)
+  else()
+    message(FATAL_ERROR "Failed to find GTEST dependency!")
+  endif()
+endif()
+#[10]end
