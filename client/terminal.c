@@ -85,8 +85,7 @@ static void on_server_new_connection(uv_stream_t *server, int status) {
     }
 }
 
-int terminal_server()
-{
+int terminal_server() {
     loop = uv_default_loop();
     uv_pipe_t server;
     uv_pipe_init(loop, &server, 0);
@@ -152,28 +151,6 @@ static void on_client_write_pipe(uv_write_t* req, int status){
     uv_read_start((uv_stream_t*)&client_pipe, alloc_buffer, on_client_read_pipe);
     free_write_req(req);
 }
-
-static void read_command_loop(uv_stream_t *handle, char *cmd) {
-    char *lasts = NULL;
-    char *ptr = NULL;
-    char cmd2[XDAG_COMMAND_MAX] = {0};
-    do {
-        read_command(cmd);
-        strncpy(cmd2, cmd, strlen(cmd));
-        ptr = strtok_r(cmd2, " \t\r\n", &lasts);
-        if(!ptr) continue;
-        if(!strcmp(ptr, "exit") || !strcmp(ptr, "terminate")) exit(0);
-        if(!strcmp(ptr, "xfer")) {
-            uint32_t pwd[4];
-            xdag_user_crypt_action(pwd, 0, 4, 4);
-            sprintf(cmd2, "pwd=%08x%08x%08x%08x ", pwd[0], pwd[1], pwd[2], pwd[3]);
-            strncpy(cmd2 + strlen(cmd2), cmd, strlen(cmd));
-            strncpy(cmd, cmd2, strlen(cmd2));
-        }
-    } while(!ptr);
-}
-
-
 
 static void on_client_write_stdout(uv_write_t* req, int status) {
     if(status){
