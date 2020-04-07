@@ -135,6 +135,7 @@ static void command_complete(uv_work_t* work, int status) {
     wri->buf=uv_buf_init((char*) malloc(strlen(cmd) + 1), strlen(cmd) + 1);
     memcpy(wri->buf.base, cmd, strlen(cmd) + 1);
     uv_write((uv_write_t*)wri, (uv_stream_t*)&client_pipe, &wri->buf, 1, on_client_write_pipe);
+    free(work->data);
 }
 
 static void on_client_read_pipe(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
