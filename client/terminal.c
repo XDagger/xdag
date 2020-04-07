@@ -8,7 +8,9 @@
 
 uv_loop_t *loop;
 uv_pipe_t client_pipe;
+uv_connect_t conn;
 uv_tty_t tty_stdout;
+uv_work_t work;
 
 typedef struct {
     uv_write_t req;
@@ -103,15 +105,41 @@ int terminal_server()
 }
 // end pipe server
 
-// start pepe client
+// start pipe client
 static void on_client_write_stdout(uv_write_t* req, int status);
 static void on_client_write_pipe(uv_write_t* req, int status);
-static void read_command_loop(uv_stream_t *handle, char *cmd);
+
+static void command_work(uv_work_t* work) {
+    char *lasts = NULL;
+    char *ptr = NULL;
+    char cmd[XDAG_COMMAND_MAX] = {0};
+    char cmd2[XDAG_COMMAND_MAX] = {0};
+    read_command(cmd);
+    strncpy(cmd2, cmd, strlen(cmd));
+    ptr = strtok_r(cmd2, " \t\r\n", &lasts);
+    if(!ptr) return;
+    if(!strcmp(ptr, "exit") || !strcmp(ptr, "terminate")) exit(0);
+    if(!strcmp(ptr, "xfer")) {
+        uint32_t pwd[4];
+        xdag_user_crypt_action(pwd, 0, 4, 4);
+        sprintf(cmd2, "pwd=%08x%08x%08x%08x ", pwd[0], pwd[1], pwd[2], pwd[3]);
+        strncpy(cmd2 + strlen(cmd2), cmd, strlen(cmd));
+        strncpy(cmd, cmd2, strlen(cmd2));
+    }
+    work->data = strdup(cmd);
+}
+
+static void command_complete(uv_work_t* work, int status) {
+    write_req_t *wri = (write_req_t *)malloc(sizeof(write_req_t));
+    char *cmd = (char*)work->data;
+    wri->buf=uv_buf_init((char*) malloc(strlen(cmd) + 1), strlen(cmd) + 1);
+    memcpy(wri->buf.base, cmd, strlen(cmd) + 1);
+    uv_write((uv_write_t*)wri, (uv_stream_t*)&client_pipe, &wri->buf, 1, on_client_write_pipe);
+}
 
 static void on_client_read_pipe(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
     write_req_t *wri = (write_req_t *)malloc(sizeof(write_req_t));
     wri->buf = uv_buf_init(buf->base, nread);
-    // write to stdout
     uv_write((uv_write_t*)wri,(uv_stream_t*)&tty_stdout, &wri->buf,1, on_client_write_stdout);
 }
 
@@ -144,41 +172,28 @@ static void read_command_loop(uv_stream_t *handle, char *cmd) {
     } while(!ptr);
 }
 
+
+
 static void on_client_write_stdout(uv_write_t* req, int status) {
     if(status){
         fprintf(stderr, "pipe write error %s\n", uv_strerror(status));
         exit(0);
     }
-    // read from stdin use linenoise and write to server pipe
-    write_req_t *wri2 = (write_req_t *)malloc(sizeof(write_req_t));
-    char cmd[XDAG_COMMAND_MAX] = {0};
-    read_command_loop(req->handle, cmd);
-    wri2->buf=uv_buf_init((char*) malloc(strlen(cmd) + 1), strlen(cmd) + 1);
-    memcpy(wri2->buf.base, cmd, strlen(cmd) + 1);
-    uv_write((uv_write_t*)wri2, (uv_stream_t*)&client_pipe, &wri2->buf, 1, on_client_write_pipe);
-    free_write_req(req);
+    uv_queue_work(loop, &work, command_work, command_complete);
 }
 
 static void on_client_connect(uv_connect_t* req, int status) {
     if(status < 0){
         fprintf(stderr, "pipe new conect error...\n");
     }
-	char cmd[XDAG_COMMAND_MAX] = {0};
-    read_command_loop(req->handle, cmd);
-    write_req_t *wr = (write_req_t *)malloc(sizeof(write_req_t));
-    uv_buf_t buf = uv_buf_init((char*) malloc(strlen(cmd) + 1), strlen(cmd) + 1);
-    memcpy(buf.base, cmd, strlen(cmd) + 1);
-    uv_write((uv_write_t*)wr,(uv_stream_t*)req->handle, &buf,1, on_client_write_pipe);
+    uv_queue_work(loop, &work, command_work, command_complete);
 }
 
 int terminal_client() {
-    uv_connect_t conn;
-
     xdag_init_commands();
     loop = uv_default_loop();
     uv_pipe_init(loop, &client_pipe, 0);
     uv_tty_init(loop, &tty_stdout,1,0);
-
     uv_pipe_connect((uv_connect_t*)&conn, &client_pipe, UNIX_SOCK, on_client_connect);
     return uv_run(loop, UV_RUN_DEFAULT);
 }
