@@ -16,11 +16,14 @@ target_link_libraries(test_core
 
 include_directories(test_core ${GTEST_INCLUDE_DIR})
 
-#file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test_core")
-
-#add_custom_target(test_core_all
-#        COMMAND           test_core
-#        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test_core")
-
 add_test(NAME   test_core
         COMMAND test_core)
+
+if(RUN_TEST)
+    add_custom_target(test_core_all
+            ALL DEPENDS test_core)
+
+    add_custom_command(TARGET test_core_all
+            POST_BUILD
+            COMMAND           test_core)
+endif()

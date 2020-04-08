@@ -14,6 +14,7 @@ endif()
 
 OPTION(DEBUG "Build the project using debugging code" OFF)
 OPTION(BUILD_TEST "Build Test Cases" OFF)
+OPTION(RUN_TEST "Run Test Cases" OFF)
 
 if(DEBUG)
   MESSAGE("Adding Debug flag...")

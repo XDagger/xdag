@@ -19,3 +19,12 @@ set_property(TARGET test_randomx
 
 add_test(NAME   test_randomx
         COMMAND test_randomx)
+
+if(RUN_TEST)
+    add_custom_target(test_randomx_all
+            ALL DEPENDS test_randomx)
+
+    add_custom_command(TARGET test_randomx_all
+            POST_BUILD
+            COMMAND           test_randomx)
+endif()

@@ -19,3 +19,12 @@ set_property(TARGET test_xfer
 
 add_test(NAME test_xfer
         COMMAND test_xfer)
+
+if(RUN_TEST)
+    add_custom_target(test_xfer_all
+            ALL DEPENDS test_xfer)
+
+    add_custom_command(TARGET test_xfer_all
+            POST_BUILD
+            COMMAND           test_xfer)
+endif()

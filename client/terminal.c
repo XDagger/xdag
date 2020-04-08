@@ -83,7 +83,7 @@ static void on_server_new_connection(uv_stream_t *server, int status) {
     }
 }
 
-int terminal_server()
+void* terminal_server()
 {
     loop = uv_default_loop();
     uv_pipe_t server;
@@ -99,7 +99,8 @@ int terminal_server()
         fprintf(stderr, "pipe listen error %s\n", uv_err_name(r));
         exit(-1);
     }
-    return uv_run(loop, UV_RUN_DEFAULT);
+    uv_run(loop, UV_RUN_DEFAULT);
+    return NULL;
 }
 // end pipe server
 
