@@ -205,6 +205,20 @@ static xdag_amount_t get_start_amount(uint64_t nmain) {
     return start_amount;
 }
 
+static xdag_amount_t get_block_earning(xdag_time_t time) {
+    xdag_amount_t amount = 0;
+    xdag_amount_t start_amount = 0;
+    uint64_t nmain = 0;
+
+    if(g_apollo_fork_time && time >= g_apollo_fork_time) {
+        nmain = g_xdag_testnet? MAIN_APOLLO_TESTNET_HEIGHT:MAIN_APOLLO_HEIGHT;
+        nmain = nmain > MAIN_TIME(time) ? nmain: MAIN_TIME(time);
+    }
+    start_amount = get_start_amount(nmain);
+    amount = start_amount >> (nmain >> MAIN_BIG_PERIOD_LOG);
+    return amount;
+}
+
 static xdag_amount_t get_amount(xdag_time_t time, uint64_t nmain) {
     xdag_amount_t amount = 0;
     xdag_amount_t start_amount = 0;
@@ -1797,74 +1811,29 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 			address, pramount(bi->linkamount[i]));
 	}
 
-//	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
-//	fprintf(out, "                                 block as address: details\n");
-//	fprintf(out, " direction  transaction                                amount       time                     remark                          \n");
-//	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
+	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
+	fprintf(out, "                                 block as address: details\n");
+	fprintf(out, " direction  transaction                                amount       time                     remark                          \n");
+	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
 
-//	int N = 0x10000;
-//	int n = 0;
-//	struct block_internal **ba = malloc(N * sizeof(struct block_internal *));
-//
-//	if (!ba) return -1;
-//
-//	for (struct block_backrefs *br = (struct block_backrefs*)atomic_load_explicit_uintptr(&bi->backrefs, memory_order_acquire); br; br = br->next) {
-//		for (i = N_BACKREFS; i && !br->backrefs[i - 1]; i--);
-//
-//		if (!i) {
-//			continue;
-//		}
-//
-//		if (n + i > N) {
-//			N *= 2;
-//			struct block_internal **ba1 = realloc(ba, N * sizeof(struct block_internal *));
-//			if (!ba1) {
-//				free(ba);
-//				return -1;
-//			}
-//
-//			ba = ba1;
-//		}
-//
-//		memcpy(ba + n, br->backrefs, i * sizeof(struct block_internal *));
-//		n += i;
-//	}
-//
-//	if (n) {
-//		qsort(ba, n, sizeof(struct block_internal *), bi_compar);
-//
-//		for (i = 0; i < n; ++i) {
-//			if (!i || ba[i] != ba[i - 1]) {
-//				struct block_internal *ri = ba[i];
-//				if (ri->flags & BI_APPLIED) {
-//					for (int j = 0; j < ri->nlinks; j++) {
-//						if(ri->link[j] == bi && ri->linkamount[j]) {
-//							xdag_xtime_to_string(ri->time, time_buf);
-//							xdag_hash2address(ri->hash, address);
-//							fprintf(out, "    %6s: %s  %10u.%09u  %s  %s\n",
-//								(1 << j & ri->in_mask ? "output" : " input"), address,
-//								pramount(ri->linkamount[j]), time_buf, get_remark(ri));
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//	free(ba);
-//
-//	if (bi->flags & BI_MAIN) {
-//		xdag_hash2address(h, address);
-//        if(MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA) < MAIN_APOLLO_HIGHT) {
-//            amount = MAIN_START_AMOUNT;
-//        } else {
-//            amount = MAIN_APOLLO_AMOUNT;
-//        }
-//		fprintf(out, "   earning: %s  %10u.%09u  %s\n", address,
-//			pramount(amount >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)),
-//			time_buf);
-//	}
-	
+	for(int i = 0; i < bi->nlinks; i++) {
+	    struct block_internal b;
+	    if(bi->linkamount[i] &&xd_rsdb_get_bi(bi->link[i], &b)){
+            xdag_xtime_to_string(b.time, time_buf);
+            xdag_hash2address(b.hash, address);
+            fprintf(out, "    %6s: %s  %10u.%09u  %s  %s\n",
+						(1 << i & b.in_mask ? "output" : " input"), address,
+						pramount(bi->linkamount[i]), time_buf, get_remark(bi));
+	    }
+	}
+
+    if (bi->flags & BI_MAIN) {
+		xdag_hash2address(h, address);
+        amount = get_block_earning(bi->time);
+		fprintf(out, "   earning: %s  %10u.%09u  %s\n", address,
+			pramount(amount),
+			time_buf);
+	}
 	return 0;
 }
 
