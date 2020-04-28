@@ -1929,16 +1929,21 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
 
 int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xtime_t, const char *))
 {
-    struct block_internal bi;
-    if (xd_rsdb_get_bi(hash, &bi)) {
-		return -1;
+    struct block_internal b;
+
+    if (!xd_rsdb_get_bi(hash, &b)) {
+        struct block_internal *bi = &b;
+        for(int i = 0; i < bi->nlinks; i++) {
+            struct block_internal b;
+            if(bi->linkamount[i] &&xd_rsdb_get_bi(bi->link[i], &b)){
+                if(callback(data, 1 << i & bi->in_mask, bi->flags, bi->hash, bi->linkamount[i], bi->time, get_remark(bi))) {
+                    return i;
+                }
+            }
+        }
+        return 0;
 	}
-	
-	int size = 0x10000;
-	int n = 0;
-	struct block_internal **block_array = malloc(size * sizeof(struct block_internal *));
-	
-	if (!block_array) return -1;
+	return -1;
 
 //	int i;
 //	for (struct block_backrefs *br = (struct block_backrefs*)atomic_load_explicit_uintptr(&bi->backrefs, memory_order_acquire); br; br = br->next) {
@@ -1985,7 +1990,7 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 //	}
 //
 //	free(block_array);
-	return n;
+//	return n;
 }
 
 int remove_orphan(xdag_hashlow_t hash)
