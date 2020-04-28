@@ -1464,15 +1464,15 @@ int xdag_traverse_our_blocks(void *data,
     int (*callback)(void*, xdag_hash_t, xdag_amount_t, xtime_t, int))
 {
 	int res = 0;
-    int retcode = 1;
+    int retcode = 0;
 	pthread_mutex_lock(&block_mutex);
     xdag_hashlow_t hash = {0};
-    for(retcode = xd_rsdb_get_ournext(g_ourlast_hash, hash);
+    for(memcpy(hash, g_ourlast_hash, sizeof(xdag_hashlow_t));
         !retcode && !res;
         retcode = xd_rsdb_get_ournext(hash, hash))
     {
         struct block_internal b;
-        if( !xd_rsdb_get_bi(hash, &b) && b.flags & BI_MAIN && b.flags & BI_OURS) {
+        if( !xd_rsdb_get_bi(hash, &b) && (b.flags & BI_OURS)) {
             res = (*callback)(data, b.hash, b.amount, b.time, b.n_our_key);
         }
     }
