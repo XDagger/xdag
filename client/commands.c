@@ -108,7 +108,7 @@ XDAG_COMMAND* find_xdag_command(char*);
 XDAG_COMMAND commands[] = {
 	{ "account"     , 0, xdag_com_account },
 	{ "balance"     , 0, xdag_com_balance },
-	{ "block"       , 2, xdag_com_block },
+	{ "block"       , 0, xdag_com_block },
 	{ "lastblocks"  , 2, xdag_com_lastblocks },
 	{ "mainblocks"  , 2, xdag_com_mainblocks },
 	{ "minedblocks" , 2, xdag_com_minedblocks },
