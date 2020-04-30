@@ -44,8 +44,8 @@ int remove_orphan(xdag_hashlow_t);
 void add_orphan(struct block_internal*, struct xdag_block*);
 static inline size_t remark_acceptance(xdag_remark_t);
 static int add_remark_bi(struct block_internal*, xdag_remark_t);
-static inline const char* get_remark(struct block_internal*);
-static int load_remark(struct block_internal*);
+static inline const char* get_remark(struct block_internal*, xdag_remark_t);
+static int load_remark(struct block_internal*, xdag_remark_t);
 //static void order_ourblocks_by_amount(struct block_internal *bi);
 static inline void add_ourblock(struct block_internal *nodeBlock);
 extern void *sync_thread(void *arg);
@@ -1712,7 +1712,8 @@ void append_block_info(struct block_internal *bi)
 
 	char message[4096] = {0};
 	char buf[128] = {0};
-
+    xdag_remark_t remark;
+    get_remark(bi, remark);
 	sprintf(message,
 			"{\"time\":\"%s\""
 			",\"flags\":\"%x\""
@@ -1728,7 +1729,7 @@ void append_block_info(struct block_internal *bi)
 			, xdag_get_block_state_info(flags)
 			, (unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]
 			, xdag_diff_args(bi->difficulty)
-			, get_remark(bi)
+			, remark
 			, address
 			, pramount(bi->amount)
 			);
@@ -1759,6 +1760,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	char time_buf[64] = {0};
 	char address[33] = {0};
     xdag_amount_t amount = 0;
+    xdag_remark_t remark;
 	int i;
 
     struct block_internal tbi, *bi = NULL;
@@ -1768,6 +1770,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
     bi = &tbi;
 	uint64_t *h = bi->hash;
 	xdag_xtime_to_string(bi->time, time_buf);
+    get_remark(bi, remark);
 	fprintf(out, "      time: %s\n", time_buf);
 	fprintf(out, " timestamp: %llx\n", (unsigned long long)bi->time);
 	fprintf(out, "     flags: %x\n", bi->flags & ~BI_OURS);
@@ -1777,7 +1780,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
         (int)((bi->time) >> 40)&0xff, (int)((bi->time) >> 32)&0xff, (int)((bi->time) >> 24)&0xff, (int)((bi->time) >> 16)&0xff);
 	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 		(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
-	fprintf(out, "    remark: %s\n", get_remark(bi));
+	fprintf(out, "    remark: %s\n", remark);
 	fprintf(out, "difficulty: %llx%016llx\n", xdag_diff_args(bi->difficulty));
 	xdag_hash2address(h, address);
 	fprintf(out, "   balance: %s  %10u.%09u\n", address, pramount(bi->amount));
@@ -1819,20 +1822,22 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	for(int i = 0; i < bi->nlinks; i++) {
 	    struct block_internal b;
 	    if(bi->linkamount[i] &&xd_rsdb_get_bi(bi->link[i], &b)){
+            xdag_remark_t remark;
+            get_remark(&b, remark);
             xdag_xtime_to_string(b.time, time_buf);
             xdag_hash2address(b.hash, address);
             fprintf(out, "    %6s: %s  %10u.%09u  %s  %s\n",
 						(1 << i & b.in_mask ? "output" : " input"), address,
-						pramount(bi->linkamount[i]), time_buf, get_remark(bi));
+						pramount(bi->linkamount[i]), time_buf, remark);
 	    }
 	}
 
     if (bi->flags & BI_MAIN) {
 		xdag_hash2address(h, address);
         amount = get_block_earning(bi->time);
-		fprintf(out, "   earning: %s  %10u.%09u  %s\n", address,
+		fprintf(out, "   earning: %s  %10u.%09u  %s %s\n", address,
 			pramount(amount),
-			time_buf);
+			time_buf, remark);
 	}
 	return 0;
 }
@@ -1848,7 +1853,9 @@ static void print_block(struct block_internal *block, int print_only_addresses, 
 		fprintf(out, "%s\n", address);
 	} else {
 		xdag_xtime_to_string(block->time, time_buf);
-		fprintf(out, "%s   %s   %-8s  %-32s\n", address, time_buf, xdag_get_block_state_info(block->flags), get_remark(block));
+        xdag_remark_t remark;
+        get_remark(block, remark);
+		fprintf(out, "%s   %s   %-8s  %-32s\n", address, time_buf, xdag_get_block_state_info(block->flags), remark);
 	}
 }
 
@@ -1935,8 +1942,10 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
         struct block_internal *bi = &b;
         for(int i = 0; i < bi->nlinks; i++) {
             struct block_internal b;
+            xdag_remark_t remark;
+            get_remark(bi, remark);
             if(bi->linkamount[i] &&xd_rsdb_get_bi(bi->link[i], &b)){
-                if(callback(data, 1 << i & bi->in_mask, bi->flags, bi->hash, bi->linkamount[i], bi->time, get_remark(bi))) {
+                if(callback(data, 1 << i & bi->in_mask, bi->flags, bi->hash, bi->linkamount[i], bi->time, (const char*)remark)) {
                     return i;
                 }
             }
@@ -2060,7 +2069,9 @@ int xdag_get_block_info(xdag_hash_t hash, void *info, int (*info_callback)(void*
 	pthread_mutex_unlock(&block_mutex);
 
 	if(info_callback && !retcode) {
-		info_callback(info, b.flags & ~BI_OURS,  b.hash, b.amount, b.time, b.storage_pos, get_remark(&b));
+        xdag_remark_t remark;
+        get_remark(&b, remark);
+		info_callback(info, b.flags & ~BI_OURS,  b.hash, b.amount, b.time, b.storage_pos, (const char*)remark);
 	}
 
 	if(links_callback && !retcode) {
@@ -2143,25 +2154,17 @@ static int add_remark_bi(struct block_internal* bi, xdag_remark_t strbuf)
 //	return -1;
 //}
 
-static inline const char* get_remark(struct block_internal *bi){
+static inline const char* get_remark(struct block_internal *bi, xdag_remark_t remark){
 	if((bi->flags & BI_REMARK) & ~BI_EXTRA){
-		const char* tmp = (const char*)atomic_load_explicit_uintptr(&bi->remark, memory_order_acquire);
-		if(tmp != NULL){
-			return tmp;
-		} else if(load_remark(bi)){
-			return (const char*)atomic_load_explicit_uintptr(&bi->remark, memory_order_relaxed);
-		}
+        load_remark(bi, remark);
 	}
 	return "";
 }
 
-static int load_remark(struct block_internal* bi) {
-    xdag_remark_t remark;
-    if(!xd_rsdb_get_remark(bi->hash, remark)) {
+static int load_remark(struct block_internal* bi, xdag_remark_t remark) {
+    if(xd_rsdb_get_remark(bi->hash, remark)) {
         xdag_err("Remark field not found [function: load_remark]");
-        pthread_mutex_lock(&block_mutex);
         bi->flags &= ~BI_REMARK;
-        pthread_mutex_unlock(&block_mutex);
         return 0;
     }
 	return add_remark_bi(bi, remark);
