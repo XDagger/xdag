@@ -60,6 +60,7 @@ typedef enum xd_rsdb_key_type {
     SETTING_OUR_FIRST_HASH                =  0x16,
     SETTING_OUR_LAST_HASH                 =  0x17,
     SETTING_OUR_BALANCE                   =  0x18,
+    SETTING_CUR_TIME                      =  0x19,
     HASH_ORP_BLOCK                        =  0x20,
     HASH_BLOCK_INTERNAL                   =  0x21,
     HASH_BLOCK_OUR                        =  0x22,
@@ -81,7 +82,7 @@ char* xd_rsdb_partial_merge(void*, const char* key, size_t key_length,
 const char* xd_rsdb_merge_operator_name(void*);
 
 xd_rsdb_op_t xd_rsdb_pre_init(void);
-xd_rsdb_op_t xd_rsdb_init(void);
+xd_rsdb_op_t xd_rsdb_init(xdag_time_t *time);
 xd_rsdb_op_t xd_rsdb_load(xd_rsdb_t* db);
 xd_rsdb_op_t xd_rsdb_conf_check(xd_rsdb_t  *db);
 xd_rsdb_op_t xd_rsdb_conf(xd_rsdb_t* db);
@@ -101,7 +102,7 @@ xd_rsdb_op_t xd_rsdb_putkey(const char* key, size_t klen, const char* value, siz
 xd_rsdb_op_t xd_rsdb_put_ournext(xdag_hashlow_t hash, xdag_hashlow_t next);
 xd_rsdb_op_t xd_rsdb_put_setting(xd_rsdb_key_t type, const char* value, size_t vlen);
 xd_rsdb_op_t xd_rsdb_put_orpblock(xdag_hashlow_t hash, struct xdag_block* xb);
-xd_rsdb_op_t xd_rsdb_put_stats(void);
+xd_rsdb_op_t xd_rsdb_put_stats(xdag_time_t time);
 xd_rsdb_op_t xd_rsdb_put_extstats(void);
 xd_rsdb_op_t xd_rsdb_put_remark(struct block_internal *bi, xdag_remark_t strbuf);
 xd_rsdb_op_t xd_rsdb_put_cacheblock(xdag_hashlow_t hash, struct xdag_block *xb);

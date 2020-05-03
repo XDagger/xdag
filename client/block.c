@@ -258,6 +258,7 @@ static void set_main(struct block_internal *m)
 	accept_amount(m, amount);
 	accept_amount(m, apply_block(m));
     memcpy(m->ref, m->hash, sizeof(xdag_hashlow_t));
+    xd_rsdb_put_stats(m->time);
     xd_rsdb_merge_bi(m);
 	log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time, m->storage_pos);
 }
@@ -271,6 +272,7 @@ static void unset_main(struct block_internal *m)
 	m->flags &= ~BI_MAIN;
 	accept_amount(m, (xdag_amount_t)0 - amount);
 	accept_amount(m, unapply_block(m));
+    xd_rsdb_put_stats(m->time);
     xd_rsdb_merge_bi(m);
 	log_block("UNMAIN", m->hash, m->time, m->storage_pos);
 }
@@ -851,7 +853,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	if(tmpNodeBlock.flags & BI_OURS && xdag_diff_gt(diff0, g_xdag_extstats.hashrate_ours[i])) {
 		g_xdag_extstats.hashrate_ours[i] = diff0;
 	}
-    xd_rsdb_put_stats();
     xd_rsdb_put_extstats();
 end:
 	for(j = 0; j < keysCount; ++j) {
@@ -1218,7 +1219,7 @@ begin:
 
     xdag_mess("Loading xdag rocksdb blocks from local storage...");
 
-    if(xd_rsdb_init() == XDAG_RSDB_INIT_NEW) {
+    if(xd_rsdb_init(&t) == XDAG_RSDB_OP_SUCCESS) {
         xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback_sync);
     }
 

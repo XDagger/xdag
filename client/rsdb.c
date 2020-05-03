@@ -84,22 +84,26 @@ xd_rsdb_op_t xd_rsdb_pre_init(void)
     return XDAG_RSDB_OP_SUCCESS;
 }
 
-xd_rsdb_op_t xd_rsdb_init(void)
+xd_rsdb_op_t xd_rsdb_init(xdag_time_t *time)
 {
-    char key[1] ={[0]=SETTING_CREATED};
+    char key[1] = {[0]=SETTING_CREATED};
     char* value = NULL;
     size_t vlen = 0;
     value = xd_rsdb_getkey(key, 1, &vlen);
     if(!value) {
         xd_rsdb_put_setting(SETTING_VERSION, XDAG_VERSION, strlen(XDAG_VERSION));
         xd_rsdb_put_setting(SETTING_CREATED, "done", strlen("done"));
-        return XDAG_RSDB_INIT_NEW;
     } else if (strncmp("done", value, strlen("done")) == 0) {
         free(value);
+        value = NULL;
         xd_rsdb_load(g_xdag_rsdb);
-        return XDAG_RSDB_INIT_LOAD;
+        char time_key[1] = {[0]=SETTING_CUR_TIME};
+        if((value = xd_rsdb_getkey(time_key, 1, &vlen))) {
+            memcpy(time, value, sizeof(xdag_time_t));
+            free(value);
+        }
     }
-    return XDAG_RSDB_NULL;
+    return XDAG_RSDB_OP_SUCCESS;
 }
 
 xd_rsdb_op_t xd_rsdb_conf_check(xd_rsdb_t  *db)
@@ -300,9 +304,15 @@ xd_rsdb_op_t xd_rsdb_delkey(const char* key, size_t klen)
 }
 
 
-xd_rsdb_op_t xd_rsdb_put_stats(void)
+xd_rsdb_op_t xd_rsdb_put_stats(xdag_time_t time)
 {
-    return xd_rsdb_put_setting(SETTING_STATS, (const char *) &g_xdag_stats, sizeof(g_xdag_stats));
+    xd_rsdb_op_t ret = XDAG_RSDB_NULL;
+    if((ret = xd_rsdb_put_setting(SETTING_STATS, (const char *) &g_xdag_stats, sizeof(g_xdag_stats)))) {
+        return ret;
+    }
+
+    ret = xd_rsdb_put_setting(SETTING_CUR_TIME, (const char*)&time, sizeof(xdag_time_t));
+    return ret;
 }
 
 xd_rsdb_op_t xd_rsdb_get_stats(void)
