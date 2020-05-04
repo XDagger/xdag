@@ -99,6 +99,8 @@ int xdag_init(int argc, char **argv, int isGui)
 	signal(SIGINT, SIG_IGN);
 	signal(SIGTERM, SIG_IGN);
 #endif
+    xdag_mess("Reading wallet...");
+    if(dnet_key_init() < 0) return -1;
 
 	set_xdag_name();
 
@@ -108,10 +110,6 @@ int xdag_init(int argc, char **argv, int isGui)
 
 	g_xdag_run = 1;
 	xdag_show_state(0);
-
-	if(pre_init() < 0) {
-		return -1;
-	}
 	
 	struct startup_parameters parameters;
 	int res = parse_startup_parameters(argc, argv, &parameters);
@@ -119,16 +117,16 @@ int xdag_init(int argc, char **argv, int isGui)
 		return res;
 	}
 
-	if(setup_common()) {
-        return -1;
-	}
-
     if(parameters.transport_flags & XDAG_DAEMON) {
         daemonize();
         angelize();
     }
-    // *** when -d set,rocksdb init must after daemonize nad angelize
-    if(xd_rsdb_pre_init()) return -1;
+
+    // *** when -d set,pre_init() and setup_common() init must after daemonize nad angelize
+	if(pre_init() || setup_common()) {
+        return -1;
+	}
+
 	if(is_wallet()) {
 		if(setup_miner(&parameters, isGui) < 0) {
 			return -1;
@@ -330,11 +328,8 @@ int pre_init(void)
 int setup_common(void)
 {
 	//TODO: future xdag.wallet
-	xdag_mess("Reading wallet...");
-	if(dnet_key_init() < 0) return -1;
-	
 	if(xdag_wallet_init()) return -1;
-
+    if(xd_rsdb_pre_init()) return -1;
 	return 0;
 }
 
@@ -406,12 +401,6 @@ int setup_miner(struct startup_parameters *parameters, int isGui)
 		}
 		parameters->pool_address = pool_address_buf;
 	}
-
-    if(parameters->transport_flags & XDAG_DAEMON && !isGui) {
-        daemonize();
-    }
-
-    //angelize();
 
 	//TODO: think of combining the logic with pool-initialization functions (after decision what to do with xdag_blocks_start)
 	if(parameters->is_rpc) {
