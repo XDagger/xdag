@@ -119,7 +119,9 @@ int xdag_init(int argc, char **argv, int isGui)
 		return res;
 	}
 	
-	setup_common();
+	if(setup_common()) {
+        return -1;
+	}
 
 	if(is_wallet()) {
 		if(setup_miner(&parameters, isGui) < 0) {
@@ -466,6 +468,7 @@ int dnet_key_init(void)
 	int err = dnet_crypt_init();
 	if(err < 0) {
 		printf("Password incorrect.\n");
+		fflush(stdout);
 		return err;
 	}
 	return 0;
