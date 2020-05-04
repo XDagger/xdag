@@ -118,11 +118,17 @@ int xdag_init(int argc, char **argv, int isGui)
 	if(res <= 0) {
 		return res;
 	}
-	
+
 	if(setup_common()) {
         return -1;
 	}
 
+    if(parameters.transport_flags & XDAG_DAEMON) {
+        daemonize();
+        angelize();
+    }
+    // *** when -d set,rocksdb init must after daemonize nad angelize
+    if(xd_rsdb_pre_init()) return -1;
 	if(is_wallet()) {
 		if(setup_miner(&parameters, isGui) < 0) {
 			return -1;
@@ -328,8 +334,6 @@ int setup_common(void)
 	if(dnet_key_init() < 0) return -1;
 	
 	if(xdag_wallet_init()) return -1;
-    
-    if(xd_rsdb_pre_init()) return -1;
 
 	return 0;
 }

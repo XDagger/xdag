@@ -827,11 +827,6 @@ int dnet_init(int argc, char **argv)
 		dnet_session_init_crypt(g_crypt, g_xkeys.sect0.word);
 	}
 
-	if(is_daemon) {
-		daemonize();
-	}
-
-	//angelize();
 	for(i = 0; i < nthreads; ++i) {
         pthread_attr_t * attr_xthread_main = NULL;
 #if defined(__APPLE__)
