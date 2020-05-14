@@ -601,18 +601,8 @@ void processStatsCommand(FILE *out)
 
 void processExitCommand()
 {
-	xdag_mess("Closing wallet module...");
-	xdag_wallet_finish();
-	xdag_mess("Closing netdb module...");
-	xdag_netdb_finish();
-	xdag_mess("Closing pool module...");
-	xdag_pool_finish();
-	xdag_mess("Closing block module...");
-	xdag_block_finish();
-	xdag_mess("Closing storage module...");
-	xdag_storage_finish();
-//	xdag_mess("Closing memory module...");
-//	xdag_mem_finish();
+    xdag_mess("exit 0");
+    exit(0);
 }
 
 void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd)
