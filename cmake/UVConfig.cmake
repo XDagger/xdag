@@ -1,13 +1,13 @@
 find_path(UV_ROOT_DIR
         NAMES include/uv.h
-        PATHS /usr/local/ /usr/local/opt/uv/ /opt/local/ /usr/
+        PATHS /usr/local/ /usr/local/opt/uv/ /opt/local/ /usr/ /usr/lib/x86_64-linux-gnu
         NO_DEFAULT_PATH
         )
 message("uv root dir ${UV_ROOT_DIR}")
 
 find_path(UV_DIR
         NAMES include/uv.h
-        PATHS /usr/local/ /usr/local/opt/gtest/ /opt/local/ /usr/
+        PATHS /usr/local/ /usr/local/opt/gtest/ /opt/local/ /usr/ /usr/lib/x86_64-linux-gnu
         NO_DEFAULT_PATH
         )
 message("uv dir ${UV_DIR}")
