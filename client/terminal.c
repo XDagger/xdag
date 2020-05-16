@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <uv.h>
+#include <string.h>
 #include "commands.h"
 #include "transport.h"
 #include "terminal.h"
