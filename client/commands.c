@@ -602,7 +602,6 @@ void processStatsCommand(FILE *out)
 void processExitCommand()
 {
     xdag_mess("exit 0");
-    exit(0);
 }
 
 void processXferCommand(char *nextParam, FILE *out, int ispwd, uint32_t* pwd)
