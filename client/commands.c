@@ -310,28 +310,6 @@ XDAG_COMMAND* find_xdag_command(char *name)
 	return (XDAG_COMMAND *)NULL;
 }
 
-void startCommandProcessing(int transportFlags)
-{
-	char cmd[XDAG_COMMAND_MAX] = {0};
-	if(!(transportFlags & XDAG_DAEMON)) printf("Type command, help for example.\n");
-
-	xdag_init_commands();
-
-	for(;;) {
-		if(transportFlags & XDAG_DAEMON) {
-			sleep(100);
-		} else {
-			read_command(cmd);
-			if(strlen(cmd) > 0) {
-				int ret = xdag_command(cmd, stdout);
-				if(ret < 0) {
-					break;
-				}
-			}
-		}
-	}
-}
-
 int xdag_command(char *cmd, FILE *out)
 {
 	uint32_t pwd[4] = {0};

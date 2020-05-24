@@ -137,24 +137,19 @@ int xdag_init(int argc, char **argv, int isGui)
 		}
 	}
 
+    pthread_t terminal_thread;
+    void *status;
 	if(!isGui) {
 		if(is_pool() || (parameters.transport_flags & XDAG_DAEMON) > 0) {
 			xdag_mess("Starting terminal server...");
-			pthread_t th;
-			const int err = pthread_create(&th, 0, &terminal_server, 0);
+			const int err = pthread_create(&terminal_thread, 0, &terminal_server, 0);
 			if(err != 0) {
 				printf("create terminal_server thread failed, error : %s\n", strerror(err));
 				return -1;
 			}
-            if(pthread_detach(th) != 0) {
-                printf("detach terminal_server thread failed, error : %s\n", strerror(err));
-                return 0;
-            }
+            pthread_join(terminal_thread, status);
 		}
-
-		startCommandProcessing(parameters.transport_flags);
 	}
-
 	return 0;
 }
 
