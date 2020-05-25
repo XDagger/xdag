@@ -136,10 +136,12 @@ static void command_work(uv_work_t* work) {
     char *ptr = NULL;
     char cmd[XDAG_COMMAND_MAX] = {0};
     char cmd2[XDAG_COMMAND_MAX] = {0};
-    read_command(cmd);
-    strncpy(cmd2, cmd, strlen(cmd));
-    ptr = strtok_r(cmd2, " \t\r\n", &lasts);
-    if(!ptr) return;
+    while(ptr == NULL) {
+        read_command(cmd);
+        strncpy(cmd2, cmd, strlen(cmd));
+        ptr = strtok_r(cmd2, " \t\r\n", &lasts);
+        if(ptr) break;
+    }
     if(!strcmp(ptr, "exit") || !strcmp(ptr, "terminate")) {
         uv_stop(loop);
     }
