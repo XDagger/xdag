@@ -1822,7 +1822,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 
 	for(int i = 0; i < bi->nlinks; i++) {
 	    struct block_internal b;
-	    if(bi->linkamount[i] &&xd_rsdb_get_bi(bi->link[i], &b)){
+	    if(bi->linkamount[i] && !xd_rsdb_get_bi(bi->link[i], &b)){
             xdag_remark_t remark;
             get_remark(&b, remark);
             xdag_xtime_to_string(b.time, time_buf);
@@ -1886,6 +1886,9 @@ void xdag_list_main_blocks(int count, int print_only_addresses, FILE *out)
             ++i;
         }
     }
+    if(g_xdag_stats.nmain == 0) {
+        fprintf(out, "empty\n");
+    }
     pthread_mutex_unlock(&block_mutex);
 }
 
@@ -1945,7 +1948,7 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
             struct block_internal b;
             xdag_remark_t remark;
             get_remark(bi, remark);
-            if(bi->linkamount[i] &&xd_rsdb_get_bi(bi->link[i], &b)){
+            if(bi->linkamount[i] && !xd_rsdb_get_bi(bi->link[i], &b)){
                 if(callback(data, 1 << i & bi->in_mask, bi->flags, bi->hash, bi->linkamount[i], bi->time, (const char*)remark)) {
                     return i;
                 }
