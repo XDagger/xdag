@@ -219,7 +219,6 @@ int terminal_client() {
     uv_pipe_init(loop, &client_pipe, 0);
     uv_tty_init(loop, &tty_stdout,1,0);
     uv_pipe_connect((uv_connect_t*)&conn, &client_pipe, UNIX_SOCK, on_client_connect);
-    return uv_run(loop, UV_RUN_DEFAULT);
+    uv_run(loop, UV_RUN_DEFAULT);
+    return -1;
 }
-// end pipe client
-
