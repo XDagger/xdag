@@ -1,21 +1,16 @@
-/* cheatcoin main, T13.654-T14.582 $DVS:time$ */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <ctype.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include<sys/types.h>
 #include<sys/wait.h>
 #ifndef _WIN32
 #include <signal.h>
 #include <gperftools/profiler.h>
 #include <gperftools/heap-profiler.h>
 #endif
-#include "system.h"
 #include "address.h"
 #include "block.h"
 #include "crypt.h"
@@ -29,7 +24,6 @@
 #include "mining_common.h"
 #include "commands.h"
 #include "terminal.h"
-#include "memory.h"
 #include "miner.h"
 #include "pool.h"
 #include "network.h"
@@ -99,9 +93,6 @@ int xdag_init(int argc, char **argv, int isGui)
 	signal(SIGINT, SIG_IGN);
 	signal(SIGTERM, SIG_IGN);
 #endif
-    xdag_mess("Reading wallet...");
-    if(dnet_key_init() < 0) return -1;
-
 	set_xdag_name();
 
 	if(!isGui) {
@@ -116,6 +107,9 @@ int xdag_init(int argc, char **argv, int isGui)
 	if(res <= 0) {
 		return res;
 	}
+
+    xdag_mess("Reading wallet...");
+    if(dnet_key_init() < 0) return -1;
 
     if(parameters.transport_flags & XDAG_DAEMON) {
         daemonize();
