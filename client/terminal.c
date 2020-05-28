@@ -63,13 +63,13 @@ static void exec_xdag_command(uv_handle_t* handle, char *cmd) {
         write_req_t *req = (write_req_t*) malloc(sizeof(write_req_t));
         req->buf = uv_buf_init((char*) malloc(len), len);
         memcpy(req->buf.base, buffer, len);
-        uv_write((uv_write_t*) req, handle, &req->buf, 1, on_server_write);
+        uv_write((uv_write_t*) req, (uv_stream_t*)handle, &req->buf, 1, on_server_write);
     }
 }
 
 static void on_server_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
     if (nread > 0) {
-        exec_xdag_command(client, buf->base);
+        exec_xdag_command((uv_handle_t*)client, buf->base);
     }
 
     if (nread < 0) {
@@ -124,7 +124,7 @@ void* terminal_server()
         exit(-1);
     }
 
-    return uv_run(loop, UV_RUN_DEFAULT);
+    uv_run(loop, UV_RUN_DEFAULT);
 }
 // end pipe server
 
@@ -157,7 +157,7 @@ static void command_work(uv_work_t* work) {
     xdag_cmd->cmd = strdup(cmd);
 
     if(xdag_cmd->type == 0) {
-        exec_xdag_command(&tty_stdout, cmd);
+        exec_xdag_command((uv_handle_t*)&tty_stdout, cmd);
     }
 }
 
