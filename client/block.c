@@ -1517,7 +1517,7 @@ int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag_hash_t
     {
         size_t vlen = 0;
         struct block_internal *bi = (struct block_internal*)rocksdb_iter_value(iter, &vlen);
-        if(vlen) {
+        if(vlen && bi->amount != 0) {
             xdag_hash2address(bi->hash, address);
             printf("%s  %20.9Lf\n", address, amount2xdags(bi->amount));
         }
@@ -1830,19 +1830,6 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "                                 block as address: details\n");
 	fprintf(out, " direction  transaction                                amount       time                     remark                          \n");
 	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
-
-//	for(int i = 0; i < bi->nlinks; i++) {
-//	    struct block_internal b;
-//	    if(bi->linkamount[i] && !xd_rsdb_get_bi(bi->link[i], &b)){
-//            xdag_remark_t remark;
-//            get_remark(&b, remark);
-//            xdag_xtime_to_string(b.time, time_buf);
-//            xdag_hash2address(b.hash, address);
-//            fprintf(out, "    %6s: %s  %10u.%09u  %s  %s\n",
-//						(1 << i & b.in_mask ? "output" : " input"), address,
-//						pramount(bi->linkamount[i]), time_buf, remark);
-//	    }
-//	}
 
     int N = 0x10000;
     int n = 0;

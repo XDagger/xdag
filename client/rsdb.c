@@ -69,8 +69,8 @@ xd_rsdb_op_t xd_rsdb_pre_init(void)
     memset(rsdb_config, 0, sizeof(xd_rsdb_conf_t));
 
     rsdb->config = rsdb_config;
-    rsdb->config->db_name = strdup("chainstate");
-    rsdb->config->db_path = strdup("chainstate");
+    rsdb->config->db_name = strdup(g_xdag_testnet?"chainstate-test":"chainstate");
+    rsdb->config->db_path = strdup(g_xdag_testnet?"chainstate-test":"chainstate");
 
     int error_code = 0;
     if((error_code = xd_rsdb_conf(rsdb))) {
