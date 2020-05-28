@@ -65,7 +65,7 @@ typedef enum xd_rsdb_key_type {
     HASH_BLOCK_INTERNAL                   =  0x21,
     HASH_BLOCK_OUR                        =  0x22,
     HASH_BLOCK_REMARK                     =  0x23,
-    HASH_BLOCK_SYNC                       =  0x24,
+    HASH_BLOCK_BACKREF                    =  0x24,
     HASH_BLOCK_CACHE                      =  0x25
 } xd_rsdb_key_t;
 
@@ -99,6 +99,7 @@ xd_rsdb_op_t xd_rsdb_get_remark(xdag_hashlow_t hash, xdag_remark_t);
 xd_rsdb_op_t xd_rsdb_get_cacheblock(xdag_hashlow_t hash, struct xdag_block *xb);
 
 xd_rsdb_op_t xd_rsdb_putkey(const char* key, size_t klen, const char* value, size_t vlen);
+xd_rsdb_op_t xd_rsdb_put_backref(xdag_hashlow_t backref, struct block_internal*);
 xd_rsdb_op_t xd_rsdb_put_ournext(xdag_hashlow_t hash, xdag_hashlow_t next);
 xd_rsdb_op_t xd_rsdb_put_setting(xd_rsdb_key_t type, const char* value, size_t vlen);
 xd_rsdb_op_t xd_rsdb_put_orpblock(xdag_hashlow_t hash, struct xdag_block* xb);

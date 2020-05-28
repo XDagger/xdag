@@ -4,7 +4,7 @@
 #include <time.h>
 #include "block.h"
 
-#define XDAG_COMMAND_MAX	0x1000
+#define XDAG_COMMAND_MAX	0x2000
 
 #ifdef __cplusplus
 extern "C" {

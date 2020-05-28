@@ -44,6 +44,7 @@ int remove_orphan(xdag_hashlow_t);
 void add_orphan(struct block_internal*, struct xdag_block*);
 static inline size_t remark_acceptance(xdag_remark_t);
 static int add_remark_bi(struct block_internal*, xdag_remark_t);
+static void add_backref(xdag_hashlow_t , struct block_internal*);
 static inline const char* get_remark(struct block_internal*, xdag_remark_t);
 static int load_remark(struct block_internal*, xdag_remark_t);
 //static void order_ourblocks_by_amount(struct block_internal *bi);
@@ -835,6 +836,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 
     for(i = 0; i < tmpNodeBlock.nlinks; ++i) {
         remove_orphan(tmpNodeBlock.link[i]);
+        if(tmpNodeBlock.linkamount[i]) {
+            add_backref(tmpNodeBlock.link[i], nodeBlock);
+        }
     }
 	add_orphan(nodeBlock, newBlock);
 	log_block((tmpNodeBlock.flags & BI_OURS ? "Good +" : "Good  "), tmpNodeBlock.hash, tmpNodeBlock.time, tmpNodeBlock.storage_pos);
@@ -1670,6 +1674,13 @@ int xdag_blocks_reset(void)
 
 #define pramount(amount) xdag_amount2xdag(amount), xdag_amount2cheato(amount)
 
+static int bi_compar(const void *l, const void *r)
+{
+    xtime_t tl = (*(struct block_internal **)l)->time, tr = (*(struct block_internal **)r)->time;
+
+    return (tl < tr) - (tl > tr);
+}
+
 // returns string representation for the block state. Ignores BI_OURS flag
 const char* xdag_get_block_state_info(uint8_t flags)
 {
@@ -1820,18 +1831,70 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, " direction  transaction                                amount       time                     remark                          \n");
 	fprintf(out, "-----------------------------------------------------------------------------------------------------------------------------\n");
 
-	for(int i = 0; i < bi->nlinks; i++) {
-	    struct block_internal b;
-	    if(bi->linkamount[i] && !xd_rsdb_get_bi(bi->link[i], &b)){
-            xdag_remark_t remark;
-            get_remark(&b, remark);
-            xdag_xtime_to_string(b.time, time_buf);
-            xdag_hash2address(b.hash, address);
-            fprintf(out, "    %6s: %s  %10u.%09u  %s  %s\n",
-						(1 << i & b.in_mask ? "output" : " input"), address,
-						pramount(bi->linkamount[i]), time_buf, remark);
-	    }
-	}
+//	for(int i = 0; i < bi->nlinks; i++) {
+//	    struct block_internal b;
+//	    if(bi->linkamount[i] && !xd_rsdb_get_bi(bi->link[i], &b)){
+//            xdag_remark_t remark;
+//            get_remark(&b, remark);
+//            xdag_xtime_to_string(b.time, time_buf);
+//            xdag_hash2address(b.hash, address);
+//            fprintf(out, "    %6s: %s  %10u.%09u  %s  %s\n",
+//						(1 << i & b.in_mask ? "output" : " input"), address,
+//						pramount(bi->linkamount[i]), time_buf, remark);
+//	    }
+//	}
+
+    int N = 0x10000;
+    int n = 0;
+    struct block_internal **ba = malloc(N * sizeof(struct block_internal *));
+    char seek_key[RSDB_KEY_LEN] = {[0] = HASH_BLOCK_BACKREF};
+    size_t vlen = 0;
+    size_t klen = 0;
+    const char *key = NULL;
+    memcpy(seek_key + 1, bi->hash, RSDB_KEY_LEN - 1);
+    rocksdb_iterator_t* iter = rocksdb_create_iterator(g_xdag_rsdb->db, g_xdag_rsdb->read_options);
+    for (rocksdb_iter_seek(iter, seek_key, sizeof(seek_key));
+         rocksdb_iter_valid(iter) && (key = rocksdb_iter_key(iter, &klen)) && !memcmp(seek_key, key, sizeof(seek_key));
+         rocksdb_iter_next(iter))
+    {
+        const char *value = rocksdb_iter_value(iter, &vlen);
+        if(value && klen) {
+            xdag_hashlow_t hash = {0};
+            memcpy(hash, value, sizeof(xdag_hashlow_t));
+            struct block_internal b;
+            if(!xd_rsdb_get_bi(hash, &b)) {
+                struct block_internal *tbi = malloc(sizeof(struct block_internal));
+                memset(tbi, 0, sizeof(struct block_internal));
+                memcpy(tbi, &b, sizeof(struct block_internal));
+                ba[n++] = tbi;
+            }
+        }
+    }
+    if(iter) rocksdb_iter_destroy(iter);
+
+    if (n) {
+        qsort(ba, n, sizeof(struct block_internal *), bi_compar);
+
+        for (i = 0; i < n; ++i) {
+            if (!i || ba[i] != ba[i - 1]) {
+                struct block_internal *ri = ba[i];
+                if (ri->flags & BI_APPLIED) {
+                    for (int j = 0; j < ri->nlinks; j++) {
+                        if(!memcmp(ri->link[j], bi->hash, sizeof(xdag_hashlow_t)) && ri->linkamount[j]) {
+                            xdag_xtime_to_string(ri->time, time_buf);
+                            xdag_hash2address(ri->hash, address);
+                            get_remark(ri, remark);
+                            fprintf(out, "    %6s: %s  %10u.%09u  %s  %s\n",
+                                    (1 << j & ri->in_mask ? "output" : " input"), address,
+                                    pramount(ri->linkamount[j]), time_buf, remark);
+                        }
+                    }
+                }
+            }
+            free(ba[i]);
+        }
+        free(ba);
+    }
 
     if (bi->flags & BI_MAIN) {
 		xdag_hash2address(h, address);
@@ -2123,30 +2186,10 @@ static int add_remark_bi(struct block_internal* bi, xdag_remark_t strbuf)
 	return 1;
 }
 
-//static void add_backref(struct block_internal* blockRef, struct block_internal* nodeBlock)
-//{
-//	int i = 0;
-//
-//	struct block_backrefs *tmp = (struct block_backrefs*)atomic_load_explicit_uintptr(&blockRef->backrefs, memory_order_acquire);
-//	// LIFO list: if the first element doesn't exist or it is full, a new element of the backrefs list will be created
-//	// and added as first element of backrefs block list
-//	if( tmp == NULL || tmp->backrefs[N_BACKREFS - 1]) {
-//		struct block_backrefs *blockRefs_to_insert = xdag_malloc(sizeof(struct block_backrefs));
-//		if(blockRefs_to_insert == NULL) {
-//			xdag_err("xdag_malloc failed. [function add_backref]");
-//			return;
-//		}
-//		memset(blockRefs_to_insert, 0, sizeof(struct block_backrefs));
-//		blockRefs_to_insert->next = tmp;
-//		atomic_store_explicit_uintptr(&blockRef->backrefs, (uintptr_t)blockRefs_to_insert, memory_order_release);
-//		tmp = blockRefs_to_insert;
-//	}
-//
-//	// searching the first free array element
-//	for(; tmp->backrefs[i]; ++i);
-//	// adding the actual block memory address to the backrefs array
-//	tmp->backrefs[i] = nodeBlock;
-//}
+static void add_backref(xdag_hashlow_t backref, struct block_internal* nodeBlock)
+{
+	xd_rsdb_put_backref(backref, nodeBlock);
+}
 
 //static inline int get_nfield(struct xdag_block *bref, int field_type)
 //{

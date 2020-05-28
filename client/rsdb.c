@@ -504,6 +504,21 @@ xd_rsdb_op_t xd_rsdb_put_remark(struct block_internal* bi, xdag_remark_t strbuf)
     return XDAG_RSDB_OP_SUCCESS;
 }
 
+xd_rsdb_op_t xd_rsdb_put_backref(xdag_hashlow_t backref, struct block_internal* bi)
+{
+    int retcode = 0;
+    if(!backref) return XDAG_RSDB_NULL;
+    char key[RSDB_KEY_LEN * 2] = {[0] = HASH_BLOCK_BACKREF};
+    memcpy(key + 1, backref, RSDB_KEY_LEN - 1);
+    key[RSDB_KEY_LEN] = '_';
+    memcpy(key + RSDB_KEY_LEN + 1, bi->hash, RSDB_KEY_LEN - 1);
+    retcode = xd_rsdb_putkey(key, RSDB_KEY_LEN * 2, (const char *) bi->hash, sizeof(xdag_hashlow_t));
+    if(retcode) {
+        return retcode;
+    }
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
 xd_rsdb_op_t xd_rsdb_put_ournext(xdag_hashlow_t hash, xdag_hashlow_t next)
 {
     int retcode = 0;
