@@ -134,7 +134,7 @@ int xdag_init(int argc, char **argv, int isGui)
     pthread_t terminal_thread;
     void *status = NULL;
 	if(!isGui) {
-		if(is_pool() || (parameters.transport_flags & XDAG_DAEMON) > 0) {
+		if(is_pool() || is_wallet() || (parameters.transport_flags & XDAG_DAEMON) > 0) {
 			xdag_mess("Starting terminal server...");
 			const int err = pthread_create(&terminal_thread, 0, &terminal_server, 0);
 			if(err != 0) {
