@@ -1224,7 +1224,7 @@ begin:
     xdag_mess("Loading xdag rocksdb blocks from local storage...");
 
     if(xd_rsdb_init(&t) == XDAG_RSDB_OP_SUCCESS) {
-        xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback_sync);
+        xdag_load_blocks(MAIN_TIME(t) << 16, xdag_get_frame() << 16, &t, &add_block_callback_sync);
     }
 
 	xdag_mess("Finish loading blocks, time cost %ldms", xdag_get_xtimestamp() - start);
