@@ -5,7 +5,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include<sys/wait.h>
+#include <sys/wait.h>
+#include <uv.h>
 #ifndef _WIN32
 #include <signal.h>
 #include <gperftools/profiler.h>
@@ -131,17 +132,11 @@ int xdag_init(int argc, char **argv, int isGui)
 		}
 	}
 
-    pthread_t terminal_thread;
-    void *status = NULL;
 	if(!isGui) {
 		if(is_pool() || is_wallet() || (parameters.transport_flags & XDAG_DAEMON) > 0) {
-			xdag_mess("Starting terminal server...");
-			const int err = pthread_create(&terminal_thread, 0, &terminal_server, 0);
-			if(err != 0) {
-				printf("create terminal_server thread failed, error : %s\n", strerror(err));
-				return -1;
-			}
-            pthread_join(terminal_thread, status);
+            uv_thread_t terminal_uv_thread;
+            uv_thread_create(&terminal_uv_thread, terminal_server, NULL);
+            uv_thread_join(&terminal_uv_thread);
 		}
 	}
 	return 0;
@@ -185,7 +180,10 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 			printUsage(argv[0]);
 			return 0;
 		} else if(ARG_EQUAL(argv[i], "-i", "")) { /* interactive mode */
-			return terminal_client(NULL);
+            uv_thread_t terminal_uv_thread;
+            uv_thread_create(&terminal_uv_thread, terminal_client, NULL);
+            uv_thread_join(&terminal_uv_thread);
+			return -1;
 		} else if(ARG_EQUAL(argv[i], "-z", "")) { /* memory map  */
 			if(++i < argc) {
 //				xdag_mem_tempfile_path(argv[i]);

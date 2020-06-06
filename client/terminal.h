@@ -3,7 +3,7 @@
 
 #define UNIX_SOCK  "unix_sock.dat"
 
-int terminal_client();
-void* terminal_server();
+void terminal_client(void *arg);
+void terminal_server(void *arg);
 
 #endif //XDAG_TERMINAL_H
