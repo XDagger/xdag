@@ -147,7 +147,6 @@ xd_rsdb_op_t xd_rsdb_conf(xd_rsdb_t  *db)
     rocksdb_options_set_max_open_files(options, 1024);
     rocksdb_options_set_create_if_missing(options, 1);
     rocksdb_options_set_compression(options, rocksdb_lz4_compression);
-    rocksdb_options_increase_parallelism(options, (int)(cpus));
 
     rocksdb_block_based_table_options_t *block_based_table_options = rocksdb_block_based_options_create();
     rocksdb_block_based_options_set_filter_policy(block_based_table_options, filter_policy);
