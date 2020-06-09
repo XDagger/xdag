@@ -169,8 +169,8 @@ static void on_client_read_pipe(uv_stream_t* stream, ssize_t nread, const uv_buf
     if(nread > 0) {
         write_req_t *wri = (write_req_t *)malloc(sizeof(write_req_t));
         wri->buf = uv_buf_init(buf->base, nread);
-        // libuv cannot read more than 8192 bytes at one time
-        if(nread == 8192) {
+        // libuv cannot read more than 8192(macos) or 4096(linux) bytes at one time
+        if(nread == 8192 || nread == 4096) {
             uv_write((uv_write_t*)wri,(uv_stream_t*)&tty_stdout, &wri->buf,1, on_stdout_write_without_work);
         } else {
             uv_write((uv_write_t*)wri,(uv_stream_t*)&tty_stdout, &wri->buf,1, on_stdout_write);
