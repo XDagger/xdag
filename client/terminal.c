@@ -39,8 +39,6 @@ static void free_write_req(uv_write_t *req) {
 }
 
 static void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
-    xdag_session_t *xd_session = (xdag_session_t*)handle->data;
-
     buf->base = (char*)malloc(suggested_size);
     buf->len = suggested_size;
 }
@@ -55,19 +53,24 @@ static void on_server_write(uv_write_t *req, int status) {
 
 static void exec_xdag_command(uv_handle_t* handle, char *cmd) {
     FILE *tmp_fp = tmpfile();
+    int offset = 0;
     if(xdag_command(cmd, tmp_fp) < 0) {
         uv_close((uv_handle_t*) handle, NULL);
     }
     fseek(tmp_fp, 0, SEEK_END);
     size_t len = ftell(tmp_fp);
     fseek(tmp_fp, 0, SEEK_SET);
-
+    if(uv_handle_get_type(handle) == UV_NAMED_PIPE) {
+        offset = sizeof(size_t);
+    }
     if(len > 0) {
         write_req_t *req = (write_req_t*) malloc(sizeof(write_req_t));
-        len += sizeof(size_t);
+        len += offset;
         req->buf = uv_buf_init((char*) malloc(len) , len);
-        memcpy(req->buf.base, &len, sizeof(size_t));
-        fread(req->buf.base + sizeof(size_t), len - sizeof(size_t), 1, tmp_fp);
+        if(offset) {
+            memcpy(req->buf.base, &len, offset);
+        }
+        fread(req->buf.base + offset, len - offset, 1, tmp_fp);
         uv_write((uv_write_t*) req, (uv_stream_t*)handle, &req->buf, 1, on_server_write);
     }
     fclose(tmp_fp);
@@ -177,14 +180,15 @@ static void on_client_read_pipe(uv_stream_t* stream, ssize_t nread, const uv_buf
             memcpy(&(xd_session->recv_size), buf->base, sizeof(size_t));
             xd_session->recv_buf = malloc(xd_session->recv_size);
             memset(xd_session->recv_buf, 0, xd_session->recv_size);
+            xd_session->recved_length = 0;
         }
-
         memcpy(xd_session->recv_buf + xd_session->recved_length, buf->base, nread);
         xd_session->recved_length += nread;
-        if(xd_session->recved_length >= xd_session->recv_size) {
+        if(xd_session->recved_length == xd_session->recv_size) {
             write_req_t *wri = (write_req_t *)malloc(sizeof(write_req_t));
-            wri->buf = uv_buf_init((char*)malloc(xd_session->recv_size), xd_session->recv_size);
-            memcpy(wri->buf.base, xd_session->recv_buf + sizeof(size_t), xd_session->recv_size - sizeof(size_t));
+            size_t readable_size = xd_session->recv_size - sizeof(size_t);
+            wri->buf = uv_buf_init((char*)malloc(readable_size), readable_size);
+            memcpy(wri->buf.base, xd_session->recv_buf + sizeof(size_t), readable_size);
             uv_write((uv_write_t*)wri,(uv_stream_t*)&tty_stdout, &wri->buf,1, on_stdout_write);
             free(xd_session->recv_buf);
             memset(xd_session, 0, sizeof(xdag_session_t));
