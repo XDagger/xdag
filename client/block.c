@@ -1724,7 +1724,7 @@ void append_block_info(struct block_internal *bi)
 
 	char message[4096] = {0};
 	char buf[128] = {0};
-    xdag_remark_t remark;
+    xdag_remark_t remark = {0};
     get_remark(bi, remark);
 	sprintf(message,
 			"{\"time\":\"%s\""
@@ -1772,7 +1772,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	char time_buf[64] = {0};
 	char address[33] = {0};
     xdag_amount_t amount = 0;
-    xdag_remark_t remark;
+    xdag_remark_t remark = {0};
 	int i;
 
     struct block_internal tbi, *bi = NULL;
@@ -1904,7 +1904,7 @@ static void print_block(struct block_internal *block, int print_only_addresses, 
 		fprintf(out, "%s\n", address);
 	} else {
 		xdag_xtime_to_string(block->time, time_buf);
-        xdag_remark_t remark;
+        xdag_remark_t remark = {0};
         get_remark(block, remark);
 		fprintf(out, "%s   %s   %-8s  %-32s\n", address, time_buf, xdag_get_block_state_info(block->flags), remark);
 	}
@@ -1996,7 +1996,7 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
         struct block_internal *bi = &b;
         for(int i = 0; i < bi->nlinks; i++) {
             struct block_internal b;
-            xdag_remark_t remark;
+            xdag_remark_t remark = {0};
             get_remark(bi, remark);
             if(bi->linkamount[i] && !xd_rsdb_get_bi(bi->link[i], &b)){
                 if(callback(data, 1 << i & bi->in_mask, bi->flags, bi->hash, bi->linkamount[i], bi->time, (const char*)remark)) {
@@ -2139,7 +2139,7 @@ int xdag_get_block_info(xdag_hash_t hash, void *info, int (*info_callback)(void*
 	pthread_mutex_unlock(&block_mutex);
 
 	if(info_callback && !retcode) {
-        xdag_remark_t remark;
+        xdag_remark_t remark = {0};
         get_remark(&b, remark);
 		info_callback(info, b.flags & ~BI_OURS,  b.hash, b.amount, b.time, b.storage_pos, (const char*)remark);
 	}
