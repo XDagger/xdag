@@ -47,6 +47,13 @@ static void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *b
     buf->len = suggested_size;
 }
 
+static void on_close(uv_handle_t* handle) {
+    xdag_session_t  *xd_session = (xdag_session_t*)handle->data;
+    if(xd_session) {
+        free(xd_session);
+    }
+}
+
 // start pipe server
 static void on_server_write(uv_write_t *req, int status) {
     check_uv(status);
@@ -57,7 +64,7 @@ static void exec_xdag_command(uv_handle_t* handle, char *cmd) {
     FILE *tmp_fp = tmpfile();
     int offset = 0;
     if(xdag_command(cmd, tmp_fp) < 0) {
-        uv_close((uv_handle_t*) handle, NULL);
+        uv_close((uv_handle_t*) handle, on_close);
     }
     fseek(tmp_fp, 0, SEEK_END);
     size_t len = ftell(tmp_fp);
@@ -164,7 +171,7 @@ static void on_client_read_pipe(uv_stream_t* stream, ssize_t nread, const uv_buf
     xdag_session_t  *xd_session = (xdag_session_t*)stream->data;
     if (nread < 0) {
         fprintf(stderr, "pipe read error %s\n", uv_err_name(nread));
-        uv_close((uv_handle_t*)stream, NULL);
+        uv_close((uv_handle_t*)stream, on_close);
         uv_stop(&loop);
     } else if(nread > 0) {
         if(xd_session->recv_size == 0) {
