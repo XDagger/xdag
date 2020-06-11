@@ -7,7 +7,7 @@
     do { \
         int code = (status); \
         if(code < 0){ \
-            fprintf(stderr, "%s: %s\n", uv_err_name(code), uv_strerror(code)); \
+            xdag_err("%s: %s\n", uv_err_name(code), uv_strerror(code)); \
             exit(code); \
         } \
     } while(0)

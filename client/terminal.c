@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <uv.h>
 #include <string.h>
+#include "utils/log.h"
 #include "commands.h"
 #include "transport.h"
 #include "terminal.h"
@@ -118,6 +119,7 @@ static void on_server_new_connection(uv_stream_t *server, int status) {
 
 void terminal_server(void *arg)
 {
+    int transport_flags = *((int*)arg) ;
     xdag_init_commands();
     xdag_cmd_t *xdag_cmd = malloc(sizeof(xdag_cmd_t));
     memset(xdag_cmd, 0, sizeof(xdag_cmd_t));
@@ -126,7 +128,9 @@ void terminal_server(void *arg)
 
     check_uv(uv_loop_init(&loop));
     check_uv(uv_pipe_init(&loop, &server_pipe, 0));
-    check_uv(uv_tty_init(&loop, &tty_stdout, 1, 0));
+    if( (transport_flags & XDAG_DAEMON) == 0) {
+        check_uv(uv_tty_init(&loop, &tty_stdout, 1, 0));
+    }
     unlink(UNIX_SOCK);
     check_uv(uv_pipe_bind(&server_pipe, UNIX_SOCK));
     check_uv(uv_signal_init(&loop, &sigterm));

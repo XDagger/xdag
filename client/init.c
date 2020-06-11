@@ -135,7 +135,7 @@ int xdag_init(int argc, char **argv, int isGui)
 	if(!isGui) {
 		if(is_pool() || is_wallet() || (parameters.transport_flags & XDAG_DAEMON) > 0) {
             uv_thread_t terminal_uv_thread;
-            uv_thread_create(&terminal_uv_thread, terminal_server, NULL);
+            uv_thread_create(&terminal_uv_thread, terminal_server, &parameters.transport_flags);
             uv_thread_join(&terminal_uv_thread);
 		}
 	}
