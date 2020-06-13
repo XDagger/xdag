@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/wait.h>
-#include <uv.h>
 #ifndef _WIN32
 #include <signal.h>
 #include <gperftools/profiler.h>
