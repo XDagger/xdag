@@ -34,7 +34,6 @@ include(cmake/RocksDBConfig.cmake)
 include(cmake/Secp256k1Config.cmake)
 include(cmake/OpenSSLConfig.cmake)
 include(cmake/TCMallocConfig.cmake)
-include(cmake/UVConfig.cmake)
 #[2]end
 
 #[3]download and compile projects in hunter
@@ -72,8 +71,6 @@ if(TCMALLOC_FOUND)
 else()
   message(FATAL_ERROR "Failed to find TCMalloc dependency!")
 endif()
-
-find_package(UV CONFIG)
 #[3]end
 
 #[4]find original libraries in system start
@@ -152,7 +149,6 @@ target_include_directories(
         ${SECP256K1_INCLUDE_DIR}
         ${OPENSSL_INCLUDE_DIR}
         ${TCMALLOC_INCLUDE_DIR}
-        ${UV_INCLUDE_DIR}
 )
 target_link_libraries(
         ${PROJECT_NAME}
@@ -164,7 +160,6 @@ target_link_libraries(
         ${OPENSSL_CRYPTO_LIBRARY}
         ${TCMALLOC_LIBRARY}
         ${PROFILER_LIBRARY}
-        ${UV_LIBRARY}
         m
 	    dl
 )

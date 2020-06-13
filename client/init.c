@@ -131,14 +131,20 @@ int xdag_init(int argc, char **argv, int isGui)
 			return -1;
 		}
 	}
+    pthread_t th;
+    if(!isGui) {
+        if(is_pool() || (parameters.transport_flags & XDAG_DAEMON) > 0) {
+            xdag_mess("Starting terminal server...");
+            pthread_t th;
+            const int err = pthread_create(&th, 0, &terminal_thread, 0);
+            if(err != 0) {
+                printf("create terminal_thread failed, error : %s\n", strerror(err));
+                return -1;
+            }
+        }
 
-	if(!isGui) {
-		if(is_pool() || is_wallet() || (parameters.transport_flags & XDAG_DAEMON) > 0) {
-            uv_thread_t terminal_uv_thread;
-            uv_thread_create(&terminal_uv_thread, terminal_server, &parameters.transport_flags);
-            uv_thread_join(&terminal_uv_thread);
-		}
-	}
+        startCommandProcessing(parameters.transport_flags);
+    }
 	return 0;
 }
 
@@ -180,10 +186,7 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 			printUsage(argv[0]);
 			return 0;
 		} else if(ARG_EQUAL(argv[i], "-i", "")) { /* interactive mode */
-            uv_thread_t terminal_uv_thread;
-            uv_thread_create(&terminal_uv_thread, terminal_client, NULL);
-            uv_thread_join(&terminal_uv_thread);
-			return -1;
+			return terminal();
 		} else if(ARG_EQUAL(argv[i], "-z", "")) { /* memory map  */
 			if(++i < argc) {
 //				xdag_mem_tempfile_path(argv[i]);
