@@ -93,6 +93,7 @@ static uint64_t apply_block(struct block_internal *bi)
 				continue;
 			}
 			memcpy(lbi.ref, bi->hash, sizeof(xdag_hashlow_t));
+            xd_rsdb_merge_bi(&lbi);
 			if (bi->amount + ref_amount >= bi->amount) {
 				accept_amount(bi, ref_amount);
 			}
@@ -1807,7 +1808,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
     memcpy(ref, bi->ref, sizeof(ref));
 	flags = bi->flags;
 	pthread_mutex_unlock(&block_mutex);
-	if((flags & BI_REF)) {
+	if(flags & BI_REF) {
 		xdag_hash2address(ref, address);
 	} else {
 		strcpy(address, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
@@ -2059,26 +2060,24 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 int remove_orphan(xdag_hashlow_t hash)
 {
     struct block_internal b;
-    if(!xd_rsdb_get_bi(hash, &b)) {
-        if(!(b.flags & BI_REF) ) {
-            b.flags |= BI_REF;
-            struct xdag_block xb;
-            if(!xd_rsdb_get_orpblock(hash, &xb)) {
-                if((&b)->flags & BI_EXTRA) {
-                    b.storage_pos = xdag_storage_save(&xb);
-                    for (int i = 0; i < b.nlinks; ++i) {
-                        remove_orphan(b.link[i]);
-                    }
-                    b.flags &= ~BI_EXTRA;
-                    g_xdag_extstats.nextra--;
-                } else {
-                    g_xdag_extstats.nnoref--;
+    if(!xd_rsdb_get_bi(hash, &b) && !(b.flags & BI_REF) ) {
+        b.flags |= BI_REF;
+        struct xdag_block xb;
+        if(!xd_rsdb_get_orpblock(hash, &xb)) {
+            if((&b)->flags & BI_EXTRA) {
+                b.storage_pos = xdag_storage_save(&xb);
+                for (int i = 0; i < b.nlinks; ++i) {
+                    remove_orphan(b.link[i]);
                 }
-                xd_rsdb_del_orpblock(hash);
-                xd_rsdb_put_cacheblock(hash, &xb);
+                b.flags &= ~BI_EXTRA;
+                g_xdag_extstats.nextra--;
+            } else {
+                g_xdag_extstats.nnoref--;
             }
-            xd_rsdb_merge_bi(&b);
+            xd_rsdb_del_orpblock(hash);
+            xd_rsdb_put_cacheblock(hash, &xb);
         }
+        xd_rsdb_merge_bi(&b);
     }
     return 0;
 }
