@@ -553,7 +553,7 @@ void processStatsCommand(FILE *out)
 	if(is_wallet()) {
 		fprintf(out, "your hashrate MHs: %.2lf\n", xdagGetHashRate());
 	} else {
-		fprintf(out, "Statistics of ours and maximum known parameters:\n"
+		fprintf(out, "Statistics for ours and maximum known parameters:\n"
 			"            hosts: %u of %u\n"
 			"           blocks: %llu of %llu\n"
 			"      main blocks: %llu of %llu\n"

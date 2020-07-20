@@ -182,20 +182,6 @@ static uint64_t unapply_block(struct block_internal* bi)
 	return (xdag_amount_t)0 - bi->fee;
 }
 
-static xdag_amount_t get_start_amount_with_time(xdag_time_t time, uint64_t nmain) {
-    xdag_amount_t start_amount = 0;
-    uint64_t fork_height = g_xdag_testnet ? MAIN_APOLLO_TESTNET_HEIGHT:MAIN_APOLLO_HEIGHT;
-    if(nmain >= fork_height) {
-        if(g_apollo_fork_time == 0) {
-            g_apollo_fork_time = time;
-        }
-        start_amount = MAIN_APOLLO_AMOUNT;
-    } else {
-        start_amount = MAIN_START_AMOUNT;
-    }
-    return start_amount;
-}
-
 static xdag_amount_t get_start_amount(uint64_t nmain) {
     xdag_amount_t start_amount = 0;
     uint64_t fork_height = g_xdag_testnet ? MAIN_APOLLO_TESTNET_HEIGHT:MAIN_APOLLO_HEIGHT;
@@ -207,25 +193,24 @@ static xdag_amount_t get_start_amount(uint64_t nmain) {
     return start_amount;
 }
 
-static xdag_amount_t get_block_earning(xdag_time_t time) {
+static xdag_amount_t get_block_earning(uint64_t nmain) {
     xdag_amount_t amount = 0;
     xdag_amount_t start_amount = 0;
-    uint64_t nmain = 0;
-
-    if(g_apollo_fork_time && time >= g_apollo_fork_time) {
-        nmain = g_xdag_testnet? MAIN_APOLLO_TESTNET_HEIGHT:MAIN_APOLLO_HEIGHT;
-        nmain = nmain > MAIN_TIME(time) ? nmain: MAIN_TIME(time);
-    }
+//    uint64_t nmain = 0;
+//    if(g_apollo_fork_time && time >= g_apollo_fork_time) {
+//        nmain = g_xdag_testnet? MAIN_APOLLO_TESTNET_HEIGHT:MAIN_APOLLO_HEIGHT;
+//        nmain = nmain > MAIN_TIME(time) ? nmain: MAIN_TIME(time);
+//    }
     start_amount = get_start_amount(nmain);
     amount = start_amount >> (nmain >> MAIN_BIG_PERIOD_LOG);
     return amount;
 }
 
-static xdag_amount_t get_amount(xdag_time_t time, uint64_t nmain) {
+static xdag_amount_t get_amount(uint64_t nmain) {
     xdag_amount_t amount = 0;
     xdag_amount_t start_amount = 0;
     
-    start_amount = get_start_amount_with_time(time, nmain);
+    start_amount = get_start_amount(nmain);
     amount = start_amount >> (nmain >> MAIN_BIG_PERIOD_LOG);
     return amount;
 }
@@ -251,11 +236,11 @@ xdag_amount_t xdag_get_supply(uint64_t nmain)
 static void set_main(struct block_internal *m)
 {
     xdag_amount_t amount = 0;
-    g_xdag_stats.nmain++;
+    m->height = g_xdag_stats.nmain++;
     if (g_xdag_stats.nmain > g_xdag_stats.total_nmain) {
         g_xdag_stats.total_nmain = g_xdag_stats.nmain;
     }
-    amount = get_amount(m->time, g_xdag_stats.nmain + 1);
+    amount = get_amount(m->height);
 	m->flags |= BI_MAIN;
 	accept_amount(m, amount);
 	accept_amount(m, apply_block(m));
@@ -270,7 +255,7 @@ static void unset_main(struct block_internal *m)
     xdag_amount_t amount = 0;
 	g_xdag_stats.nmain--;
 	g_xdag_stats.total_nmain--;
-	amount = get_amount(m->time, g_xdag_stats.nmain);
+	amount = get_amount(g_xdag_stats.nmain);
 	m->flags &= ~BI_MAIN;
 	accept_amount(m, (xdag_amount_t)0 - amount);
 	accept_amount(m, unapply_block(m));
@@ -1886,7 +1871,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 
     if (bi->flags & BI_MAIN) {
 		xdag_hash2address(h, address);
-        amount = get_block_earning(bi->time);
+        amount = get_block_earning(bi->height);
 		fprintf(out, "   earning: %s  %10u.%09u  %s %s\n", address,
 			pramount(amount),
 			time_buf, remark);
