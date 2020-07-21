@@ -247,6 +247,7 @@ static void set_main(struct block_internal *m)
     memcpy(m->ref, m->hash, sizeof(xdag_hashlow_t));
     xd_rsdb_put_stats(m->time);
     xd_rsdb_merge_bi(m);
+    xd_rsdb_put_heighthash(m->height, m->hash);
 	log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time, m->storage_pos);
 }
 
@@ -261,6 +262,7 @@ static void unset_main(struct block_internal *m)
 	accept_amount(m, unapply_block(m));
     xd_rsdb_put_stats(m->time);
     xd_rsdb_merge_bi(m);
+    xd_rsdb_del_heighthash(m->height);
 	log_block("UNMAIN", m->hash, m->time, m->storage_pos);
 }
 
@@ -1887,19 +1889,19 @@ static void print_block(struct block_internal *block, int print_only_addresses, 
 	xdag_hash2address(block->hash, address);
 
 	if(print_only_addresses) {
-		fprintf(out, "%s\n", address);
+		fprintf(out, "%s   %08lld\n", address, block->height);
 	} else {
 		xdag_xtime_to_string(block->time, time_buf);
         xdag_remark_t remark = {0};
         get_remark(block, remark);
-		fprintf(out, "%s   %s   %-8s  %-32s\n", address, time_buf, xdag_get_block_state_info(block->flags), remark);
+		fprintf(out, "%08lld   %s   %s   %-8s  %-32s\n", block->height, address, time_buf, xdag_get_block_state_info(block->flags), remark);
 	}
 }
 
 static inline void print_header_block_list(FILE *out)
 {
 	fprintf(out, "---------------------------------------------------------------------------------------------------------\n");
-	fprintf(out, "address                            time                      state     mined by                          \n");
+	fprintf(out, "height        address                            time                      state     mined by            \n");
 	fprintf(out, "---------------------------------------------------------------------------------------------------------\n");
 }
 
