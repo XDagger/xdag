@@ -451,10 +451,13 @@ void processBlockCommandByHeight(char *nextParam, FILE *out)
 	if((cmd && sscanf(cmd, "%llu", &blocksHeight) != 1) || blocksHeight <= 0) {
 		fprintf(out, "Illegal number.\n");
 	} else {
-		xdag_hashlow_t hash;
-		xd_rsdb_get_heighthash(blocksHeight,hash);
-		fprintf(out, "block height %llu\n",blocksHeight);
-		fprintf(out, "block hash %016llx%016llx%016llx\n",hash[0],hash[1],hash[2]);
+		xdag_hashlow_t hash = {0};
+		if(!xd_rsdb_get_heighthash(blocksHeight, hash)) {
+            struct block_internal b;
+            xdag_print_block_info(hash, out);
+		} else {
+            fprintf(out, "con't find block.\n");
+		}
 	}
 }
 
