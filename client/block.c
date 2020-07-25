@@ -236,7 +236,7 @@ xdag_amount_t xdag_get_supply(uint64_t nmain)
 static void set_main(struct block_internal *m)
 {
     xdag_amount_t amount = 0;
-    m->height = g_xdag_stats.nmain++;
+    m->height = ++g_xdag_stats.nmain;
     if (g_xdag_stats.nmain > g_xdag_stats.total_nmain) {
         g_xdag_stats.total_nmain = g_xdag_stats.nmain;
     }
