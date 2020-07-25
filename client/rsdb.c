@@ -569,7 +569,7 @@ xd_rsdb_op_t xd_rsdb_put_heighthash(uint64_t height, xdag_hashlow_t hash)
     int retcode = 0;
     if(!hash) return XDAG_RSDB_NULL;
     char key[sizeof(uint64_t) + 1] = {[0] = HEIGHT_BLOCK_HASH};
-    memcpy(key + 1, hash, sizeof(uint64_t));
+    memcpy(key + 1, &height, sizeof(uint64_t));
     retcode = xd_rsdb_putkey(key, sizeof(uint64_t) + 1, (const char *)hash, sizeof(xdag_hashlow_t));
     if(retcode) {
         return retcode;
