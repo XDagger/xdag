@@ -456,7 +456,7 @@ void processBlockCommandByHeight(char *nextParam, FILE *out)
             struct block_internal b;
             xdag_print_block_info(hash, out);
 		} else {
-            fprintf(out, "con't find block.\n");
+            fprintf(out, "Block is not found.\n");
 		}
 	}
 }
