@@ -993,6 +993,7 @@ void processHelpCommand(FILE *out)
 		"  account [N]          - print first N (20 by default) our addresses with their amounts\n"
 		"  balance [A]          - print balance of the address A or total balance for all our addresses\n"
 		"  block [A]            - print extended info for the block corresponding to the address or hash A\n"
+        "  blockbyheight [N]    - print extended info for the block corresponding to the height N\n"
 		"  lastblocks [N]       - print latest N (20 by default, max limit 100) main blocks\n"
 		"  exit                 - exit this program (not the daemon)\n"
 		"  help                 - print this help\n"
