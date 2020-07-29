@@ -1875,6 +1875,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
     }
 
     if (bi->flags & BI_MAIN) {
+        xdag_xtime_to_string(bi->time, time_buf);
 		xdag_hash2address(h, address);
         amount = get_block_earning(bi->height);
 		fprintf(out, "   earning: %s  %10u.%09u  %s %s\n", address,
