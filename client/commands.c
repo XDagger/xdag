@@ -111,7 +111,7 @@ XDAG_COMMAND commands[] = {
 	{ "account"     , 0, xdag_com_account },
 	{ "balance"     , 0, xdag_com_balance },
 	{ "block"       , 0, xdag_com_block },
-	{ "blockbyheight", 0, xdag_com_block_by_height },
+	{ "blockbyheight", 2, xdag_com_block_by_height },
 	{ "lastblocks"  , 2, xdag_com_lastblocks },
 	{ "mainblocks"  , 2, xdag_com_mainblocks },
 	{ "minedblocks" , 2, xdag_com_minedblocks },
