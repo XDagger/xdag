@@ -318,7 +318,7 @@ int setup_common(void)
 {
 	//TODO: future xdag.wallet
 	if(xdag_wallet_init()) return -1;
-    if(xd_rsdb_pre_init()) return -1;
+    if(xd_rsdb_pre_init(0)) return -1;
 	return 0;
 }
 

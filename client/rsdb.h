@@ -82,12 +82,12 @@ char* xd_rsdb_partial_merge(void*, const char* key, size_t key_length,
                             unsigned char* success, size_t* new_value_length);
 const char* xd_rsdb_merge_operator_name(void*);
 
-xd_rsdb_op_t xd_rsdb_pre_init(void);
+xd_rsdb_op_t xd_rsdb_pre_init(int);
 xd_rsdb_op_t xd_rsdb_init(xdag_time_t *time);
 xd_rsdb_op_t xd_rsdb_load(xd_rsdb_t* db);
 xd_rsdb_op_t xd_rsdb_conf_check(xd_rsdb_t  *db);
 xd_rsdb_op_t xd_rsdb_conf(xd_rsdb_t* db);
-xd_rsdb_op_t xd_rsdb_open(xd_rsdb_t* db);
+xd_rsdb_op_t xd_rsdb_open(xd_rsdb_t* db, int);
 xd_rsdb_op_t xd_rsdb_close(xd_rsdb_t* db);
 
 void* xd_rsdb_getkey(const char* key, const size_t klen, size_t* vlen);

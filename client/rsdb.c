@@ -58,7 +58,7 @@ const char *xd_rsdb_merge_operator_name(void* test)
     return "xd_rsdb_merge_operator";
 }
 
-xd_rsdb_op_t xd_rsdb_pre_init(void)
+xd_rsdb_op_t xd_rsdb_pre_init(int read_only)
 {
     xd_rsdb_t* rsdb = NULL;
     xd_rsdb_conf_t* rsdb_config = NULL;
@@ -77,7 +77,7 @@ xd_rsdb_op_t xd_rsdb_pre_init(void)
         return error_code;
     }
 
-    if((error_code = xd_rsdb_open(rsdb))) {
+    if((error_code = xd_rsdb_open(rsdb, read_only))) {
         return error_code;
     }
     g_xdag_rsdb = rsdb;
@@ -161,12 +161,15 @@ xd_rsdb_op_t xd_rsdb_conf(xd_rsdb_t  *db)
     return XDAG_RSDB_OP_SUCCESS;
 }
 
-xd_rsdb_op_t xd_rsdb_open(xd_rsdb_t* db)
+xd_rsdb_op_t xd_rsdb_open(xd_rsdb_t* db, int read_only)
 {
     char *errmsg = NULL;
+    if(read_only) {
+        db->db = rocksdb_open_for_read_only(db->options, db->config->db_path, (unsigned char)NULL, &errmsg);
+    } else {
+        db->db = rocksdb_open(db->options, db->config->db_path, &errmsg);
+    }
 
-    // merge operator
-    db->db = rocksdb_open(db->options, db->config->db_path, &errmsg);
     if(errmsg)
     {
 		RSDB_LOG_FREE_ERRMSG(errmsg);
