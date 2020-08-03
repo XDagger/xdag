@@ -1460,8 +1460,12 @@ int xdag_traverse_our_blocks(void *data,
     int retcode = 0;
 	pthread_mutex_lock(&block_mutex);
     xdag_hashlow_t hash = {0};
-    for(memcpy(hash, g_ourlast_hash, sizeof(xdag_hashlow_t));
-        !retcode && !res;
+    if(is_wallet()) {
+        memcpy(hash, g_ourfirst_hash, sizeof(xdag_hashlow_t));
+    } else {
+        memcpy(hash, g_ourlast_hash, sizeof(xdag_hashlow_t));
+    }
+    for(;!retcode && !res;
         retcode = xd_rsdb_get_ournext(hash, hash))
     {
         struct block_internal b;
