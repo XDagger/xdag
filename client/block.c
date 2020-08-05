@@ -1863,6 +1863,10 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
                 if (ri->flags & BI_APPLIED) {
                     for (int j = 0; j < ri->nlinks; j++) {
                         if(!memcmp(ri->link[j], bi->hash, sizeof(xdag_hashlow_t)) && ri->linkamount[j]) {
+                        	memset(time_buf, 0, sizeof(time_buf));
+							memset(address, 0, sizeof(address));
+							memset(remark, 0, sizeof(remark));
+
                             xdag_xtime_to_string(ri->time, time_buf);
                             xdag_hash2address(ri->hash, address);
                             get_remark(ri, remark);
@@ -1879,7 +1883,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
     }
 
     if (bi->flags & BI_MAIN) {
-        xdag_xtime_to_string(bi->time, time_buf);
+		xdag_xtime_to_string(bi->time, time_buf);
 		xdag_hash2address(h, address);
         amount = get_block_earning(bi->height);
 		fprintf(out, "   earning: %s  %10u.%09u  %s %s\n", address,
