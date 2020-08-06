@@ -365,7 +365,6 @@ static void *mining_thread(void *arg)
 
 		last.amount = xdag_hash_final_multi(task->ctx, &nonce, 4096, g_xdag_mining_threads, hash);
 		g_xdag_extstats.nhashes += 4096;
-        xd_rsdb_put_extstats();
 		xdag_set_min_share(task, last.data, hash);
 	}
 
