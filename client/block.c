@@ -1993,23 +1993,62 @@ static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xda
 
 int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, int, int, xdag_hash_t, xdag_amount_t, xtime_t, const char *))
 {
-    struct block_internal b;
-
-    if (!xd_rsdb_get_bi(hash, &b)) {
-        struct block_internal *bi = &b;
-        for(int i = 0; i < bi->nlinks; i++) {
+    int size = 0x10000;
+    int n = 0;
+    struct block_internal **ba = malloc(size * sizeof(struct block_internal *));
+    char seek_key[RSDB_KEY_LEN] = {[0] = HASH_BLOCK_BACKREF};
+    size_t vlen = 0;
+    size_t klen = 0;
+    const char *key = NULL;
+    memcpy(seek_key + 1, hash, RSDB_KEY_LEN - 1);
+    rocksdb_iterator_t* iter = rocksdb_create_iterator(g_xdag_rsdb->db, g_xdag_rsdb->read_options);
+    for (rocksdb_iter_seek(iter, seek_key, sizeof(seek_key));
+         rocksdb_iter_valid(iter) && (key = rocksdb_iter_key(iter, &klen)) && !memcmp(seek_key, key, sizeof(seek_key));
+         rocksdb_iter_next(iter))
+    {
+        const char *value = rocksdb_iter_value(iter, &vlen);
+        if(value && klen) {
+            xdag_hashlow_t hash = {0};
+            memcpy(hash, value, sizeof(xdag_hashlow_t));
             struct block_internal b;
-            xdag_remark_t remark = {0};
-            get_remark(bi, remark);
-            if(bi->linkamount[i] && !xd_rsdb_get_bi(bi->link[i], &b)){
-                if(callback(data, 1 << i & bi->in_mask, bi->flags, bi->hash, bi->linkamount[i], bi->time, (const char*)remark)) {
-                    return i;
+            if(!xd_rsdb_get_bi(hash, &b)) {
+                struct block_internal *tbi = malloc(sizeof(struct block_internal));
+                memset(tbi, 0, sizeof(struct block_internal));
+                memcpy(tbi, &b, sizeof(struct block_internal));
+                ba[n++] = tbi;
+            }
+        }
+    }
+    if(iter) rocksdb_iter_destroy(iter);
+    if (!n) {
+		free(ba);
+		return 0;
+	}
+    int i = 0;
+    qsort(ba, n, sizeof(struct block_internal *), bi_compar);
+    xdag_remark_t remark;
+    for (i = 0; i < n; ++i) {
+        if (!i || ba[i] != ba[i - 1]) {
+            struct block_internal *ri = ba[i];
+            for (int j = 0; j < ri->nlinks; j++) {
+                if(!memcmp(ri->link[j], hash, sizeof(xdag_hashlow_t)) && ri->linkamount[j]) {
+                    memset(remark, 0, sizeof(remark));
+                    get_remark(ri, remark);
+                    if(callback(data, 1 << i & ri->in_mask, ri->flags, ri->hash, ri->linkamount[i], ri->time, (const char*)remark)) {
+                        while(i < n) {
+                            free(ba[i]);
+                            i++;
+                        }
+                        free(ba);
+                        return n;
+                    }
                 }
             }
         }
-        return 0;
-	}
-	return -1;
+        free(ba[i]);
+    }
+    free(ba);
+	return n;
 
 //	int i;
 //	for (struct block_backrefs *br = (struct block_backrefs*)atomic_load_explicit_uintptr(&bi->backrefs, memory_order_acquire); br; br = br->next) {
