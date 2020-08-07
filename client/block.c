@@ -1886,6 +1886,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 		xdag_xtime_to_string(bi->time, time_buf);
 		xdag_hash2address(h, address);
         amount = get_block_earning(bi->height);
+        memset(remark, 0, sizeof(remark));
 		fprintf(out, "   earning: %s  %10u.%09u  %s %s\n", address,
 			pramount(amount),
 			time_buf, remark);
@@ -1960,7 +1961,9 @@ void xdag_list_mined_blocks(int count, int include_non_payed, FILE *out)
             print_block(&b, 0, out);
             ++i;
         }
-
+    }
+    if(g_xdag_stats.nmain == 0) {
+        fprintf(out, "empty\n");
     }
 }
 
