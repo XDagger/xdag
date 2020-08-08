@@ -1018,7 +1018,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
             if(value && klen) {
                 memcpy(xb_hash, key + 1, sizeof(xdag_hashlow_t));
                 if(!(b_retcode = xd_rsdb_get_bi(xb_hash, &b))) {
-                    if (b.time < send_time) {
+                    if (b.time < send_time && memcmp(pretop->hash, xb_hash, sizeof(xdag_hashlow_t))) {
                         setfld(XDAG_FIELD_OUT, xb_hash, xdag_hashlow_t);
                         res++;
                     }
@@ -2026,7 +2026,7 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
 	}
     int i = 0;
     qsort(ba, n, sizeof(struct block_internal *), bi_compar);
-    xdag_remark_t remark;
+    xdag_remark_t remark = {0};
     for (i = 0; i < n; ++i) {
         if (!i || ba[i] != ba[i - 1]) {
             struct block_internal *ri = ba[i];
