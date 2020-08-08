@@ -1469,7 +1469,7 @@ int xdag_traverse_our_blocks(void *data,
         retcode = xd_rsdb_get_ournext(hash, hash))
     {
         struct block_internal b;
-        if( !xd_rsdb_get_bi(hash, &b) && (b.flags & BI_OURS)) {
+        if( !xd_rsdb_get_bi(hash, &b) && (b.flags & BI_OURS) && b.amount) {
             res = (*callback)(data, b.hash, b.amount, b.time, b.n_our_key);
         }
     }
