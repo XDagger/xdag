@@ -1018,7 +1018,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
             if(value && klen) {
                 memcpy(xb_hash, key + 1, sizeof(xdag_hashlow_t));
                 if(!(b_retcode = xd_rsdb_get_bi(xb_hash, &b))) {
-                    if (b.time < send_time && memcmp(pretop->hash, xb_hash, sizeof(xdag_hashlow_t))) {
+                    if (b.time < send_time && (!pretop || memcmp(pretop->hash, xb_hash, sizeof(xdag_hashlow_t)))) {
                         setfld(XDAG_FIELD_OUT, xb_hash, xdag_hashlow_t);
                         res++;
                     }
@@ -2112,10 +2112,11 @@ int remove_orphan(xdag_hashlow_t hash)
                 }
                 b.flags &= ~BI_EXTRA;
                 g_xdag_extstats.nextra--;
+                xd_rsdb_del_extblock(hash);
             } else {
                 g_xdag_extstats.nnoref--;
+                xd_rsdb_del_orpblock(hash);
             }
-            xd_rsdb_del_orpblock(hash);
             xd_rsdb_put_cacheblock(hash, &xb);
         }
         xd_rsdb_merge_bi(&b);
@@ -2127,10 +2128,11 @@ void add_orphan(struct block_internal* bi, struct xdag_block* xb)
 {
     if (bi && (bi->flags & BI_EXTRA)) {
         g_xdag_extstats.nextra++;
+        xd_rsdb_put_extblock(bi->hash, xb);
     } else {
         g_xdag_extstats.nnoref++;
+        xd_rsdb_put_orpblock(bi->hash, xb);
     }
-    xd_rsdb_put_orpblock(bi->hash, xb);
 }
 
 void xdag_list_orphan_blocks(int count, FILE *out)
