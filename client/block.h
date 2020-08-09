@@ -54,7 +54,8 @@ enum bi_flags {
 #define XDAG_BLOCK_FIELDS            16
 #define REMARK_ENABLED               1
 #define MAX_WAITING_MAIN             1
-#define MAX_ALLOWED_EXTRA	         0x04
+#define MAX_ALLOWED_EXTRA	         0x10000
+#define MIN_DELETE_EXTRA_FRAME	     128
 #define MAIN_START_AMOUNT            (1ll << 42)
 #define MAIN_APOLLO_AMOUNT           (1ll << 39)
 // nmain = 976487, hash is WENN9ZgvXA+vNaslRLFQPgBKIbJVaMsu
