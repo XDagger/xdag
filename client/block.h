@@ -54,6 +54,7 @@ enum bi_flags {
 #define XDAG_BLOCK_FIELDS            16
 #define REMARK_ENABLED               1
 #define MAX_WAITING_MAIN             1
+#define MAX_ALLOWED_EXTRA	         0x04
 #define MAIN_START_AMOUNT            (1ll << 42)
 #define MAIN_APOLLO_AMOUNT           (1ll << 39)
 // nmain = 976487, hash is WENN9ZgvXA+vNaslRLFQPgBKIbJVaMsu
@@ -100,8 +101,6 @@ struct xdag_block {
 	struct xdag_field field[XDAG_BLOCK_FIELDS];
 };
 
-struct block_backrefs;
-
 struct block_internal {
     xdag_hash_t hash;
     xdag_diff_t difficulty;
@@ -110,26 +109,10 @@ struct block_internal {
     uint64_t storage_pos;
     xdag_hashlow_t ref;
     xdag_hashlow_t link[MAX_LINKS];
-    //xdag_hashlow_t backrefs;
     uint64_t height;
     atomic_uintptr_t remark;
     uint16_t flags, in_mask, n_our_key;
     uint8_t nlinks:4, max_diff_link:4, reserved;
-};
-
-struct block_internal_backref {
-    xdag_hash_t hash;
-    xdag_hashlow_t backref;
-};
-
-#define N_BACKREFS      (sizeof(struct block_internal) / sizeof(struct block_internal *) - 1)
-        
-#define ourprev link[MAX_LINKS - 2]
-#define ournext link[MAX_LINKS - 1]
-
-struct block_backrefs {
-    struct block_internal *backrefs[N_BACKREFS];
-    struct block_backrefs *next;
 };
 
 #ifdef __cplusplus
@@ -179,9 +162,6 @@ extern const char* xdag_get_block_state_info(uint8_t flag);
 // returns a number of key by hash of block or -1 if block is not ours
 extern int xdag_get_key(xdag_hash_t hash);
 
-// reinitialization of block processing
-extern int xdag_blocks_reset(void);
-
 // prints detailed information about block
 extern int xdag_print_block_info(xdag_hash_t hash, FILE *out);
 
@@ -199,16 +179,9 @@ void xdag_list_orphan_blocks(int, FILE*);
 
 // completes work with the blocks
 void xdag_block_finish(void);
-
-// add blocks with out sync for pool reload data
-void *add_block_callback_nosync(void *block, void *data);
     
 void *add_block_callback_sync(void *block, void *data);
 
-void xdag_connect_block(struct xdag_block *b);
-
-
-	
 // get block info of specified address
 extern int xdag_get_block_info(xdag_hash_t, void *, int (*)(void*, int, xdag_hash_t, xdag_amount_t, xtime_t, uint64_t, const char*),
 							void *, int (*)(void*, const char *, xdag_hash_t, xdag_amount_t));

@@ -712,6 +712,24 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 		tmpNodeBlock.storage_pos = -2l;
 	}
 
+    if (g_xdag_extstats.nextra > MAX_ALLOWED_EXTRA
+        && (g_xdag_state == XDAG_STATE_SYNC || g_xdag_state == XDAG_STATE_STST)) {
+        /* if too many extra blocks then reuse the oldest */
+        nodeBlock = g_orphan_first[1]->orphan_bi;
+        xdag_info("MAX_ALLOWED_EXTRA, remove_orphan");
+        // 1.del ext block
+        remove_orphan(nodeBlock, ORPHAN_REMOVE_REUSE);
+
+        // 2.del blockInternal
+        remove_index(nodeBlock);
+        if (g_xdag_stats.nblocks-- == g_xdag_stats.total_nblocks)
+            g_xdag_stats.total_nblocks--;
+        if (nodeBlock->flags & BI_OURS) {
+            // 3. del our block
+            remove_ourblock(nodeBlock);
+        }
+    }
+
     nodeBlock = calloc(sizeof(struct block_internal), 1);
     if(!nodeBlock) {
         err = 0xC;
@@ -863,14 +881,6 @@ end:
         free(nodeBlock);
     }
 	return -err;
-}
-
-void *add_block_callback_nosync(void *block, void *data)
-{
-    unsigned *i = (unsigned *)data;
-    xdag_add_block((struct xdag_block *)block);
-    if(!(++*i % 10000)) xdag_info("nosync add blocks: %u\n", *i);
-    return 0;
 }
         
 void *add_block_callback_sync(void *block, void *data)
@@ -1163,33 +1173,6 @@ int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t 
 
 	return 1;
 }
-
-//static void reset_callback(struct ldus_rbtree *node)
-//{
-//	struct block_internal *bi = 0;
-//
-//	if(g_bi_index_enable) {
-//		struct block_internal_index *index = (struct block_internal_index *)node;
-//		bi = index->bi;
-//	} else {
-//		bi = (struct block_internal *)node;
-//	}
-//
-//	struct block_backrefs *tmp;
-//	for(struct block_backrefs *to_free = (struct block_backrefs*)atomic_load_explicit_uintptr(&bi->backrefs, memory_order_acquire); to_free != NULL;){
-//		tmp = to_free->next;
-//		xdag_free(to_free);
-//		to_free = tmp;
-//	}
-//	if((bi->flags & BI_REMARK) && bi->remark != (uintptr_t)NULL) {
-//		xdag_free((char*)bi->remark);
-//	}
-//	xdag_free(bi);
-//
-//	if(g_bi_index_enable) {
-//		free(node);
-//	}
-//}
 
 // main thread which works with block
 static void *work_thread(void *arg)
@@ -2049,53 +2032,6 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
     }
     free(ba);
 	return n;
-
-//	int i;
-//	for (struct block_backrefs *br = (struct block_backrefs*)atomic_load_explicit_uintptr(&bi->backrefs, memory_order_acquire); br; br = br->next) {
-//		for (i = N_BACKREFS; i && !br->backrefs[i - 1]; i--);
-//
-//		if (!i) {
-//			continue;
-//		}
-//
-//		if (n + i > size) {
-//			size *= 2;
-//			struct block_internal **tmp_array = realloc(block_array, size * sizeof(struct block_internal *));
-//			if (!tmp_array) {
-//				free(block_array);
-//				return -1;
-//			}
-//
-//			block_array = tmp_array;
-//		}
-//
-//		memcpy(block_array + n, br->backrefs, i * sizeof(struct block_internal *));
-//		n += i;
-//	}
-//
-//	if (!n) {
-//		free(block_array);
-//		return 0;
-//	}
-//
-//	qsort(block_array, n, sizeof(struct block_internal *), bi_compar);
-//
-//	for (i = 0; i < n; ++i) {
-//		if (!i || block_array[i] != block_array[i - 1]) {
-//			struct block_internal *ri = block_array[i];
-//			for (int j = 0; j < ri->nlinks; j++) {
-//				if(ri->link[j] == bi && ri->linkamount[j]) {
-//					if(callback(data, 1 << j & ri->in_mask, ri->flags, ri->hash, ri->linkamount[j], ri->time, get_remark(ri))) {
-//						free(block_array);
-//						return n;
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//	free(block_array);
-//	return n;
 }
 
 int remove_orphan(xdag_hashlow_t hash)

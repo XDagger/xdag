@@ -34,10 +34,6 @@ extern struct xdag_ext_stats {
 	uint64_t nhashes;
 	double hashrate_s;
 	uint32_t nwaitsync;
-	uint32_t cache_size;
-	uint32_t cache_usage;
-	double cache_hitrate;
-	int use_orphan_hashtable;
 } g_xdag_extstats;
 
 enum xdag_type {

@@ -38,19 +38,14 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
     struct sync_block **p, *q;
     int res;
     time_t t = time(0);
-
     xdag_hash(b, sizeof(struct xdag_block), hash);
-
     for (p = get_list(b->field[nfield].hash), q = *p; q; q = q->next) {
         if (!memcmp(&q->b, b, sizeof(struct xdag_block))) {
             res = (t - q->t >= REQ_PERIOD);
-
             q->conn = conn;
             q->nfield = nfield;
             q->ttl = ttl;
-
             if (res) q->t = t;
-
             return res;
         }
     }
@@ -72,9 +67,7 @@ static int push_block_nolock(struct xdag_block *b, struct xconnection *conn, int
 
     q->next_r = *p;
     *p = q;
-
     g_xdag_extstats.nwaitsync++;
-
     return 1;
 }
 
@@ -83,30 +76,23 @@ int xdag_sync_pop_block_nolock(struct xdag_block *b)
 {
     struct sync_block **p, *q, *r;
     xdag_hash_t hash;
-
     xdag_hash(b, sizeof(struct xdag_block), hash);
 
     begin:
-
     for (p = get_list(hash); (q = *p); p = &q->next) {
         if (!memcmp(hash, q->b.field[q->nfield].hash, sizeof(xdag_hashlow_t))) {
             *p = q->next;
             g_xdag_extstats.nwaitsync--;
-
             for (p = get_list_r(q->hash); (r = *p) && r != q; p = &r->next_r);
-
             if (r == q) {
                 *p = q->next_r;
             }
-
             q->b.field[0].transport_header = q->ttl << 8 | 1;
             xdag_sync_add_block_nolock(&q->b, q->conn);
             free(q);
-
             goto begin;
         }
     }
-
     return 0;
 }
 
@@ -122,7 +108,6 @@ int xdag_sync_pop_block(struct xdag_block *b)
 int xdag_sync_add_block_nolock(struct xdag_block *b, struct xconnection *conn)
 {
 	int res=0, ttl = b->field[0].transport_header >> 8 & 0xff;
-
 	res = xdag_add_block(b);
 	if (res >= 0) {
 		xdag_sync_pop_block_nolock(b);
@@ -136,27 +121,22 @@ int xdag_sync_add_block_nolock(struct xdag_block *b, struct xconnection *conn)
             struct sync_block **p, *q;
             uint64_t *hash = b->field[res].hash;
             time_t t = time(0);
-
 begin:
             for (p = get_list_r(hash); (q = *p); p = &q->next_r) {
                 if (!memcmp(hash, q->hash, sizeof(xdag_hashlow_t))) {
                     if (t - q->t < REQ_PERIOD) {
                         return 0;
                     }
-
                     q->t = t;
                     hash = q->b.field[q->nfield].hash;
 
                     goto begin;
                 }
             }
-
             xdag_request_block(hash, NULL, 1);
-
             xdag_info("ReqBlk: %016llx%016llx%016llx%016llx", hash[3], hash[2], hash[1], hash[0]);
 		}
 	}
-
 	return 0;
 }
 
@@ -173,7 +153,6 @@ int xdag_sync_init(void)
 {
 	g_sync_hash = (struct sync_block **)calloc(sizeof(struct sync_block *), SYNC_HASH_SIZE);
 	g_sync_hash_r = (struct sync_block **)calloc(sizeof(struct sync_block *), SYNC_HASH_SIZE);
-
 	if (!g_sync_hash || !g_sync_hash_r) return -1;
 	return 0;
 }
@@ -182,17 +161,13 @@ int xdag_sync_init(void)
 static int request_blocks(xtime_t t, xtime_t dt)
 {
 	int i, res = 0;
-
 	if (!g_xdag_sync_on) return -1;
-
 	if (dt <= REQUEST_BLOCKS_MAX_TIME) {
 		xtime_t t0 = g_time_limit;
-
 		for (i = 0;
 //			xdag_debug("QueryB: t=%llx dt=%llx", t, dt),
 			i < QUERY_RETRIES && (res = xdag_request_blocks(t, t + dt, &t0, add_block_callback_sync)) < 0;
 			++i);
-
 		if (res <= 0) {
 			return -1;
 		}
@@ -201,29 +176,22 @@ static int request_blocks(xtime_t t, xtime_t dt)
 		if (xdag_load_sums(t, t + dt, lsums) <= 0) {
 			return -1;
 		}
-
 		xdag_debug("Local : [%s]", xdag_log_array(lsums, 16 * sizeof(struct xdag_storage_sum)));
-
 		for (i = 0;
 //			xdag_debug("QueryS: t=%llx dt=%llx", t, dt),
 			i < QUERY_RETRIES && (res = xdag_request_sums(t, t + dt, rsums)) < 0;
 			++i);
-
 		if (res <= 0) {
 			return -1;
 		}
-
 		dt >>= 4;
-
 		xdag_debug("Remote: [%s]", xdag_log_array(rsums, 16 * sizeof(struct xdag_storage_sum)));
-
 		for (i = 0; i < 16; ++i) {
 			if (lsums[i].size != rsums[i].size || lsums[i].sum != rsums[i].sum) {
 				request_blocks(t + i * dt, dt);
 			}
 		}
 	}
-
 	return 0;
 }
 
@@ -231,7 +199,6 @@ static int request_blocks(xtime_t t, xtime_t dt)
 void *sync_thread(void *arg)
 {
 	xtime_t t = 0;
-
 	for (;;) {
 		xtime_t st = xdag_get_xtimestamp();
 		if (st - t >= MAIN_CHAIN_PERIOD) {
@@ -244,6 +211,4 @@ void *sync_thread(void *arg)
 		}
 		sleep(1);
 	}
-
-	return 0;
 }
