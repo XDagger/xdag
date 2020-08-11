@@ -843,6 +843,9 @@ int xdag_do_xfer(void *outv, const char *amount, const char *address, const char
 		return 1;
 	}
 
+    xdag_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
+    xfer.outsig = 1;
+
 #if REMARK_ENABLED
 	if(remark) {
 		if(!validate_remark(remark)) {
@@ -851,14 +854,12 @@ int xdag_do_xfer(void *outv, const char *amount, const char *address, const char
 			}
 			return 1;
 		} else {
-			memcpy(xfer.remark, remark, strlen(remark));
+			memcpy(xfer.remark, remark, sizeof(xdag_remark_t));
 			xfer.hasRemark = 1;
 		}
 	}
 #endif
 
-	xdag_wallet_default_key(&xfer.keys[XFER_MAX_IN]);
-	xfer.outsig = 1;
 	g_xdag_state = XDAG_STATE_XFER;
 	g_xdag_xfer_last = time(0);
 	xdag_traverse_our_blocks(&xfer, &xfer_callback);
