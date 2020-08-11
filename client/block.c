@@ -1367,7 +1367,7 @@ int xdag_traverse_our_blocks(void *data,
         retcode = xd_rsdb_get_ournext(hash, hash))
     {
         struct block_internal b;
-        if( !xd_rsdb_get_bi(hash, &b) && (b.flags & BI_OURS) && b.amount) {
+        if( !xd_rsdb_get_bi(hash, &b) && (b.flags & BI_OURS)) {
             res = (*callback)(data, b.hash, b.amount, b.time, b.n_our_key);
         }
     }
@@ -1680,7 +1680,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
             xdag_hashlow_t hash = {0};
             memcpy(hash, value, sizeof(xdag_hashlow_t));
             struct block_internal b;
-            if(!xd_rsdb_get_bi(hash, &b)) {
+            if(!xd_rsdb_get_bi(hash, &b) && b.flags & BI_APPLIED) {
                 struct block_internal *tbi = malloc(sizeof(struct block_internal));
                 memset(tbi, 0, sizeof(struct block_internal));
                 memcpy(tbi, &b, sizeof(struct block_internal));
@@ -1847,7 +1847,7 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
             xdag_hashlow_t hash = {0};
             memcpy(hash, value, sizeof(xdag_hashlow_t));
             struct block_internal b;
-            if(!xd_rsdb_get_bi(hash, &b)) {
+            if(!xd_rsdb_get_bi(hash, &b) && b.flags & BI_APPLIED) {
                 struct block_internal *tbi = malloc(sizeof(struct block_internal));
                 memset(tbi, 0, sizeof(struct block_internal));
                 memcpy(tbi, &b, sizeof(struct block_internal));
@@ -1866,17 +1866,19 @@ int xdag_get_transactions(xdag_hash_t hash, void *data, int (*callback)(void*, i
     for (i = 0; i < n; ++i) {
         if (!i || ba[i] != ba[i - 1]) {
             struct block_internal *ri = ba[i];
-            for (int j = 0; j < ri->nlinks; j++) {
-                if(!memcmp(ri->link[j], hash, sizeof(xdag_hashlow_t)) && ri->linkamount[j]) {
-                    memset(remark, 0, sizeof(remark));
-                    get_remark(ri, remark);
-                    if(callback(data, 1 << i & ri->in_mask, ri->flags, ri->hash, ri->linkamount[i], ri->time, (const char*)remark)) {
-                        while(i < n) {
-                            free(ba[i]);
-                            i++;
+            if (ri->flags & BI_APPLIED) {
+                for (int j = 0; j < ri->nlinks; j++) {
+                    if(!memcmp(ri->link[j], hash, sizeof(xdag_hashlow_t)) && ri->linkamount[j]) {
+                        memset(remark, 0, sizeof(remark));
+                        get_remark(ri, remark);
+                        if(callback(data, 1 << i & ri->in_mask, ri->flags, ri->hash, ri->linkamount[i], ri->time, (const char*)remark)) {
+                            while(i < n) {
+                                free(ba[i]);
+                                i++;
+                            }
+                            free(ba);
+                            return n;
                         }
-                        free(ba);
-                        return n;
                     }
                 }
             }

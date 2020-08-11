@@ -110,7 +110,7 @@ XDAG_COMMAND* find_xdag_command(char*);
 XDAG_COMMAND commands[] = {
 	{ "account"     , 0, xdag_com_account },
 	{ "balance"     , 0, xdag_com_balance },
-	{ "block"       , 0, xdag_com_block },
+	{ "block"       , 2, xdag_com_block },
 	{ "blockbyheight", 2, xdag_com_block_by_height },
 	{ "lastblocks"  , 2, xdag_com_lastblocks },
 	{ "mainblocks"  , 2, xdag_com_mainblocks },
@@ -877,7 +877,7 @@ int xfer_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t ti
 	xdag_amount_t todo = xferData->remains;
 	int i;
 	if(!amount) {
-		return -1;
+		return 0;
 	}
 	if(is_pool() && xdag_get_frame() < (time >> 16) + 2 * CONFIRMATIONS_COUNT) {
 		return 0;
