@@ -1358,13 +1358,15 @@ int xdag_traverse_our_blocks(void *data,
     int retcode = 0;
 	pthread_mutex_lock(&block_mutex);
     xdag_hashlow_t hash = {0};
+    xdag_hashlow_t next_hash = {0};
     if(is_wallet()) {
         memcpy(hash, g_ourfirst_hash, sizeof(xdag_hashlow_t));
     } else {
         memcpy(hash, g_ourlast_hash, sizeof(xdag_hashlow_t));
     }
     for(;!retcode && !res;
-        retcode = xd_rsdb_get_ournext(hash, hash))
+        retcode = xd_rsdb_get_ournext(hash, next_hash),
+        memcpy(hash, next_hash, sizeof(xdag_hashlow_t)))
     {
         struct block_internal b;
         if( !xd_rsdb_get_bi(hash, &b) && (b.flags & BI_OURS)) {
