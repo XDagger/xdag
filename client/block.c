@@ -922,13 +922,16 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 		pthread_mutex_unlock(&g_create_block_mutex);
 	} else {
 		pthread_mutex_lock(&block_mutex);
+        struct block_internal b;
+		if(!pretop && xd_rsdb_get_bi(g_top_main_chain_hash, &b)){
+            pretop = &b;
+		}
 		if (res < XDAG_BLOCK_FIELDS && mining && pretop && pretop->time < send_time) {
 			log_block("Mintop", pretop->hash, pretop->time, pretop->storage_pos);
 			setfld(XDAG_FIELD_OUT, pretop->hash, xdag_hashlow_t);
 			res++;
 		}
 
-		struct block_internal b;
 		int b_retcode = 0;
 		xdag_hash_t xb_hash = {0};
         char seek_key[1] = {[0] = HASH_ORP_BLOCK};
