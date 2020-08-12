@@ -91,17 +91,19 @@ xd_rsdb_op_t xd_rsdb_conf(xd_rsdb_t* db);
 xd_rsdb_op_t xd_rsdb_open(xd_rsdb_t* db, int);
 xd_rsdb_op_t xd_rsdb_close(xd_rsdb_t* db);
 
+//get
 void* xd_rsdb_getkey(const char* key, const size_t klen, size_t* vlen);
 xd_rsdb_op_t xd_rsdb_get_bi(xdag_hashlow_t hash, struct block_internal*);
 xd_rsdb_op_t xd_rsdb_get_ournext(xdag_hashlow_t hash, xdag_hashlow_t next);
 xd_rsdb_op_t xd_rsdb_get_orpblock(xdag_hashlow_t hash, struct xdag_block*);
 xd_rsdb_op_t xd_rsdb_get_extblock(xdag_hashlow_t hash, struct xdag_block*);
+xd_rsdb_op_t xd_rsdb_get_cacheblock(xdag_hashlow_t hash, struct xdag_block *xb);
 xd_rsdb_op_t xd_rsdb_get_stats(void);
 xd_rsdb_op_t xd_rsdb_get_extstats(void);
 xd_rsdb_op_t xd_rsdb_get_remark(xdag_hashlow_t hash, xdag_remark_t);
-xd_rsdb_op_t xd_rsdb_get_cacheblock(xdag_hashlow_t hash, struct xdag_block *xb);
 xd_rsdb_op_t xd_rsdb_get_heighthash(uint64_t height, xdag_hashlow_t hash);
 
+//put
 xd_rsdb_op_t xd_rsdb_putkey(const char* key, size_t klen, const char* value, size_t vlen);
 xd_rsdb_op_t xd_rsdb_put_backref(xdag_hashlow_t backref, struct block_internal*);
 xd_rsdb_op_t xd_rsdb_put_ournext(xdag_hashlow_t hash, xdag_hashlow_t next);
@@ -114,6 +116,7 @@ xd_rsdb_op_t xd_rsdb_put_remark(struct block_internal *bi, xdag_remark_t strbuf)
 xd_rsdb_op_t xd_rsdb_put_cacheblock(xdag_hashlow_t hash, struct xdag_block *xb);
 xd_rsdb_op_t xd_rsdb_put_heighthash(uint64_t height, xdag_hashlow_t hash);
 
+//del
 xd_rsdb_op_t xd_rsdb_delkey(const char* key, size_t klen);
 xd_rsdb_op_t xd_rsdb_del_bi(xdag_hashlow_t hash);
 xd_rsdb_op_t xd_rsdb_del_orpblock(xdag_hashlow_t hash);

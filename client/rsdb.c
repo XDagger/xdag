@@ -106,18 +106,77 @@ xd_rsdb_op_t xd_rsdb_init(xdag_time_t *time)
     return XDAG_RSDB_OP_SUCCESS;
 }
 
+xd_rsdb_op_t xd_rsdb_load(xd_rsdb_t* db)
+{
+    xd_rsdb_get_stats();
+    xd_rsdb_get_extstats();
+
+    // clean wait blocks
+    g_xdag_extstats.nwaitsync = 0;
+
+    // read top_main_chain hash
+    char top_main_chain_hash_key[1] ={[0]=SETTING_TOP_MAIN_HASH};
+    char *value = NULL;
+    size_t vlen = 0;
+
+    value = xd_rsdb_getkey(top_main_chain_hash_key, 1, &vlen);
+    if(value)
+    {
+        memcpy(g_top_main_chain_hash, value, sizeof(g_top_main_chain_hash));
+        free(value);
+        value = NULL;
+    }
+
+    char pre_top_main_chain_hash_key[1] ={[0]=SETTING_PRE_TOP_MAIN_HASH};
+    value = xd_rsdb_getkey(pre_top_main_chain_hash_key, 1, &vlen);
+    if(value)
+    {
+        memcpy(g_pre_top_main_chain_hash, value, sizeof(g_pre_top_main_chain_hash));
+        free(value);
+        value = NULL;
+    }
+
+    char ourfirst_hash_key[1] ={[0]=SETTING_OUR_FIRST_HASH};
+    value = xd_rsdb_getkey(ourfirst_hash_key, 1, &vlen);
+    if(value)
+    {
+        memcpy(g_ourfirst_hash, value, sizeof(g_ourfirst_hash));
+        free(value);
+        value = NULL;
+    }
+
+    char ourlast_hash_key[1] ={[0]=SETTING_OUR_LAST_HASH};
+    value = xd_rsdb_getkey(ourlast_hash_key, 1, &vlen);
+    if(value)
+    {
+        memcpy(g_ourlast_hash, value, sizeof(g_ourlast_hash));
+        free(value);
+        value = NULL;
+    }
+
+    char balance_key[1] ={[0]=SETTING_OUR_BALANCE};
+    value = xd_rsdb_getkey(balance_key, 1, &vlen);
+    if(value)
+    {
+        memcpy(&g_balance, value, sizeof(g_balance));
+        free(value);
+        value = NULL;
+    }
+
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
 xd_rsdb_op_t xd_rsdb_conf_check(xd_rsdb_t  *db)
 {
     if(db == NULL ||
        !strlen(db->config->db_name) ||
        !strlen(db->config->db_path)
-    )
+            )
     {
         return XDAG_RSDB_CONF_ERROR;
     }
     return  XDAG_RSDB_OP_SUCCESS;
 }
-
 
 xd_rsdb_op_t xd_rsdb_conf(xd_rsdb_t  *db)
 {
@@ -187,92 +246,7 @@ xd_rsdb_op_t xd_rsdb_close(xd_rsdb_t* db)
     return XDAG_RSDB_OP_SUCCESS;
 }
 
-xd_rsdb_op_t xd_rsdb_load(xd_rsdb_t* db)
-{
-    xd_rsdb_get_stats();
-    xd_rsdb_get_extstats();
-
-    // clean wait blocks
-    g_xdag_extstats.nwaitsync = 0;
-
-    // read top_main_chain hash
-    char top_main_chain_hash_key[1] ={[0]=SETTING_TOP_MAIN_HASH};
-    char *value = NULL;
-    size_t vlen = 0;
-
-    value = xd_rsdb_getkey(top_main_chain_hash_key, 1, &vlen);
-    if(value)
-    {
-        memcpy(g_top_main_chain_hash, value, sizeof(g_top_main_chain_hash));
-        free(value);
-        value = NULL;
-    }
-
-    char pre_top_main_chain_hash_key[1] ={[0]=SETTING_PRE_TOP_MAIN_HASH};
-    value = xd_rsdb_getkey(pre_top_main_chain_hash_key, 1, &vlen);
-    if(value)
-    {
-        memcpy(g_pre_top_main_chain_hash, value, sizeof(g_pre_top_main_chain_hash));
-        free(value);
-        value = NULL;
-    }
-
-    char ourfirst_hash_key[1] ={[0]=SETTING_OUR_FIRST_HASH};
-    value = xd_rsdb_getkey(ourfirst_hash_key, 1, &vlen);
-    if(value)
-    {
-        memcpy(g_ourfirst_hash, value, sizeof(g_ourfirst_hash));
-        free(value);
-        value = NULL;
-    }
-
-    char ourlast_hash_key[1] ={[0]=SETTING_OUR_LAST_HASH};
-    value = xd_rsdb_getkey(ourlast_hash_key, 1, &vlen);
-    if(value)
-    {
-        memcpy(g_ourlast_hash, value, sizeof(g_ourlast_hash));
-        free(value);
-        value = NULL;
-    }
-
-    char balance_key[1] ={[0]=SETTING_OUR_BALANCE};
-    value = xd_rsdb_getkey(balance_key, 1, &vlen);
-    if(value)
-    {
-        memcpy(&g_balance, value, sizeof(g_balance));
-        free(value);
-        value = NULL;
-    }
-
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
-xd_rsdb_op_t xd_rsdb_putkey(const char* key, size_t klen, const char* value, size_t vlen)
-{
-    char *errmsg = NULL;
-    
-    rocksdb_put(g_xdag_rsdb->db,
-                g_xdag_rsdb->write_options,
-                key, klen,
-                value, vlen,
-                &errmsg);
-    if(errmsg)
-    {
-        rocksdb_writeoptions_destroy(g_xdag_rsdb->write_options);
-        rocksdb_close(g_xdag_rsdb->db);
-		RSDB_LOG_FREE_ERRMSG(errmsg);
-        return XDAG_RSDB_PUT_ERROR;
-    }
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
-xd_rsdb_op_t xd_rsdb_put_setting(xd_rsdb_key_t type, const char* value, size_t vlen)
-{
-    char key[1] = {[0] = type};
-    xd_rsdb_putkey(key, 1, value, vlen);
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
+// get
 void* xd_rsdb_getkey(const char* key, const size_t klen, size_t* vlen)
 {
     char *errmsg = NULL;
@@ -289,63 +263,6 @@ void* xd_rsdb_getkey(const char* key, const size_t klen, size_t* vlen)
         return NULL;
     }
     return rocksdb_return_value;
-}
-
-xd_rsdb_op_t xd_rsdb_delkey(const char* key, size_t klen)
-{
-    char *errmsg = NULL;
-    rocksdb_delete(g_xdag_rsdb->db, g_xdag_rsdb->write_options, key, klen, &errmsg);
-    if(errmsg)
-    {
-        rocksdb_writeoptions_destroy(g_xdag_rsdb->write_options);
-        rocksdb_close(g_xdag_rsdb->db);
-		RSDB_LOG_FREE_ERRMSG(errmsg);
-        return XDAG_RSDB_DELETE_ERROR;
-    }
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
-
-xd_rsdb_op_t xd_rsdb_put_stats(xdag_time_t time)
-{
-    xd_rsdb_op_t ret = XDAG_RSDB_NULL;
-    if((ret = xd_rsdb_put_setting(SETTING_STATS, (const char *) &g_xdag_stats, sizeof(g_xdag_stats)))) {
-        return ret;
-    }
-
-    ret = xd_rsdb_put_setting(SETTING_CUR_TIME, (const char*)&time, sizeof(xdag_time_t));
-    return ret;
-}
-
-xd_rsdb_op_t xd_rsdb_get_stats(void)
-{
-    char key[1] = {[0] = SETTING_STATS};
-    struct xdag_stats* p = NULL;
-    size_t vlen = 0;
-    p = xd_rsdb_getkey(key, 1, &vlen);
-    if(p) {
-        memcpy(&g_xdag_stats, p, sizeof(g_xdag_stats));
-        free(p);
-    }
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
-xd_rsdb_op_t xd_rsdb_get_extstats()
-{
-    char key[1] = {[0] = SETTING_EXT_STATS};
-    struct xdag_ext_stats* pexs = NULL;
-    size_t vlen = 0;
-    pexs = xd_rsdb_getkey(key, 1, &vlen);
-    if(pexs) {
-        memcpy(&g_xdag_extstats, pexs, sizeof(g_xdag_extstats));
-        free(pexs);
-    }
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
-xd_rsdb_op_t xd_rsdb_put_extstats(void)
-{
-    return xd_rsdb_put_setting(SETTING_EXT_STATS, (const char *) &g_xdag_extstats, sizeof(g_xdag_extstats));;
 }
 
 xd_rsdb_op_t xd_rsdb_get_bi(xdag_hashlow_t hash, struct block_internal *bi)
@@ -390,137 +307,64 @@ xd_rsdb_op_t xd_rsdb_get_ournext(xdag_hashlow_t hash, xdag_hashlow_t next)
     return XDAG_RSDB_OP_SUCCESS;
 }
 
-xd_rsdb_op_t xd_rsdb_get_heighthash(uint64_t height, xdag_hashlow_t hash)
+static xd_rsdb_op_t xd_rsdb_get_xdblock(xdag_hashlow_t hash, xd_rsdb_key_t type, struct xdag_block *xb)
 {
-    if (!hash) return XDAG_RSDB_NULL;
+    if(!xb) return XDAG_RSDB_NULL;
     size_t vlen = 0;
-    char key[sizeof(uint64_t) + 1] = {[0] = HEIGHT_BLOCK_HASH};
-    memcpy(key + 1, &height, sizeof(uint64_t));
-    char *value = xd_rsdb_getkey(key, sizeof(uint64_t) + 1, &vlen);
+    char key[RSDB_KEY_LEN] = {[0] = type};
+    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
+    char *value = xd_rsdb_getkey(key, RSDB_KEY_LEN, &vlen);
+
     if(!value)
         return XDAG_RSDB_NULL;
 
-    if(vlen != sizeof(xdag_hashlow_t)){
-        xdag_err("vlen is not math size of xdag_hashlow_t\n");
+    if(vlen != sizeof(struct xdag_block)){
+        fprintf(stderr,"vlen is not math size of xdag_block\n");
         free(value);
         return XDAG_RSDB_NULL;
     }
-    memcpy(hash, value, vlen);
+    memcpy(xb, value, vlen);
     free(value);
-
     return XDAG_RSDB_OP_SUCCESS;
 }
 
 xd_rsdb_op_t xd_rsdb_get_orpblock(xdag_hashlow_t hash, struct xdag_block *xb)
 {
-    if(!xb) return XDAG_RSDB_NULL;
-    size_t vlen = 0;
-    char key[RSDB_KEY_LEN] = {[0] = HASH_ORP_BLOCK};
-    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
-    char *value = xd_rsdb_getkey(key, RSDB_KEY_LEN, &vlen);
-
-    if(!value)
-        return XDAG_RSDB_NULL;
-
-    if(vlen != sizeof(struct xdag_block)){
-        fprintf(stderr,"vlen is not math size of xdag_block\n");
-        free(value);
-        return XDAG_RSDB_NULL;
-    }
-    memcpy(xb, value, vlen);
-    free(value);
-    return XDAG_RSDB_OP_SUCCESS;
+    return xd_rsdb_get_xdblock(hash, HASH_ORP_BLOCK, xb);
 }
 
 xd_rsdb_op_t xd_rsdb_get_extblock(xdag_hashlow_t hash, struct xdag_block *xb)
 {
-    if(!xb) return XDAG_RSDB_NULL;
-    size_t vlen = 0;
-    char key[RSDB_KEY_LEN] = {[0] = HASH_EXT_BLOCK};
-    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
-    char *value = xd_rsdb_getkey(key, RSDB_KEY_LEN, &vlen);
-
-    if(!value)
-        return XDAG_RSDB_NULL;
-
-    if(vlen != sizeof(struct xdag_block)){
-        fprintf(stderr,"vlen is not math size of xdag_block\n");
-        free(value);
-        return XDAG_RSDB_NULL;
-    }
-    memcpy(xb, value, vlen);
-    free(value);
-    return XDAG_RSDB_OP_SUCCESS;
+    return xd_rsdb_get_xdblock(hash, HASH_EXT_BLOCK, xb);
 }
 
 xd_rsdb_op_t xd_rsdb_get_cacheblock(xdag_hashlow_t hash, struct xdag_block *xb)
 {
-    if(!xb) return XDAG_RSDB_NULL;
+    return xd_rsdb_get_xdblock(hash, HASH_BLOCK_CACHE, xb);;
+}
+
+xd_rsdb_op_t xd_rsdb_get_stats(void)
+{
+    char key[1] = {[0] = SETTING_STATS};
+    struct xdag_stats* p = NULL;
     size_t vlen = 0;
-    char key[RSDB_KEY_LEN] = {[0] = HASH_BLOCK_CACHE};
-    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
-    char *value = xd_rsdb_getkey(key, RSDB_KEY_LEN, &vlen);
-
-    if(!value)
-        return XDAG_RSDB_NULL;
-
-    if(vlen != sizeof(struct xdag_block)){
-        fprintf(stderr,"vlen is not math size of xdag_block\n");
-        free(value);
-        return XDAG_RSDB_NULL;
-    }
-    memcpy(xb, value, vlen);
-    free(value);
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
-xd_rsdb_op_t xd_rsdb_del_bi(xdag_hashlow_t hash)
-{
-    if(!hash) return XDAG_RSDB_NULL;
-    int retcode = 0;
-    char key[RSDB_KEY_LEN] = {[0] = HASH_BLOCK_INTERNAL};
-    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
-    retcode = xd_rsdb_delkey(key, RSDB_KEY_LEN);
-    if(retcode) {
-        return retcode;
+    p = xd_rsdb_getkey(key, 1, &vlen);
+    if(p) {
+        memcpy(&g_xdag_stats, p, sizeof(g_xdag_stats));
+        free(p);
     }
     return XDAG_RSDB_OP_SUCCESS;
 }
 
-xd_rsdb_op_t xd_rsdb_del_orpblock(xdag_hashlow_t hash)
+xd_rsdb_op_t xd_rsdb_get_extstats()
 {
-    if(!hash) return XDAG_RSDB_NULL;
-    int retcode = 0;
-    char key[RSDB_KEY_LEN] = {[0] = HASH_ORP_BLOCK};
-    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
-    retcode = xd_rsdb_delkey(key, RSDB_KEY_LEN);
-    if(retcode) {
-        return retcode;
-    }
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
-xd_rsdb_op_t xd_rsdb_del_extblock(xdag_hashlow_t hash)
-{
-    if(!hash) return XDAG_RSDB_NULL;
-    int retcode = 0;
-    char key[RSDB_KEY_LEN] = {[0] = HASH_EXT_BLOCK};
-    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
-    retcode = xd_rsdb_delkey(key, RSDB_KEY_LEN);
-    if(retcode) {
-        return retcode;
-    }
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
-xd_rsdb_op_t xd_rsdb_del_heighthash(uint64_t height)
-{
-    int retcode = 0;
-    char key[sizeof(uint64_t) + 1] = {[0] = HEIGHT_BLOCK_HASH};
-    memcpy(key + 1, &height, sizeof(uint64_t));
-    retcode = xd_rsdb_delkey(key, sizeof(uint64_t) + 1);
-    if(retcode) {
-        return retcode;
+    char key[1] = {[0] = SETTING_EXT_STATS};
+    struct xdag_ext_stats* pexs = NULL;
+    size_t vlen = 0;
+    pexs = xd_rsdb_getkey(key, 1, &vlen);
+    if(pexs) {
+        memcpy(&g_xdag_extstats, pexs, sizeof(g_xdag_extstats));
+        free(pexs);
     }
     return XDAG_RSDB_OP_SUCCESS;
 }
@@ -546,56 +390,43 @@ xd_rsdb_op_t xd_rsdb_get_remark(xdag_hashlow_t hash, xdag_remark_t remark)
     return XDAG_RSDB_OP_SUCCESS;
 }
 
-xd_rsdb_op_t xd_rsdb_put_orpblock(xdag_hashlow_t hash, struct xdag_block* xb)
+xd_rsdb_op_t xd_rsdb_get_heighthash(uint64_t height, xdag_hashlow_t hash)
 {
-    if(!hash) return XDAG_RSDB_NULL;
-    if(!xb) return XDAG_RSDB_NULL;
-    int retcode = 0;
-    char key[RSDB_KEY_LEN] = {[0] = HASH_ORP_BLOCK};
-    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
-    retcode = xd_rsdb_putkey(key, RSDB_KEY_LEN, (const char *) xb, sizeof(struct xdag_block));
-    if(retcode) {
-        return retcode;
+    if (!hash) return XDAG_RSDB_NULL;
+    size_t vlen = 0;
+    char key[sizeof(uint64_t) + 1] = {[0] = HEIGHT_BLOCK_HASH};
+    memcpy(key + 1, &height, sizeof(uint64_t));
+    char *value = xd_rsdb_getkey(key, sizeof(uint64_t) + 1, &vlen);
+    if(!value)
+        return XDAG_RSDB_NULL;
+
+    if(vlen != sizeof(xdag_hashlow_t)){
+        xdag_err("vlen is not math size of xdag_hashlow_t\n");
+        free(value);
+        return XDAG_RSDB_NULL;
     }
+    memcpy(hash, value, vlen);
+    free(value);
+
     return XDAG_RSDB_OP_SUCCESS;
 }
 
-xd_rsdb_op_t xd_rsdb_put_extblock(xdag_hashlow_t hash, struct xdag_block* xb)
+// put
+xd_rsdb_op_t xd_rsdb_putkey(const char* key, size_t klen, const char* value, size_t vlen)
 {
-    if(!hash) return XDAG_RSDB_NULL;
-    if(!xb) return XDAG_RSDB_NULL;
-    int retcode = 0;
-    char key[RSDB_KEY_LEN] = {[0] = HASH_EXT_BLOCK};
-    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
-    retcode = xd_rsdb_putkey(key, RSDB_KEY_LEN, (const char *) xb, sizeof(struct xdag_block));
-    if(retcode) {
-        return retcode;
-    }
-    return XDAG_RSDB_OP_SUCCESS;
-}
+    char *errmsg = NULL;
 
-xd_rsdb_op_t xd_rsdb_put_cacheblock(xdag_hashlow_t hash, struct xdag_block* xb)
-{
-    if(!hash) return XDAG_RSDB_NULL;
-    if(!xb) return XDAG_RSDB_NULL;
-    int retcode = 0;
-    char key[RSDB_KEY_LEN] = {[0] = HASH_BLOCK_CACHE};
-    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
-    retcode = xd_rsdb_putkey(key, RSDB_KEY_LEN, (const char *) xb, sizeof(struct xdag_block));
-    if(retcode) {
-        return retcode;
-    }
-    return XDAG_RSDB_OP_SUCCESS;
-}
-
-xd_rsdb_op_t xd_rsdb_put_remark(struct block_internal* bi, xdag_remark_t strbuf)
-{
-    int retcode = 0;
-    char key[RSDB_KEY_LEN] = {[0] = HASH_BLOCK_REMARK};
-    memcpy(key + 1, bi->hash, RSDB_KEY_LEN - 1);
-    retcode = xd_rsdb_putkey(key, RSDB_KEY_LEN, (const char *) strbuf, sizeof(xdag_remark_t));
-    if(retcode) {
-        return retcode;
+    rocksdb_put(g_xdag_rsdb->db,
+                g_xdag_rsdb->write_options,
+                key, klen,
+                value, vlen,
+                &errmsg);
+    if(errmsg)
+    {
+        rocksdb_writeoptions_destroy(g_xdag_rsdb->write_options);
+        rocksdb_close(g_xdag_rsdb->db);
+        RSDB_LOG_FREE_ERRMSG(errmsg);
+        return XDAG_RSDB_PUT_ERROR;
     }
     return XDAG_RSDB_OP_SUCCESS;
 }
@@ -628,6 +459,69 @@ xd_rsdb_op_t xd_rsdb_put_ournext(xdag_hashlow_t hash, xdag_hashlow_t next)
     return XDAG_RSDB_OP_SUCCESS;
 }
 
+xd_rsdb_op_t xd_rsdb_put_setting(xd_rsdb_key_t type, const char* value, size_t vlen)
+{
+    char key[1] = {[0] = type};
+    xd_rsdb_putkey(key, 1, value, vlen);
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+static xd_rsdb_op_t xd_rsdb_put_xdblock(xdag_hashlow_t hash, xd_rsdb_key_t type,struct xdag_block* xb)
+{
+    if(!hash) return XDAG_RSDB_NULL;
+    if(!xb) return XDAG_RSDB_NULL;
+    int retcode = 0;
+    char key[RSDB_KEY_LEN] = {[0] = type};
+    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
+    retcode = xd_rsdb_putkey(key, RSDB_KEY_LEN, (const char *) xb, sizeof(struct xdag_block));
+    if(retcode) {
+        return retcode;
+    }
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+xd_rsdb_op_t xd_rsdb_put_orpblock(xdag_hashlow_t hash, struct xdag_block* xb)
+{
+    return xd_rsdb_put_xdblock(hash, HASH_ORP_BLOCK, xb);
+}
+
+xd_rsdb_op_t xd_rsdb_put_extblock(xdag_hashlow_t hash, struct xdag_block* xb)
+{
+    return xd_rsdb_put_xdblock(hash, HASH_EXT_BLOCK, xb);
+}
+
+xd_rsdb_op_t xd_rsdb_put_cacheblock(xdag_hashlow_t hash, struct xdag_block* xb)
+{
+    return xd_rsdb_put_xdblock(hash, HASH_BLOCK_CACHE, xb);;
+}
+
+xd_rsdb_op_t xd_rsdb_put_stats(xdag_time_t time)
+{
+    xd_rsdb_op_t ret = XDAG_RSDB_NULL;
+    if((ret = xd_rsdb_put_setting(SETTING_STATS, (const char *) &g_xdag_stats, sizeof(g_xdag_stats)))) {
+        return ret;
+    }
+    ret = xd_rsdb_put_setting(SETTING_CUR_TIME, (const char*)&time, sizeof(xdag_time_t));
+    return ret;
+}
+
+xd_rsdb_op_t xd_rsdb_put_extstats(void)
+{
+    return xd_rsdb_put_setting(SETTING_EXT_STATS, (const char *) &g_xdag_extstats, sizeof(g_xdag_extstats));;
+}
+
+xd_rsdb_op_t xd_rsdb_put_remark(struct block_internal* bi, xdag_remark_t strbuf)
+{
+    int retcode = 0;
+    char key[RSDB_KEY_LEN] = {[0] = HASH_BLOCK_REMARK};
+    memcpy(key + 1, bi->hash, RSDB_KEY_LEN - 1);
+    retcode = xd_rsdb_putkey(key, RSDB_KEY_LEN, (const char *) strbuf, sizeof(xdag_remark_t));
+    if(retcode) {
+        return retcode;
+    }
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
 xd_rsdb_op_t xd_rsdb_put_heighthash(uint64_t height, xdag_hashlow_t hash)
 {
     int retcode = 0;
@@ -635,6 +529,61 @@ xd_rsdb_op_t xd_rsdb_put_heighthash(uint64_t height, xdag_hashlow_t hash)
     char key[sizeof(uint64_t) + 1] = {[0] = HEIGHT_BLOCK_HASH};
     memcpy(key + 1, &height, sizeof(uint64_t));
     retcode = xd_rsdb_putkey(key, sizeof(uint64_t) + 1, (const char *)hash, sizeof(xdag_hashlow_t));
+    if(retcode) {
+        return retcode;
+    }
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+// delete
+xd_rsdb_op_t xd_rsdb_delkey(const char* key, size_t klen)
+{
+    char *errmsg = NULL;
+    rocksdb_delete(g_xdag_rsdb->db, g_xdag_rsdb->write_options, key, klen, &errmsg);
+    if(errmsg)
+    {
+        rocksdb_writeoptions_destroy(g_xdag_rsdb->write_options);
+        rocksdb_close(g_xdag_rsdb->db);
+        RSDB_LOG_FREE_ERRMSG(errmsg);
+        return XDAG_RSDB_DELETE_ERROR;
+    }
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+static xd_rsdb_op_t xd_rsdb_del(xdag_hashlow_t hash, xd_rsdb_key_t type)
+{
+    if(!hash) return XDAG_RSDB_NULL;
+    int retcode = 0;
+    char key[RSDB_KEY_LEN] = {[0] = type};
+    memcpy(key + 1, hash, RSDB_KEY_LEN - 1);
+    retcode = xd_rsdb_delkey(key, RSDB_KEY_LEN);
+    if(retcode) {
+        return retcode;
+    }
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
+xd_rsdb_op_t xd_rsdb_del_bi(xdag_hashlow_t hash)
+{
+    return xd_rsdb_del(hash, HASH_BLOCK_INTERNAL);
+}
+
+xd_rsdb_op_t xd_rsdb_del_orpblock(xdag_hashlow_t hash)
+{
+    return xd_rsdb_del(hash, HASH_ORP_BLOCK);
+}
+
+xd_rsdb_op_t xd_rsdb_del_extblock(xdag_hashlow_t hash)
+{
+    return xd_rsdb_del(hash, HASH_EXT_BLOCK);
+}
+
+xd_rsdb_op_t xd_rsdb_del_heighthash(uint64_t height)
+{
+    int retcode = 0;
+    char key[sizeof(uint64_t) + 1] = {[0] = HEIGHT_BLOCK_HASH};
+    memcpy(key + 1, &height, sizeof(uint64_t));
+    retcode = xd_rsdb_delkey(key, sizeof(uint64_t) + 1);
     if(retcode) {
         return retcode;
     }
