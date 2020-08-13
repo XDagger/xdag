@@ -93,6 +93,8 @@ xd_rsdb_op_t xd_rsdb_init(xdag_time_t *time)
     if(!value) {
         xd_rsdb_put_setting(SETTING_VERSION, XDAG_VERSION, strlen(XDAG_VERSION));
         xd_rsdb_put_setting(SETTING_CREATED, "done", strlen("done"));
+        memset(&top_main_chain, 0, sizeof(top_main_chain));
+        memset(&pretop_main_chain, 0, sizeof(pretop_main_chain));
     } else if (strncmp("done", value, strlen("done")) == 0) {
         free(value);
         value = NULL;
@@ -114,26 +116,29 @@ xd_rsdb_op_t xd_rsdb_load(xd_rsdb_t* db)
     // clean wait blocks
     g_xdag_extstats.nwaitsync = 0;
 
-    // read top_main_chain hash
-    char top_main_chain_hash_key[1] ={[0]=SETTING_TOP_MAIN_HASH};
+    // read top_main_chain
+    char top_hash_key[1] ={[0]=SETTING_TOP_MAIN};
     char *value = NULL;
     size_t vlen = 0;
-
-    value = xd_rsdb_getkey(top_main_chain_hash_key, 1, &vlen);
+    value = xd_rsdb_getkey(top_hash_key, 1, &vlen);
     if(value)
     {
-        memcpy(g_top_main_chain_hash, value, sizeof(g_top_main_chain_hash));
+        memcpy(&top_main_chain, value, sizeof(top_main_chain));
         free(value);
         value = NULL;
+    } else {
+        memset(&top_main_chain, 0, sizeof(top_main_chain));
     }
 
-    char pre_top_main_chain_hash_key[1] ={[0]=SETTING_PRE_TOP_MAIN_HASH};
-    value = xd_rsdb_getkey(pre_top_main_chain_hash_key, 1, &vlen);
+    char pre_top_main_key[1] ={[0]=SETTING_PRE_TOP_MAIN};
+    value = xd_rsdb_getkey(pre_top_main_key, 1, &vlen);
     if(value)
     {
-        memcpy(g_pre_top_main_chain_hash, value, sizeof(g_pre_top_main_chain_hash));
+        memcpy(&pretop_main_chain, value, sizeof(pretop_main_chain));
         free(value);
         value = NULL;
+    } else {
+        memset(&pretop_main_chain, 0, sizeof(pretop_main_chain));
     }
 
     char ourfirst_hash_key[1] ={[0]=SETTING_OUR_FIRST_HASH};
