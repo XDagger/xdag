@@ -15,10 +15,10 @@
 extern "C" {
 #endif
 
-// convert cheato to xdag
+// convert amount to xdag
 extern long double amount2xdags(xdag_amount_t);
 
-// convert xdag to cheato
+// convert xdag to amount
 extern xdag_amount_t xdags2amount(const char*);
 
 // calculate difficulty from hash

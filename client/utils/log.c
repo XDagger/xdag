@@ -111,7 +111,7 @@ size_t get_log(char* log, size_t size)
 	return size;
 }
 
-int xdag_log(const char *logfile, int level, const char *format, ...)
+int xdag_log(const char *logfile, int level, const char* func, unsigned  long line,const char *format, ...)
 {
 	static const char lvl[] = "NONEFATACRITINTEERROWARNMESSINFODBUGTRAC";
 	char tbuf[64] = {0}, buf[64] = {0};
@@ -144,9 +144,9 @@ int xdag_log(const char *logfile, int level, const char *format, ...)
 	}
 	
 #ifdef LOG_PRINT
-	printf("%s.%03d [%012llx:%.4s]  ", tbuf, (int)(tv.tv_usec / 1000), (long long)pthread_self_ptr(), lvl + 4 * level);
+	printf("%s.%03d [%012llx:%.4s %s %lu\t\t]  ", tbuf, (int)(tv.tv_usec / 1000), (long long)pthread_self_ptr(), lvl + 4 * level,func,line);
 #else
-	fprintf(f, "%s.%03d [%012llx:%.4s]  ", tbuf, (int)(tv.tv_usec / 1000), (long long)pthread_self_ptr(), lvl + 4 * level);
+	fprintf(f, "%s.%03d [%012llx:%.4s %s %lu\t\t]  ", tbuf, (int)(tv.tv_usec / 1000), (long long)pthread_self_ptr(), lvl + 4 * level,func,line);
 #endif
 	
 	va_start(arg, format);
@@ -288,7 +288,7 @@ int xdag_log_init(void)
 	sa.sa_flags = SA_RESTART | SA_SIGINFO;
 
 	for (i = 1; i < 32; ++i) {
-		if (i != SIGURG && i != SIGCHLD && i != SIGCONT && i != SIGPIPE && i != SIGINT && i != SIGTERM && i != SIGWINCH && i != SIGHUP) {
+		if (i != SIGPROF && i != SIGUSR1 && i != SIGURG && i != SIGCHLD && i != SIGCONT && i != SIGPIPE && i != SIGINT && i != SIGTERM && i != SIGWINCH && i != SIGHUP) {
 			sigaction(i, &sa, 0);
 		}
 	}

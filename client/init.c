@@ -1,17 +1,16 @@
-/* cheatcoin main, T13.654-T14.582 $DVS:time$ */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <ctype.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/wait.h>
 #ifndef _WIN32
 #include <signal.h>
+#include <gperftools/profiler.h>
+#include <gperftools/heap-profiler.h>
 #endif
-#include "system.h"
 #include "address.h"
 #include "block.h"
 #include "crypt.h"
@@ -25,7 +24,6 @@
 #include "mining_common.h"
 #include "commands.h"
 #include "terminal.h"
-#include "memory.h"
 #include "miner.h"
 #include "pool.h"
 #include "network.h"
@@ -36,6 +34,7 @@
 #include "../dnet/dnet_crypt.h"
 #include "utils/random.h"
 #include "websocket/websocket.h"
+#include "rsdb.h"
 
 #define ARG_EQUAL(a,b,c) strcmp(c, "") == 0 ? strcmp(a, b) == 0 : (strcmp(a, b) == 0 || strcmp(a, c) == 0)
 
@@ -68,10 +67,25 @@ void set_xdag_name(void);
 static void daemonize(void);
 static void angelize(void);
 
+static void gprofStartAndStop(int signum) {
+	static int isStarted = 0;
+	if (signum != SIGUSR1) return;
+	
+	if (!isStarted){
+		isStarted = 1;
+		HeapProfilerStart("/tmp/heap_prof");
+		printf("ProfilerStart success\n");
+	}else{
+		isStarted = 0;
+		HeapProfilerStop();
+		printf("ProfilerStop success\n");
+	}
+}
+
 int xdag_init(int argc, char **argv, int isGui)
 {
 	xdag_init_path(argv[0]);
-
+	signal(SIGUSR1, gprofStartAndStop);
 #ifndef _WIN32
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
@@ -79,7 +93,6 @@ int xdag_init(int argc, char **argv, int isGui)
 	signal(SIGINT, SIG_IGN);
 	signal(SIGTERM, SIG_IGN);
 #endif
-
 	set_xdag_name();
 
 	if(!isGui) {
@@ -88,18 +101,25 @@ int xdag_init(int argc, char **argv, int isGui)
 
 	g_xdag_run = 1;
 	xdag_show_state(0);
-
-	if(pre_init() < 0) {
-		return -1;
-	}
 	
 	struct startup_parameters parameters;
 	int res = parse_startup_parameters(argc, argv, &parameters);
 	if(res <= 0) {
 		return res;
 	}
-	
-	setup_common();
+
+    xdag_mess("Reading wallet...");
+    if(dnet_key_init() < 0) return -1;
+
+    if(parameters.transport_flags & XDAG_DAEMON) {
+        daemonize();
+        angelize();
+    }
+
+    // *** when -d set,pre_init() and setup_common() init must after daemonize nad angelize
+	if(pre_init() || setup_common()) {
+        return -1;
+	}
 
 	if(is_wallet()) {
 		if(setup_miner(&parameters, isGui) < 0) {
@@ -110,21 +130,20 @@ int xdag_init(int argc, char **argv, int isGui)
 			return -1;
 		}
 	}
+    pthread_t th;
+    if(!isGui) {
+        if(is_pool() || (parameters.transport_flags & XDAG_DAEMON) > 0) {
+            xdag_mess("Starting terminal server...");
+            pthread_t th;
+            const int err = pthread_create(&th, 0, &terminal_thread, 0);
+            if(err != 0) {
+                printf("create terminal_thread failed, error : %s\n", strerror(err));
+                return -1;
+            }
+        }
 
-	if(!isGui) {
-		if(is_pool() || (parameters.transport_flags & XDAG_DAEMON) > 0) {
-			xdag_mess("Starting terminal server...");
-			pthread_t th;
-			const int err = pthread_create(&th, 0, &terminal_thread, 0);
-			if(err != 0) {
-				printf("create terminal_thread failed, error : %s\n", strerror(err));
-				return -1;
-			}
-		}
-
-		startCommandProcessing(parameters.transport_flags);
-	}
-
+        startCommandProcessing(parameters.transport_flags);
+    }
 	return 0;
 }
 
@@ -150,17 +169,7 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
             g_block_header_type = XDAG_FIELD_HEAD_TEST; //block header has the different type in the test network
         } else if(ARG_EQUAL(argv[i], "", "-disable-refresh")) { /* disable auto refresh white list */
             g_prevent_auto_refresh = 1;
-        } else if(ARG_EQUAL(argv[i], "-f", "")) { /* configuration file */
-			if(parameters->pool_configuration.node_address != NULL || parameters->pool_configuration.mining_configuration != NULL) {
-				printUsage(argv[0]);
-				return 0;
-			}
-			const char *config_path = NULL;
-			if(i + 1 < argc && argv[i + 1] != NULL && argv[i + 1][0] != '-') {
-				config_path = argv[++i];
-			}
-			if(get_pool_config(config_path, &parameters->pool_configuration) < 0) return -1;
-		} else if(ARG_EQUAL(argv[i], "-a", "")) { /* miner address */
+        } else if(ARG_EQUAL(argv[i], "-a", "")) { /* miner address */
 			if(++i < argc) {
 				parameters->miner_address = argv[i];
 			}
@@ -179,7 +188,7 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 			return terminal();
 		} else if(ARG_EQUAL(argv[i], "-z", "")) { /* memory map  */
 			if(++i < argc) {
-				xdag_mem_tempfile_path(argv[i]);
+//				xdag_mem_tempfile_path(argv[i]);
 			}
         } else if(ARG_EQUAL(argv[i], "-m", "")) { /* mining thread number */
 			if(++i < argc) {
@@ -238,7 +247,17 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 			}
 		} else if(ARG_EQUAL(argv[i], "-l", "")) { /* list balance */
 			return out_balances();
-		} else {
+		} else if(ARG_EQUAL(argv[i], "-f", "")) { /* configuration file */
+            if(parameters->pool_configuration.node_address != NULL || parameters->pool_configuration.mining_configuration != NULL) {
+                printUsage(argv[0]);
+                return 0;
+            }
+            const char *config_path = NULL;
+            if(i + 1 < argc && argv[i + 1] != NULL && argv[i + 1][0] != '-') {
+                config_path = argv[++i];
+            }
+            if(get_pool_config(config_path, &parameters->pool_configuration) < 0) return -1;
+        } else {
 			printUsage(argv[0]);
 			return 0;
 		}
@@ -298,10 +317,8 @@ int pre_init(void)
 int setup_common(void)
 {
 	//TODO: future xdag.wallet
-	xdag_mess("Reading wallet...");
-	if(dnet_key_init() < 0) return -1;
-	
 	if(xdag_wallet_init()) return -1;
+    if(xd_rsdb_pre_init(0)) return -1;
 	return 0;
 }
 
@@ -374,12 +391,6 @@ int setup_miner(struct startup_parameters *parameters, int isGui)
 		parameters->pool_address = pool_address_buf;
 	}
 
-    if(parameters->transport_flags & XDAG_DAEMON && !isGui) {
-        daemonize();
-    }
-
-    angelize();
-
 	//TODO: think of combining the logic with pool-initialization functions (after decision what to do with xdag_blocks_start)
 	if(parameters->is_rpc) {
 		xdag_mess("Initializing RPC service...");
@@ -439,6 +450,7 @@ int dnet_key_init(void)
 	int err = dnet_crypt_init();
 	if(err < 0) {
 		printf("Password incorrect.\n");
+		fflush(stdout);
 		return err;
 	}
 	return 0;

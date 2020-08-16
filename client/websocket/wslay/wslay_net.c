@@ -23,7 +23,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "wslay_net.h"
-
+#include <arpa/inet.h>
 #ifndef WORDS_BIGENDIAN
 
 uint64_t wslay_byteswap64(uint64_t x)

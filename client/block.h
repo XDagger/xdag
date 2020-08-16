@@ -9,6 +9,7 @@
 #include "hash.h"
 #include "system.h"
 #include "types.h"
+#include "utils/atomic.h"
 
 enum xdag_field_type {
 	XDAG_FIELD_NONCE,        //0
@@ -50,9 +51,25 @@ enum bi_flags {
 	BI_REMARK     = 0x80
 };
 
-#define XDAG_BLOCK_FIELDS 16
+#define XDAG_BLOCK_FIELDS            16
+#define REMARK_ENABLED               1
+#define MAX_WAITING_MAIN             1
+#define MAX_ALLOWED_EXTRA	         0x10000
+#define MIN_DELETE_EXTRA_FRAME	     128
+#define MAIN_START_AMOUNT            (1ll << 42)
+#define MAIN_APOLLO_AMOUNT           (1ll << 39)
+// nmain = 976487, hash is WENN9ZgvXA+vNaslRLFQPgBKIbJVaMsu
+//                         at 2019-12-30 18:01:35 UTC
+//                         get this info from https://explorer.xdag.io/
+//
+// Apollo plans to upgrade on 2020-01-30 00:00:00 UTC
+//
+#define MAIN_APOLLO_HEIGHT           1017323
+#define MAIN_APOLLO_TESTNET_HEIGHT   196250
+#define MAIN_BIG_PERIOD_LOG          21
+#define MAX_LINKS                    15
 
-#define REMARK_ENABLED 1
+#define xdag_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)
 
 #if CHAR_BIT != 8
 #error Your system hasn't exactly 8 bit for a char, it won't run.
@@ -85,13 +102,23 @@ struct xdag_block {
 	struct xdag_field field[XDAG_BLOCK_FIELDS];
 };
 
-#define xdag_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)
+struct block_internal {
+    xdag_hash_t hash;
+    xdag_diff_t difficulty;
+    xdag_amount_t amount, linkamount[MAX_LINKS], fee;
+    xtime_t time;
+    uint64_t storage_pos;
+    xdag_hashlow_t ref;
+    xdag_hashlow_t link[MAX_LINKS];
+    uint64_t height;
+    atomic_uintptr_t remark;
+    uint16_t flags, in_mask, n_our_key;
+    uint8_t nlinks:4, max_diff_link:4, reserved;
+};
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-extern int g_bi_index_enable;
 
 // start of regular block processing
 extern int xdag_blocks_start(int mining_threads_count, int miner_address);
@@ -128,16 +155,13 @@ extern int xdag_set_balance(xdag_hash_t hash, xdag_amount_t balance);
 extern xdag_amount_t xdag_get_supply(uint64_t nmain);
 
 // returns position and time of block by hash; if block is extra and block != 0 also returns the whole block
-extern int64_t xdag_get_block_pos(const xdag_hash_t hash, xtime_t *time, struct xdag_block *block);
+extern int64_t xdag_get_block_pos(xdag_hash_t hash, xtime_t *time, struct xdag_block *block);
 
 // return state info string
 extern const char* xdag_get_block_state_info(uint8_t flag);
 
 // returns a number of key by hash of block or -1 if block is not ours
 extern int xdag_get_key(xdag_hash_t hash);
-
-// reinitialization of block processing
-extern int xdag_blocks_reset(void);
 
 // prints detailed information about block
 extern int xdag_print_block_info(xdag_hash_t hash, FILE *out);
@@ -158,10 +182,11 @@ void xdag_list_orphan_blocks(int, FILE*);
 void xdag_block_finish(void);
     
 void *add_block_callback_sync(void *block, void *data);
-	
+
 // get block info of specified address
-extern int xdag_get_block_info(xdag_hash_t, void *, int (*)(void*, int, xdag_hash_t, xdag_amount_t, xtime_t, const char*),
+extern int xdag_get_block_info(xdag_hash_t, void *, int (*)(void*, int, xdag_hash_t, xdag_amount_t, xtime_t, uint64_t, const char*),
 							void *, int (*)(void*, const char *, xdag_hash_t, xdag_amount_t));
+
 
 #ifdef __cplusplus
 };
