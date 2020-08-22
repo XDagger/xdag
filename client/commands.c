@@ -70,6 +70,7 @@ void processLastBlocksCommand(char *nextParam, FILE *out);
 void processMainBlocksCommand(char *nextParam, FILE *out);
 void processMinedBlocksCommand(char *nextParam, FILE *out);
 void processOrphanBlocksCommand(char *nextParam, FILE *out);
+void processExtraBlocksCommand(char *nextParam, FILE *out);
 void processHelpCommand(FILE *out);
 void processDisconnectCommand(char *nextParam, FILE *out);
 void processRPCCommand(char *nextParam, FILE *out);
@@ -84,6 +85,7 @@ int xdag_com_lastblocks(char *, FILE*);
 int xdag_com_mainblocks(char *, FILE*);
 int xdag_com_minedblocks(char *, FILE*);
 int xdag_com_orphanblocks(char *, FILE*);
+int xdag_com_extrablocks(char *, FILE*);
 int xdag_com_keyGen(char *, FILE*);
 int xdag_com_level(char *, FILE*);
 int xdag_com_miner(char *, FILE*);
@@ -116,6 +118,7 @@ XDAG_COMMAND commands[] = {
 	{ "mainblocks"  , 2, xdag_com_mainblocks },
 	{ "minedblocks" , 2, xdag_com_minedblocks },
 	{ "orphanblocks", 2, xdag_com_orphanblocks },
+	{ "extrablocks" , 2, xdag_com_extrablocks },
 	{ "keygen"      , 0, xdag_com_keyGen },
 	{ "level"       , 0, xdag_com_level },
 	{ "miner"       , 2, xdag_com_miner },
@@ -186,6 +189,12 @@ int xdag_com_orphanblocks(char * args, FILE* out)
 {
 	processOrphanBlocksCommand(args, out);
 	return 0;
+}
+
+int xdag_com_extrablocks(char * args, FILE* out)
+{
+    processExtraBlocksCommand(args, out);
+    return 0;
 }
 
 int xdag_com_keyGen(char * args, FILE* out)
@@ -700,6 +709,17 @@ void processOrphanBlocksCommand(char *nextParam, FILE *out)
 	} else {
 		xdag_list_orphan_blocks(blocksCount, out);
 	}
+}
+
+void processExtraBlocksCommand(char *nextParam, FILE *out)
+{
+    int blocksCount = 20;
+    char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+    if((cmd && sscanf(cmd, "%d", &blocksCount) != 1) || blocksCount <= 0) {
+        fprintf(out, "Illegal number.\n");
+    } else {
+        xdag_list_extra_blocks(blocksCount, out);
+    }
 }
 
 void processDisconnectCommand(char *nextParam, FILE *out)

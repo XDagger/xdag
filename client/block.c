@@ -1920,6 +1920,7 @@ void add_orphan(struct block_internal* bi, struct xdag_block* xb)
 void xdag_list_orphan_blocks(int count, FILE *out)
 {
 	int i = 0;
+    xdag_hashlow_t hash = {0};
 	print_header_block_list(out);
 
 	pthread_mutex_lock(&block_mutex);
@@ -1934,13 +1935,42 @@ void xdag_list_orphan_blocks(int count, FILE *out)
         const char *seek_key = rocksdb_iter_key(iter, &klen);
         if(klen && seek_key) {
             struct block_internal b;
-            if(!xd_rsdb_get_bi((uint64_t*)seek_key, &b)){
+            memcpy(hash, seek_key + 1, sizeof(xdag_hashlow_t));
+            if(!xd_rsdb_get_bi(hash, &b)){
                 print_block(&b, 0, out);
             }
         }
     }
 
 	pthread_mutex_unlock(&block_mutex);
+}
+
+void xdag_list_extra_blocks(int count, FILE *out)
+{
+    int i = 0;
+    xdag_hashlow_t hash = {0};
+    print_header_block_list(out);
+
+    pthread_mutex_lock(&block_mutex);
+    rocksdb_iterator_t* iter = NULL;
+    iter = rocksdb_create_iterator(g_xdag_rsdb->db, g_xdag_rsdb->read_options);
+    char key[1] = {[0] = HASH_EXT_BLOCK};
+    size_t klen = 1;
+    for (rocksdb_iter_seek(iter, key, 1);
+         rocksdb_iter_valid(iter) && !memcmp(rocksdb_iter_key(iter, &klen), key, 1);
+         rocksdb_iter_next(iter))
+    {
+        const char *seek_key = rocksdb_iter_key(iter, &klen);
+        if(klen && seek_key) {
+            struct block_internal b;
+            memcpy(hash, seek_key + 1, sizeof(xdag_hashlow_t));
+            if(!xd_rsdb_get_bi(hash, &b)){
+                print_block(&b, 0, out);
+            }
+        }
+    }
+
+    pthread_mutex_unlock(&block_mutex);
 }
 
 // completes work with the blocks
