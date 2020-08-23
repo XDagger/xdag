@@ -39,7 +39,7 @@ void append_block_info(struct block_internal *bi);
 //int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
 int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
 static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
-int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t send_time);
+int do_mining(struct xdag_block *block, struct block_internal *pretop, xtime_t send_time);
 int remove_orphan(xdag_hashlow_t);
 void add_orphan(struct block_internal*, struct xdag_block*);
 static inline size_t remark_acceptance(xdag_remark_t);
@@ -181,7 +181,7 @@ static uint64_t unapply_block(struct block_internal* bi)
 	for (int i = 0; i < bi->nlinks; ++i) {
         struct block_internal lbi;
         if(!xd_rsdb_get_bi(bi->link[i], &lbi)) {
-            if (memcmp(lbi.ref, bi->hash, sizeof(xdag_hashlow_t)) == 0 && lbi.flags & BI_MAIN_REF) {
+            if (!memcmp(lbi.ref, bi->hash, sizeof(xdag_hashlow_t)) && lbi.flags & BI_MAIN_REF) {
                 accept_amount(bi, unapply_block(&lbi));
             }
         }
@@ -239,13 +239,16 @@ xdag_amount_t xdag_get_supply(uint64_t nmain)
 static void set_main(struct block_internal *m)
 {
     xdag_amount_t amount = 0;
-    m->height = ++g_xdag_stats.nmain;
-    if (g_xdag_stats.nmain > g_xdag_stats.total_nmain) {
-        g_xdag_stats.total_nmain = g_xdag_stats.nmain;
-    }
+    m->height = g_xdag_stats.nmain + 1;
     amount = get_amount(m->height);
 	m->flags |= BI_MAIN;
 	accept_amount(m, amount);
+    g_xdag_stats.nmain++;
+
+    if (g_xdag_stats.nmain > g_xdag_stats.total_nmain) {
+        g_xdag_stats.total_nmain = g_xdag_stats.nmain;
+    }
+
 	accept_amount(m, apply_block(m));
     memcpy(m->ref, m->hash, sizeof(xdag_hashlow_t));
     xd_rsdb_put_stats(m->time);
@@ -367,7 +370,7 @@ static int valid_signature(const struct xdag_block *b, int signo_r, int keysLeng
 
 static void set_pretop(struct block_internal *b, xdag_time_t timestamp){
     if ((b) && MAIN_TIME((b)->time) < MAIN_TIME(timestamp) &&
-		(xdag_diff_gt((b)->difficulty, pretop_main_chain.difficulty)))
+		( is_empty_block(&pretop_main_chain)||xdag_diff_gt((b)->difficulty, pretop_main_chain.difficulty)))
 	{
         memcpy(&pretop_main_chain, b, sizeof(struct block_internal));
         log_block("Pretop", b->hash, b->time, b->storage_pos);
@@ -832,8 +835,12 @@ int xdag_add_block(struct xdag_block *b)
 			memcpy(&block[0].field[i++], (void*)(src), sizeof(hashtype)) \
 		)
 
-static struct block_internal* pretop_block(xdag_time_t send_time) {
-    return (MAIN_TIME(top_main_chain.time) == MAIN_TIME(send_time) ? &pretop_main_chain : &top_main_chain);
+static void pretop_block(xdag_time_t send_time, struct block_internal* bi) {
+    if(!is_empty_block(&top_main_chain) && MAIN_TIME(top_main_chain.time) == MAIN_TIME(send_time) ){
+        memcpy(bi, &pretop_main_chain, sizeof(struct block_internal));
+    }  else {
+        memcpy(bi, &top_main_chain, sizeof(struct block_internal));
+    }
 }
 
 /* create a new block
@@ -851,7 +858,11 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 	struct xdag_public_key *defkey = xdag_wallet_default_key(&defkeynum), *keys = xdag_wallet_our_keys(&nkeys), *key;
     xdag_hash_t signatureHash = {0};
     xdag_hash_t newBlockHash = {0};
-	struct block_internal ref, *pretop = pretop_block(send_time);
+	struct block_internal ref, pretop;
+	memset(&ref, 0, sizeof(struct block_internal));
+    memset(&pretop, 0, sizeof(struct block_internal));
+
+	pretop_block(send_time, &pretop);
 
 	for (i = 0; i < inputsCount; ++i) {
         if(xd_rsdb_get_bi(fields[i].hash, &ref) || !(ref.flags & BI_OURS))
@@ -912,9 +923,9 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 		pthread_mutex_unlock(&g_create_block_mutex);
 	} else {
 		pthread_mutex_lock(&block_mutex);
-		if (res < XDAG_BLOCK_FIELDS && mining && pretop && pretop->time < send_time) {
-			log_block("Mintop", pretop->hash, pretop->time, pretop->storage_pos);
-			setfld(XDAG_FIELD_OUT, pretop->hash, xdag_hashlow_t);
+		if (res < XDAG_BLOCK_FIELDS && mining && !is_empty_block(&pretop) && pretop.time < send_time) {
+			log_block("Mintop", pretop.hash, pretop.time, pretop.storage_pos);
+			setfld(XDAG_FIELD_OUT, pretop.hash, xdag_hashlow_t);
 			res++;
 		}
 
@@ -933,7 +944,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
             if(value && klen) {
                 memcpy(xb_hash, key + 1, sizeof(xdag_hashlow_t));
                 if(!(b_retcode = xd_rsdb_get_bi(xb_hash, &b))) {
-                    if (b.time < send_time && (!pretop || memcmp(pretop->hash, xb_hash, sizeof(xdag_hashlow_t)))) {
+                    if (b.time < send_time && (is_empty_block(&pretop) || memcmp(pretop.hash, xb_hash, sizeof(xdag_hashlow_t)))) {
                         setfld(XDAG_FIELD_OUT, xb_hash, xdag_hashlow_t);
                         res++;
                     }
@@ -1036,7 +1047,7 @@ int xdag_create_and_send_block(struct xdag_field *fields, int inputsCount, int o
 	return res;
 }
 
-int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t send_time)
+int do_mining(struct xdag_block *block, struct block_internal *pretop, xtime_t send_time)
 {
 	uint64_t taskIndex = g_xdag_pool_task_index + 1;
 	struct xdag_pool_task *task = &g_xdag_pool_task[taskIndex & 1];
@@ -1062,13 +1073,16 @@ int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t 
 	while(xdag_get_xtimestamp() <= send_time) {
 		sleep(1);
 		pthread_mutex_lock(&g_create_block_mutex);
-        struct block_internal *pretop_new = pretop_block(send_time);
+        struct block_internal pretop_new;
+        memset(&pretop_new, 0, sizeof(struct block_internal));
+
+        pretop_block(send_time, &pretop_new);
 		pthread_mutex_unlock(&g_create_block_mutex);
-		if(*pretop != pretop_new && xdag_get_xtimestamp() < send_time) {
+        if(memcmp(pretop, &pretop_new, sizeof(struct block_internal)) && xdag_get_xtimestamp() < send_time) {
 			*pretop = pretop_new;
 			xdag_info("Mining: start from beginning because of pre-top block changed");
 			return 0;
-		}
+ 		}
 	}
 
 	pthread_mutex_lock((pthread_mutex_t*)g_ptr_share_mutex);
@@ -1456,7 +1470,7 @@ int64_t xdag_get_block_pos(xdag_hash_t hash, xtime_t *t, struct xdag_block *bloc
     
 	if (block && b.flags & BI_EXTRA) {
         struct xdag_block xb;
-        if(!xd_rsdb_get_cacheblock(hash, &xb) || !xd_rsdb_get_orpblock(hash, &xb)) {
+        if(!xd_rsdb_get_cacheblock(hash, &xb) || !xd_rsdb_get_extblock(hash, &xb)) {
             memcpy(block, &xb, sizeof(struct xdag_block));
         }
 	}
@@ -1602,13 +1616,13 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	uint64_t *h = bi->hash;
 	xdag_xtime_to_string(bi->time, time_buf);
     get_remark(bi, remark);
-    int flags = bi->flags;
-    if(flags & BI_MAIN) {
+    uint8_t flags = bi->flags;
+    if(bi->flags & BI_MAIN) {
         fprintf(out, "    height: %08llu\n", bi->height);
     }
 	fprintf(out, "      time: %s\n", time_buf);
 	fprintf(out, " timestamp: %llx\n", (unsigned long long)bi->time);
-	fprintf(out, "     flags: %x\n", bi->flags & ~BI_OURS);
+	fprintf(out, "     flags: %x\n", flags & ~(BI_OURS));
 	fprintf(out, "     state: %s\n", xdag_get_block_state_info(bi->flags));
 	fprintf(out, "  file pos: %llx\n", (unsigned long long)bi->storage_pos);
     fprintf(out, "      file: storage%s/%02x/%02x/%02x/%02x.dat\n", (g_xdag_testnet ? "-testnet" : ""),
@@ -1884,9 +1898,10 @@ int remove_orphan(xdag_hashlow_t hash)
 {
     struct block_internal b;
     if(!xd_rsdb_get_bi(hash, &b) && !(b.flags & BI_REF) ) {
-        b.flags |= BI_REF;
         struct xdag_block xb;
-        if(!xd_rsdb_get_orpblock(hash, &xb) || !xd_rsdb_get_extblock(hash, &xb)) {
+        if(!xd_rsdb_get_orpblock(hash, &xb) ||
+           !xd_rsdb_get_extblock(hash, &xb) ||
+           !xd_rsdb_get_cacheblock(hash, &xb)) {
             if((&b)->flags & BI_EXTRA) {
                 b.storage_pos = xdag_storage_save(&xb);
                 for (int i = 0; i < b.nlinks; ++i) {
@@ -1901,6 +1916,8 @@ int remove_orphan(xdag_hashlow_t hash)
             }
             xd_rsdb_put_cacheblock(hash, &xb);
         }
+        b.flags |= BI_REF;
+        memset(b.ref, 0 , sizeof(xdag_hashlow_t));
         xd_rsdb_merge_bi(&b);
     }
     return 0;
