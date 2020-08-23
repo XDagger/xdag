@@ -196,8 +196,9 @@ static int process_transport_block(struct xdag_block *received_block, struct xco
 		case XDAG_MESSAGE_BLOCK_REQUEST:
 		{
             struct xdag_block b;
-            if(!xd_rsdb_get_cacheblock(received_block->field[1].hash, &b) || !xd_rsdb_get_orpblock(
-                    received_block->field[1].hash, &b))
+            if(!xd_rsdb_get_cacheblock(received_block->field[1].hash, &b) ||
+               !xd_rsdb_get_orpblock(received_block->field[1].hash, &b) ||
+               !xd_rsdb_get_extblock(received_block->field[1].hash, &b))
             {
                 struct send_parameters send_parameters = {connection, time(NULL) + REQUEST_WAIT, 0, 0};
 
