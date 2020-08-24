@@ -100,7 +100,7 @@ static uint64_t apply_block(struct block_internal *bi)
 			if (ref_amount == -1l) {
 				continue;
 			}
-			memcpy(lbi.ref, bi->hash, sizeof(xdag_hashlow_t));
+			memcpy(&lbi.ref, &(bi->hash), sizeof(xdag_hashlow_t));
             xd_rsdb_merge_bi(&lbi);
 			if (bi->amount + ref_amount >= bi->amount) {
 				accept_amount(bi, ref_amount);
@@ -176,12 +176,12 @@ static uint64_t unapply_block(struct block_internal* bi)
 	}
 
 	bi->flags &= ~BI_MAIN_REF;
-    memset(bi->ref, 0, sizeof(xdag_hashlow_t));
+    memset(&(bi->ref), 0, sizeof(xdag_hashlow_t));
 
 	for (int i = 0; i < bi->nlinks; ++i) {
         struct block_internal lbi;
         if(!xd_rsdb_get_bi(bi->link[i], &lbi)) {
-            if (!memcmp(lbi.ref, bi->hash, sizeof(xdag_hashlow_t)) && lbi.flags & BI_MAIN_REF) {
+            if (!memcmp(&(lbi.ref), &(bi->hash), sizeof(xdag_hashlow_t)) && lbi.flags & BI_MAIN_REF) {
                 accept_amount(bi, unapply_block(&lbi));
             }
         }
@@ -250,7 +250,7 @@ static void set_main(struct block_internal *m)
     }
 
 	accept_amount(m, apply_block(m));
-    memcpy(m->ref, m->hash, sizeof(xdag_hashlow_t));
+    memcpy(&(m->ref), &(m->hash), sizeof(xdag_hashlow_t));
     xd_rsdb_put_stats(m->time);
     xd_rsdb_merge_bi(m);
     xd_rsdb_put_heighthash(m->height, m->hash);
@@ -939,12 +939,11 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
              rocksdb_iter_valid(iter) && !memcmp(seek_key, rocksdb_iter_key(iter, &klen), sizeof(seek_key)) && !b_retcode && res < XDAG_BLOCK_FIELDS;
              rocksdb_iter_next(iter))
         {
-            const char *value = rocksdb_iter_value(iter, &vlen);
             const char *key = rocksdb_iter_key(iter, &klen);
-            if(value && klen) {
+            if(key && klen) {
                 memcpy(xb_hash, key + 1, sizeof(xdag_hashlow_t));
                 if(!(b_retcode = xd_rsdb_get_bi(xb_hash, &b))) {
-                    if (b.time < send_time && (is_empty_block(&pretop) || memcmp(pretop.hash, xb_hash, sizeof(xdag_hashlow_t)))) {
+                    if (b.time < send_time) {
                         setfld(XDAG_FIELD_OUT, xb_hash, xdag_hashlow_t);
                         res++;
                     }
@@ -1543,7 +1542,7 @@ void append_block_info(struct block_internal *bi)
     xdag_hashlow_t ref, link[MAX_LINKS];
     pthread_mutex_lock(&block_mutex);
     //ref = bi->ref;
-    memcpy(ref, bi->ref, sizeof(ref));
+    memcpy(&ref, &(bi->ref), sizeof(ref));
     flags = bi->flags;
     nlinks = bi->nlinks;
     memcpy(link, bi->link, nlinks * sizeof(struct block_internal*));
@@ -1641,7 +1640,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
     xdag_hash_t ref = {0};
 	pthread_mutex_lock(&block_mutex);
 	//ref = bi->ref;
-    memcpy(ref, bi->ref, sizeof(ref));
+    memcpy(&ref, &(bi->ref), sizeof(ref));
 	pthread_mutex_unlock(&block_mutex);
 	if(flags & BI_REF) {
 		xdag_hash2address(ref, address);
@@ -1917,7 +1916,6 @@ int remove_orphan(xdag_hashlow_t hash)
             xd_rsdb_put_cacheblock(hash, &xb);
         }
         b.flags |= BI_REF;
-        memset(b.ref, 0 , sizeof(xdag_hashlow_t));
         xd_rsdb_merge_bi(&b);
     }
     return 0;
@@ -2015,7 +2013,7 @@ int xdag_get_block_info(xdag_hash_t hash, void *info, int (*info_callback)(void*
 		int flags;
 		xdag_hashlow_t ref_hash = {0};
 		pthread_mutex_lock(&block_mutex);
-		memcpy(&ref_hash, b.ref, sizeof(b.ref));
+		memcpy(&ref_hash, &(b.ref), sizeof(b.ref));
 		flags = b.flags;
 		pthread_mutex_unlock(&block_mutex);
 
