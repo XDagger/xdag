@@ -932,7 +932,6 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 		int b_retcode = 0;
 		xdag_hash_t xb_hash = {0};
         char seek_key[1] = {[0] = HASH_ORP_BLOCK};
-        size_t vlen = 0;
         size_t klen = 0;
         rocksdb_iterator_t* iter = rocksdb_create_iterator(g_xdag_rsdb->db, g_xdag_rsdb->read_options);
         for (rocksdb_iter_seek(iter, seek_key, sizeof(seek_key));
@@ -944,7 +943,7 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
                 memcpy(xb_hash, key + 1, sizeof(xdag_hashlow_t));
                 if(!(b_retcode = xd_rsdb_get_bi(xb_hash, &b))) {
                     if (b.time < send_time) {
-                        setfld(XDAG_FIELD_OUT, xb_hash, xdag_hashlow_t);
+                        setfld(XDAG_FIELD_OUT, b.hash, xdag_hashlow_t);
                         res++;
                     }
                 }
@@ -1078,7 +1077,7 @@ int do_mining(struct xdag_block *block, struct block_internal *pretop, xtime_t s
         pretop_block(send_time, &pretop_new);
 		pthread_mutex_unlock(&g_create_block_mutex);
         if(memcmp(pretop, &pretop_new, sizeof(struct block_internal)) && xdag_get_xtimestamp() < send_time) {
-			*pretop = pretop_new;
+			memcpy(pretop, &pretop_new, sizeof(struct block_internal));
 			xdag_info("Mining: start from beginning because of pre-top block changed");
 			return 0;
  		}
