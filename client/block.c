@@ -1906,11 +1906,13 @@ int remove_orphan(xdag_hashlow_t hash)
                     remove_orphan(b.link[i]);
                 }
                 b.flags &= ~BI_EXTRA;
-                g_xdag_extstats.nextra--;
-                xd_rsdb_del_extblock(hash);
+                if(!xd_rsdb_del_extblock(hash) && g_xdag_extstats.nextra) {
+                    g_xdag_extstats.nextra--;
+                }
             } else {
-                g_xdag_extstats.nnoref--;
-                xd_rsdb_del_orpblock(hash);
+                if(!xd_rsdb_del_orpblock(hash) && g_xdag_extstats.nnoref) {
+                    g_xdag_extstats.nnoref--;
+                }
             }
             xd_rsdb_put_cacheblock(hash, &xb);
         }
