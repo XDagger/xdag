@@ -12,13 +12,13 @@ find_path(TCMALLOC_INCLUDE_DIR
 
 find_library(TCMALLOC_LIBRARY
         NAMES tcmalloc
-        PATHS ${TCMALLOC_ROOT_DIR}/lib
+        PATHS ${TCMALLOC_ROOT_DIR}/lib /usr/lib /usr/lib/x86_64-linux-gnu
         NO_DEFAULT_PATH
         )
 
 find_library(PROFILER_LIBRARY
         NAMES profiler
-        PATHS ${TCMALLOC_ROOT_DIR}/lib
+        PATHS ${TCMALLOC_ROOT_DIR}/lib /usr/lib /usr/lib/x86_64-linux-gnu
         NO_DEFAULT_PATH
         )
 

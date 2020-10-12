@@ -17,7 +17,7 @@ find_path(RocksDB_INCLUDE_DIR
 
 find_library(RocksDB_LIBRARY
         NAMES rocksdb
-        PATHS ${RocksDB_ROOT_DIR}/lib /usr/lib/x86_64-linux-gnu
+        PATHS ${RocksDB_ROOT_DIR}/lib /usr/lib /usr/lib/x86_64-linux-gnu
         NO_DEFAULT_PATH
         )
 

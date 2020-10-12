@@ -12,7 +12,7 @@ find_path(SECP256K1_INCLUDE_DIR
 
 find_library(SECP256K1_LIBRARY
         NAMES secp256k1
-        PATHS ${SECP256K1_ROOT_DIR}/lib /usr/lib/x86_64-linux-gnu
+        PATHS ${SECP256K1_ROOT_DIR}/lib /usr/lib /usr/lib/x86_64-linux-gnu
         NO_DEFAULT_PATH
         )
 
