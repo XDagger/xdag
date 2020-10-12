@@ -1,6 +1,4 @@
-## Build on Linux
-
-Build on Docker:
+## Build on Docker:
 
 Prerequisites:
 - docker
@@ -21,7 +19,7 @@ root@xxx:/usr/local/xdag/build# cmake ..
 root@xxx:/usr/local/xdag/build# make
 ```
 
-Build on Linux:
+##Build on Linux:
 
 Prerequisites:
 - gcc-7+
