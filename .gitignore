@@ -3,6 +3,10 @@ Release/
 Debug/
 build/
 .vs/
+.vscode/
+.idea/
+cmake-build-debug/
+cmake-build-release/
 
 /win/xdag.VC.db
 /win/xdag.VC.VC.opendb

@@ -9,9 +9,12 @@ struct xdag_ext_stats g_xdag_extstats;
 int g_disable_mining = 0;
 enum xdag_type g_xdag_type = XDAG_POOL;
 char *g_coinname, *g_progname;
-xdag_time_t g_apollo_fork_time = 0;
+xd_rsdb_t  *g_xdag_rsdb = NULL;
+xdag_hashlow_t g_ourfirst_hash = {0};
+xdag_hashlow_t g_ourlast_hash = {0};
+xdag_amount_t g_balance = 0;
+struct block_internal top_main_chain;
+struct block_internal pretop_main_chain;
 
-#if defined (__MACOS__) || defined (__APPLE__)
 inline int is_pool(void) { return g_xdag_type == XDAG_POOL; }
 inline int is_wallet(void) { return g_xdag_type == XDAG_WALLET; }
-#endif

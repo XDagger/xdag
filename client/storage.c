@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <unistd.h>
 #include "storage.h"
 #include "global.h"
 #include "hash.h"
@@ -169,12 +168,15 @@ struct xdag_block *xdag_storage_load(xdag_hash_t hash, xtime_t time, uint64_t po
 	if (buf) {
 		xdag_hash(buf, sizeof(struct xdag_block), hash0);
 		if (memcmp(hash, hash0, sizeof(xdag_hashlow_t))) {
-			buf = 0;
+            xdag_info("xdag_storage_load->hash (pos=%d): %016llx%016llx%016llx%016llx", pos, hash[3], hash[2], hash[1], hash[0]);
+            xdag_info("xdag_storage_load->hash0(pos=%d): %016llx%016llx%016llx%016llx", pos, hash[3], hash[2], hash[1], hash[0]);
+            buf = 0;
 		}
 	}
 
 	if (!buf) {
-		xdag_blocks_reset();
+        xdag_info("xdag_storage_load->err(pos=%d): %016llx%016llx%016llx%016llx", pos, hash[3], hash[2], hash[1], hash[0]);
+		//xdag_blocks_reset();
 	}
 
 	return buf;
@@ -195,6 +197,7 @@ static int sort_callback(const void *l, const void *r)
 /* Calls a callback for all blocks from the repository that are in specified time interval; returns the number of blocks */
 uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *data, void *(*callback)(void *, void *))
 {
+	//xdag_info("xdag load blocks start\n");
 	struct xdag_block *buf, *pbuf[bufsize];
 	struct xdag_storage_sum s;
 	char path[256] = {0};
@@ -211,6 +214,7 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 	}
 
 	while (start_time < end_time) {
+		//xdag_info("xdag load blocks start time %lu end_time %lu \n",start_time,end_time);
 		sprintf(path, STORAGE_FILE, STORAGE_FILE_ARGS(start_time));
 
 		pthread_mutex_lock(&storage_mutex);
@@ -223,7 +227,6 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 		} else {
 			todo = 0;
 		}
-		
 		pthread_mutex_unlock(&storage_mutex);
 		
 		uint64_t pos0 = pos;
@@ -241,7 +244,7 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 		}
 
 		if (k) {
-			qsort(pbuf, k, sizeof(struct xdag_block *), sort_callback);
+            qsort(pbuf, k, sizeof(struct xdag_block*), sort_callback);
 		}
 
 		for (i = 0; i < k; ++i) {
@@ -254,28 +257,16 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 		}
         
 		if (todo != bufsize) {
+		    /* Load performance optimization
 			if (f) {
 				pthread_mutex_lock(&storage_mutex);
-				int res = correct_storage_sums(start_time, &s, 0);
+                int res = correct_storage_sums(start_time, &s, 0);
 				pthread_mutex_unlock(&storage_mutex);
-				
 				if (res) break;
-				
 				s.size = s.sum = 0;
-				mask = (1l << 16) - 1;
-			} else if (sprintf(path, STORAGE_DIR3, STORAGE_DIR3_ARGS(start_time)), xdag_file_exists(path)) {
-				mask = (1l << 16) - 1;
-			} else if (sprintf(path, STORAGE_DIR2, STORAGE_DIR2_ARGS(start_time)), xdag_file_exists(path)) {
-				mask = (1l << 24) - 1;
-			} else if (sprintf(path, STORAGE_DIR1, STORAGE_DIR1_ARGS(start_time)), xdag_file_exists(path)) {
-				mask = (1ll << 32) - 1;
-			} else {
-				mask = (1ll << 40) - 1;
 			}
-
-			start_time |= mask;
-			start_time++;
-			
+		     */
+			start_time += 1l << 16;
 			pos = 0;
 		}
 	}

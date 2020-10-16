@@ -6,6 +6,7 @@
 #include "time.h"
 #include "system.h"
 #include "block.h"
+#include "rsdb.h"
 
 enum xdag_states {
 #define xdag_state(n,s) XDAG_STATE_##n ,
@@ -33,10 +34,6 @@ extern struct xdag_ext_stats {
 	uint64_t nhashes;
 	double hashrate_s;
 	uint32_t nwaitsync;
-	uint32_t cache_size;
-	uint32_t cache_usage;
-	double cache_hitrate;
-	int use_orphan_hashtable;
 } g_xdag_extstats;
 
 enum xdag_type {
@@ -62,18 +59,19 @@ extern char *g_coinname, *g_progname;
 //defines if mining is disabled (pool)
 extern int g_disable_mining;
 
+extern xd_rsdb_t* g_xdag_rsdb;
+
+extern struct block_internal top_main_chain;
+extern struct block_internal pretop_main_chain;
+extern xdag_hashlow_t g_ourfirst_hash;
+extern xdag_hashlow_t g_ourlast_hash;
+extern xdag_amount_t g_balance;
 //Default type of the block header
 //Test network and main network have different types of the block headers, so blocks from different networks are incompatible
 extern enum xdag_field_type g_block_header_type;
 
-extern xdag_time_t g_apollo_fork_time;
-
-#if defined (__MACOS__) || defined (__APPLE__)
 extern int is_pool(void);
 extern int is_wallet(void);
-#else
-inline int is_pool(void) { return g_xdag_type == XDAG_POOL; }
-inline int is_wallet(void) { return g_xdag_type == XDAG_WALLET; }
-#endif
+
 
 #endif

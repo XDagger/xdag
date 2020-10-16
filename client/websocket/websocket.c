@@ -36,14 +36,14 @@
 
 #define WS_LOG_FILE "websocket.log"
 
-#define ws_fatal(...) xdag_log(WS_LOG_FILE, XDAG_FATAL   , __VA_ARGS__)
-#define ws_crit(...)  xdag_log(WS_LOG_FILE, XDAG_CRITICAL, __VA_ARGS__)
-#define ws_err(...)   xdag_log(WS_LOG_FILE, XDAG_ERROR   , __VA_ARGS__)
-#define ws_warn(...)  xdag_log(WS_LOG_FILE, XDAG_WARNING , __VA_ARGS__)
-#define ws_mess(...)  xdag_log(WS_LOG_FILE, XDAG_MESSAGE , __VA_ARGS__)
-#define ws_info(...)  xdag_log(WS_LOG_FILE, XDAG_INFO    , __VA_ARGS__)
+#define ws_fatal(...) xdag_log(WS_LOG_FILE, XDAG_FATAL   , __FUNCTION__, __LINE__ ,	__VA_ARGS__)
+#define ws_crit(...)  xdag_log(WS_LOG_FILE, XDAG_CRITICAL, __FUNCTION__, __LINE__ ,	__VA_ARGS__)
+#define ws_err(...)   xdag_log(WS_LOG_FILE, XDAG_ERROR   , __FUNCTION__, __LINE__ ,	__VA_ARGS__)
+#define ws_warn(...)  xdag_log(WS_LOG_FILE, XDAG_WARNING , __FUNCTION__, __LINE__ ,	__VA_ARGS__)
+#define ws_mess(...)  xdag_log(WS_LOG_FILE, XDAG_MESSAGE , __FUNCTION__, __LINE__ ,	__VA_ARGS__)
+#define ws_info(...)  xdag_log(WS_LOG_FILE, XDAG_INFO    , __FUNCTION__, __LINE__ ,	__VA_ARGS__)
 #ifndef NDEBUG
-#define ws_debug(...) xdag_log(WS_LOG_FILE, XDAG_DEBUG   , __VA_ARGS__)
+#define ws_debug(...) xdag_log(WS_LOG_FILE, XDAG_DEBUG   , __FUNCTION__, __LINE__ ,	__VA_ARGS__)
 #else
 #define ws_debug(...)
 #endif

@@ -3,16 +3,12 @@
 #include <stdlib.h>
 #ifndef _WIN32
 #include <string.h>
-#include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
-#include <signal.h>
 #include <errno.h>
-#include <fcntl.h>
 #endif
 #include <sys/socket.h>
 #include "commands.h"
-#include "init.h"
 #include "transport.h"
 #include "network.h"
 #include "utils/log.h"
@@ -33,47 +29,47 @@
 
 int terminal(void)
 {
-	char *lasts;
-	int sock;
+    char *lasts;
+    int sock;
 
-	if(!xdag_network_init()) {
-		printf("Can't initialize sockets");
-		return -1;
-	}
+    if(!xdag_network_init()) {
+        printf("Can't initialize sockets");
+        return -1;
+    }
 
-	char cmd[XDAG_COMMAND_MAX] = {0};
-	char cmd2[XDAG_COMMAND_MAX] = {0};
+    char cmd[XDAG_COMMAND_MAX] = {0};
+    char cmd2[XDAG_COMMAND_MAX] = {0};
 
-	xdag_init_commands();
+    xdag_init_commands();
 
-	while(1) {
-		int ispwd = 0, c = 0;
-		read_command(cmd);
-		strcpy(cmd2, cmd);
-		char *ptr = strtok_r(cmd2, " \t\r\n", &lasts);
-		if(!ptr) continue;
-		if(!strcmp(ptr, "exit")) break;
-		if(!strcmp(ptr, "xfer")) {
-			uint32_t pwd[4];
-			xdag_user_crypt_action(pwd, 0, 4, 4);
-			sprintf(cmd2, "pwd=%08x%08x%08x%08x ", pwd[0], pwd[1], pwd[2], pwd[3]);
-			ispwd = 1;
-		}
+    while(1) {
+        int ispwd = 0, c = 0;
+        read_command(cmd);
+        strcpy(cmd2, cmd);
+        char *ptr = strtok_r(cmd2, " \t\r\n", &lasts);
+        if(!ptr) continue;
+        if(!strcmp(ptr, "exit")) break;
+        if(!strcmp(ptr, "xfer")) {
+            uint32_t pwd[4];
+            xdag_user_crypt_action(pwd, 0, 4, 4);
+            sprintf(cmd2, "pwd=%08x%08x%08x%08x ", pwd[0], pwd[1], pwd[2], pwd[3]);
+            ispwd = 1;
+        }
 #ifndef _WIN32
-		if((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-			printf("Can't open unix domain socket errno:%d.\n", errno);
-			continue;
-		}
-		struct sockaddr_un addr;
-		memset(&addr, 0, sizeof(addr));
-		addr.sun_family = AF_UNIX;
-		strcpy(addr.sun_path, UNIX_SOCK);
-		if(connect(sock, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-			printf("Can't connect to unix domain socket errno:%d\n", errno);
-			continue;
-		}
+        if((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+            printf("Can't open unix domain socket errno:%d.\n", errno);
+            continue;
+        }
+        struct sockaddr_un addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sun_family = AF_UNIX;
+        strcpy(addr.sun_path, UNIX_SOCK);
+        if(connect(sock, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+            printf("Can't connect to unix domain socket errno:%d\n", errno);
+            continue;
+        }
 #else
-		if((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+        if((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 			printf("Can't create domain socket errno:%d", WSAGetLastError());
 			return 0;
 		}
@@ -86,43 +82,43 @@ int terminal(void)
 			return 0;
 		}
 #endif
-		if(ispwd) {
-			write(sock, cmd2, strlen(cmd2));
-		}
-		write(sock, cmd, strlen(cmd) + 1);
-		if(!strcmp(ptr, "terminate")) {
-			sleep(1);
-			close(sock);
-			break;
-		}
-		while(read(sock, &c, 1) == 1 && c) {
-			putchar(c);
-		}
-		close(sock);
-	}
-	return 0;
+        if(ispwd) {
+            write(sock, cmd2, strlen(cmd2));
+        }
+        write(sock, cmd, strlen(cmd) + 1);
+        if(!strcmp(ptr, "terminate")) {
+            sleep(1);
+            close(sock);
+            break;
+        }
+        while(read(sock, &c, 1) == 1 && c) {
+            putchar(c);
+        }
+        close(sock);
+    }
+    return 0;
 }
 
 void *terminal_thread(void *arg)
 {
-	int sock;
+    int sock;
 #ifndef _WIN32
-	struct sockaddr_un addr;
-	
-	if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-		xdag_err("Can't create unix domain socket errno:%d", errno);
-		return 0;
-	}
-	memset(&addr, 0, sizeof(addr));
-	addr.sun_family = AF_UNIX;
-	strcpy(addr.sun_path, UNIX_SOCK);
-	unlink(UNIX_SOCK);
-	if (bind(sock, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-		xdag_err("Can't bind unix domain socket errno:%d", errno);
-		return 0;
-	}
-#else	
-	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    struct sockaddr_un addr;
+
+    if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+        xdag_err("Can't create unix domain socket errno:%d", errno);
+        return 0;
+    }
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    strcpy(addr.sun_path, UNIX_SOCK);
+    unlink(UNIX_SOCK);
+    if (bind(sock, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+        xdag_err("Can't bind unix domain socket errno:%d", errno);
+        return 0;
+    }
+#else
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		xdag_err("Can't create domain socket errno:%d", WSAGetLastError());
 		return 0;
 	}
@@ -135,53 +131,53 @@ void *terminal_thread(void *arg)
 		return 0;
 	}
 #endif
-	if (listen(sock, 100) == -1) {
-		xdag_err("Unix domain socket listen errno:%d", errno);
-		return 0;
-	}
-	while (1) {
-		char cmd[XDAG_COMMAND_MAX] = {0};
-		int clientSock, res;
-		struct pollfd fds;
-		if ((clientSock = accept(sock, NULL, NULL)) == -1) {
-			xdag_err("Unix domain socket accept errno:%d", errno);
-			break;
-		}
+    if (listen(sock, 100) == -1) {
+        xdag_err("Unix domain socket listen errno:%d", errno);
+        return 0;
+    }
+    while (1) {
+        char cmd[XDAG_COMMAND_MAX] = {0};
+        int clientSock, res;
+        struct pollfd fds;
+        if ((clientSock = accept(sock, NULL, NULL)) == -1) {
+            xdag_err("Unix domain socket accept errno:%d", errno);
+            break;
+        }
 
-		int p = 0;
-		fds.fd = clientSock;
-		fds.events = POLLIN;
-		do {
-			if (poll(&fds, 1, 1000) != 1 || !(fds.revents & POLLIN)) {
-				res = -1;
-				break;
-			}
-			p += res = read(clientSock, &cmd[p], sizeof(cmd) - p);
-		} while (res > 0 && p < sizeof(cmd) && cmd[p - 1] != '\0');
+        int p = 0;
+        fds.fd = clientSock;
+        fds.events = POLLIN;
+        do {
+            if (poll(&fds, 1, 1000) != 1 || !(fds.revents & POLLIN)) {
+                res = -1;
+                break;
+            }
+            p += res = read(clientSock, &cmd[p], sizeof(cmd) - p);
+        } while (res > 0 && p < sizeof(cmd) && cmd[p - 1] != '\0');
 
-		if (res < 0 || cmd[p - 1] != '\0') {
-			close(clientSock);
-		} else {
+        if (res < 0 || cmd[p - 1] != '\0') {
+            close(clientSock);
+        } else {
 #ifndef _WIN32
-			FILE *fd = fdopen(clientSock, "w");
-			if (!fd) {
-				xdag_err("Can't fdopen unix domain socket errno:%d", errno);
-				break;
-			}
+            FILE *fd = fdopen(clientSock, "w");
+            if (!fd) {
+                xdag_err("Can't fdopen unix domain socket errno:%d", errno);
+                break;
+            }
 #else
-			FILE *fd = tmpfile();
+            FILE *fd = tmpfile();
 			if (!fd) {
 				xdag_err("Can't create a temporary file");
 				break;
 			}
 #endif
 
-			res = xdag_command(cmd, fd);
+            res = xdag_command(cmd, fd);
 
 #ifndef _WIN32
-			xdag_close_file(fd);
+            xdag_close_file(fd);
 #else
-			rewind(fd);
+            rewind(fd);
 
 			char buf[256] = {0};
 			while (!feof(fd)) {
@@ -191,10 +187,10 @@ void *terminal_thread(void *arg)
 			xdag_close_file(fd);
 			close(clientSock);
 #endif
-			if (res < 0) {
-				exit(0);
-			}
-		}
-	}
-	return 0;
+            if (res < 0) {
+                exit(0);
+            }
+        }
+    }
+    return 0;
 }

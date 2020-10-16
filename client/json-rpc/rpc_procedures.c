@@ -634,7 +634,6 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
 		return NULL;
 	} else {
 		struct xfer_callback_data xfer;
-		
 		memset(&xfer, 0, sizeof(xfer));
 		xfer.remains = xdags2amount(amount);
 		if(!xfer.remains) {
@@ -652,8 +651,8 @@ cJSON * method_xdag_do_xfer(struct xdag_rpc_context * ctx, cJSON *params, cJSON 
 
 #if REMARK_ENABLED
 			if(strlen(remark)>0) {
-				xfer.hasRemark = 1;
 				memcpy(xfer.remark, remark, sizeof(xdag_remark_t));
+                xfer.hasRemark = 1;
 			}
 #endif
 

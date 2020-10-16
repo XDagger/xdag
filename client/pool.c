@@ -503,11 +503,12 @@ static int connection_can_be_accepted(int sock, struct sockaddr_in *peeraddr)
 
 void *pool_net_thread(void *arg)
 {
+	
 	const char *pool_arg = (const char*)arg;
 	struct sockaddr_in peeraddr;
 	socklen_t peeraddr_len = sizeof(peeraddr);
 	int rcvbufsize = 1024;
-
+	
 	while(!g_block_production_on) {
 		sleep(1);
 	}
@@ -695,7 +696,7 @@ static int register_new_miner(connection_list_element *connection)
 	struct connection_pool_data *conn_data = &connection->connection_data;
 
 	xtime_t tm;
-	const int64_t position = xdag_get_block_pos((const uint64_t*)conn_data->data, &tm, 0);
+	const int64_t position = xdag_get_block_pos((uint64_t*)conn_data->data, &tm, 0);
 	if(position < 0) {
 		char address_buf[33] = {0};
 		char message[100] = {0};
@@ -1137,7 +1138,7 @@ void *pool_payment_thread(void *arg)
 			remove_inactive_miners();
 			pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old_state_type);
 
-			xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
+			xdag_info("payminer thread %s: %016llx%016llx%016llx%016llx t=%llx res=%d", (res ? "Nopaid" : "Paid  "),
 				hash[3], hash[2], hash[1], hash[0], (current_task_time - CONFIRMATIONS_COUNT + 1) << 16 | 0xffff, res);
 		}
 
@@ -1385,6 +1386,8 @@ int pay_miners(xtime_t time)
 	} else if (pos < 0) {
 		return -6;
 	} else {
+		xdag_info("%s load block hash %016llx%016llx%016llx%016llx time %llu pos %llu ",__FUNCTION__,
+							hash[3],hash[2],hash[1],hash[0],time,pos);
 		struct xdag_block *block = xdag_storage_load(hash, time, pos, &buf);
 		if(!block) return -7;
 	}

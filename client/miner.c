@@ -182,6 +182,8 @@ begin:
 		mess = "can't find the block";
 		goto err;
 	} else {
+		xdag_info("%s load block hash %016llx%016llx%016llx%016llx time %llu pos %llu ",__FUNCTION__,
+							hash[3],hash[2],hash[1],hash[0],t,pos);
 		struct xdag_block *blk = xdag_storage_load(hash, t, pos, &b);
 		if(!blk) {
 			mess = "can't load the block";
@@ -363,7 +365,6 @@ static void *mining_thread(void *arg)
 
 		last.amount = xdag_hash_final_multi(task->ctx, &nonce, 4096, g_xdag_mining_threads, hash);
 		g_xdag_extstats.nhashes += 4096;
-
 		xdag_set_min_share(task, last.data, hash);
 	}
 
