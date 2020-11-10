@@ -40,10 +40,15 @@ _Difficulty_of_chain_ is sum of difficulties of blocks.
 _Main_chain_ is the distinct chain with maximum difficulty.
 Blocks in main chain are called _main_blocks_.
 
-Daggers are mined in every main block.
-For first 4 years 1024 XDAG are mined in each main block.
-For second 4 years - 512 XDAG, and so on.
-So, maximum XDAG supply is approximately power(2,32).
+Daggers are mined in every main block. There are three periods of mining:
+
+| Stage 1 | Stage 2 | Stage 3 |
+| -- | -- | -- |
+| 2 years, Jan 5th, 2018 to Jan 5th, 2020 | 2 years, Jan 5th, 2020 to Jan 5th, 2022 | Each 4 years |
+| 1024 XDAG each block | 128 XDAG each block | 64 * (1/2)^n XDAG each block |
+
+The maximum XDAG supply is approximately 1.412 billion.
+
 Each dagger is equal to power(2,32) cheatoshino.
 Transaction is _valid_ if it is referenced by a main block.
 Valid transactions are strictly ordered depending on main chain and links order.
