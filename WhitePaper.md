@@ -24,6 +24,15 @@ Every block in DAG has up to 15 links to another blocks (inputs and outputs). Bl
 
 Daggers are mined in every main block. For first 4 years 1024 XDAG are mined in each main block. For second 4 years - 512 XDAG, and so on. So, maximum XDAG supply is approximately power(2,32). Each dagger is equal to power(2,32) cheatoshino. Transaction is valid if it is referenced by a main block. Valid transactions are strictly ordered depending on main chain and links order. Double spending is prohibited because only first concurrent transaction (by this order) is applied.
 
+Daggers are mined in every mainblock. There are three periods of mining:
+
+| Stage 1 | Stage 2 | Stage 3 |
+| -- | -- | -- |
+| 2 years, Jan 5th, 2018 to Jan 5th, 2020 | 2 years, Jan 5th, 2020 to Jan 5th, 2022 | Each 4 years |
+| 1024 XDAG each block | 128 XDAG each block | 64 * (1/2)^n XDAG each block |
+
+The maximum XDAG supply is approximately 1.412 billion.
+
 
 ## Security
 The ECDSA algorithm with a 256-bit private key is used for a signature that confirms the rights of the wallet owner for money in the given address. All messages are transmitted between hosts in an encrypted form using the author's semi-symmetric encryption algorithm. The session key to it is transmitted using the 8192-bit key RSA algorithm.
