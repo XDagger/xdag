@@ -22,8 +22,6 @@ Each block contains exactly one transaction. At the same time, the block is an a
 
 Every block in DAG has up to 15 links to another blocks (inputs and outputs). Block B is referenced by another block A if we can reach B from A by following the links. Chain is a sequence of blocks each of which is referenced by the previous block. Chain is called distinct if every its block belongs to separate 64-seconds interval. Difficulty_of_block is 1/hash where hash is sha256(sha256(block)) regarded as little-endian number. Difficulty_of_chain is sum of difficulties of blocks. Main_chain is the distinct chain with maximum difficulty. Blocks in main chain are called main_blocks.
 
-Daggers are mined in every main block. For first 4 years 1024 XDAG are mined in each main block. For second 4 years - 512 XDAG, and so on. So, maximum XDAG supply is approximately power(2,32). Each dagger is equal to power(2,32) cheatoshino. Transaction is valid if it is referenced by a main block. Valid transactions are strictly ordered depending on main chain and links order. Double spending is prohibited because only first concurrent transaction (by this order) is applied.
-
 Daggers are mined in every mainblock. There are three periods of mining:
 
 | Stage 1 | Stage 2 | Stage 3 |
