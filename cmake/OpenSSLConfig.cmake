@@ -18,13 +18,13 @@ find_path(OPENSSL_INCLUDE_DIR
 
 find_library(OPENSSL_SSL_LIBRARY
         NAMES ssl
-        PATHS ${OPENSSL_ROOT_DIR}/lib/ /usr/lib/x86_64-linux-gnu
+        PATHS ${OPENSSL_ROOT_DIR}/lib /usr/lib /usr/lib/x86_64-linux-gnu
         NO_DEFAULT_PATH
         )
 
 find_library(OPENSSL_CRYPTO_LIBRARY
         NAMES crypto
-        PATHS ${OPENSSL_ROOT_DIR}/lib /usr/lib/x86_64-linux-gnu
+        PATHS ${OPENSSL_ROOT_DIR}/lib /usr/lib /usr/lib/x86_64-linux-gnu
         NO_DEFAULT_PATH
         )
 

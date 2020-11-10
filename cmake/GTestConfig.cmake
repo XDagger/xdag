@@ -19,7 +19,7 @@ find_path(GTEST_INCLUDE_DIR
 
 find_library(GTEST_LIBRARY
         NAMES gtest
-        PATHS ${GTEST_ROOT_DIR}/lib /usr/lib/x86_64-linux-gnu
+        PATHS ${GTEST_ROOT_DIR}/lib /usr/lib /usr/lib/x86_64-linux-gnu
         NO_DEFAULT_PATH
         )
 
