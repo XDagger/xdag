@@ -299,7 +299,8 @@ static void unwind_main(struct block_internal *bi)
 {
     struct block_internal b;
     xd_rsdb_op_t retcode = 0;
-    for (memcpy(&b, &top_main_chain, sizeof(b));
+
+    for (retcode = xd_rsdb_get_bi(top_main_chain.hash, &b);
          !retcode && !is_empty_block(&b) &&memcmp(b.hash, bi->hash, sizeof(xdag_hashlow_t));
          retcode = xd_rsdb_get_bi(b.link[b.max_diff_link], &b))
     {
