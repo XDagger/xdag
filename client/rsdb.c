@@ -10,55 +10,6 @@
 
 #define RSDB_LOG_FREE_ERRMSG(errmsg) xdag_info("%s %lu %s \n",__FUNCTION__, __LINE__,errmsg);free(errmsg)
 
-char* xd_rsdb_full_merge(void* state, const char* key, size_t key_length,
-                         const char* existing_value,
-                         size_t existing_value_length,
-                         const char* const* operands_list,
-                         const size_t* operands_list_length, int num_operands,
-                         unsigned char* success, size_t* new_value_length)
-{
-    struct block_internal *result = calloc(sizeof(struct block_internal), 1);
-    for(int i = 0; i < num_operands; i++) {
-        struct block_internal *bi = (struct block_internal*)operands_list[i];
-        memcpy(result, bi, sizeof(struct block_internal));
-    }
-
-    if (!result) {
-        *success = 0;
-        *new_value_length = 0;
-        return NULL;
-    }
-    *success = 1;
-    *new_value_length = sizeof(struct block_internal) ;
-    return (char*)result;
-}
-
-char* xd_rsdb_partial_merge(void* state, const char* key, size_t key_length,
-                       const char* const* operands_list,
-                       const size_t* operands_list_length, int num_operands,
-                       unsigned char* success, size_t* new_value_length)
-{
-    struct block_internal *result = calloc(sizeof(struct block_internal), 1);
-    for(int i = 0; i < num_operands; i++) {
-        struct block_internal *bi = (struct block_internal*)operands_list[i];
-        memcpy(result, bi, sizeof(struct block_internal));
-    }
-
-    if (!result) {
-        *success = 0;
-        *new_value_length = 0;
-        return NULL;
-    }
-    *success = 1;
-    *new_value_length = sizeof(struct block_internal) ;
-    return (char*)result;
-}
-
-const char *xd_rsdb_merge_operator_name(void* test)
-{
-    return "xd_rsdb_merge_operator";
-}
-
 xd_rsdb_op_t xd_rsdb_pre_init(int read_only)
 {
     xd_rsdb_t* rsdb = NULL;
@@ -209,14 +160,7 @@ xd_rsdb_op_t xd_rsdb_conf(xd_rsdb_t  *db)
 
     rocksdb_block_based_table_options_t *block_based_table_options = rocksdb_block_based_options_create();
     rocksdb_block_based_options_set_filter_policy(block_based_table_options, filter_policy);
-    rocksdb_block_based_options_set_block_size(block_based_table_options, 16 * 1024);
-    rocksdb_cache_t *cache = rocksdb_cache_create_lru(32 * 1024 * 1024);
-    rocksdb_block_based_options_set_block_cache(block_based_table_options, cache);
-    rocksdb_block_based_options_set_pin_l0_filter_and_index_blocks_in_cache(block_based_table_options, 1);
-    rocksdb_block_based_options_set_cache_index_and_filter_blocks(block_based_table_options, 1);
-
     rocksdb_options_set_block_based_table_factory(options, block_based_table_options);
-
 
     db->options = options;
     db->write_options = write_options;
