@@ -196,13 +196,6 @@ xd_rsdb_op_t xd_rsdb_conf(xd_rsdb_t  *db)
     rocksdb_writeoptions_t* write_options = rocksdb_writeoptions_create();
     rocksdb_readoptions_t* read_options = rocksdb_readoptions_create();
     rocksdb_filterpolicy_t *filter_policy = rocksdb_filterpolicy_create_bloom_full(10);
-    struct merge_operator_state *state = malloc(sizeof(*state));
-    rocksdb_mergeoperator_t *merge_operator = rocksdb_mergeoperator_create((void *)state,
-                                                                           NULL,
-                                                                           xd_rsdb_full_merge,
-                                                                           xd_rsdb_partial_merge,
-                                                                           NULL,
-                                                                           xd_rsdb_merge_operator_name);
 
 
     // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
@@ -212,17 +205,22 @@ xd_rsdb_op_t xd_rsdb_conf(xd_rsdb_t  *db)
     rocksdb_options_set_max_open_files(options, 1024);
     rocksdb_options_set_create_if_missing(options, 1);
     rocksdb_options_set_compression(options, rocksdb_lz4_compression);
+    rocksdb_readoptions_set_verify_checksums(read_options, 0);
 
     rocksdb_block_based_table_options_t *block_based_table_options = rocksdb_block_based_options_create();
     rocksdb_block_based_options_set_filter_policy(block_based_table_options, filter_policy);
+    rocksdb_block_based_options_set_block_size(block_based_table_options, 16 * 1024);
+    rocksdb_cache_t *cache = rocksdb_cache_create_lru(32 * 1024 * 1024);
+    rocksdb_block_based_options_set_block_cache(block_based_table_options, cache);
+    rocksdb_block_based_options_set_pin_l0_filter_and_index_blocks_in_cache(block_based_table_options, 1);
+    rocksdb_block_based_options_set_cache_index_and_filter_blocks(block_based_table_options, 1);
+
     rocksdb_options_set_block_based_table_factory(options, block_based_table_options);
-    rocksdb_options_set_merge_operator(options, merge_operator);
+
 
     db->options = options;
     db->write_options = write_options;
     db->read_options = read_options;
-    db->merge_operator = merge_operator;
-    db->filter_policy = filter_policy;
     return XDAG_RSDB_OP_SUCCESS;
 }
 

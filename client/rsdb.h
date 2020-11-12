@@ -26,8 +26,6 @@ typedef struct xdag_rsdb {
     rocksdb_options_t                *options;
     rocksdb_readoptions_t       *read_options;
     rocksdb_writeoptions_t     *write_options;
-    rocksdb_mergeoperator_t   *merge_operator;
-    rocksdb_filterpolicy_t     *filter_policy;
     rocksdb_t                             *db;
 } xd_rsdb_t;
 
@@ -70,18 +68,6 @@ typedef enum xd_rsdb_key_type {
     HASH_BLOCK_CACHE                      =  0x26,
     HEIGHT_BLOCK_HASH                     =  0x27
 } xd_rsdb_key_t;
-
-char* xd_rsdb_full_merge(void* state, const char* key, size_t key_length,
-                         const char* existing_value,
-                         size_t existing_value_length,
-                         const char* const* operands_list,
-                         const size_t* operands_list_length, int num_operands,
-                         unsigned char* success, size_t* new_value_length);
-char* xd_rsdb_partial_merge(void*, const char* key, size_t key_length,
-                            const char* const* operands_list,
-                            const size_t* operands_list_length, int num_operands,
-                            unsigned char* success, size_t* new_value_length);
-const char* xd_rsdb_merge_operator_name(void*);
 
 xd_rsdb_op_t xd_rsdb_pre_init(int);
 xd_rsdb_op_t xd_rsdb_init(xdag_time_t *time);
