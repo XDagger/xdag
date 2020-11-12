@@ -6,6 +6,7 @@
 #include "global.h"
 #include "utils/log.h"
 #include "version.h"
+#include "address.h"
 
 #define RSDB_LOG_FREE_ERRMSG(errmsg) xdag_info("%s %lu %s \n",__FUNCTION__, __LINE__,errmsg);free(errmsg)
 
@@ -485,6 +486,19 @@ static xd_rsdb_op_t xd_rsdb_put_xdblock(xdag_hashlow_t hash, xd_rsdb_key_t type,
     return XDAG_RSDB_OP_SUCCESS;
 }
 
+xd_rsdb_op_t xd_rsdb_put_bi(struct block_internal *bi)
+{
+    if(!bi) return XDAG_RSDB_NULL;
+    int retcode = 0;
+    char key[RSDB_KEY_LEN] = {[0] = HASH_BLOCK_INTERNAL};
+    memcpy(key + 1, bi->hash, RSDB_KEY_LEN - 1);
+    retcode = xd_rsdb_putkey(key, RSDB_KEY_LEN, (const char *) bi, sizeof(struct block_internal));
+    if(retcode) {
+        return retcode;
+    }
+    return XDAG_RSDB_OP_SUCCESS;
+}
+
 xd_rsdb_op_t xd_rsdb_put_orpblock(xdag_hashlow_t hash, struct xdag_block* xb)
 {
     return xd_rsdb_put_xdblock(hash, HASH_ORP_BLOCK, xb);
@@ -595,24 +609,7 @@ xd_rsdb_op_t xd_rsdb_del_heighthash(uint64_t height)
     return XDAG_RSDB_OP_SUCCESS;
 }
 
-xd_rsdb_op_t xd_rsdb_merge_bi(struct block_internal* bi)
+xd_rsdb_op_t xd_rsdb_merge_bi(struct block_internal *bi)
 {
-    char *errmsg = NULL;
-    if(!bi) return XDAG_RSDB_NULL;
-    char key[RSDB_KEY_LEN] = {[0] = HASH_BLOCK_INTERNAL};
-    memcpy(key + 1, bi->hash, RSDB_KEY_LEN - 1);
-
-    rocksdb_merge(g_xdag_rsdb->db,
-                  g_xdag_rsdb->write_options,
-                  key, RSDB_KEY_LEN,
-                  (const char*)bi, sizeof(struct block_internal),
-                  &errmsg);
-    if(errmsg)
-    {
-        rocksdb_mergeoperator_destroy(g_xdag_rsdb->merge_operator);
-        rocksdb_close(g_xdag_rsdb->db);
-        RSDB_LOG_FREE_ERRMSG(errmsg);
-        return XDAG_RSDB_MERGE_ERROR;
-    }
-    return XDAG_RSDB_OP_SUCCESS;
+    return xd_rsdb_put_bi(bi);
 }

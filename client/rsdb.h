@@ -104,6 +104,7 @@ xd_rsdb_op_t xd_rsdb_get_remark(xdag_hashlow_t hash, xdag_remark_t);
 xd_rsdb_op_t xd_rsdb_get_heighthash(uint64_t height, xdag_hashlow_t hash);
 
 //put
+xd_rsdb_op_t xd_rsdb_put_bi(struct block_internal *bi);
 xd_rsdb_op_t xd_rsdb_putkey(const char* key, size_t klen, const char* value, size_t vlen);
 xd_rsdb_op_t xd_rsdb_put_backref(xdag_hashlow_t backref, struct block_internal*);
 xd_rsdb_op_t xd_rsdb_put_ournext(xdag_hashlow_t hash, xdag_hashlow_t next);
