@@ -1675,21 +1675,25 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
     const char *key = NULL;
     memcpy(seek_key + 1, bi->hash, RSDB_KEY_LEN - 1);
     rocksdb_iterator_t* iter = rocksdb_create_iterator(g_xdag_rsdb->db, g_xdag_rsdb->read_options);
-    for (rocksdb_iter_seek(iter, seek_key, sizeof(seek_key));
-         rocksdb_iter_valid(iter) && (key = rocksdb_iter_key(iter, &klen)) && !memcmp(seek_key, key, sizeof(seek_key));
+    for (rocksdb_iter_seek(iter, seek_key, sizeof(seek_key)),i = 0;
+         rocksdb_iter_valid(iter) && i < N;
          rocksdb_iter_next(iter))
     {
+        key = rocksdb_iter_key(iter, &klen);
         const char *value = rocksdb_iter_value(iter, &vlen);
+        if(memcmp(seek_key, key, sizeof(seek_key))) {
+            break;
+        }
+        struct block_internal b;
         if(value && klen) {
             xdag_hashlow_t hash = {0};
             memcpy(hash, value, sizeof(xdag_hashlow_t));
-            struct block_internal b;
             if(!xd_rsdb_get_bi(hash, &b) && b.flags & BI_APPLIED) {
-                struct block_internal *tbi = malloc(sizeof(struct block_internal));
-                memset(tbi, 0, sizeof(struct block_internal));
-                memcpy(tbi, &b, sizeof(struct block_internal));
-                ba[n++] = tbi;
+                ba[n] = malloc(sizeof(struct block_internal));
+                memcpy(ba[n], &b, sizeof(struct block_internal));
+                n++;
             }
+            i++;
         }
     }
     if(iter) rocksdb_iter_destroy(iter);

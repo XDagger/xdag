@@ -10,55 +10,6 @@
 
 #define RSDB_LOG_FREE_ERRMSG(errmsg) xdag_info("%s %lu %s \n",__FUNCTION__, __LINE__,errmsg);free(errmsg)
 
-char* xd_rsdb_full_merge(void* state, const char* key, size_t key_length,
-                         const char* existing_value,
-                         size_t existing_value_length,
-                         const char* const* operands_list,
-                         const size_t* operands_list_length, int num_operands,
-                         unsigned char* success, size_t* new_value_length)
-{
-    struct block_internal *result = calloc(sizeof(struct block_internal), 1);
-    for(int i = 0; i < num_operands; i++) {
-        struct block_internal *bi = (struct block_internal*)operands_list[i];
-        memcpy(result, bi, sizeof(struct block_internal));
-    }
-
-    if (!result) {
-        *success = 0;
-        *new_value_length = 0;
-        return NULL;
-    }
-    *success = 1;
-    *new_value_length = sizeof(struct block_internal) ;
-    return (char*)result;
-}
-
-char* xd_rsdb_partial_merge(void* state, const char* key, size_t key_length,
-                       const char* const* operands_list,
-                       const size_t* operands_list_length, int num_operands,
-                       unsigned char* success, size_t* new_value_length)
-{
-    struct block_internal *result = calloc(sizeof(struct block_internal), 1);
-    for(int i = 0; i < num_operands; i++) {
-        struct block_internal *bi = (struct block_internal*)operands_list[i];
-        memcpy(result, bi, sizeof(struct block_internal));
-    }
-
-    if (!result) {
-        *success = 0;
-        *new_value_length = 0;
-        return NULL;
-    }
-    *success = 1;
-    *new_value_length = sizeof(struct block_internal) ;
-    return (char*)result;
-}
-
-const char *xd_rsdb_merge_operator_name(void* test)
-{
-    return "xd_rsdb_merge_operator";
-}
-
 xd_rsdb_op_t xd_rsdb_pre_init(int read_only)
 {
     xd_rsdb_t* rsdb = NULL;
@@ -196,13 +147,6 @@ xd_rsdb_op_t xd_rsdb_conf(xd_rsdb_t  *db)
     rocksdb_writeoptions_t* write_options = rocksdb_writeoptions_create();
     rocksdb_readoptions_t* read_options = rocksdb_readoptions_create();
     rocksdb_filterpolicy_t *filter_policy = rocksdb_filterpolicy_create_bloom_full(10);
-    struct merge_operator_state *state = malloc(sizeof(*state));
-    rocksdb_mergeoperator_t *merge_operator = rocksdb_mergeoperator_create((void *)state,
-                                                                           NULL,
-                                                                           xd_rsdb_full_merge,
-                                                                           xd_rsdb_partial_merge,
-                                                                           NULL,
-                                                                           xd_rsdb_merge_operator_name);
 
 
     // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
@@ -212,17 +156,15 @@ xd_rsdb_op_t xd_rsdb_conf(xd_rsdb_t  *db)
     rocksdb_options_set_max_open_files(options, 1024);
     rocksdb_options_set_create_if_missing(options, 1);
     rocksdb_options_set_compression(options, rocksdb_lz4_compression);
+    rocksdb_readoptions_set_verify_checksums(read_options, 0);
 
     rocksdb_block_based_table_options_t *block_based_table_options = rocksdb_block_based_options_create();
     rocksdb_block_based_options_set_filter_policy(block_based_table_options, filter_policy);
     rocksdb_options_set_block_based_table_factory(options, block_based_table_options);
-    rocksdb_options_set_merge_operator(options, merge_operator);
 
     db->options = options;
     db->write_options = write_options;
     db->read_options = read_options;
-    db->merge_operator = merge_operator;
-    db->filter_policy = filter_policy;
     return XDAG_RSDB_OP_SUCCESS;
 }
 
