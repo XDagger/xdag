@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <sys/socket.h>
+#include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -268,7 +269,7 @@ static int close_connection(struct xconnection *conn, int error, const char *mes
 	fd = t->fds[nfd].fd;
 	t->nconnections--; 
 	nconns--;
-	if(nconns) {
+	if(nconns >= 0) {
 		t->fds[nfd].fd = t->fds[nconns].fd;
 		t->fds[nfd].revents = t->fds[nconns].revents;
 		t->conn[nfd] = t->conn[nconns];
@@ -311,6 +312,11 @@ void *dnet_send_xdag_packet(void *block, void *data)
 	struct send_parameters *sp = data;
 	struct xconnection *conn = sp->connection;
 	struct xsector_extended *buf;
+
+	if(NULL == block || NULL == data){
+		fprintf(stderr,"fatal error packet %p or data %p send in dnet is NULL \n",block,data);
+		return 0;
+	}
 
 	if (sp->time_limit && time(NULL) > sp->time_limit) {
 		return (void*)(intptr_t)-1;
@@ -426,7 +432,7 @@ static void *xthread_main(void *arg)
 						getsockopt(t->fds[n].fd, SOL_SOCKET, SO_ERROR, (void *)&error, &errlen);
 						snprintf(mess, 127, "%s", strerror(error));
 					} else if(t->fds[n].revents & POLLHUP) {
-						sprintf(mess, "%s", "hang up");
+ 						sprintf(mess, "%s", "hang up");
 					} else {
 						sprintf(mess, "%s", "unknown");
 					}
@@ -655,15 +661,20 @@ static void *accept_thread_main(void *arg)
 		return 0;
 	}
 
+    // Set the "LINGER" timeout to zero, to close the listen socket
+    // immediately at program termination.
+    setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&linger_opt, sizeof(linger_opt));
+	// Set SO_REUSEADDR must before bind method!
+    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuseaddr, sizeof(int));
+
+    // Set TCP_NODELAY
+    int tcp_nodelay_enable = 1;
+    setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void*)&tcp_nodelay_enable, sizeof(tcp_nodelay_enable));
+
 	// Bind a socket to the address
 	if(bind(fd, (struct sockaddr*)&peeraddr, sizeof(peeraddr))) {
 		return 0;
 	}
-
-	// Set the "LINGER" timeout to zero, to close the listen socket
-	// immediately at program termination.
-	setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&linger_opt, sizeof(linger_opt));
-	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuseaddr, sizeof(int));
 
 	// Now, listen for a connection
 	if(listen(fd, MAX_CONNECTIONS_PER_THREAD)) { // "1" is the maximal length of the queue
@@ -681,6 +692,7 @@ static void *accept_thread_main(void *arg)
 		}
 		setsockopt(fd1, SOL_SOCKET, SO_LINGER, (char *)&linger_opt, sizeof(linger_opt));
 		setsockopt(fd1, SOL_SOCKET, SO_REUSEADDR, (char *)&reuseaddr, sizeof(int));
+        setsockopt(fd1, IPPROTO_TCP, TCP_NODELAY, (void*)&tcp_nodelay_enable, sizeof(tcp_nodelay_enable));
 		fcntl(fd1, F_SETFD, FD_CLOEXEC);
 		if(!add_connection(fd1, peeraddr.sin_addr.s_addr, htons(peeraddr.sin_port), 1)) {
 			close(fd1);
@@ -822,13 +834,37 @@ int dnet_init(int argc, char **argv)
 		dnet_session_init_crypt(g_crypt, g_xkeys.sect0.word);
 	}
 
-	if(is_daemon) {
-		daemonize();
-	}
+    if(is_daemon) {
+        daemonize();
+    }
 
-	angelize();
+    angelize();
+
 	for(i = 0; i < nthreads; ++i) {
-		pthread_create(&t, 0, xthread_main, (void *)(long)i);
+        pthread_attr_t * attr_xthread_main = NULL;
+#if defined(__APPLE__)
+        pthread_attr_t attr_xthread;
+        struct rlimit lim;
+        if (getrlimit(RLIMIT_STACK, &lim))
+            abort();
+
+        attr_xthread_main = &attr_xthread;
+        if (pthread_attr_init(attr_xthread_main)){
+            printf("set xthread_main thread stack size failed \n");
+            abort();
+        }
+
+        if (pthread_attr_setstacksize(attr_xthread_main, lim.rlim_max)){
+            printf("set xthread_main thread stack size failed \n");
+            abort();
+        }
+#endif
+        int err = pthread_create(&t, attr_xthread_main, xthread_main, (void*)(uintptr_t)i);
+        if(err != 0) {
+            printf("create attr_xthread failed, error : %s\n", strerror(err));
+            return 0;
+        }
+		//pthread_create(&t, 0, xthread_main, (void *)(long)i);
 	}
 	if(bindto && nthreads >= 1) {
 		pthread_create(&t, 0, accept_thread_main, (void *)bindto);
@@ -885,6 +921,12 @@ int dnet_execute_command(const char *cmd, void *fileout)
 			dnet_err("DNET  : failed to   %s, can't open socket", str);
 			return -1;
 		}
+        int reuseAddr = 1;
+		int tcp_nodelay_enable = 1;
+        struct linger lingerOpt = { 1, 0 };
+        setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&lingerOpt, sizeof(lingerOpt));
+        setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuseAddr, sizeof(int));
+        setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void*)&tcp_nodelay_enable, sizeof(tcp_nodelay_enable));
 		if(connect(fd, (struct sockaddr *)&peeraddr, sizeof(peeraddr))) {
 			close(fd);
 			fprintf(f, "connect: error connecting the socket (ip=%08x, port=%d)\n",
