@@ -7,7 +7,6 @@
 #include <unistd.h>
 #include <math.h>
 #include "system.h"
-#include "../ldus/rbtree.h"
 #include "block.h"
 #include "crypt.h"
 #include "global.h"
@@ -27,7 +26,6 @@
 #include "mining_common.h"
 #include "time.h"
 #include "math.h"
-#include "utils/atomic.h"
 #include "utils/random.h"
 #include "websocket/websocket.h"
 #include "global.h"
@@ -45,7 +43,6 @@
 #define MAIN_APOLLO_HEIGHT           1017323
 #define MAIN_APOLLO_TESTNET_HEIGHT   196250
 #define MAIN_BIG_PERIOD_LOG     21
-#define MAX_LINKS               15
 #define MAKE_BLOCK_PERIOD       13
 
 #define CACHE			1
@@ -57,27 +54,6 @@
 struct block_backrefs;
 struct orphan_block;
 struct block_internal_index;
-
-struct block_internal {
-	union {
-		struct ldus_rbtree node;
-		struct block_internal_index *index;
-	};
-	xdag_hash_t hash;
-	xdag_diff_t difficulty;
-	xdag_amount_t amount, linkamount[MAX_LINKS], fee;
-	xtime_t time;
-	uint64_t storage_pos;
-	union {
-		struct block_internal *ref;
-		struct orphan_block *oref;
-	};
-	struct block_internal *link[MAX_LINKS];
-	atomic_uintptr_t backrefs;
-	atomic_uintptr_t remark;
-	uint16_t flags, in_mask, n_our_key;
-	uint8_t nlinks:4, max_diff_link:4, reserved;
-};
 
 struct block_internal_index {
 	struct ldus_rbtree node;
@@ -178,6 +154,25 @@ static inline struct block_internal *block_by_hash(const xdag_hashlow_t hash)
 	}
 }
 
+// only main block can query by height
+struct block_internal *block_by_height(const uint64_t height)
+{
+    if(height > g_xdag_stats.nmain) {
+        return NULL;
+    }
+    struct block_internal *bi = NULL;
+    int i = 0;
+    for (bi = top_main_chain; bi && i < g_xdag_stats.nmain; bi = bi->link[bi->max_diff_link]) {
+        if (bi->flags & BI_MAIN) {
+            if(height == bi->height) {
+                break;
+            }
+            ++i;
+        }
+    }
+    return bi;
+}
+
 static inline struct cache_block *cache_block_by_hash(const xdag_hashlow_t hash)
 {
 	return (struct cache_block *)ldus_rbtree_find(cache_root, (struct ldus_rbtree *)hash - 1);
@@ -188,7 +183,7 @@ static void log_block(const char *mess, xdag_hash_t h, xtime_t t, uint64_t pos)
 {
 	/* Do not log blocks as we are loading from local storage */
     if(g_xdag_state != XDAG_STATE_LOAD) {
-        xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess,
+        xdag_info("%s tid=%lu height=%lu: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess, pthread_self(), g_xdag_stats.nmain,
             ((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t, pos);
     }
 }
@@ -323,11 +318,19 @@ static xdag_amount_t get_start_amount(uint64_t nmain) {
     return start_amount;
 }
 
-static xdag_amount_t get_amount(xdag_time_t time, uint64_t nmain) {
+static xdag_amount_t get_block_earning(uint64_t nmain) {
     xdag_amount_t amount = 0;
     xdag_amount_t start_amount = 0;
-    
-    start_amount = get_start_amount_with_time(time, nmain);
+    start_amount = get_start_amount(nmain);
+    amount = start_amount >> (nmain >> MAIN_BIG_PERIOD_LOG);
+    return amount;
+}
+
+static xdag_amount_t get_amount(uint64_t nmain) {
+    xdag_amount_t amount = 0;
+    xdag_amount_t start_amount = 0;
+
+    start_amount = get_start_amount(nmain);
     amount = start_amount >> (nmain >> MAIN_BIG_PERIOD_LOG);
     return amount;
 }
@@ -353,7 +356,8 @@ xdag_amount_t xdag_get_supply(uint64_t nmain)
 static void set_main(struct block_internal *m)
 {
     xdag_amount_t amount = 0;
-    amount = get_amount(m->time, g_xdag_stats.nmain + 1);
+    m->height = g_xdag_stats.nmain + 1;
+    amount = get_amount(m->height);
 	m->flags |= BI_MAIN;
 	accept_amount(m, amount);
 	g_xdag_stats.nmain++;
@@ -373,7 +377,7 @@ static void unset_main(struct block_internal *m)
     xdag_amount_t amount = 0;
 	g_xdag_stats.nmain--;
 	g_xdag_stats.total_nmain--;
-	amount = get_amount(m->time, g_xdag_stats.nmain);
+    amount = get_amount(g_xdag_stats.nmain);
 	m->flags &= ~BI_MAIN;
 	accept_amount(m, (xdag_amount_t)0 - amount);
 	accept_amount(m, unapply_block(m));
@@ -1750,6 +1754,9 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 
 	uint64_t *h = bi->hash;
 	xdag_xtime_to_string(bi->time, time_buf);
+    if(bi->flags & BI_MAIN) {
+        fprintf(out, "    height: %08llu\n", bi->height);
+    }
 	fprintf(out, "      time: %s\n", time_buf);
 	fprintf(out, " timestamp: %llx\n", (unsigned long long)bi->time);
 	fprintf(out, "     flags: %x\n", bi->flags & ~BI_OURS);
@@ -1851,11 +1858,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	
 	if (bi->flags & BI_MAIN) {
 		xdag_hash2address(h, address);
-        if(g_apollo_fork_time && bi->time && MAIN_TIME(bi->time) >= MAIN_TIME(g_apollo_fork_time)) {
-            amount = MAIN_APOLLO_AMOUNT;
-        } else {
-            amount = MAIN_START_AMOUNT;
-        }
+        amount = get_block_earning(bi->height);
         memset(time_buf, 0, sizeof(time_buf));
         xdag_xtime_to_string(bi->time, time_buf);
         fprintf(out, "   earning: %s  %10u.%09u  %s\n", address,
@@ -1874,17 +1877,17 @@ static inline void print_block(struct block_internal *block, int print_only_addr
 	xdag_hash2address(block->hash, address);
 
 	if(print_only_addresses) {
-		fprintf(out, "%s\n", address);
+        fprintf(out, "%s   %08lld\n", address, block->height);
 	} else {
 		xdag_xtime_to_string(block->time, time_buf);
-		fprintf(out, "%s   %s   %-8s  %-32s\n", address, time_buf, xdag_get_block_state_info(block->flags), get_remark(block));
+		fprintf(out, "%08llu   %s   %s   %-8s  %-32s\n", block->height, address, time_buf, xdag_get_block_state_info(block->flags), get_remark(block));
 	}
 }
 
 static inline void print_header_block_list(FILE *out)
 {
 	fprintf(out, "---------------------------------------------------------------------------------------------------------\n");
-	fprintf(out, "address                            time                      state     mined by                          \n");
+	fprintf(out, "height        address                            time                      state     mined by            \n");
 	fprintf(out, "---------------------------------------------------------------------------------------------------------\n");
 }
 

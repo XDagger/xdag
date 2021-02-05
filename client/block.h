@@ -9,6 +9,8 @@
 #include "hash.h"
 #include "system.h"
 #include "types.h"
+#include "utils/atomic.h"
+#include "../ldus/rbtree.h"
 
 enum xdag_field_type {
 	XDAG_FIELD_NONCE,        //0
@@ -51,7 +53,7 @@ enum bi_flags {
 };
 
 #define XDAG_BLOCK_FIELDS 16
-
+#define MAX_LINKS               15
 #define REMARK_ENABLED 1
 
 #if CHAR_BIT != 8
@@ -83,6 +85,28 @@ struct xdag_field {
 
 struct xdag_block {
 	struct xdag_field field[XDAG_BLOCK_FIELDS];
+};
+
+struct block_internal {
+    union {
+        struct ldus_rbtree node;
+        struct block_internal_index *index;
+    };
+    xdag_hash_t hash;
+    xdag_diff_t difficulty;
+    xdag_amount_t amount, linkamount[MAX_LINKS], fee;
+    xtime_t time;
+    uint64_t storage_pos;
+    union {
+        struct block_internal *ref;
+        struct orphan_block *oref;
+    };
+    struct block_internal *link[MAX_LINKS];
+    uint64_t height;
+    atomic_uintptr_t backrefs;
+    atomic_uintptr_t remark;
+    uint16_t flags, in_mask, n_our_key;
+    uint8_t nlinks:4, max_diff_link:4, reserved;
 };
 
 #define xdag_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)
@@ -162,6 +186,8 @@ void *add_block_callback_sync(void *block, void *data);
 // get block info of specified address
 extern int xdag_get_block_info(xdag_hash_t, void *, int (*)(void*, int, xdag_hash_t, xdag_amount_t, xtime_t, uint64_t, const char*),
 							void *, int (*)(void*, const char *, xdag_hash_t, xdag_amount_t));
+
+struct block_internal *block_by_height(const uint64_t height);
 
 #ifdef __cplusplus
 };
