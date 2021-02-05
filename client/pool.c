@@ -36,6 +36,7 @@
 #include "uthash/uthash.h"
 #include "utils/atomic.h"
 #include "time.h"
+#include "rx_hash.h"
 
 //TODO: why do we need these two definitions?
 #define START_MINERS_COUNT     256
@@ -880,7 +881,14 @@ static int process_received_share(connection_list_element *connection)
 
 	if(share_can_be_accepted(conn_data->miner, (uint64_t*)conn_data->data, task_index)) {
 		xdag_hash_t hash;
-		xdag_hash_final(task->ctx0, conn_data->data, sizeof(struct xdag_field), hash);
+        if(is_randomx_fork(task->task_time)){
+            uint8_t rx_task_data[sizeof(xdag_hash_t)*2];
+            memcpy(rx_task_data,task->task[0].data,sizeof(xdag_hash_t));
+            memcpy(rx_task_data+sizeof(xdag_hash_t),conn_data->data,sizeof(xdag_hash_t));
+            rx_pool_calc_hash(rx_task_data, sizeof(rx_task_data), task->task_time, hash);
+        }else{
+            xdag_hash_final(task->ctx0, conn_data->data, sizeof(struct xdag_field), hash);
+        }
 		xdag_set_min_share(task, conn_data->miner->id.data, hash);
 		update_mean_log_diff(conn_data, task, hash);
 		calculate_nopaid_shares(conn_data, task, hash);

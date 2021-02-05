@@ -24,6 +24,7 @@
 #include <unistd.h>
 #endif
 #include "version.h"
+#include "rx_hash.h"
 
 #define Nfields(d) (2 + d->hasRemark + d->fieldsCount + 3 * d->keysCount + 2 * d->outsig)
 #define COMMAND_HISTORY ".cmd.history"
@@ -550,7 +551,7 @@ void processPoolCommand(char *nextParam, FILE *out)
 void processStatsCommand(FILE *out)
 {
 	if(is_wallet()) {
-		fprintf(out, "your hashrate MHs: %.2lf\n", xdagGetHashRate());
+		fprintf(out, "your hashrate MHs: %.6lf\n", xdagGetHashRate());
 	} else {
 		fprintf(out, "Statistics for ours and maximum known parameters:\n"
 			"            hosts: %u of %u\n"
@@ -561,7 +562,7 @@ void processStatsCommand(FILE *out)
 			" wait sync blocks: %u\n"
 			" chain difficulty: %llx%016llx of %llx%016llx\n"
 			" %9s supply: %.9Lf of %.9Lf\n"
-			"4 hr hashrate MHs: %.2Lf of %.2Lf\n",
+			"4 hr hashrate MHs: %.6Lf of %.6Lf\n",
 			g_xdag_stats.nhosts, g_xdag_stats.total_nhosts,
 			(long long)g_xdag_stats.nblocks, (long long)g_xdag_stats.total_nblocks,
 			(long long)g_xdag_stats.nmain, (long long)g_xdag_stats.total_nmain,
@@ -601,6 +602,9 @@ void processInternalStatsCommand(FILE *out)
 
 void processExitCommand()
 {
+    if(is_pool()) {
+        rx_pool_release_mem();
+    }
 	xdag_mess("Closing wallet module...");
 	xdag_wallet_finish();
 	xdag_mess("Closing netdb module...");

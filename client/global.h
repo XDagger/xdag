@@ -44,6 +44,17 @@ enum xdag_type {
 	XDAG_POOL = 2
 };
 
+enum xdag_mine_type {
+    XDAG_RAW = 1,
+    XDAG_RANDOMX = 2
+};
+
+enum randomx_mode {
+    RANDOMX_LIGHT = 0,
+    RANDOMX_FAST = 1
+};
+
+
 // defines if xdag started as a pool or a wallet
 extern enum xdag_type g_xdag_type;
 
@@ -61,6 +72,10 @@ extern char *g_coinname, *g_progname;
 
 //defines if mining is disabled (pool)
 extern int g_disable_mining;
+
+//defines mine type for randomx
+extern enum xdag_mine_type g_xdag_mine_type;
+extern enum randomx_mode g_xdag_rx_mode;
 
 //Default type of the block header
 //Test network and main network have different types of the block headers, so blocks from different networks are incompatible
