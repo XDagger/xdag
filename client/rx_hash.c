@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <limits.h>
+//#include <limits.h>
 #include <pthread.h>
 #include <randomx.h>
 #include "utils/log.h"
@@ -74,7 +74,8 @@ inline void  rx_set_fork_time(struct block_internal *m) {
             next_rx_mem->seed_height = m->height;
             xdag_info("*#*from %llu,%llx, set switch time to %llx", m->height, m->time,
                       next_rx_mem->switch_time);
-            if (xdag_cmphash(next_rx_mem->seed, block_by_height(m->height - g_rx_fork_lag)->hash) != 0) {
+            memcpy(hash, block_by_height(m->height - g_rx_fork_lag)->hash, sizeof(xdag_hashlow_t));
+            if (xdag_cmphash(next_rx_mem->seed, hash) != 0) {
                 // to avoid main block roll back, get prior 128 height hash as seed
                 memcpy(next_rx_mem->seed, hash, sizeof(xdag_hashlow_t));
                 rx_pool_update_seed(next_mem_index);
@@ -535,9 +536,9 @@ void rx_pool_release_mem(void) {
 }
 
 void rx_loading_fork_time(void) {    // node start height greater than g_rx_fork_seed_height
-    xdag_hashlow_t hash = {0};
+//    xdag_hashlow_t hash = {0};
     struct block_internal* b;
-    xdag_hashlow_t hash_seed = {0};
+//    xdag_hashlow_t hash_seed = {0};
     if (g_xdag_stats.nmain >= g_rx_fork_seed_height) {
 
         b = block_by_height(g_rx_fork_seed_height);
