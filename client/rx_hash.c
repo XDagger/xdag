@@ -129,7 +129,11 @@ void rx_init_flags(int is_full_mem, uint32_t init_thread_count) {
 
     g_randomx_flags = randomx_get_flags();
 
+#if defined (__MACOS__) || defined (__APPLE__)
+#else
     g_randomx_flags |= RANDOMX_FLAG_LARGE_PAGES;
+#endif
+
     if (is_full_mem == 1) {
         g_randomx_flags |= RANDOMX_FLAG_FULL_MEM;
     }
