@@ -26,6 +26,7 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/random.h"
+#include "rx_hash.h"
 
 #define MINERS_PWD             "minersgonnamine"
 #define SECTOR0_BASE           0x1947f3acu
@@ -270,17 +271,30 @@ begin:
 					struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
 
 					task->task_time = xdag_get_frame();
-					xdag_hash_set_state(task->ctx, data[0].data,
-						sizeof(struct xdag_block) - 2 * sizeof(struct xdag_field));
-					xdag_hash_update(task->ctx, data[1].data, sizeof(struct xdag_field));
-					xdag_hash_update(task->ctx, hash, sizeof(xdag_hashlow_t));
 
-					GetRandBytes(task->nonce.data, sizeof(xdag_hash_t));
+                    GetRandBytes(task->nonce.data, sizeof(xdag_hash_t));
+                    memcpy(task->nonce.data, hash, sizeof(xdag_hashlow_t));
+                    memcpy(task->lastfield.data, task->nonce.data, sizeof(xdag_hash_t));
 
-					memcpy(task->nonce.data, hash, sizeof(xdag_hashlow_t));
-					memcpy(task->lastfield.data, task->nonce.data, sizeof(xdag_hash_t));
+                    if(g_xdag_mine_type == XDAG_RANDOMX) {
+                        memcpy(task->task[0].data,data[0].data, sizeof(xdag_hash_t));
+                        memcpy(task->task[1].data,data[1].data,sizeof(xdag_hash_t));
+                        memset(task->minhash.data, 0xff, sizeof(xdag_hash_t));
 
-					xdag_hash_final(task->ctx, &task->nonce.amount, sizeof(uint64_t), task->minhash.data);
+                        struct xdag_pool_task *pre_task = &g_xdag_pool_task[g_xdag_pool_task_index & 1];
+                        // if seed changed
+                        if(xdag_cmphash(pre_task->task[1].data, task->task[1].data) != 0) {
+                            rx_mine_init_dataset(task->task[1].data, sizeof(xdag_hash_t));
+                            xdag_info("New Mine Seed  : t=%llx N=%llu", task->task_time, task_index);
+                        }
+                    } else {
+                        xdag_hash_set_state(task->ctx, data[0].data,
+                                            sizeof(struct xdag_block) - 2 * sizeof(struct xdag_field));
+                        xdag_hash_update(task->ctx, data[1].data, sizeof(struct xdag_field));
+                        xdag_hash_update(task->ctx, hash, sizeof(xdag_hashlow_t));
+
+                        xdag_hash_final(task->ctx, &task->nonce.amount, sizeof(uint64_t), task->minhash.data);
+                    }
 
 					g_xdag_pool_task_index = task_index;
 					task_time = time(0);
@@ -300,16 +314,22 @@ begin:
 			struct xdag_pool_task *task = &g_xdag_pool_task[task_index & 1];
 			uint64_t *h = task->minhash.data;
 
-			share_time = time(0);
-			res = send_to_pool(&task->lastfield, 1);
-			pthread_mutex_unlock(&g_miner_mutex);
+            if(task->minhash.amount + 1 != 0) { // min hash is not  0xffffffffff....
+                share_time = time(0);
+                res = send_to_pool(&task->lastfield, 1);
+                pthread_mutex_unlock(&g_miner_mutex);
+//                uint64_t *d = (uint64_t *) &task->lastfield;
+//                xdag_info("Sent lastfield data %016llx%016llx%016llx%016llx", d[0], d[1], d[2], d[3]);
+                xdag_info("Share : %016llx%016llx%016llx%016llx t=%llx res=%d",
+                          h[3], h[2], h[1], h[0], task->task_time << 16 | 0xffff, res);
 
-			xdag_info("Share : %016llx%016llx%016llx%016llx t=%llx res=%d",
-				h[3], h[2], h[1], h[0], task->task_time << 16 | 0xffff, res);
-
-			if(res) {
-				mess = "write error on socket"; goto err;
-			}
+                if (res) {
+                    mess = "write error on socket";
+                    goto err;
+                }
+            }else{
+                pthread_mutex_unlock(&g_miner_mutex);
+            }
 		} else {
 			pthread_mutex_unlock(&g_miner_mutex);
 		}
@@ -359,10 +379,16 @@ static void *mining_thread(void *arg)
 			oldntask = ntask;
 			memcpy(last.data, task->nonce.data, sizeof(xdag_hash_t));
 			nonce = last.amount + nthread;
+//			xdag_info("mining thread %lu start nonce %016llx",pthread_self(),nonce);
 		}
 
-		last.amount = xdag_hash_final_multi(task->ctx, &nonce, 4096, g_xdag_mining_threads, hash);
-		g_xdag_extstats.nhashes += 4096;
+        if(g_xdag_mine_type == XDAG_RANDOMX) {
+            last.amount = xdag_rx_mine_worker_hash(task->task[0].data, last.data, &nonce, 4096,
+                                                   g_xdag_mining_threads, hash);
+        } else {
+            last.amount = xdag_hash_final_multi(task->ctx, &nonce, 4096, g_xdag_mining_threads, hash);
+        }
+        g_xdag_extstats.nhashes += 4096;
 
 		xdag_set_min_share(task, last.data, hash);
 	}

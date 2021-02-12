@@ -188,7 +188,7 @@ cJSON * method_xdag_stats(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id
 
 	char buf[128] = {0};
 	if(is_wallet()) {
-		sprintf(buf, "%.2lf MHs", xdagGetHashRate());
+		sprintf(buf, "%.6lf MHs", xdagGetHashRate());
 		cJSON *json_hashrate = cJSON_CreateString(buf);
 		cJSON_AddItemToObject(item, "hashrate", json_hashrate);
 	} else {
@@ -240,11 +240,11 @@ cJSON * method_xdag_stats(struct xdag_rpc_context *ctx, cJSON *params, cJSON *id
 		cJSON *json_total_supply = cJSON_CreateString(buf);
 		cJSON_AddItemToObject(item, "totalsupply", json_total_supply);
 
-		sprintf(buf, "%.2Lf MHs", xdag_hashrate(g_xdag_extstats.hashrate_ours));
+		sprintf(buf, "%.6Lf MHs", xdag_hashrate(g_xdag_extstats.hashrate_ours));
 		cJSON *json_hashrate = cJSON_CreateString(buf);
 		cJSON_AddItemToObject(item, "hashrate", json_hashrate);
 
-		sprintf(buf, "%.2Lf MHs", xdag_hashrate(g_xdag_extstats.hashrate_total));
+		sprintf(buf, "%.6Lf MHs", xdag_hashrate(g_xdag_extstats.hashrate_total));
 		cJSON * json_total_hashrate = cJSON_CreateString(buf);
 		cJSON_AddItemToObject(item, "totalhashrate", json_total_hashrate);
 	}

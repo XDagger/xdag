@@ -204,3 +204,12 @@ void xdag_hash_set_state(void *ctxv, xdag_hash_t state, size_t size)
 	ctx->bitlenH = 0;
 	ctx->md_len = SHA256_BLOCK_SIZE;
 }
+
+//calculate sha256 hash for rx mining
+void xdag_rx_pre_hash(void *data, size_t size, xdag_hash_t hash)
+{
+    SHA256REF_CTX ctx;
+    sha256_init(&ctx);
+    sha256_update(&ctx, (uint8_t*)data, size);
+    sha256_final(&ctx, (uint8_t*)hash);
+}
