@@ -121,7 +121,7 @@ in rx_hash.h
 #define SEEDHASH_EPOCH_TESTNET_LAG    32
 
 // fork seed height, (time frame of RANDOMX_FORK_HEIGHT) + SEEDHASH_EPOCH_LAG = fork time frame
-#define RANDOMX_FORK_HEIGHT           1339392 
+#define RANDOMX_FORK_HEIGHT           1540096 
 
 // (time frame of RANDOMX_TESTNET_FORK_HEIGHT) + SEEDHASH_EPOCH_TESTNET_LAG = test net fork time frame
 #define RANDOMX_TESTNET_FORK_HEIGHT   196288 // 196288 % 64 = 0
