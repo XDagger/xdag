@@ -43,6 +43,7 @@ static uint32_t g_mine_n_threads;
 static pthread_mutex_t g_rx_dataset_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int rx_update_vm(randomx_vm **vm, randomx_cache *cache, randomx_dataset *dataset);
+int getHugePageNumber(unsigned long* num); // get and check if huge pages is available
 
 static void rx_abort(const char *msg){
     fprintf(stderr, "%s\n", msg);
@@ -171,6 +172,16 @@ void rx_init_flags(int is_full_mem, uint32_t init_thread_count) {
 
     if (g_randomx_flags & RANDOMX_FLAG_LARGE_PAGES) {
         xdag_info(" - randomx large pages mode");
+#ifdef __linux__
+        unsigned long num = 0;
+        int ret;
+        ret = getHugePageNumber(&num);
+        if (ret == -1 || num < 2560) {
+            rx_abort("randomx: huge page not available.");
+            return;
+        }
+        xdag_info( "huge page free = %lu ", num );
+#endif
     } else {
         xdag_info(" - randomx small pages mode");
     }
@@ -583,4 +594,21 @@ void rx_loading_fork_time(void) {    // node start height greater than g_rx_fork
             rx_mem->is_switched = 0;
         }
     }
+}
+
+// get huge pages free number
+int getHugePageNumber(unsigned long* num) {
+    void *fp;
+    char str[256];
+    if ((fp = fopen("/proc/meminfo", "r")) == NULL) {
+        return -1;
+    }
+    while (fscanf(fp, "%s", str) != EOF) {
+        if (strcmp(str, "HugePages_Free:")==0) {
+            fscanf(fp, "%lu", num);
+            break;
+        }
+    }
+    fclose(fp);
+    return 0;
 }
