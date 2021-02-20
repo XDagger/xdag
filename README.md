@@ -1,3 +1,5 @@
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FXDagger%2Fxdag.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FXDagger%2Fxdag?ref=badge_shield)
+
 The Dagger (XDAG) cryptocurrency
 ================================
 - Community site: https://xdag.io  
@@ -122,3 +124,7 @@ Code Contributors:
 * [ZR](https://github.com/zergl)
 
 [Full list of contributors](https://github.com/XDagger/xdag/blob/master/CONTRIBUTORS.md) including all contributors for XDAG sub-projects.
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FXDagger%2Fxdag.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FXDagger%2Fxdag?ref=badge_large)
