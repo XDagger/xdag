@@ -36,6 +36,7 @@
 #include "../dnet/dnet_crypt.h"
 #include "utils/random.h"
 #include "websocket/websocket.h"
+#include "rx_hash.h"
 
 #define ARG_EQUAL(a,b,c) strcmp(c, "") == 0 ? strcmp(a, b) == 0 : (strcmp(a, b) == 0 || strcmp(a, c) == 0)
 
@@ -89,6 +90,8 @@ int xdag_init(int argc, char **argv, int isGui)
 	g_xdag_run = 1;
 	xdag_show_state(0);
 
+    g_xdag_mine_type = XDAG_RAW;
+
 	if(pre_init() < 0) {
 		return -1;
 	}
@@ -102,10 +105,16 @@ int xdag_init(int argc, char **argv, int isGui)
 	setup_common();
 
 	if(is_wallet()) {
+        if(g_xdag_mine_type == XDAG_RANDOMX){
+            rx_init_flags(1, parameters.mining_threads_count);
+        }
 		if(setup_miner(&parameters, isGui) < 0) {
 			return -1;
 		}
 	} else {
+        if(g_xdag_mine_type == XDAG_RANDOMX){
+            rx_init_flags((int)g_xdag_rx_mode, 0);
+        }
 		if(setup_pool(&parameters) < 0) {
 			return -1;
 		}
@@ -198,6 +207,18 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
 			if(++i < argc) {
 				parameters->pool_configuration.mining_configuration = argv[i];
 			}
+        } else if(ARG_EQUAL(argv[i], "-randomx", "")){
+            g_xdag_mine_type = XDAG_RANDOMX;
+            if(++i < argc) {
+                if(ARG_EQUAL(argv[i], "l", "L")) {
+                    g_xdag_rx_mode = RANDOMX_LIGHT;
+                } else if(ARG_EQUAL(argv[i], "f", "F")) {
+                    g_xdag_rx_mode = RANDOMX_FAST;
+                } else {
+                    printf("Illevel use of option -randomx\n");
+                    return -1;
+                }
+            }
 		} else if(ARG_EQUAL(argv[i], "-r", "")) { /* load blocks and wait for run command */
 			g_xdag_run = 0;
 		} else if(ARG_EQUAL(argv[i], "-s", "")) { /* address of this node */
@@ -486,6 +507,9 @@ void printUsage(char* appName)
 		"  -rpc-enable    - enable JSON-RPC service\n"
 		"  -rpc-port      - set HTTP JSON-RPC port (default is 7667)\n"
 		"  -threads N     - create N transport layer threads for pool (default is 6)\n"
+        "  -randomx MODE  - set randomx mode for pool (miners ignore this, always use fast mode), MODE: \n"
+        "                     l - light mode, lower hash speed, less memeory usage(0.5GB),\n"
+        "                     f - fast mode, higher hash speed, more memeory usage(5GB),\n"
 		"  -dm            - disable mining on pool (-P option is ignored)\n"
 		"  -tag           - tag for pool to distingush pools. Max length is 32 chars\n"
 		, appName);

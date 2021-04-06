@@ -24,6 +24,7 @@
 #include <unistd.h>
 #endif
 #include "version.h"
+#include "rx_hash.h"
 
 #define Nfields(d) (2 + d->hasRemark + d->fieldsCount + 3 * d->keysCount + 2 * d->outsig)
 #define COMMAND_HISTORY ".cmd.history"
@@ -53,6 +54,7 @@ int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t
 void processAccountCommand(char *nextParam, FILE *out);
 void processBalanceCommand(char *nextParam, FILE *out);
 void processBlockCommand(char *nextParam, FILE *out);
+void processBlockCommandByHeight(char *nextParam,FILE *out);
 void processKeyGenCommand(FILE *out);
 void processLevelCommand(char *nextParam, FILE *out);
 void processMinerCommand(char *nextParam, FILE *out);
@@ -78,6 +80,7 @@ void processReloadCommand(char *nextParam, FILE *out);
 int xdag_com_account(char *, FILE*);
 int xdag_com_balance(char *, FILE*);
 int xdag_com_block(char *, FILE*);
+int xdag_com_block_by_height(char * args, FILE* out);
 int xdag_com_lastblocks(char *, FILE*);
 int xdag_com_mainblocks(char *, FILE*);
 int xdag_com_minedblocks(char *, FILE*);
@@ -109,6 +112,7 @@ XDAG_COMMAND commands[] = {
 	{ "account"     , 0, xdag_com_account },
 	{ "balance"     , 0, xdag_com_balance },
 	{ "block"       , 2, xdag_com_block },
+    { "blockbyheight", 2, xdag_com_block_by_height },
 	{ "lastblocks"  , 2, xdag_com_lastblocks },
 	{ "mainblocks"  , 2, xdag_com_mainblocks },
 	{ "minedblocks" , 2, xdag_com_minedblocks },
@@ -153,6 +157,12 @@ int xdag_com_block(char * args, FILE* out)
 {
 	processBlockCommand(args, out);
 	return 0;
+}
+
+int xdag_com_block_by_height(char * args, FILE* out)
+{
+    processBlockCommandByHeight(args, out);
+    return 0;
 }
 
 int xdag_com_lastblocks(char * args, FILE* out)
@@ -434,6 +444,22 @@ void processBlockCommand(char *nextParam, FILE *out)
 	}
 }
 
+void processBlockCommandByHeight(char *nextParam, FILE *out)
+{
+    uint64_t blocksHeight = 0;
+    char *cmd = strtok_r(nextParam, " \t\r\n", &nextParam);
+    if((cmd && sscanf(cmd, "%llu", &blocksHeight) != 1) || blocksHeight <= 0 || blocksHeight > g_xdag_stats.nmain) {
+        fprintf(out, "Illegal number.\n");
+    } else {
+        struct block_internal *bi = NULL;
+        if((bi = block_by_height(blocksHeight))) {
+            xdag_print_block_info(bi->hash, out);
+        } else {
+            fprintf(out, "Block is not found.\n");
+        }
+    }
+}
+
 void processKeyGenCommand(FILE *out)
 {
 	const int res = xdag_wallet_new_key();
@@ -550,7 +576,7 @@ void processPoolCommand(char *nextParam, FILE *out)
 void processStatsCommand(FILE *out)
 {
 	if(is_wallet()) {
-		fprintf(out, "your hashrate MHs: %.2lf\n", xdagGetHashRate());
+		fprintf(out, "your hashrate MHs: %.6lf\n", xdagGetHashRate());
 	} else {
 		fprintf(out, "Statistics for ours and maximum known parameters:\n"
 			"            hosts: %u of %u\n"
@@ -561,7 +587,7 @@ void processStatsCommand(FILE *out)
 			" wait sync blocks: %u\n"
 			" chain difficulty: %llx%016llx of %llx%016llx\n"
 			" %9s supply: %.9Lf of %.9Lf\n"
-			"4 hr hashrate MHs: %.2Lf of %.2Lf\n",
+			"4 hr hashrate MHs: %.6Lf of %.6Lf\n",
 			g_xdag_stats.nhosts, g_xdag_stats.total_nhosts,
 			(long long)g_xdag_stats.nblocks, (long long)g_xdag_stats.total_nblocks,
 			(long long)g_xdag_stats.nmain, (long long)g_xdag_stats.total_nmain,
@@ -601,6 +627,9 @@ void processInternalStatsCommand(FILE *out)
 
 void processExitCommand()
 {
+    if(is_pool()) {
+        rx_pool_release_mem();
+    }
 	xdag_mess("Closing wallet module...");
 	xdag_wallet_finish();
 	xdag_mess("Closing netdb module...");
@@ -985,6 +1014,7 @@ void processHelpCommand(FILE *out)
 		"  account [N]          - print first N (20 by default) our addresses with their amounts\n"
 		"  balance [A]          - print balance of the address A or total balance for all our addresses\n"
 		"  block [A]            - print extended info for the block corresponding to the address or hash A\n"
+        "  blockbyheight [N]    - print extended info for the block corresponding to the height N\n"
 		"  lastblocks [N]       - print latest N (20 by default, max limit 100) main blocks\n"
 		"  exit                 - exit this program (not the daemon)\n"
 		"  help                 - print this help\n"

@@ -7,13 +7,17 @@
 #define STRINGIZE(s) STRINGIZE2(s)
 
 #define VERSION_MAJOR               0
-#define VERSION_MINOR               3
-#define VERSION_REVISION            2
+#define VERSION_MINOR               4
+#define VERSION_REVISION            0
 
 #define XDAG_VERSION STRINGIZE(VERSION_MAJOR) "." STRINGIZE(VERSION_MINOR) "." STRINGIZE(VERSION_REVISION)
 
 
 /* version history
+
+0.4.0 change pow to randomx
+
+0.3.3 add height for mainblock
 
 0.3.2 fix dnet refused connection issue
 

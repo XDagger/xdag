@@ -30,6 +30,9 @@ if (APPLE AND NOT DEFINED ENV{OPENSSL_ROOT_DIR})
   set(OPENSSL_LIBRARIES "/usr/local/opt/openssl/lib" "/usr/local/ssl/*/lib" "/usr/local/Cellar/openssl/*/lib")
 endif()
 
+set(RANDOMX_LIBDIR "/usr/lib" "/usr/local/lib")
+set(RANDOMX_LIBRARIES "randomx")
+
 file(GLOB_RECURSE DAGGER_SOURCES
   client/*.c
   dfslib/*.c
@@ -114,6 +117,9 @@ target_link_libraries(
   OpenSSL::SSL
   OpenSSL::Crypto
   -L${SECP256K1_LIBDIR} ${SECP256K1_LIBRARIES}
+  -L${RANDOMX_LIBDIR} ${RANDOMX_LIBRARIES}
+  m
+  -lstdc++
 )
 
 add_executable(

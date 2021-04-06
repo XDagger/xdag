@@ -7,7 +7,6 @@
 #include <unistd.h>
 #include <math.h>
 #include "system.h"
-#include "../ldus/rbtree.h"
 #include "block.h"
 #include "crypt.h"
 #include "global.h"
@@ -27,10 +26,10 @@
 #include "mining_common.h"
 #include "time.h"
 #include "math.h"
-#include "utils/atomic.h"
 #include "utils/random.h"
 #include "websocket/websocket.h"
 #include "global.h"
+#include "rx_hash.h"
 
 #define MAX_WAITING_MAIN        1
 #define MAIN_START_AMOUNT       (1ll << 42)
@@ -44,7 +43,6 @@
 #define MAIN_APOLLO_HEIGHT           1017323
 #define MAIN_APOLLO_TESTNET_HEIGHT   196250
 #define MAIN_BIG_PERIOD_LOG     21
-#define MAX_LINKS               15
 #define MAKE_BLOCK_PERIOD       13
 
 #define CACHE			1
@@ -56,27 +54,6 @@
 struct block_backrefs;
 struct orphan_block;
 struct block_internal_index;
-
-struct block_internal {
-	union {
-		struct ldus_rbtree node;
-		struct block_internal_index *index;
-	};
-	xdag_hash_t hash;
-	xdag_diff_t difficulty;
-	xdag_amount_t amount, linkamount[MAX_LINKS], fee;
-	xtime_t time;
-	uint64_t storage_pos;
-	union {
-		struct block_internal *ref;
-		struct orphan_block *oref;
-	};
-	struct block_internal *link[MAX_LINKS];
-	atomic_uintptr_t backrefs;
-	atomic_uintptr_t remark;
-	uint16_t flags, in_mask, n_our_key;
-	uint8_t nlinks:4, max_diff_link:4, reserved;
-};
 
 struct block_internal_index {
 	struct ldus_rbtree node;
@@ -138,6 +115,8 @@ int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_ke
 int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
 static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
 int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t send_time);
+int do_rx_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t send_time);
+xdag_diff_t rx_hash_difficulty(struct xdag_block *block, xdag_frame_t t, xdag_hash_t hash);
 void remove_orphan(struct block_internal*,int);
 void add_orphan(struct block_internal*,struct xdag_block*);
 static inline size_t remark_acceptance(xdag_remark_t);
@@ -175,6 +154,25 @@ static inline struct block_internal *block_by_hash(const xdag_hashlow_t hash)
 	}
 }
 
+// only main block can query by height
+struct block_internal *block_by_height(const uint64_t height)
+{
+    if(height > g_xdag_stats.nmain) {
+        return NULL;
+    }
+    struct block_internal *bi = NULL;
+    int i = 0;
+    for (bi = top_main_chain; bi && i < g_xdag_stats.nmain; bi = bi->link[bi->max_diff_link]) {
+        if (bi->flags & BI_MAIN) {
+            if(height == bi->height) {
+                break;
+            }
+            ++i;
+        }
+    }
+    return bi;
+}
+
 static inline struct cache_block *cache_block_by_hash(const xdag_hashlow_t hash)
 {
 	return (struct cache_block *)ldus_rbtree_find(cache_root, (struct ldus_rbtree *)hash - 1);
@@ -185,7 +183,7 @@ static void log_block(const char *mess, xdag_hash_t h, xtime_t t, uint64_t pos)
 {
 	/* Do not log blocks as we are loading from local storage */
     if(g_xdag_state != XDAG_STATE_LOAD) {
-        xdag_info("%s: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess,
+        xdag_info("%s tid=%lu height=%lu: %016llx%016llx%016llx%016llx t=%llx pos=%llx", mess, pthread_self(), g_xdag_stats.nmain,
             ((uint64_t*)h)[3], ((uint64_t*)h)[2], ((uint64_t*)h)[1], ((uint64_t*)h)[0], t, pos);
     }
 }
@@ -295,20 +293,6 @@ static uint64_t unapply_block(struct block_internal *bi)
 	return (xdag_amount_t)0 - bi->fee;
 }
 
-static xdag_amount_t get_start_amount_with_time(xdag_time_t time, uint64_t nmain) {
-    xdag_amount_t start_amount = 0;
-    uint64_t fork_height = g_xdag_testnet ? MAIN_APOLLO_TESTNET_HEIGHT:MAIN_APOLLO_HEIGHT;
-    if(nmain >= fork_height) {
-        if(g_apollo_fork_time == 0) {
-            g_apollo_fork_time = time;
-        }
-        start_amount = MAIN_APOLLO_AMOUNT;
-    } else {
-        start_amount = MAIN_START_AMOUNT;
-    }
-    return start_amount;
-}
-
 static xdag_amount_t get_start_amount(uint64_t nmain) {
     xdag_amount_t start_amount = 0;
     uint64_t fork_height = g_xdag_testnet ? MAIN_APOLLO_TESTNET_HEIGHT:MAIN_APOLLO_HEIGHT;
@@ -320,11 +304,19 @@ static xdag_amount_t get_start_amount(uint64_t nmain) {
     return start_amount;
 }
 
-static xdag_amount_t get_amount(xdag_time_t time, uint64_t nmain) {
+static xdag_amount_t get_block_earning(uint64_t nmain) {
     xdag_amount_t amount = 0;
     xdag_amount_t start_amount = 0;
-    
-    start_amount = get_start_amount_with_time(time, nmain);
+    start_amount = get_start_amount(nmain);
+    amount = start_amount >> (nmain >> MAIN_BIG_PERIOD_LOG);
+    return amount;
+}
+
+static xdag_amount_t get_amount(uint64_t nmain) {
+    xdag_amount_t amount = 0;
+    xdag_amount_t start_amount = 0;
+
+    start_amount = get_start_amount(nmain);
     amount = start_amount >> (nmain >> MAIN_BIG_PERIOD_LOG);
     return amount;
 }
@@ -350,7 +342,8 @@ xdag_amount_t xdag_get_supply(uint64_t nmain)
 static void set_main(struct block_internal *m)
 {
     xdag_amount_t amount = 0;
-    amount = get_amount(m->time, g_xdag_stats.nmain + 1);
+    m->height = g_xdag_stats.nmain + 1;
+    amount = get_amount(m->height);
 	m->flags |= BI_MAIN;
 	accept_amount(m, amount);
 	g_xdag_stats.nmain++;
@@ -361,6 +354,7 @@ static void set_main(struct block_internal *m)
 
 	accept_amount(m, apply_block(m));
 	m->ref = m;
+    rx_set_fork_time(m);
 	//log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time, m->storage_pos);
 }
 
@@ -369,10 +363,11 @@ static void unset_main(struct block_internal *m)
     xdag_amount_t amount = 0;
 	g_xdag_stats.nmain--;
 	g_xdag_stats.total_nmain--;
-	amount = get_amount(m->time, g_xdag_stats.nmain);
+    amount = get_amount(g_xdag_stats.nmain);
 	m->flags &= ~BI_MAIN;
 	accept_amount(m, (xdag_amount_t)0 - amount);
 	accept_amount(m, unapply_block(m));
+    rx_unset_fork_time(m);
 	//log_block("UNMAIN", m->hash, m->time, m->storage_pos);
 }
 
@@ -675,7 +670,11 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	}
 
 	keysCount = j;
-	tmpNodeBlock.difficulty = diff0 = xdag_hash_difficulty(tmpNodeBlock.hash);
+    if (is_randomx_fork(MAIN_TIME(tmpNodeBlock.time)) && (tmpNodeBlock.time & 0xffff) == 0xffff) {
+        tmpNodeBlock.difficulty = diff0 = rx_hash_difficulty(newBlock, MAIN_TIME(tmpNodeBlock.time),tmpNodeBlock.hash);
+    } else {
+        tmpNodeBlock.difficulty = diff0 = xdag_hash_difficulty(tmpNodeBlock.hash);
+    }
 	sum_out += newBlock->field[0].amount;
 	tmpNodeBlock.fee = newBlock->field[0].amount;
 	if (tmpNodeBlock.fee) {
@@ -1051,9 +1050,24 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
 	}
 
 	if (mining) {
-		if(!do_mining(block, &pretop, send_time)) {
-			goto begin;
-		}
+        if(is_randomx_fork(MAIN_TIME(send_time))) {
+            if (g_rx_pool_mem_index == 0) {
+                g_rx_pool_mem_index = (g_rx_hash_epoch_index - 1) & 1;
+            }
+            uint64_t rx_mem_index = g_rx_pool_mem_index + 1;
+            rx_pool_mem *next_rx_mem = &g_rx_pool_mem[rx_mem_index & 1];
+            if(MAIN_TIME(send_time) >= next_rx_mem->switch_time && next_rx_mem->is_switched  == 0) {
+                g_rx_pool_mem_index += 1;
+                next_rx_mem->is_switched = 1;
+            }
+            if(!do_rx_mining(block, &pretop, send_time)) {
+                goto begin;
+            }
+        }else{
+            if(!do_mining(block, &pretop, send_time)) {
+                goto begin;
+            }
+        }
 	}
 
 	xdag_hash(block, sizeof(struct xdag_block), newBlockHash);
@@ -1146,6 +1160,46 @@ int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t 
 	return 1;
 }
 
+int do_rx_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t send_time)
+{
+    uint64_t taskIndex = g_xdag_pool_task_index + 1;
+    struct xdag_pool_task *task = &g_xdag_pool_task[taskIndex & 1];
+
+    GetRandBytes(block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(xdag_hash_t));
+
+    rx_pool_mem *rx_memory = &g_rx_pool_mem[g_rx_pool_mem_index & 1];
+
+    task->task_time = MAIN_TIME(send_time);
+    xdag_rx_pre_hash(block,sizeof(struct xdag_block) - 1 * sizeof(struct xdag_field),task->task[0].data);
+    memcpy(task->task[1].data, rx_memory->seed, sizeof(rx_memory->seed));
+    g_xdag_pool_task_index = taskIndex;
+    xdag_info("*#* new pre hash  %016llx%016llx%016llx%016llx t=%llx",task->task[0].data[3],
+              task->task[0].data[2],task->task[0].data[1],task->task[0].data[0], task->task_time);
+    memcpy(task->nonce.data, block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(struct xdag_field));
+    memcpy(task->lastfield.data, block[0].field[XDAG_BLOCK_FIELDS - 1].data, sizeof(struct xdag_field));
+    memset(task->minhash.data, 0xff, sizeof(xdag_hash_t));
+
+    while(xdag_get_xtimestamp() <= send_time) {
+        sleep(1);
+        pthread_mutex_lock(&g_create_block_mutex);
+        struct block_internal *pretop_new = pretop_block();
+        pthread_mutex_unlock(&g_create_block_mutex);
+        if(*pretop != pretop_new && xdag_get_xtimestamp() < send_time) {
+            *pretop = pretop_new;
+            xdag_info("Mining: start from beginning because of pre-top block changed");
+            return 0;
+        }
+    }
+
+    pthread_mutex_lock((pthread_mutex_t*)g_ptr_share_mutex);
+    memcpy(block[0].field[XDAG_BLOCK_FIELDS - 1].data, task->lastfield.data, sizeof(struct xdag_field));
+    pthread_mutex_unlock((pthread_mutex_t*)g_ptr_share_mutex);
+    xdag_info("mined last field: %016llx%016llx%016llx%016llx t=%llx",
+              task->lastfield.data[3], task->lastfield.data[2],
+              task->lastfield.data[1], task->lastfield.data[0], task->task_time);
+    return 1;
+}
+
 static void reset_callback(struct ldus_rbtree *node)
 {
 	struct block_internal *bi = 0;
@@ -1194,6 +1248,10 @@ begin:
 	xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback_sync);
 
 	xdag_mess("Finish loading blocks, time cost %ldms", xdag_get_xtimestamp() - start);
+
+    if(is_pool()) {
+        rx_loading_fork_time();
+    }
 
 	// waiting for command "run"
 	while (!g_xdag_run) {
@@ -1682,6 +1740,9 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 
 	uint64_t *h = bi->hash;
 	xdag_xtime_to_string(bi->time, time_buf);
+    if(bi->flags & BI_MAIN) {
+        fprintf(out, "    height: %08llu\n", bi->height);
+    }
 	fprintf(out, "      time: %s\n", time_buf);
 	fprintf(out, " timestamp: %llx\n", (unsigned long long)bi->time);
 	fprintf(out, "     flags: %x\n", bi->flags & ~BI_OURS);
@@ -1689,7 +1750,8 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	fprintf(out, "  file pos: %llx\n", (unsigned long long)bi->storage_pos);
     fprintf(out, "      file: storage%s/%02x/%02x/%02x/%02x.dat\n", (g_xdag_testnet ? "-testnet" : ""),
         (int)((bi->time) >> 40)&0xff, (int)((bi->time) >> 32)&0xff, (int)((bi->time) >> 24)&0xff, (int)((bi->time) >> 16)&0xff);
-	fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
+	// todo: display main block randomx hash instead of  dsha256
+    fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 		(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
 	fprintf(out, "    remark: %s\n", get_remark(bi));
 	fprintf(out, "difficulty: %llx%016llx\n", xdag_diff_args(bi->difficulty));
@@ -1782,11 +1844,7 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	
 	if (bi->flags & BI_MAIN) {
 		xdag_hash2address(h, address);
-        if(g_apollo_fork_time && bi->time && MAIN_TIME(bi->time) >= MAIN_TIME(g_apollo_fork_time)) {
-            amount = MAIN_APOLLO_AMOUNT;
-        } else {
-            amount = MAIN_START_AMOUNT;
-        }
+        amount = get_block_earning(bi->height);
         memset(time_buf, 0, sizeof(time_buf));
         xdag_xtime_to_string(bi->time, time_buf);
         fprintf(out, "   earning: %s  %10u.%09u  %s\n", address,
@@ -1805,17 +1863,17 @@ static inline void print_block(struct block_internal *block, int print_only_addr
 	xdag_hash2address(block->hash, address);
 
 	if(print_only_addresses) {
-		fprintf(out, "%s\n", address);
+        fprintf(out, "%s   %08lld\n", address, block->height);
 	} else {
 		xdag_xtime_to_string(block->time, time_buf);
-		fprintf(out, "%s   %s   %-8s  %-32s\n", address, time_buf, xdag_get_block_state_info(block->flags), get_remark(block));
+		fprintf(out, "%08llu   %s   %s   %-8s  %-32s\n", block->height, address, time_buf, xdag_get_block_state_info(block->flags), get_remark(block));
 	}
 }
 
 static inline void print_header_block_list(FILE *out)
 {
 	fprintf(out, "---------------------------------------------------------------------------------------------------------\n");
-	fprintf(out, "address                            time                      state     mined by                          \n");
+	fprintf(out, "height        address                            time                      state     mined by            \n");
 	fprintf(out, "---------------------------------------------------------------------------------------------------------\n");
 }
 
@@ -2272,4 +2330,21 @@ static inline void remove_ourblock(struct block_internal *nodeBlock){
 	struct block_internal *prev = nodeBlock->ourprev, *next = nodeBlock->ournext;
 	*(prev ? &prev->ournext : &ourfirst) = next;
 	*(next ? &next->ourprev : &ourlast) = prev;
+}
+
+// block difficulty by randomx hash
+xdag_diff_t rx_hash_difficulty(struct xdag_block *block, xdag_frame_t t, xdag_hash_t sha_hash) {
+    xdag_hash_t rx_hash_data[2];
+    xdag_rx_pre_hash(block,sizeof(struct xdag_block) - 1 * sizeof(struct xdag_field),rx_hash_data[0]);
+    memcpy(rx_hash_data[1], block->field[XDAG_BLOCK_FIELDS-1].data, sizeof(struct xdag_field));
+    xdag_hash_t rx_hash;
+    if (rx_block_hash(rx_hash_data, sizeof(rx_hash_data), t, rx_hash) == 0) {
+        xdag_info("rx hash for diff: %016llx%016llx%016llx%016llx t=%llx",
+                  rx_hash[3], rx_hash[2], rx_hash[1], rx_hash[0], t);
+        //store main block randomx hash
+//        xd_rsdb_put_rxhash(sha_hash, rx_hash);
+        return xdag_hash_difficulty(rx_hash);
+    } else {
+        return xdag_hash_difficulty(sha_hash);
+    }
 }
