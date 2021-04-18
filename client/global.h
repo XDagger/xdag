@@ -13,6 +13,8 @@ enum xdag_states {
 #undef xdag_state
 };
 
+#define SNAPSHOT_DIR            "snapshot"
+
 extern struct xdag_stats {
 	xdag_diff_t difficulty, max_difficulty;
 	uint64_t nblocks, total_nblocks;
@@ -82,6 +84,10 @@ extern enum randomx_mode g_xdag_rx_mode;
 extern enum xdag_field_type g_block_header_type;
 
 extern xdag_time_t g_apollo_fork_time;
+
+// is running the node in snapshot mode (bool)
+extern int g_xdag_snapshot;
+extern int g_snapshot_height;
 
 #if defined (__MACOS__) || defined (__APPLE__)
 extern int is_pool(void);

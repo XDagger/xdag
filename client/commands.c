@@ -988,6 +988,30 @@ int out_balances()
 	return 0;
 }
 
+int balances_snapshot(void)
+{
+    char address[33] = {0};
+    struct out_balances_data d;
+    unsigned i = 0;
+
+    xdag_mess("Starting Snapshot...");
+    xdag_mkdir(SNAPSHOT_DIR);
+
+    xdag_set_log_level(0);
+    xdag_mem_init((((xdag_get_xtimestamp() - XDAG_ERA) >> 10) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal));
+    xdag_crypt_init();
+    memset(&d, 0, sizeof(struct out_balances_data));
+    xdag_load_blocks(xdag_get_start_frame() << 16, xdag_get_frame() << 16, &i, &add_block_callback_sync);
+    xdag_traverse_all_blocks(&d, out_balances_callback);
+
+    qsort(d.blocks, d.blocksCount, sizeof(struct xdag_field), out_sort_callback);
+    for(i = 0; i < d.blocksCount; ++i) {
+        xdag_hash2address(d.blocks[i].data, address);
+        printf("%s  %20.9Lf\n", address, amount2xdags(d.blocks[i].amount));
+    }
+    return 0;
+}
+
 int xdag_show_state(xdag_hash_t hash)
 {
 	char balance[64] = {0}, address[64] = {0}, state[256] = {0};

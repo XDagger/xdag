@@ -129,6 +129,7 @@ static void order_ourblocks_by_amount(struct block_internal *bi);
 static inline void add_ourblock(struct block_internal *nodeBlock);
 static inline void remove_ourblock(struct block_internal *nodeBlock);
 extern void *sync_thread(void *arg);
+int is_wallet_block(struct block_internal * bi);
 
 static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
 {
@@ -1489,6 +1490,10 @@ static void traverse_all_callback(struct ldus_rbtree *node)
 		bi = (struct block_internal *)node;
 	}
 
+	if(g_xdag_snapshot && !is_wallet_block(bi)) {
+        return;
+	}
+
 	(*g_traverse_callback)(g_traverse_data, bi->hash, bi->amount, bi->time);
 }
 
@@ -2346,5 +2351,18 @@ xdag_diff_t rx_hash_difficulty(struct xdag_block *block, xdag_frame_t t, xdag_ha
         return xdag_hash_difficulty(rx_hash);
     } else {
         return xdag_hash_difficulty(sha_hash);
+    }
+}
+
+int is_wallet_block(struct block_internal * bi) {
+    uint16_t  flags = bi->flags & ~BI_OURS;
+    if(flags == 0x1f || flags == 0x9f) {
+        return 0; // main block
+    } else {
+        if (bi->nlinks > 1) {
+            return 0; // transaction block
+        } else {
+            return 1;
+        }
     }
 }

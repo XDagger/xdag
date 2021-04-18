@@ -7,6 +7,8 @@ enum xdag_field_type g_block_header_type = XDAG_FIELD_HEAD;
 struct xdag_stats g_xdag_stats;
 struct xdag_ext_stats g_xdag_extstats;
 int g_disable_mining = 0;
+int g_xdag_snapshot = 0;
+int g_snapshot_height = 0;
 enum xdag_type g_xdag_type = XDAG_POOL;
 enum xdag_mine_type g_xdag_mine_type = XDAG_RAW;
 enum randomx_mode g_xdag_rx_mode = RANDOMX_LIGHT;

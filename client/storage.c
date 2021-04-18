@@ -251,7 +251,13 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 				return sum;
 			}
 			sum++;
+            if(g_xdag_snapshot && g_xdag_stats.nmain == g_snapshot_height){
+                break;
+            }
 		}
+        if(g_xdag_snapshot && g_xdag_stats.nmain == g_snapshot_height){
+            break;
+        }
         
 		if (todo != bufsize) {
 			if (f) {
