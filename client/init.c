@@ -219,6 +219,18 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
                     return -1;
                 }
             }
+		} else if(ARG_EQUAL(argv[i], "-snapshot", "")){
+            g_xdag_snapshot = 1;
+            if(++i < argc && sscanf(argv[i], "%d", &g_snapshot_height) == 1) {
+                if(g_snapshot_height <= 1) {
+                    printf(" snapshot height must be greater than 1 \n");
+                    return -1;
+                }
+                return balances_snapshot();
+            }else {
+                printf("Illevel use of option -snapshot\n");
+                return -1;
+            }
 		} else if(ARG_EQUAL(argv[i], "-r", "")) { /* load blocks and wait for run command */
 			g_xdag_run = 0;
 		} else if(ARG_EQUAL(argv[i], "-s", "")) { /* address of this node */
@@ -508,9 +520,10 @@ void printUsage(char* appName)
 		"  -rpc-port      - set HTTP JSON-RPC port (default is 7667)\n"
 		"  -threads N     - create N transport layer threads for pool (default is 6)\n"
         "  -randomx MODE  - set randomx mode for pool (miners ignore this, always use fast mode), MODE: \n"
-        "                     l - light mode, lower hash speed, less memeory usage(0.5GB),\n"
-        "                     f - fast mode, higher hash speed, more memeory usage(5GB),\n"
+        "                     l - light mode, lower hash speed, less memory usage(0.5GB),\n"
+        "                     f - fast mode, higher hash speed, more memory usage(5GB),\n"
 		"  -dm            - disable mining on pool (-P option is ignored)\n"
-		"  -tag           - tag for pool to distingush pools. Max length is 32 chars\n"
+		"  -tag           - tag for pool to distinguish pools. Max length is 32 chars\n"
+        "  -snapshot N    - generate snapshot of all accounts balance at blocks height N\n"
 		, appName);
 }
