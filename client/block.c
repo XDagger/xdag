@@ -1054,6 +1054,21 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
             if (g_rx_pool_mem_index == 0) {
                 g_rx_pool_mem_index = (g_rx_hash_epoch_index - 1) & 1;
             }
+            if(g_rx_pool_mem_index == -1) {
+                if(g_rx_pool_mem[0].switch_time > g_rx_pool_mem[1].switch_time) {
+                    if(MAIN_TIME(send_time) > g_rx_pool_mem[0].switch_time) {
+                        g_rx_pool_mem_index = 2;
+                    } else {
+                        g_rx_pool_mem_index = 1;
+                    }
+                } else {
+                    if(MAIN_TIME(send_time) > g_rx_pool_mem[1].switch_time) {
+                        g_rx_pool_mem_index = 1;
+                    } else {
+                        g_rx_pool_mem_index = 2;
+                    }
+                }
+            }
             uint64_t rx_mem_index = g_rx_pool_mem_index + 1;
             rx_pool_mem *next_rx_mem = &g_rx_pool_mem[rx_mem_index & 1];
             if(MAIN_TIME(send_time) >= next_rx_mem->switch_time && next_rx_mem->is_switched  == 0) {
