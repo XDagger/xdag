@@ -16,11 +16,11 @@
 #define SEEDHASH_EPOCH_BLOCKS   4096
 #define SEEDHASH_EPOCH_LAG      128 // lag time frames
 
-#define SEEDHASH_EPOCH_TESTNET_BLOCKS	64
-#define SEEDHASH_EPOCH_TESTNET_LAG		32
+#define SEEDHASH_EPOCH_TESTNET_BLOCKS	2048
+#define SEEDHASH_EPOCH_TESTNET_LAG		64
 
 #define RANDOMX_FORK_HEIGHT           1540096 // fork seed height, it's time frame + SEEDHASH_EPOCH_LAG = fork time frame
-#define RANDOMX_TESTNET_FORK_HEIGHT   196288 // 196288 % 64 = 0
+#define RANDOMX_TESTNET_FORK_HEIGHT   4096 // 196288 % 64 = 0
 
 typedef struct rx_pool_memory {
     xdag_hash_t seed;
