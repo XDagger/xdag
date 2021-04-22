@@ -361,9 +361,9 @@ static void set_main(struct block_internal *m)
 static void unset_main(struct block_internal *m)
 {
     xdag_amount_t amount = 0;
-	g_xdag_stats.nmain--;
 	g_xdag_stats.total_nmain--;
     amount = get_amount(g_xdag_stats.nmain);
+	g_xdag_stats.nmain--;
 	m->flags &= ~BI_MAIN;
 	accept_amount(m, (xdag_amount_t)0 - amount);
 	accept_amount(m, unapply_block(m));
