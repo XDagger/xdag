@@ -1055,20 +1055,48 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
                 g_rx_pool_mem_index = (g_rx_hash_epoch_index - 1) & 1;
             }
             if(g_rx_pool_mem_index == -1) {
+                struct block_internal * last_main = block_by_height(g_xdag_stats.nmain);
+                xdag_info("*#*top_main_chain time%llx, height%d", top_main_chain->time, top_main_chain->height);
+                xdag_info("*#*g_xdag_stat.nmain time%llx, height%d", last_main->time, last_main->height);
+                int ready_switch = -1;
                 if(g_rx_pool_mem[0].switch_time > g_rx_pool_mem[1].switch_time) {
-                    if(MAIN_TIME(send_time) > g_rx_pool_mem[0].switch_time) {
+                    g_rx_pool_mem[1].is_switched = 1;
+                    if(MAIN_TIME(top_main_chain->time) >= g_rx_pool_mem[0].switch_time) {
                         g_rx_pool_mem_index = 2;
+                        g_rx_pool_mem[0].is_switched = 1;
                     } else {
                         g_rx_pool_mem_index = 1;
+                        g_rx_pool_mem[0].is_switched = 0;
+                        ready_switch = 0;
                     }
-                } else {
-                    if(MAIN_TIME(send_time) > g_rx_pool_mem[1].switch_time) {
+                } else {  //g_rx_pool_mem[1].switch_time > g_rx_pool_mem[0].switch_time
+                    g_rx_pool_mem[0].is_switched = 1;
+                    if(MAIN_TIME(top_main_chain->time) >= g_rx_pool_mem[1].switch_time) {
                         g_rx_pool_mem_index = 1;
+                        g_rx_pool_mem[1].is_switched = 1;
                     } else {
                         g_rx_pool_mem_index = 2;
+                        g_rx_pool_mem[1].is_switched = 0;
+                        ready_switch = 1;
                     }
                 }
+                uint64_t seed_epoch = g_xdag_testnet ? SEEDHASH_EPOCH_TESTNET_BLOCKS : SEEDHASH_EPOCH_BLOCKS;
+                if (ready_switch > -1 && MAIN_TIME(send_time) > (g_rx_pool_mem[ready_switch].switch_time + seed_epoch)) {
+                    xdag_frame_t offset = MAIN_TIME(send_time) - MAIN_TIME(top_main_chain->time);
+                    xdag_info("*#*offset : %ld, %d, %ld", offset, ready_switch,  MAIN_TIME(send_time) - (g_rx_pool_mem[ready_switch].switch_time + seed_epoch),
+                              g_rx_pool_mem[0].is_switched);
+                    xdag_info("*#*g_rx_pool_mem[0]:%llx, %d", g_rx_pool_mem[0].switch_time,
+                              g_rx_pool_mem[0].is_switched);
+                    xdag_info("*#*g_rx_pool_mem[1]:%llx, %d", g_rx_pool_mem[1].switch_time,
+                              g_rx_pool_mem[1].is_switched);
+                    g_rx_pool_mem[0].switch_time += offset;
+                    g_rx_pool_mem[1].switch_time += offset;
+                }
             }
+            xdag_info("*#*g_rx_pool_mem_index:%llu, send_time: %llx", g_rx_pool_mem_index, MAIN_TIME(send_time));
+            xdag_info("*#*g_rx_pool_mem[0]:%llx, %d", g_rx_pool_mem[0].switch_time, g_rx_pool_mem[0].is_switched);
+            xdag_info("*#*g_rx_pool_mem[1]:%llx, %d", g_rx_pool_mem[1].switch_time, g_rx_pool_mem[1].is_switched);
+
             uint64_t rx_mem_index = g_rx_pool_mem_index + 1;
             rx_pool_mem *next_rx_mem = &g_rx_pool_mem[rx_mem_index & 1];
             if(MAIN_TIME(send_time) >= next_rx_mem->switch_time && next_rx_mem->is_switched  == 0) {
