@@ -30,6 +30,8 @@
 #include "websocket/websocket.h"
 #include "global.h"
 #include "rx_hash.h"
+#include "lmdb/lmdb.h"
+#include "snapshot.h"
 
 #define MAX_WAITING_MAIN        1
 #define MAIN_START_AMOUNT       (1ll << 42)
@@ -113,7 +115,7 @@ void cache_retarget(int32_t, int32_t);
 void cache_add(struct xdag_block*, xdag_hash_t);
 int32_t check_signature_out_cached(struct block_internal*, struct xdag_public_key*, const int, int32_t*, int32_t*);
 int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, const int);
-static int32_t find_and_verify_signature_out(struct xdag_block*, struct xdag_public_key*, const int);
+static int32_t find_and_verify_signature_out(xdag_hash_t block_hash, struct xdag_block*, struct xdag_public_key*, const int);
 int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t send_time);
 int do_rx_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t send_time);
 xdag_diff_t rx_hash_difficulty(struct xdag_block *block, xdag_frame_t t, xdag_hash_t hash);
@@ -129,7 +131,7 @@ static void order_ourblocks_by_amount(struct block_internal *bi);
 static inline void add_ourblock(struct block_internal *nodeBlock);
 static inline void remove_ourblock(struct block_internal *nodeBlock);
 extern void *sync_thread(void *arg);
-int is_wallet_block(struct block_internal * bi);
+void snapshot_pub_key(xdag_hash_t hash, int key_index, struct xdag_public_key *public_keys);
 
 static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
 {
@@ -650,6 +652,9 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
             
 			if(keyNumber >= 0) {
 				verified_keys_mask |= 1 << keyNumber;
+                if(g_xdag_snapshot) {
+                    snapshot_pub_key(newBlock->field[i].hash, keyNumber, public_keys);
+                }
 			}
              
 			if(1 << i & signoutmask && !(tmpNodeBlock.flags & BI_OURS) && (keyNumber = valid_signature(newBlock, i, ourKeysCount, our_keys)) >= 0) {
@@ -1490,7 +1495,7 @@ static void traverse_all_callback(struct ldus_rbtree *node)
 		bi = (struct block_internal *)node;
 	}
 
-	if(g_xdag_snapshot && !is_wallet_block(bi)) {
+	if(g_xdag_snapshot && bi->amount == 0) {
         return;
 	}
 
@@ -1989,7 +1994,7 @@ int32_t check_signature_out_cached(struct block_internal* blockRef, struct xdag_
 	struct cache_block *bref = cache_block_by_hash(blockRef->hash);
 	if(bref != NULL) {
 		++(*cache_hit);
-		return  find_and_verify_signature_out(&(bref->block), public_keys, keysCount);
+		return  find_and_verify_signature_out(blockRef->hash, &(bref->block), public_keys, keysCount);
 	} else {
 		++(*cache_miss);
 		return check_signature_out(blockRef, public_keys, keysCount);
@@ -2003,15 +2008,18 @@ int32_t check_signature_out(struct block_internal* blockRef, struct xdag_public_
 	if(!bref) {
 		return 8;
 	}
-	return find_and_verify_signature_out(bref, public_keys, keysCount);
+	return find_and_verify_signature_out(blockRef->hash, bref, public_keys, keysCount);
 }
 
-static int32_t find_and_verify_signature_out(struct xdag_block* bref, struct xdag_public_key *public_keys, const int keysCount)
+static int32_t find_and_verify_signature_out(xdag_hash_t block_hash, struct xdag_block* bref, struct xdag_public_key *public_keys, const int keysCount)
 {
 	int j = 0;
 	for(int k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
-		if(xdag_type(bref, j) == XDAG_FIELD_SIGN_OUT && (++k & 1)
-			&& valid_signature(bref, j, keysCount, public_keys) >= 0) {
+	    int key_index = valid_signature(bref, j, keysCount, public_keys);
+		if(xdag_type(bref, j) == XDAG_FIELD_SIGN_OUT && (++k & 1) && key_index >= 0) {
+            if(g_xdag_snapshot) {
+                snapshot_pub_key(block_hash, key_index, public_keys);
+            }
 			break;
 		}
 	}
@@ -2354,15 +2362,22 @@ xdag_diff_t rx_hash_difficulty(struct xdag_block *block, xdag_frame_t t, xdag_ha
     }
 }
 
-int is_wallet_block(struct block_internal * bi) {
-    uint16_t  flags = bi->flags & ~BI_OURS;
-    if(flags == 0x1f || flags == 0x9f) {
-        return 0; // main block
-    } else {
-        if (bi->nlinks > 1) {
-            return 0; // transaction block
-        } else {
-            return 1;
-        }
-    }
+void snapshot_pub_key(xdag_hash_t hash, int key_index, struct xdag_public_key *public_keys) {
+    char mdb_address[33] = {0};
+    uint8_t buf_pubkey[sizeof(xdag_hash_t) + 1];
+    MDB_val mdb_key, mdb_data;
+    mdb_key.mv_size = 32; //sizeof(xdag_hashlow_t);
+    mdb_data.mv_size = sizeof(struct xdag_field);
+
+    xdag_hash2address(hash, mdb_address);
+    mdb_key.mv_data = mdb_address;
+    buf_pubkey[0] = 2 + ((uintptr_t) public_keys[key_index].pub & 1);
+    memcpy(&(buf_pubkey[1]), (xdag_hash_t *) ((uintptr_t) public_keys[key_index].pub & ~1l),
+           sizeof(xdag_hash_t));
+    mdb_data.mv_size = sizeof(xdag_hash_t) + 1;
+    mdb_data.mv_data = buf_pubkey;
+    mdb_put(g_mdb_pub_key_txn, g_pub_key_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
+    printf("%s   %02X%02X%02X%02X%02X...%02X%02X%02X%02X\n", mdb_address, buf_pubkey[0],
+           buf_pubkey[1], buf_pubkey[2], buf_pubkey[3], buf_pubkey[4],
+           buf_pubkey[29], buf_pubkey[30], buf_pubkey[31], buf_pubkey[32]);
 }

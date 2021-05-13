@@ -14,6 +14,8 @@ enum xdag_states {
 };
 
 #define SNAPSHOT_DIR            "snapshot"
+#define SNAPSHOT_PUBKEY_DIR            "snapshot/pubkey"
+#define SNAPSHOT_BALANCE_DIR            "snapshot/balance"
 
 extern struct xdag_stats {
 	xdag_diff_t difficulty, max_difficulty;

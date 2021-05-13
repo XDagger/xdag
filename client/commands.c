@@ -19,12 +19,14 @@
 #include "crypt.h"
 #include "json-rpc/rpc_commands.h"
 #include "math.h"
+#include "lmdb/lmdb.h"
 #ifndef _WIN32
 #include "utils/linenoise.h"
 #include <unistd.h>
 #endif
 #include "version.h"
 #include "rx_hash.h"
+#include "snapshot.h"
 
 #define Nfields(d) (2 + d->hasRemark + d->fieldsCount + 3 * d->keysCount + 2 * d->outsig)
 #define COMMAND_HISTORY ".cmd.history"
@@ -994,21 +996,67 @@ int balances_snapshot(void)
     struct out_balances_data d;
     unsigned i = 0;
 
-    xdag_mess("Starting Snapshot...");
+    printf("Starting  Snapshot...\n");
     xdag_mkdir(SNAPSHOT_DIR);
-
+    xdag_mkdir(SNAPSHOT_PUBKEY_DIR);
+    xdag_mkdir(SNAPSHOT_BALANCE_DIR);
+    if(init_mdb_pub_key() != 0) {
+        printf("init_mdb_pub_key error\n");
+        return -1;
+    }
+    printf("Pub key mdb  initialized...\n");
     xdag_set_log_level(0);
-    xdag_mem_init((((xdag_get_xtimestamp() - XDAG_ERA) >> 10) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal));
-    xdag_crypt_init();
+    if(xdag_mem_init((((xdag_get_xtimestamp() - XDAG_ERA) >> 10) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal))) {
+        printf("xdag_mem_init failed...\n");
+        return -1;
+    }
+
     memset(&d, 0, sizeof(struct out_balances_data));
+    printf("Snapshot loading blocks...\n");
     xdag_load_blocks(xdag_get_start_frame() << 16, xdag_get_frame() << 16, &i, &add_block_callback_sync);
+    if(mdb_txn_commit(g_mdb_pub_key_txn)) {
+        printf("pub keys mdb_txn_commit error\n");
+        return -1;
+    }
+    mdb_dbi_close(g_mdb_pub_key_env, g_pub_key_dbi);
+    mdb_env_close(g_mdb_pub_key_env);
+
+    printf("Snapshot traverse all blocks...\n");
     xdag_traverse_all_blocks(&d, out_balances_callback);
 
     qsort(d.blocks, d.blocksCount, sizeof(struct xdag_field), out_sort_callback);
+//    xdag_hashlow_t hash;
+    xdag_amount_t amount;
+    MDB_val mdb_key, mdb_data;
+    mdb_key.mv_size = 32; //sizeof(xdag_hashlow_t);
+    mdb_key.mv_data = address; //hash;
+    printf("Snapshot balance...\n");
+    if(init_mdb_balance()){
+        printf("init_mdb_balance error\n");
+        return -1;
+    }
+    printf("balance mdb  initialized...\n");
+    xdag_amount_t total=0;
     for(i = 0; i < d.blocksCount; ++i) {
         xdag_hash2address(d.blocks[i].data, address);
+//        memcpy(hash, d.blocks[i].hash, sizeof(xdag_hashlow_t));
+        amount = d.blocks[i].amount;
+        mdb_data.mv_size = sizeof(xdag_amount_t);
+        mdb_data.mv_data = &amount;
+        mdb_put(g_mdb_balance_txn, g_balance_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
+
         printf("%s  %20.9Lf\n", address, amount2xdags(d.blocks[i].amount));
+        total += d.blocks[i].amount;
     }
+    printf("total: %20.9Lf\n", amount2xdags(total));
+    if(mdb_txn_commit(g_mdb_balance_txn)) {
+        printf("balance mdb_txn_commit error\n");
+        return -1;
+    }
+    mdb_dbi_close(g_mdb_balance_env, g_balance_dbi);
+    mdb_env_close(g_mdb_balance_env);
+    printf("Snapshot end...\n");
+    xdag_mem_finish();
     return 0;
 }
 
