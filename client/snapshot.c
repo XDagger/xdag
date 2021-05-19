@@ -35,14 +35,6 @@ int init_mdb_pub_key(void) {
         xdag_mess("mdb_env_open error");
         return -1;
     }
-    if(mdb_txn_begin(g_mdb_pub_key_env, NULL, 0, &g_mdb_pub_key_txn)) {
-        xdag_mess("mdb_txn_begin error");
-        return -1;
-    }
-    if(mdb_dbi_open(g_mdb_pub_key_txn, "pubkey", MDB_CREATE, &g_pub_key_dbi)) {
-        xdag_mess("mdb_dbi_open pub key error");
-        return -1;
-    }
     return 0;
 }
 
@@ -51,7 +43,7 @@ int init_mdb_balance(void) {
         xdag_mess("mdb_env_create error");
         return -1;
     }
-    if(mdb_env_set_maxreaders(g_mdb_balance_env, 1)) {
+    if(mdb_env_set_maxreaders(g_mdb_balance_env, 4)) {
         xdag_mess("mdb_env_set_maxreaders error");
         return -1;
     }
@@ -65,14 +57,6 @@ int init_mdb_balance(void) {
     }
     if(mdb_env_open(g_mdb_balance_env, "./snapshot/balance", MDB_FIXEDMAP|MDB_NOSYNC, 0664)) {
         xdag_mess("mdb_env_open error");
-        return -1;
-    }
-    if(mdb_txn_begin(g_mdb_balance_env, NULL, 0, &g_mdb_balance_txn)) {
-        xdag_mess("mdb_txn_begin error");
-        return -1;
-    }
-    if(mdb_dbi_open(g_mdb_balance_txn, "balance", MDB_CREATE, &g_balance_dbi)) {
-        xdag_mess("mdb_dbi_open balance error");
         return -1;
     }
     return 0;

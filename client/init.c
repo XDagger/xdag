@@ -221,15 +221,19 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
             }
 		} else if(ARG_EQUAL(argv[i], "-snapshot", "")){
             g_xdag_snapshot = 1;
-            if(++i < argc && sscanf(argv[i], "%d", &g_snapshot_height) == 1) {
-                if(g_snapshot_height <= 1) {
-                    printf(" snapshot height must be greater than 1 \n");
+            if(++i < argc) {
+                if(sscanf(argv[i], "%d", &g_snapshot_height) == 1) {
+                    if(g_snapshot_height <= 1) {
+                        printf(" snapshot height must be greater than 1 \n");
+                        return -1;
+                    }
+                    return balances_snapshot();
+                } else if(ARG_EQUAL(argv[i], "l", "L")){
+                    return load_snapshot();
+                } else {
+                    printf("Illevel use of option -snapshot\n");
                     return -1;
                 }
-                return balances_snapshot();
-            }else {
-                printf("Illevel use of option -snapshot\n");
-                return -1;
             }
 		} else if(ARG_EQUAL(argv[i], "-r", "")) { /* load blocks and wait for run command */
 			g_xdag_run = 0;

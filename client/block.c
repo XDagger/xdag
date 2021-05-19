@@ -1482,7 +1482,7 @@ int xdag_traverse_our_blocks(void *data,
 	return res;
 }
 
-static int (*g_traverse_callback)(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time);
+static int (*g_traverse_callback)(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, uint64_t storage_pos);
 static void *g_traverse_data;
 
 static void traverse_all_callback(struct ldus_rbtree *node)
@@ -1495,16 +1495,12 @@ static void traverse_all_callback(struct ldus_rbtree *node)
 		bi = (struct block_internal *)node;
 	}
 
-	if(g_xdag_snapshot && bi->amount == 0) {
-        return;
-	}
-
-	(*g_traverse_callback)(g_traverse_data, bi->hash, bi->amount, bi->time);
+	(*g_traverse_callback)(g_traverse_data, bi->hash, bi->amount, bi->time, bi->storage_pos);
 }
 
 /* calls callback for each block */
 int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag_hash_t hash,
-	xdag_amount_t amount, xtime_t time))
+	xdag_amount_t amount, xtime_t time, uint64_t storage_pos))
 {
 	pthread_mutex_lock(&block_mutex);
 	g_traverse_callback = callback;
@@ -2366,11 +2362,11 @@ void snapshot_pub_key(xdag_hash_t hash, int key_index, struct xdag_public_key *p
     char mdb_address[33] = {0};
     uint8_t buf_pubkey[sizeof(xdag_hash_t) + 1];
     MDB_val mdb_key, mdb_data;
-    mdb_key.mv_size = 32; //sizeof(xdag_hashlow_t);
+    mdb_key.mv_size = sizeof(xdag_hash_t);
     mdb_data.mv_size = sizeof(struct xdag_field);
 
     xdag_hash2address(hash, mdb_address);
-    mdb_key.mv_data = mdb_address;
+    mdb_key.mv_data = hash;
     buf_pubkey[0] = 2 + ((uintptr_t) public_keys[key_index].pub & 1);
     memcpy(&(buf_pubkey[1]), (xdag_hash_t *) ((uintptr_t) public_keys[key_index].pub & ~1l),
            sizeof(xdag_hash_t));
