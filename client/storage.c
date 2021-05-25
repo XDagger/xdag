@@ -251,12 +251,9 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 				return sum;
 			}
 			sum++;
-            if(g_xdag_snapshot && g_xdag_stats.nmain == g_snapshot_height){
-                break;
-            }
 		}
-        if(g_xdag_snapshot && g_xdag_stats.nmain == g_snapshot_height){
-            break;
+        if(g_make_snapshot && g_xdag_stats.nmain == g_snapshot_height){
+            g_snapshot_time = start_time;
         }
         
 		if (todo != bufsize) {
@@ -284,6 +281,9 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 			
 			pos = 0;
 		}
+        if(g_make_snapshot && g_xdag_stats.nmain == g_snapshot_height){
+            break;
+        }
 	}
 
 	free(buf);

@@ -33,6 +33,9 @@ endif()
 set(RANDOMX_LIBDIR "/usr/lib" "/usr/local/lib")
 set(RANDOMX_LIBRARIES "randomx")
 
+set(SNAPPY_LIBDIR "/usr/lib" "/usr/local/lib")
+set(SNAPPY_LIBRARIES "snappy")
+
 file(GLOB_RECURSE DAGGER_SOURCES
   client/*.c
   dfslib/*.c
@@ -118,6 +121,7 @@ target_link_libraries(
   OpenSSL::Crypto
   -L${SECP256K1_LIBDIR} ${SECP256K1_LIBRARIES}
   -L${RANDOMX_LIBDIR} ${RANDOMX_LIBRARIES}
+  -L${SNAPPY_LIBDIR} ${SNAPPY_LIBRARIES}
   m
   -lstdc++
 )

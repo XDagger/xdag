@@ -37,7 +37,7 @@ void startCommandProcessing(int transportFlags);
 int xdag_command(char *cmd, FILE *out);
 void xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount);
 int out_balances(void);
-int balances_snapshot(void);
+int make_snapshot(void);
 int load_snapshot(void);
 int xdag_show_state(xdag_hash_t hash);
 

@@ -88,8 +88,14 @@ extern enum xdag_field_type g_block_header_type;
 extern xdag_time_t g_apollo_fork_time;
 
 // is running the node in snapshot mode (bool)
-extern int g_xdag_snapshot;
+extern int g_make_snapshot;
+extern int g_load_snapshot;
+extern uint64_t g_snapshot_time;
 extern int g_snapshot_height;
+extern int g_snapshot_compress;
+extern int g_snapshot_integer;
+extern int g_snapshot_pub_key;
+extern int g_snapshot_balance;
 
 #if defined (__MACOS__) || defined (__APPLE__)
 extern int is_pool(void);

@@ -132,6 +132,7 @@ static inline void add_ourblock(struct block_internal *nodeBlock);
 static inline void remove_ourblock(struct block_internal *nodeBlock);
 extern void *sync_thread(void *arg);
 void snapshot_pub_key(xdag_hash_t hash, int key_index, struct xdag_public_key *public_keys);
+int load_balance_snapshot(void);
 
 static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
 {
@@ -652,7 +653,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
             
 			if(keyNumber >= 0) {
 				verified_keys_mask |= 1 << keyNumber;
-                if(g_xdag_snapshot) {
+                if(g_make_snapshot && g_snapshot_pub_key) {
                     snapshot_pub_key(newBlock->field[i].hash, keyNumber, public_keys);
                 }
 			}
@@ -1251,7 +1252,13 @@ begin:
 	xtime_t start = xdag_get_xtimestamp();
 	xdag_show_state(0);
 
-	xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback_sync);
+    if(g_load_snapshot && g_snapshot_balance) {
+        if(load_balance_snapshot()) {
+            return 0;
+        }
+        t = g_snapshot_time + 1;
+    }
+    xdag_load_blocks(t, xdag_get_xtimestamp(), &t, &add_block_callback_sync);
 
 	xdag_mess("Finish loading blocks, time cost %ldms", xdag_get_xtimestamp() - start);
 
@@ -2013,7 +2020,7 @@ static int32_t find_and_verify_signature_out(xdag_hash_t block_hash, struct xdag
 	for(int k = 0; j < XDAG_BLOCK_FIELDS; ++j) {
 	    int key_index = valid_signature(bref, j, keysCount, public_keys);
 		if(xdag_type(bref, j) == XDAG_FIELD_SIGN_OUT && (++k & 1) && key_index >= 0) {
-            if(g_xdag_snapshot) {
+            if(g_make_snapshot && g_snapshot_pub_key) {
                 snapshot_pub_key(block_hash, key_index, public_keys);
             }
 			break;
@@ -2376,4 +2383,69 @@ void snapshot_pub_key(xdag_hash_t hash, int key_index, struct xdag_public_key *p
     printf("%s   %02X%02X%02X%02X%02X...%02X%02X%02X%02X\n", mdb_address, buf_pubkey[0],
            buf_pubkey[1], buf_pubkey[2], buf_pubkey[3], buf_pubkey[4],
            buf_pubkey[29], buf_pubkey[30], buf_pubkey[31], buf_pubkey[32]);
+}
+
+int load_balance_snapshot(void)
+{
+    int rc;
+    MDB_cursor *cursor;
+    MDB_val mdb_key, mdb_data;
+
+    xdag_mess("Snapshot load balance...");
+    if(init_mdb_balance()){
+        xdag_mess("init_mdb_balance error");
+        return -1;
+    }
+    if(mdb_txn_begin(g_mdb_balance_env, NULL, MDB_RDONLY, &g_mdb_balance_txn)) {
+        xdag_mess("mdb_txn_begin error");
+        return -1;
+    }
+    if(mdb_dbi_open(g_mdb_balance_txn, "balance", MDB_CREATE|MDB_INTEGERKEY, &g_balance_dbi)) {
+        xdag_mess("mdb_dbi_open balance error");
+        return -1;
+    }
+    xdag_mess("balance mdb  initialized...");
+
+
+    if(mdb_cursor_open(g_mdb_balance_txn, g_balance_dbi, &cursor)){
+        xdag_mess("mdb_cursor_open balance error");
+        return -1;
+    }
+
+    while ((rc = mdb_cursor_get(cursor, &mdb_key, &mdb_data, MDB_NEXT)) == 0) {
+        struct block_internal* nodeBlock;
+        struct balance_data* balanceData;
+
+        balanceData = (struct balance_data*)mdb_data.mv_data;
+        nodeBlock = xdag_malloc(sizeof(struct block_internal));
+
+        nodeBlock->amount = balanceData->amount;
+        nodeBlock->time = balanceData->time;
+        nodeBlock->storage_pos = balanceData->storage_pos;
+        memcpy(nodeBlock->hash, balanceData->hash, sizeof(xdag_hash_t));
+
+        insert_index(nodeBlock);
+    }
+
+    if(rc != MDB_NOTFOUND) {
+        xdag_mess("mdb_cursor_get balance error");
+        return -1;
+    }
+    mdb_cursor_close(cursor);
+
+    if(mdb_dbi_open(g_mdb_balance_txn, "stats", MDB_CREATE, &g_stats_dbi)) {
+        xdag_mess("mdb_dbi_open balance error");
+        return -1;
+    }
+
+    if(load_stats_snapshot()) {
+        return -1;
+    }
+
+    mdb_txn_abort(g_mdb_balance_txn);
+    mdb_dbi_close(g_mdb_balance_env, g_stats_dbi);
+    mdb_dbi_close(g_mdb_balance_env, g_balance_dbi);
+    mdb_env_close(g_mdb_balance_env);
+    xdag_mess("load balance snapshot end...");
+    return 0;
 }

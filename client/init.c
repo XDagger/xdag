@@ -220,16 +220,17 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
                 }
             }
 		} else if(ARG_EQUAL(argv[i], "-snapshot", "")){
-            g_xdag_snapshot = 1;
             if(++i < argc) {
                 if(sscanf(argv[i], "%d", &g_snapshot_height) == 1) {
                     if(g_snapshot_height <= 1) {
                         printf(" snapshot height must be greater than 1 \n");
                         return -1;
                     }
-                    return balances_snapshot();
+                    g_make_snapshot = 1;
+                    return make_snapshot();
                 } else if(ARG_EQUAL(argv[i], "l", "L")){
-                    return load_snapshot();
+                    g_load_snapshot = 1;
+//                    return load_snapshot();
                 } else {
                     printf("Illevel use of option -snapshot\n");
                     return -1;
