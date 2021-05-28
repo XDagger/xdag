@@ -221,21 +221,47 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
             }
 		} else if(ARG_EQUAL(argv[i], "-snapshot", "")){
             if(++i < argc) {
-                if(sscanf(argv[i], "%d", &g_snapshot_height) == 1) {
-                    if(g_snapshot_height <= 1) {
+                 if(ARG_EQUAL(argv[i], "l", "L")){
+                    if(++i < argc && sscanf(argv[i], "%d", &g_snapshot_height) == 1) {
+                        if (g_snapshot_height <= 1) {
+                            printf(" snapshot height must be greater than 1 \n");
+                            return -1;
+                        }
+                    }else {
+                        printf(" snapshot height needed \n");
+                        return -1;
+                    }
+                    g_load_snapshot = 1;
+                    return load_snapshot();
+                } else if(sscanf(argv[i++], "%d", &g_snapshot_height) == 1) {
+                    if (g_snapshot_height <= 1) {
                         printf(" snapshot height must be greater than 1 \n");
                         return -1;
                     }
-                    g_make_snapshot = 1;
-                    return make_snapshot();
-                } else if(ARG_EQUAL(argv[i], "l", "L")){
-                    g_load_snapshot = 1;
-//                    return load_snapshot();
-                } else {
+                    if (sscanf(argv[i], "%d", &g_snapshot_steps) == 1) {
+
+                        if (g_snapshot_steps > 10 || g_snapshot_steps < 1) {
+                            printf(" snapshot steps must be between 1 an 10\n");
+                            return -1;
+                        }
+                        for (int j = 0; j < g_snapshot_steps; j++) {
+                            int step = g_snapshot_height / g_snapshot_steps;
+                            g_steps_height[j] = (j + 1) * step;
+                        }
+                        if (g_snapshot_height % g_snapshot_steps != 0) {
+                            g_steps_height[g_snapshot_steps - 1] = g_snapshot_height;
+                        }
+                        g_make_snapshot = 1;
+                        return make_snapshot();
+                    }
                     printf("Illevel use of option -snapshot\n");
                     return -1;
-                }
+                 }
+                printf("Illevel use of option -snapshot\n");
+                return -1;
             }
+            printf("Illevel use of option -snapshot\n");
+            return -1;
 		} else if(ARG_EQUAL(argv[i], "-r", "")) { /* load blocks and wait for run command */
 			g_xdag_run = 0;
 		} else if(ARG_EQUAL(argv[i], "-s", "")) { /* address of this node */
@@ -529,6 +555,6 @@ void printUsage(char* appName)
         "                     f - fast mode, higher hash speed, more memory usage(5GB),\n"
 		"  -dm            - disable mining on pool (-P option is ignored)\n"
 		"  -tag           - tag for pool to distinguish pools. Max length is 32 chars\n"
-        "  -snapshot N    - generate snapshot of all accounts balance at blocks height N\n"
+        "  -snapshot N M   - generate snapshot of all accounts balance at blocks height N with M steps\n"
 		, appName);
 }

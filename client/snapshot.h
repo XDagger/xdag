@@ -34,7 +34,7 @@ extern char key_xdag_extstats[];
 extern char key_xdag_state[];
 
 int init_mdb_pub_key(void);
-int init_mdb_balance(void);
+int init_mdb_balance(int);
 int snapshot_stats(void);
 int load_stats_snapshot(void);
 

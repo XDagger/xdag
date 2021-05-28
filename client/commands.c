@@ -2,7 +2,6 @@
 
 #include "commands.h"
 #include <string.h>
-#include <math.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include "global.h"
@@ -50,7 +49,7 @@ typedef struct {
 } XDAG_COMMAND;
 
 extern int g_block_production_on;
-
+int make_step_snapshot(int step_height);
 // Function declarations
 int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, int n_our_key);
 
@@ -982,7 +981,6 @@ static int snapshot_balances_callback(void *data, xdag_hash_t hash, xdag_amount_
     d->blocksCount++;
     return 0;
 }
-
 //static int snapshot_sort_callback(const void *l, const void *r)
 //{
 //    return xdag_cmphash(((struct balance_data *)l)->hash, ((struct balance_data *)r)->hash);
@@ -1018,8 +1016,8 @@ int out_balances()
 
 int make_snapshot(void)
 {
-    char address[33] = {0};
-    struct snapshot_balances_data d;
+//    char address[33] = {0};
+//    struct snapshot_balances_data d;
     uint32_t i = 0;
 
     printf("Starting  Snapshot...\n");
@@ -1047,9 +1045,14 @@ int make_snapshot(void)
         return -1;
     }
 
-    memset(&d, 0, sizeof(struct out_balances_data));
+//    memset(&d, 0, sizeof(struct out_balances_data));
     printf("Snapshot loading blocks...\n");
-    xdag_load_blocks(xdag_get_start_frame() << 16, xdag_get_frame() << 16, &i, &add_block_callback_sync);
+    xdag_frame_t start_frame = xdag_get_start_frame() << 16;
+    for(; g_steps_index < g_snapshot_steps; g_steps_index++) {
+        xdag_load_blocks(start_frame, xdag_get_frame() << 16, &i, &add_block_callback_sync);
+        make_step_snapshot(g_steps_height[g_steps_index]);
+        start_frame = g_snapshot_time + 1;
+    }
     if(g_snapshot_pub_key) {
         if (mdb_txn_commit(g_mdb_pub_key_txn)) {
             printf("pub keys mdb_txn_commit error\n");
@@ -1059,14 +1062,23 @@ int make_snapshot(void)
         mdb_env_close(g_mdb_pub_key_env);
     }
 
-    if(!g_snapshot_balance) {
-        xdag_mem_finish();
-        return 0;
-    }
+    xdag_mem_finish();
+    return 0;
+}
 
-    printf("Snapshot traverse all blocks...\n");
+int make_step_snapshot(int step_height)
+{
+    char address[33] = {0};
+    struct snapshot_balances_data d;
+    uint32_t i = 0;
+    char path[256] = {0};
+    sprintf(path,SNAPSHOT_BALANCE_HEIGHT_DIR, step_height);
+    xdag_mkdir(path);
+
+    memset(&d, 0, sizeof(struct snapshot_balances_data));
+    printf("Snapshot traverse blocks at height: %d, ... begin\n", step_height);
     xdag_traverse_all_blocks(&d, snapshot_balances_callback);
-
+    printf("Snapshot traverse blocks at height: %d, ... end\n", step_height);
 //    qsort(d.blocks, d.blocksCount, sizeof(struct balance_data), snapshot_sort_callback); 不用排序，本身已经是有序的
 
     char* compress_data = (char*)malloc(10 * sizeof(struct balance_data));
@@ -1081,7 +1093,7 @@ int make_snapshot(void)
         mdb_key.mv_data = hash;
     }
     printf("Snapshot balance...\n");
-    if(init_mdb_balance()){
+    if(init_mdb_balance(step_height)){
         printf("init_mdb_balance error\n");
         return -1;
     }
@@ -1156,7 +1168,6 @@ int make_snapshot(void)
     mdb_dbi_close(g_mdb_balance_env, g_balance_dbi);
     mdb_env_close(g_mdb_balance_env);
     printf("Snapshot end...\n");
-    xdag_mem_finish();
     return 0;
 }
 
@@ -1208,7 +1219,7 @@ int load_snapshot(void)
     }
 
     printf("Snapshot load balance...\n");
-    if(init_mdb_balance()){
+    if(init_mdb_balance(g_snapshot_height)){
         printf("init_mdb_balance error\n");
         return -1;
     }

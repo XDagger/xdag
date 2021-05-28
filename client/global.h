@@ -16,6 +16,7 @@ enum xdag_states {
 #define SNAPSHOT_DIR            "snapshot"
 #define SNAPSHOT_PUBKEY_DIR            "snapshot/pubkey"
 #define SNAPSHOT_BALANCE_DIR            "snapshot/balance"
+#define SNAPSHOT_BALANCE_HEIGHT_DIR            "snapshot/balance/%d"
 
 extern struct xdag_stats {
 	xdag_diff_t difficulty, max_difficulty;
@@ -96,6 +97,9 @@ extern int g_snapshot_compress;
 extern int g_snapshot_integer;
 extern int g_snapshot_pub_key;
 extern int g_snapshot_balance;
+extern int g_snapshot_steps;
+extern int g_steps_height[10];
+extern int g_steps_index;
 
 #if defined (__MACOS__) || defined (__APPLE__)
 extern int is_pool(void);

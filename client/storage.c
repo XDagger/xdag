@@ -252,7 +252,7 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 			}
 			sum++;
 		}
-        if(g_make_snapshot && g_xdag_stats.nmain == g_snapshot_height){
+        if(g_make_snapshot && g_xdag_stats.nmain == g_steps_height[g_steps_index]){
             g_snapshot_time = start_time;
         }
         
@@ -281,7 +281,7 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 			
 			pos = 0;
 		}
-        if(g_make_snapshot && g_xdag_stats.nmain == g_snapshot_height){
+        if(g_make_snapshot && g_xdag_stats.nmain == g_steps_height[g_steps_index]){
             break;
         }
 	}

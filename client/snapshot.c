@@ -45,7 +45,7 @@ int init_mdb_pub_key(void) {
     return 0;
 }
 
-int init_mdb_balance(void) {
+int init_mdb_balance(int height) {
     if(mdb_env_create(&g_mdb_balance_env)) {
         xdag_mess("mdb_env_create error");
         return -1;
@@ -62,7 +62,9 @@ int init_mdb_balance(void) {
         xdag_mess("mdb_env_set_maxdbs error");
         return -1;
     }
-    if(mdb_env_open(g_mdb_balance_env, "./snapshot/balance", MDB_FIXEDMAP|MDB_NOSYNC, 0664)) {
+    char path[256] = {0};
+    sprintf(path,"./snapshot/balance/%d", height);
+    if(mdb_env_open(g_mdb_balance_env, path, MDB_FIXEDMAP|MDB_NOSYNC, 0664)) {
         xdag_mess("mdb_env_open error");
         return -1;
     }

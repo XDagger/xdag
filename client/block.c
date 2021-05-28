@@ -2392,7 +2392,7 @@ int load_balance_snapshot(void)
     MDB_val mdb_key, mdb_data;
 
     xdag_mess("Snapshot load balance...");
-    if(init_mdb_balance()){
+    if(init_mdb_balance(g_snapshot_height)){
         xdag_mess("init_mdb_balance error");
         return -1;
     }
