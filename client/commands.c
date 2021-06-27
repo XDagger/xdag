@@ -49,7 +49,7 @@ typedef struct {
 } XDAG_COMMAND;
 
 extern int g_block_production_on;
-int make_step_snapshot(int step_height);
+int make_step_snapshot(void);
 // Function declarations
 int account_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, int n_our_key);
 
@@ -1048,11 +1048,8 @@ int make_snapshot(void)
 //    memset(&d, 0, sizeof(struct out_balances_data));
     printf("Snapshot loading blocks...\n");
     xdag_frame_t start_frame = xdag_get_start_frame() << 16;
-    for(; g_steps_index < g_snapshot_steps; g_steps_index++) {
-        xdag_load_blocks(start_frame, xdag_get_frame() << 16, &i, &add_block_callback_sync);
-        make_step_snapshot(g_steps_height[g_steps_index]);
-        start_frame = g_snapshot_time + 1;
-    }
+    xdag_load_blocks(start_frame, xdag_get_frame() << 16, &i, &add_block_callback_sync);
+    make_step_snapshot();
     if(g_snapshot_pub_key) {
         if (mdb_txn_commit(g_mdb_pub_key_txn)) {
             printf("pub keys mdb_txn_commit error\n");
@@ -1066,107 +1063,123 @@ int make_snapshot(void)
     return 0;
 }
 
-int make_step_snapshot(int step_height)
+int make_step_snapshot()
 {
     char address[33] = {0};
     struct snapshot_balances_data d;
     uint32_t i = 0;
     char path[256] = {0};
-    sprintf(path,SNAPSHOT_BALANCE_HEIGHT_DIR, step_height);
-    xdag_mkdir(path);
+    g_undo_log_file =  fopen("./snapshot/undo_log.dat", "rb");
+    if(!g_undo_log_file) {
+        printf("make snapshot: open undo log file error\n");
+        return -1;
+    }
+    fseek(g_undo_log_file, 0, SEEK_END);
+    struct block_internal *bi = NULL;
+    for(int k = g_snapshot_steps; k > 0; k--) {
+        int step_height = g_steps_height[k-1];
+        sprintf(path, SNAPSHOT_BALANCE_HEIGHT_DIR, step_height);
+        xdag_mkdir(path);
+        bi = load_undo_log(step_height, bi);
+        if(!bi) {
+            printf("make snapshot: load undo log records error\n");
+            return -1;
+        }
 
-    memset(&d, 0, sizeof(struct snapshot_balances_data));
-    printf("Snapshot traverse blocks at height: %d, ... begin\n", step_height);
-    xdag_traverse_all_blocks(&d, snapshot_balances_callback);
-    printf("Snapshot traverse blocks at height: %d, ... end\n", step_height);
+        memset(&d, 0, sizeof(struct snapshot_balances_data));
+        printf("Snapshot traverse blocks at height: %d, ... begin\n", step_height);
+        xdag_traverse_all_blocks(&d, snapshot_balances_callback);
+        printf("Snapshot traverse blocks at height: %d, ... end\n", step_height);
 //    qsort(d.blocks, d.blocksCount, sizeof(struct balance_data), snapshot_sort_callback); 不用排序，本身已经是有序的
 
-    char* compress_data = (char*)malloc(10 * sizeof(struct balance_data));
-    struct balance_data snapshot_data;
-    xdag_hash_t hash;
-    MDB_val mdb_key, mdb_data;
-    if(g_snapshot_integer) {
-        mdb_key.mv_size = sizeof(uint32_t);// sizeof(xdag_hash_t);
-        mdb_key.mv_data = &i; //hash;
-    } else {
-        mdb_key.mv_size = sizeof(xdag_hash_t);
-        mdb_key.mv_data = hash;
-    }
-    printf("Snapshot balance...\n");
-    if(init_mdb_balance(step_height)){
-        printf("init_mdb_balance error\n");
-        return -1;
-    }
-    if(mdb_txn_begin(g_mdb_balance_env, NULL, 0, &g_mdb_balance_txn)) {
-        printf("mdb_txn_begin error\n");
-        return -1;
-    }
-    if(g_snapshot_integer) {
-        if (mdb_dbi_open(g_mdb_balance_txn, "balance", MDB_CREATE | MDB_INTEGERKEY, &g_balance_dbi)) {
-            printf("mdb_dbi_open balance error\n");
+        char *compress_data = (char *) malloc(10 * sizeof(struct balance_data));
+        struct balance_data snapshot_data;
+        xdag_hash_t hash;
+        MDB_val mdb_key, mdb_data;
+        if (g_snapshot_integer) {
+            mdb_key.mv_size = sizeof(uint32_t);// sizeof(xdag_hash_t);
+            mdb_key.mv_data = &i; //hash;
+        } else {
+            mdb_key.mv_size = sizeof(xdag_hash_t);
+            mdb_key.mv_data = hash;
+        }
+        printf("Snapshot balance...\n");
+        if (init_mdb_balance(step_height)) {
+            printf("init_mdb_balance error\n");
             return -1;
         }
-    } else {
-        if (mdb_dbi_open(g_mdb_balance_txn, "balance", MDB_CREATE, &g_balance_dbi)) {
-            printf("mdb_dbi_open balance error\n");
+        if (mdb_txn_begin(g_mdb_balance_env, NULL, 0, &g_mdb_balance_txn)) {
+            printf("mdb_txn_begin error\n");
             return -1;
         }
-    }
-    printf("balance mdb  initialized...\n");
-    xdag_amount_t total=0;
-    for(i = 0; i < d.blocksCount; ++i) {
-        xdag_hash2address(d.blocks[i].hash, address);
-        if(g_snapshot_compress) {
-            size_t input_length;
-            if(g_snapshot_integer) {
-                input_length = sizeof(struct balance_data);
-            } else {
-                memcpy(hash, d.blocks[i].hash, sizeof(xdag_hash_t));
-                input_length = sizeof(struct balance_data) - sizeof(xdag_hash_t);
-            }
-            size_t output_length = 10 * sizeof(struct balance_data);
-            if (snappy_compress((char *) (&d.blocks[i]), input_length,
-                                compress_data, &output_length) == SNAPPY_OK) {
-
-                mdb_data.mv_size = output_length;
-                mdb_data.mv_data = compress_data;
-                mdb_put(g_mdb_balance_txn, g_balance_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
-                printf("%s  %20.9Lf\n", address, amount2xdags(d.blocks[i].amount));
-                total += d.blocks[i].amount;
-            } else {
-                free(compress_data);
-                printf("snappy compress error \n");
+        if (g_snapshot_integer) {
+            if (mdb_dbi_open(g_mdb_balance_txn, "balance", MDB_CREATE | MDB_INTEGERKEY, &g_balance_dbi)) {
+                printf("mdb_dbi_open balance error\n");
                 return -1;
             }
         } else {
-            memcpy(hash, d.blocks[i].hash, sizeof(xdag_hash_t));
-            memcpy(&snapshot_data, &d.blocks[i], sizeof(struct balance_data));
-            mdb_data.mv_size = sizeof(struct balance_data) - sizeof(xdag_hash_t);
-            mdb_data.mv_data = &snapshot_data;
-            mdb_put(g_mdb_balance_txn, g_balance_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
-            printf("%s  %20.9Lf\n", address, amount2xdags(d.blocks[i].amount));
-            total += d.blocks[i].amount;
+            if (mdb_dbi_open(g_mdb_balance_txn, "balance", MDB_CREATE, &g_balance_dbi)) {
+                printf("mdb_dbi_open balance error\n");
+                return -1;
+            }
+        }
+        printf("balance mdb  initialized...\n");
+        xdag_amount_t total = 0;
+        for (i = 0; i < d.blocksCount; ++i) {
+            xdag_hash2address(d.blocks[i].hash, address);
+            if (g_snapshot_compress) {
+                size_t input_length;
+                if (g_snapshot_integer) {
+                    input_length = sizeof(struct balance_data);
+                } else {
+                    memcpy(hash, d.blocks[i].hash, sizeof(xdag_hash_t));
+                    input_length = sizeof(struct balance_data) - sizeof(xdag_hash_t);
+                }
+                size_t output_length = 10 * sizeof(struct balance_data);
+                if (snappy_compress((char *) (&d.blocks[i]), input_length,
+                                    compress_data, &output_length) == SNAPPY_OK) {
+
+                    mdb_data.mv_size = output_length;
+                    mdb_data.mv_data = compress_data;
+                    mdb_put(g_mdb_balance_txn, g_balance_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
+                    printf("%s  %20.9Lf\n", address, amount2xdags(d.blocks[i].amount));
+                    total += d.blocks[i].amount;
+                } else {
+                    free(compress_data);
+                    printf("snappy compress error \n");
+                    return -1;
+                }
+            } else {
+                memcpy(hash, d.blocks[i].hash, sizeof(xdag_hash_t));
+                memcpy(&snapshot_data, &d.blocks[i], sizeof(struct balance_data));
+                mdb_data.mv_size = sizeof(struct balance_data) - sizeof(xdag_hash_t);
+                mdb_data.mv_data = &snapshot_data;
+                mdb_put(g_mdb_balance_txn, g_balance_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
+                printf("%s  %20.9Lf\n", address, amount2xdags(d.blocks[i].amount));
+                total += d.blocks[i].amount;
+            }
+
+        }
+        free(compress_data);
+        printf("total: %20.9Lf\n", amount2xdags(total));
+
+        if (mdb_dbi_open(g_mdb_balance_txn, "stats", MDB_CREATE, &g_stats_dbi)) {
+            printf("mdb_dbi_open stats error\n");
+            return -1;
+        }
+        if (snapshot_stats()) {
+            return -1;
         }
 
+        if (mdb_txn_commit(g_mdb_balance_txn)) {
+            printf("balance mdb_txn_commit error\n");
+            return -1;
+        }
+        mdb_dbi_close(g_mdb_balance_env, g_stats_dbi);
+        mdb_dbi_close(g_mdb_balance_env, g_balance_dbi);
+        mdb_env_close(g_mdb_balance_env);
     }
-    free(compress_data);
-    printf("total: %20.9Lf\n", amount2xdags(total));
-
-    if(mdb_dbi_open(g_mdb_balance_txn, "stats", MDB_CREATE, &g_stats_dbi)) {
-        printf("mdb_dbi_open stats error\n");
-        return -1;
-    }
-    if(snapshot_stats()) {
-        return -1;
-    }
-
-    if(mdb_txn_commit(g_mdb_balance_txn)) {
-        printf("balance mdb_txn_commit error\n");
-        return -1;
-    }
-    mdb_dbi_close(g_mdb_balance_env, g_stats_dbi);
-    mdb_dbi_close(g_mdb_balance_env, g_balance_dbi);
-    mdb_env_close(g_mdb_balance_env);
+    fclose(g_undo_log_file);
     printf("Snapshot end...\n");
     return 0;
 }

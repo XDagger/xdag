@@ -238,21 +238,29 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
                         printf(" snapshot height must be greater than 1 \n");
                         return -1;
                     }
-                    if (sscanf(argv[i], "%d", &g_snapshot_steps) == 1) {
+                    if (sscanf(argv[i++], "%d", &g_snapshot_steps) == 1) {
 
                         if (g_snapshot_steps > 10 || g_snapshot_steps < 1) {
                             printf(" snapshot steps must be between 1 an 10\n");
                             return -1;
                         }
-                        for (int j = 0; j < g_snapshot_steps; j++) {
-                            int step = g_snapshot_height / g_snapshot_steps;
-                            g_steps_height[j] = (j + 1) * step;
+                        if (sscanf(argv[i], "%d", &g_snapshot_extra_height) == 1) {
+                            if(g_snapshot_extra_height <= 15) {
+                                printf("  snapshot extra height must be greater than 15\n");
+                                return -1;
+                            }
+                            for (int j = 0; j < g_snapshot_steps; j++) {
+                                int step = g_snapshot_height / g_snapshot_steps;
+                                g_steps_height[j] = (j + 1) * step;
+                            }
+                            if (g_snapshot_height % g_snapshot_steps != 0) {
+                                g_steps_height[g_snapshot_steps - 1] = g_snapshot_height;
+                            }
+                            g_make_snapshot = 1;
+                            printf("  snapshot height:%d, steps:%d, extra height: %d, steps_height[0]:%d \n",
+                                   g_snapshot_height, g_snapshot_steps, g_snapshot_extra_height,g_steps_height[0]);
+                            return make_snapshot();
                         }
-                        if (g_snapshot_height % g_snapshot_steps != 0) {
-                            g_steps_height[g_snapshot_steps - 1] = g_snapshot_height;
-                        }
-                        g_make_snapshot = 1;
-                        return make_snapshot();
                     }
                     printf("Illevel use of option -snapshot\n");
                     return -1;

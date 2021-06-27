@@ -252,9 +252,9 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 			}
 			sum++;
 		}
-        if(g_make_snapshot && g_xdag_stats.nmain == g_steps_height[g_steps_index]){
-            g_snapshot_time = start_time;
-        }
+//        if(g_make_snapshot && g_xdag_stats.nmain == g_steps_height[g_steps_index]){
+//            g_snapshot_time = start_time;
+//        }
         
 		if (todo != bufsize) {
 			if (f) {
@@ -281,7 +281,7 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 			
 			pos = 0;
 		}
-        if(g_make_snapshot && g_xdag_stats.nmain == g_steps_height[g_steps_index]){
+        if(g_make_snapshot && g_xdag_stats.nmain >= (g_snapshot_height + g_snapshot_extra_height)){
             break;
         }
 	}

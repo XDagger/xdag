@@ -189,6 +189,7 @@ extern int xdag_get_block_info(xdag_hash_t, void *, int (*)(void*, int, xdag_has
 
 struct block_internal *block_by_height(const uint64_t height);
 
+struct block_internal *load_undo_log(int step_height, struct block_internal *bi);
 #ifdef __cplusplus
 };
 #endif

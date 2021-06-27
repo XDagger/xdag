@@ -93,6 +93,11 @@ enum orphan_remove_actions {
 	ORPHAN_REMOVE_EXTRA
 };
 
+struct undo_record {
+    xdag_hash_t hash;
+    xdag_amount_t amount;
+};
+
 #define get_orphan_index(bi)      (!!((bi)->flags & BI_EXTRA))
 
 int g_bi_index_enable = 1, g_block_production_on;
@@ -133,6 +138,8 @@ static inline void remove_ourblock(struct block_internal *nodeBlock);
 extern void *sync_thread(void *arg);
 void snapshot_pub_key(xdag_hash_t hash, int key_index, struct xdag_public_key *public_keys);
 int load_balance_snapshot(void);
+void insert_undo_log(struct block_internal *bi, xdag_amount_t sum);
+void execute_undo_log(struct undo_record *p_undo_list, int count);
 
 static inline int lessthan(struct ldus_rbtree *l, struct ldus_rbtree *r)
 {
@@ -202,6 +209,9 @@ static inline void accept_amount(struct block_internal *bi, xdag_amount_t sum)
 	if (bi->flags & BI_OURS) {
 		g_balance += sum;
 		order_ourblocks_by_amount(bi);
+	}
+	if(g_balance_undo && g_undo_log_file) {
+        insert_undo_log(bi, sum);
 	}
 }
 
@@ -349,6 +359,15 @@ static void set_main(struct block_internal *m)
     m->height = g_xdag_stats.nmain + 1;
     amount = get_amount(m->height);
 	m->flags |= BI_MAIN;
+	if(g_make_snapshot && m->height >= g_steps_height[0]){
+	    g_balance_undo_count = 0;
+	    g_undo_log_file =  fopen("./snapshot/undo_log.dat", "ab");
+        if (!g_undo_log_file) {
+            printf("set_main: open undo log file error\n");
+            return;
+        }
+        g_balance_undo = 1;
+    }
 	accept_amount(m, amount);
 	g_xdag_stats.nmain++;
 
@@ -357,6 +376,13 @@ static void set_main(struct block_internal *m)
 	}
 
 	accept_amount(m, apply_block(m));
+    if(g_make_snapshot && m->height >= g_steps_height[0]) {
+        if (g_undo_log_file){
+            fwrite(&g_balance_undo_count, sizeof(int), 1, g_undo_log_file);
+            fclose(g_undo_log_file);
+        }
+        g_balance_undo = 0;
+    }
 	m->ref = m;
     rx_set_fork_time(m);
 	//log_block((m->flags & BI_OURS ? "MAIN +" : "MAIN  "), m->hash, m->time, m->storage_pos);
@@ -653,9 +679,6 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
             
 			if(keyNumber >= 0) {
 				verified_keys_mask |= 1 << keyNumber;
-                if(g_make_snapshot && g_snapshot_pub_key) {
-                    snapshot_pub_key(newBlock->field[i].hash, keyNumber, public_keys);
-                }
 			}
              
 			if(1 << i & signoutmask && !(tmpNodeBlock.flags & BI_OURS) && (keyNumber = valid_signature(newBlock, i, ourKeysCount, our_keys)) >= 0) {
@@ -2448,4 +2471,80 @@ int load_balance_snapshot(void)
     mdb_env_close(g_mdb_balance_env);
     xdag_mess("load balance snapshot end...");
     return 0;
+}
+
+void insert_undo_log(struct block_internal *bi, xdag_amount_t sum)
+{
+    fwrite(bi->hash, sizeof(xdag_hash_t), 1, g_undo_log_file);
+    fwrite(&sum, sizeof(xdag_amount_t), 1, g_undo_log_file);
+    g_balance_undo_count++;
+}
+
+void execute_undo_log(struct undo_record *p_undo_list, int count)
+{
+    int i = 0;
+    while(count > 0) {
+        struct block_internal *bi = block_by_hash(p_undo_list[i].hash);
+        if(bi) {
+            bi->amount -= p_undo_list[i].amount;
+        }
+        count--;
+        i++;
+    }
+}
+struct block_internal * load_undo_log(int step_height, struct block_internal *bi)
+{
+    struct undo_record *p_undo_list;
+
+    int log_count;
+    printf("step_height:%d, nmain:%lu\n",step_height, g_xdag_stats.nmain);
+    if(step_height > g_xdag_stats.nmain) {
+        return NULL;
+    }
+    if(step_height == g_snapshot_height) {
+        bi = top_main_chain;
+    }
+    printf("loading undo log ...\n");
+    while(1) {
+        if (bi->flags & BI_MAIN) {
+            if(step_height == bi->height) {
+                break;
+            }
+            while(!fseek(g_undo_log_file,(signed long )(-1*sizeof(int)), SEEK_CUR)) {
+
+                fread(&log_count,sizeof(int),1,g_undo_log_file);
+//                printf("undo record count:%d ...\n", log_count);
+                if(log_count <= 0) {
+                    return NULL;
+                }
+                p_undo_list = malloc(sizeof(struct undo_record) * log_count);
+                if(!p_undo_list) {
+                    printf("undo log malloc failed ...\n");
+                    return NULL;
+                }
+                if(fseek(g_undo_log_file,(signed long )(-1*sizeof(struct undo_record)*log_count - sizeof(int)), SEEK_CUR)){
+                    printf("undo log seek records failed ...\n");
+                    return NULL;
+                }
+
+                fread(p_undo_list, sizeof(struct undo_record), 1, g_undo_log_file);
+                if(memcmp(p_undo_list->hash,bi->hash, sizeof(xdag_hash_t)) == 0){
+//                    printf("undo main block balance ...\n");
+                    fread(p_undo_list+1, sizeof(struct undo_record), log_count - 1, g_undo_log_file);
+                    execute_undo_log(p_undo_list, log_count);
+                    fseek(g_undo_log_file,(signed long )(-1*sizeof(struct undo_record)*log_count), SEEK_CUR);
+                    free(p_undo_list);
+                    break;
+                }else{
+                    fseek(g_undo_log_file,(signed long )(-1*sizeof(struct undo_record)), SEEK_CUR);
+                    free(p_undo_list);
+                }
+
+            }
+
+
+        }
+        bi = bi->link[bi->max_diff_link];
+    }
+    return bi;
 }

@@ -100,6 +100,10 @@ extern int g_snapshot_balance;
 extern int g_snapshot_steps;
 extern int g_steps_height[10];
 extern int g_steps_index;
+extern int g_balance_undo;
+extern int g_snapshot_extra_height;
+extern FILE * g_undo_log_file;
+extern int g_balance_undo_count;
 
 #if defined (__MACOS__) || defined (__APPLE__)
 extern int is_pool(void);
