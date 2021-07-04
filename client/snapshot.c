@@ -10,6 +10,7 @@ MDB_env *g_mdb_pub_key_env;
 MDB_env *g_mdb_balance_env;
 MDB_dbi g_pub_key_dbi;
 MDB_dbi g_balance_dbi;
+MDB_dbi g_signature_dbi;
 MDB_dbi g_stats_dbi;
 MDB_txn *g_mdb_pub_key_txn;
 MDB_txn *g_mdb_balance_txn;
@@ -26,7 +27,7 @@ int init_mdb_pub_key(void) {
         xdag_mess("mdb_env_create error");
         return -1;
     }
-    if(mdb_env_set_maxreaders(g_mdb_pub_key_env, 1)) {
+    if(mdb_env_set_maxreaders(g_mdb_pub_key_env, 4)) {
         xdag_mess("mdb_env_set_maxreaders error");
         return -1;
     }

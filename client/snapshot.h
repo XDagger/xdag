@@ -10,8 +10,8 @@
 struct balance_data {
     xdag_amount_t amount;
     xtime_t time;
-    uint64_t storage_pos;
     xdag_hash_t hash;
+    uint64_t storage_pos;
 };
 
 struct snapshot_balances_data {
@@ -22,6 +22,7 @@ struct snapshot_balances_data {
 extern MDB_env *g_mdb_pub_key_env;
 extern MDB_env *g_mdb_balance_env;
 extern MDB_dbi g_pub_key_dbi;
+extern MDB_dbi g_signature_dbi;
 extern MDB_dbi g_balance_dbi;
 extern MDB_dbi g_stats_dbi;
 extern MDB_txn *g_mdb_pub_key_txn;
