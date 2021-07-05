@@ -1058,7 +1058,8 @@ int make_snapshot(void)
             printf("make step snapshot error\n");
             return -1;
         }
-        start_frame = g_snapshot_time + 1;
+        printf("next start frame =%lx\n", g_snapshot_time);
+        start_frame = g_snapshot_time + (1 << 16);
     }
 
     if(g_snapshot_pub_key) {

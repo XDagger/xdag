@@ -563,6 +563,6 @@ void printUsage(char* appName)
         "                     f - fast mode, higher hash speed, more memory usage(5GB),\n"
 		"  -dm            - disable mining on pool (-P option is ignored)\n"
 		"  -tag           - tag for pool to distinguish pools. Max length is 32 chars\n"
-        "  -snapshot N M   - generate snapshot of all accounts balance at blocks height N with M steps\n"
+        "  -snapshot N M X   - generate snapshot of all accounts balance at blocks height N with M steps, load X extra height\n"
 		, appName);
 }

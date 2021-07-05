@@ -252,10 +252,9 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 			}
 			sum++;
 		}
-        if(g_make_snapshot && g_xdag_stats.nmain >= (g_steps_height[g_steps_index] + g_snapshot_extra_height)){
-            g_snapshot_time = start_time;
-        }
-        
+
+        g_snapshot_time = start_time;
+
 		if (todo != bufsize) {
 			if (f) {
 				pthread_mutex_lock(&storage_mutex);
