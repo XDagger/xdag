@@ -7,6 +7,13 @@
 #include "lmdb/lmdb.h"
 #include "block.h"
 
+struct stats_data {
+    uint64_t height;
+    xtime_t time;
+    xdag_hash_t hash;
+    xdag_diff_t difficulty;
+};
+
 struct balance_data {
     xdag_amount_t amount;
     xtime_t time;

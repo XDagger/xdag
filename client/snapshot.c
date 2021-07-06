@@ -18,10 +18,7 @@ MDB_txn *g_mdb_balance_txn;
 //MDB_stat g_mdb_mst;
 //MDB_cursor *g_mdb_cursor;
 
-char key_snapshot_time[]={"g_snapshot_time"};
 char key_snapshot_main[]={"g_snapshot_main"};
-char key_snapshot_height[]={"g_snapshot_height"};
-char key_snapshot_difficulty[]={"g_snapshot_difficulty"};
 
 int init_mdb_pub_key(void) {
     if(mdb_env_create(&g_mdb_pub_key_env)) {
@@ -76,55 +73,48 @@ int init_mdb_balance(int height) {
 int snapshot_stats() {
     MDB_val mdb_key, mdb_data;
     int res;
+    int snapshot_height = g_steps_height[g_steps_index];
 
     //key_snapshot_main
-    struct block_internal *bi = block_by_height(g_steps_height[g_steps_index]);
+    struct block_internal *bi = block_by_height(snapshot_height);
     if(bi == NULL) {
         printf("get main block by snapshot height error\n");
         return -1;
     }
-
+    struct stats_data block;
     mdb_key.mv_data = key_snapshot_main;
     mdb_key.mv_size = sizeof(key_snapshot_main);
-    mdb_data.mv_data = bi->hash;
-    mdb_data.mv_size = sizeof(xdag_hash_t);
+    mdb_data.mv_data = &block;
+    mdb_data.mv_size = sizeof(struct stats_data);
+    block.time = bi->time;
+    block.height = bi->height;
+    memcpy(block.hash, bi->hash, sizeof(xdag_hash_t));
+    block.difficulty = bi->difficulty;
     res = mdb_put(g_mdb_balance_txn, g_stats_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
     if(res) {
         printf("mdb put main block error\n");
         return -1;
     }
 
-    //key_snapshot_time
-    mdb_key.mv_data = key_snapshot_time;
-    mdb_key.mv_size = sizeof(key_snapshot_time);
-    mdb_data.mv_data = &bi->time;
-    mdb_data.mv_size = sizeof(uint64_t);
-    res = mdb_put(g_mdb_balance_txn, g_stats_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
-    if(res) {
-        printf("mdb put key_snapshot_time error\n");
-        return -1;
-    }
-
-    //key_snapshot_difficulty
-    mdb_key.mv_data = key_snapshot_difficulty;
-    mdb_key.mv_size = sizeof(key_snapshot_difficulty);
-    mdb_data.mv_data = &bi->difficulty;
-    mdb_data.mv_size = sizeof(xdag_diff_t);
-    res = mdb_put(g_mdb_balance_txn, g_stats_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
-    if(res) {
-        printf("mdb put g_snapshot_difficulty error\n");
-        return -1;
-    }
-
-    //key_snapshot_height
-    mdb_key.mv_data = key_snapshot_height;
-    mdb_key.mv_size = sizeof(key_snapshot_height);
-    mdb_data.mv_data = &bi->height;
-    mdb_data.mv_size = sizeof(uint64_t);
-    res = mdb_put(g_mdb_balance_txn, g_stats_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
-    if(res) {
-        printf("mdb put g_snapshot_height error\n");
-        return -1;
+    for (int i = 1; i <= 128; i++) {
+        bi = block_by_height(snapshot_height-i);
+        if(bi == NULL) {
+            printf("get main block by snapshot height error\n");
+            return -1;
+        }
+        char key_val[32] = {0};
+        mdb_key.mv_data = key_val;
+        sprintf(key_val, "g_snapshot_main_%d", i);
+        mdb_key.mv_size = strlen(key_val);
+        block.time = bi->time;
+        block.height = bi->height;
+        memcpy(block.hash, bi->hash, sizeof(xdag_hash_t));
+        block.difficulty = bi->difficulty;
+        res = mdb_put(g_mdb_balance_txn, g_stats_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
+        if(res) {
+            printf("mdb put main block %d error\n", snapshot_height-i);
+            return -1;
+        }
     }
 
     return 0;
@@ -133,15 +123,6 @@ int snapshot_stats() {
 int load_stats_snapshot() {
     MDB_val mdb_key, mdb_data;
     int res;
-    //key_snapshot_time
-    mdb_key.mv_data = key_snapshot_time;
-    mdb_key.mv_size = sizeof(key_snapshot_time);
-    res = mdb_get(g_mdb_balance_txn, g_stats_dbi, &mdb_key, &mdb_data);
-    if(res) {
-        printf("mdb get key_snapshot_time error\n");
-        return -1;
-    }
-    g_snapshot_time = *((uint64_t *)mdb_data.mv_data);
 
     //key_snapshot_main
     char address[33] = {0};
@@ -152,31 +133,36 @@ int load_stats_snapshot() {
         printf("mdb get key_snapshot_main error\n");
         return -1;
     }
-    xdag_hash2address((uint64_t *) mdb_data.mv_data, address);
+    struct stats_data *block = (struct stats_data*)mdb_data.mv_data;
+    xdag_hash2address(block->hash, address);
+    g_snapshot_time = block->time;
+    xdag_diff_t main_diff = block->difficulty;
+    uint64_t main_height = block->height;
 
     printf("main=%s time=%lx\n", address, g_snapshot_time);
-
-    //key_xdag_state
-    mdb_key.mv_data = key_snapshot_difficulty;
-    mdb_key.mv_size = sizeof(key_snapshot_difficulty);
-    res = mdb_get(g_mdb_balance_txn, g_stats_dbi, &mdb_key, &mdb_data);
-    if(res) {
-        printf("mdb get key_snapshot_difficulty error\n");
-        return -1;
-    }
-    xdag_diff_t main_diff = *((xdag_diff_t *)mdb_data.mv_data);
-
-    //key_xdag_stats
-    mdb_key.mv_data = key_snapshot_height;
-    mdb_key.mv_size = sizeof(key_snapshot_height);
-    res = mdb_get(g_mdb_balance_txn, g_stats_dbi, &mdb_key, &mdb_data);
-    if(res) {
-        printf("mdb get key_snapshot_height error\n");
-        return -1;
-    }
-    uint64_t main_height = *((uint64_t *)mdb_data.mv_data);
-
     printf("main diff=%llx%016llx  main height=%ld\n", xdag_diff_args(main_diff), main_height);
+
+    for (int i = 1; i <= 128; i++) {
+        char key_val[32] = {0};
+        mdb_key.mv_data = key_val;
+        sprintf(key_val, "g_snapshot_main_%d", i);
+        mdb_key.mv_size = strlen(key_val);
+        res = mdb_get(g_mdb_balance_txn, g_stats_dbi, &mdb_key, &mdb_data);
+        if(res) {
+            printf("mdb get key_snapshot_main error\n");
+            return -1;
+        }
+
+        block = (struct stats_data*)mdb_data.mv_data;
+        xdag_hash2address(block->hash, address);
+        g_snapshot_time = block->time;
+        main_diff = block->difficulty;
+        main_height = block->height;
+
+        printf("main_%d=%s time=%lx\n",i, address, g_snapshot_time);
+        printf("main_%d diff=%llx%016llx  main height=%ld\n", i, xdag_diff_args(main_diff), main_height);
+
+    }
 
     return 0;
 }
