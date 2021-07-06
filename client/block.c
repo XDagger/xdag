@@ -32,6 +32,7 @@
 #include "rx_hash.h"
 #include "lmdb/lmdb.h"
 #include "snapshot.h"
+#include <snappy-c.h>
 
 #define MAX_WAITING_MAIN        1
 #define MAIN_START_AMOUNT       (1ll << 42)
@@ -136,7 +137,7 @@ static void order_ourblocks_by_amount(struct block_internal *bi);
 static inline void add_ourblock(struct block_internal *nodeBlock);
 static inline void remove_ourblock(struct block_internal *nodeBlock);
 extern void *sync_thread(void *arg);
-void snapshot_pub_key(xdag_hash_t hash, int key_index, struct xdag_public_key *public_keys);
+int snapshot_pub_key(xdag_hash_t hash, int key_index, struct xdag_public_key *public_keys);
 int load_balance_snapshot(void);
 void insert_undo_log(struct block_internal *bi, xdag_amount_t sum);
 void execute_undo_log(struct undo_record *p_undo_list, int count, int recover);
@@ -2390,24 +2391,42 @@ xdag_diff_t rx_hash_difficulty(struct xdag_block *block, xdag_frame_t t, xdag_ha
     }
 }
 
-void snapshot_pub_key(xdag_hash_t hash, int key_index, struct xdag_public_key *public_keys) {
-    char mdb_address[33] = {0};
-    uint8_t buf_pubkey[sizeof(xdag_hash_t) + 1];
+int snapshot_pub_key(xdag_hash_t hash, int key_index, struct xdag_public_key *public_keys) {
+//    char mdb_address[33] = {0};
+    size_t data_length = sizeof(xdag_hash_t) + 1;
+    uint8_t buf_pubkey[data_length];
     MDB_val mdb_key, mdb_data;
-    mdb_key.mv_size = sizeof(xdag_hash_t);
-    mdb_data.mv_size = sizeof(struct xdag_field);
-
-    xdag_hash2address(hash, mdb_address);
     mdb_key.mv_data = hash;
+    mdb_key.mv_size = sizeof(xdag_hash_t);
+//    xdag_hash2address(hash, mdb_address);
     buf_pubkey[0] = 2 + ((uintptr_t) public_keys[key_index].pub & 1);
     memcpy(&(buf_pubkey[1]), (xdag_hash_t *) ((uintptr_t) public_keys[key_index].pub & ~1l),
            sizeof(xdag_hash_t));
-    mdb_data.mv_size = sizeof(xdag_hash_t) + 1;
-    mdb_data.mv_data = buf_pubkey;
-    mdb_put(g_mdb_pub_key_txn, g_pub_key_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
+    if (g_pub_key_compress) {
+        char *compress_data = (char *) malloc(10 * sizeof(xdag_hash_t));
+        size_t output_length = 10 * sizeof(xdag_hash_t);
+        if (snappy_compress((char *) buf_pubkey, data_length,
+                            compress_data, &output_length) == SNAPPY_OK) {
+
+            mdb_data.mv_size = output_length;
+            mdb_data.mv_data = compress_data;
+            mdb_put(g_mdb_pub_key_txn, g_pub_key_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
+            free(compress_data);
+        } else {
+            free(compress_data);
+            printf("pub key snappy compress error \n");
+            return -1;
+        }
+    } else {
+        mdb_data.mv_data = buf_pubkey;
+        mdb_data.mv_size = data_length;
+        mdb_put(g_mdb_pub_key_txn, g_pub_key_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
+    }
+
 //    printf("%s   %02X%02X%02X%02X%02X...%02X%02X%02X%02X\n", mdb_address, buf_pubkey[0],
 //           buf_pubkey[1], buf_pubkey[2], buf_pubkey[3], buf_pubkey[4],
 //           buf_pubkey[29], buf_pubkey[30], buf_pubkey[31], buf_pubkey[32]);
+    return 0;
 }
 
 int load_balance_snapshot(void)
