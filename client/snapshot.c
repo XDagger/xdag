@@ -12,11 +12,10 @@ MDB_env *g_mdb_balance_env;
 MDB_dbi g_pub_key_dbi;
 MDB_dbi g_balance_dbi;
 MDB_dbi g_signature_dbi;
+MDB_dbi g_block_dbi;
 MDB_dbi g_stats_dbi;
 MDB_txn *g_mdb_pub_key_txn;
 MDB_txn *g_mdb_balance_txn;
-//MDB_stat g_mdb_mst;
-//MDB_cursor *g_mdb_cursor;
 
 char key_snapshot_main[]={"g_snapshot_main"};
 

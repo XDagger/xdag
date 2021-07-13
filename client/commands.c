@@ -1041,6 +1041,10 @@ int make_snapshot(void)
             printf("mdb_dbi_open signature error\n");
             return -1;
         }
+        if (mdb_dbi_open(g_mdb_pub_key_txn, "block", MDB_CREATE, &g_block_dbi)) {
+            printf("mdb_dbi_open block error\n");
+            return -1;
+        }
         printf("Pub key mdb  initialized...\n");
     }
     xdag_set_log_level(0);
@@ -1069,6 +1073,7 @@ int make_snapshot(void)
         }
         mdb_dbi_close(g_mdb_pub_key_env, g_pub_key_dbi);
         mdb_dbi_close(g_mdb_pub_key_env, g_signature_dbi);
+        mdb_dbi_close(g_mdb_pub_key_env, g_block_dbi);
         mdb_env_close(g_mdb_pub_key_env);
     }
 
@@ -1082,6 +1087,7 @@ int make_step_snapshot(int step_height)
     struct snapshot_balances_data d;
     uint32_t i = 0;
     uint32_t j = 0;
+    uint32_t k = 0;
     char path[256] = {0};
     g_undo_log_file =  fopen("./snapshot/undo_log.dat", "rb");
     if(!g_undo_log_file) {
@@ -1103,11 +1109,11 @@ int make_step_snapshot(int step_height)
     printf("Snapshot traverse blocks at height: %d, ... end\n", step_height);
 //    qsort(d.blocks, d.blocksCount, sizeof(struct balance_data), snapshot_sort_callback); 不用排序，本身已经是有序的
 
-    char *compress_data = (char *) malloc(10 * sizeof(struct balance_data));
+    char *compress_data = (char *) malloc(10 * sizeof(struct xdag_block));
     struct balance_data snapshot_data;
     xdag_hash_t hash;
     MDB_val mdb_key, mdb_data;
-    MDB_val pk_key, pk_data, sig_data;
+    MDB_val pk_key, pk_data, sig_key, sig_data, block_key, block_data;
     pk_key.mv_size = sizeof(xdag_hash_t);
     pk_key.mv_data = hash;
     pk_data.mv_size =0;
@@ -1122,13 +1128,11 @@ int make_step_snapshot(int step_height)
         mdb_key.mv_size = sizeof(xdag_hash_t);
         mdb_key.mv_data = hash;
     }
-    if (g_pub_key_compress) {
-        pk_key.mv_size = sizeof(uint32_t);
-        pk_key.mv_data = &j;
-    } else {
-        pk_key.mv_size = sizeof(xdag_hash_t);
-        pk_key.mv_data = hash;
-    }
+    sig_key.mv_size = sizeof(uint32_t);
+    sig_key.mv_data = &j;
+    block_key.mv_size = sizeof(uint32_t);
+    block_key.mv_data = &k;
+
     printf("Snapshot balance...\n");
     if (init_mdb_balance(step_height)) {
         printf("init_mdb_balance error\n");
@@ -1155,7 +1159,7 @@ int make_step_snapshot(int step_height)
         xdag_hash2address(d.blocks[i].hash, address);
         if (g_snapshot_integer) {
             size_t input_length = sizeof(struct balance_data) - sizeof(uint64_t) ;
-            size_t output_length = 10 * sizeof(struct balance_data);
+            size_t output_length = 10 * sizeof(struct xdag_block);
             if (snappy_compress((char *) (&d.blocks[i]), input_length,
                                 compress_data, &output_length) == SNAPPY_OK) {
 
@@ -1199,24 +1203,40 @@ int make_step_snapshot(int step_height)
                     }
                 }
                 if (sign_count == 2) {
-                    if(g_pub_key_compress){
-                        memcpy(buf_signature,&bref->field[sign_out], 2*sizeof(xdag_hash_t));
-                        memcpy(&buf_signature[2*sizeof(xdag_hash_t)], hash, sizeof(xdag_hash_t));
-                        size_t output_length = 10 * sizeof(struct balance_data);
-                        if (snappy_compress((char *) buf_signature, data_length,
-                                            compress_data, &output_length) == SNAPPY_OK) {
-                            sig_data.mv_size = output_length;
-                            sig_data.mv_data = compress_data;
+                    if(xdag_type(bref, 1) == XDAG_FIELD_SIGN_OUT && xdag_type(bref, 2) == XDAG_FIELD_SIGN_OUT
+                        && xdag_type(bref, 3) == XDAG_FIELD_NONCE) { // address block
+                        if (g_pub_key_compress) {
+                            memcpy(buf_signature, &bref->field[sign_out], 2 * sizeof(xdag_hash_t));
+                            memcpy(&buf_signature[2 * sizeof(xdag_hash_t)], hash, sizeof(xdag_hash_t));
+                            size_t output_length = 10 * sizeof(struct xdag_block);
+                            if (snappy_compress((char *) buf_signature, data_length,
+                                                compress_data, &output_length) == SNAPPY_OK) {
+                                sig_data.mv_size = output_length;
+                                sig_data.mv_data = compress_data;
+                                mdb_put(g_mdb_pub_key_txn, g_signature_dbi, &sig_key, &sig_data, MDB_NOOVERWRITE);
+                                j++;
+                            } else {
+                                free(compress_data);
+                                printf("signature snappy compress error \n");
+                                return -1;
+                            }
+                        } else {
+                            sig_data.mv_data = &bref->field[sign_out];
                             mdb_put(g_mdb_pub_key_txn, g_signature_dbi, &pk_key, &sig_data, MDB_NOOVERWRITE);
-                            j++;
+                        }
+                    } else { // compress main block
+                        size_t output_length = 10 * sizeof(struct xdag_block);
+                        if (snappy_compress((char *) bref, sizeof(struct xdag_block),
+                                            compress_data, &output_length) == SNAPPY_OK) {
+                            block_data.mv_size = output_length;
+                            block_data.mv_data = compress_data;
+                            mdb_put(g_mdb_pub_key_txn, g_block_dbi, &block_key, &block_data, MDB_NOOVERWRITE);
+                            k++;
                         } else {
                             free(compress_data);
-                            printf("signature snappy compress error \n");
+                            printf("block snappy compress error \n");
                             return -1;
                         }
-                    } else {
-                        sig_data.mv_data = &bref->field[sign_out];
-                        mdb_put(g_mdb_pub_key_txn, g_signature_dbi, &pk_key, &sig_data, MDB_NOOVERWRITE);
                     }
 
                 }
@@ -1258,8 +1278,9 @@ int load_snapshot(void)
     MDB_cursor *cursor;
     MDB_val mdb_key, mdb_data;
     MDB_val sig_key, sig_data;
+    MDB_val block_key, block_data;
     char address[33] = {0};
-    char* compress_data = (char*)malloc(10 * sizeof(struct balance_data));
+    char* compress_data = (char*)malloc(10 * sizeof(struct xdag_block));
     if(g_snapshot_pub_key) {
         printf("Snapshot load pub key...\n");
         if (init_mdb_pub_key() != 0) {
@@ -1275,7 +1296,11 @@ int load_snapshot(void)
             return -1;
         }
         if (mdb_dbi_open(g_mdb_pub_key_txn, "signature", MDB_CREATE, &g_signature_dbi)) {
-            printf("mdb_dbi_open pub key error\n");
+            printf("mdb_dbi_open signature error\n");
+            return -1;
+        }
+        if (mdb_dbi_open(g_mdb_pub_key_txn, "block", MDB_CREATE, &g_block_dbi)) {
+            printf("mdb_dbi_open block error\n");
             return -1;
         }
         printf("pub key mdb  initialized...\n");
@@ -1284,10 +1309,11 @@ int load_snapshot(void)
             return -1;
         }
         uint8_t *buf_pubkey;
+        struct xdag_block *bref;
         while ((rc = mdb_cursor_get(cursor, &mdb_key, &mdb_data, MDB_NEXT)) == 0) {
             xdag_hash2address((uint64_t *) mdb_key.mv_data, address);
             if(g_pub_key_compress){
-                size_t output_length = 10 * sizeof(struct balance_data);
+                size_t output_length = 10 * sizeof(struct xdag_block);
                 if (snappy_uncompress((char*)mdb_data.mv_data, mdb_data.mv_size,
                                       compress_data, &output_length) == SNAPPY_OK) {
                     buf_pubkey = (uint8_t *) compress_data;
@@ -1317,7 +1343,7 @@ int load_snapshot(void)
         }
         while ((rc = mdb_cursor_get(cursor, &sig_key, &sig_data, MDB_NEXT)) == 0) {
             if(g_pub_key_compress){
-                size_t output_length = 10 * sizeof(struct balance_data);
+                size_t output_length = 10 * sizeof(struct xdag_block);
                 if (snappy_uncompress((char*)sig_data.mv_data, sig_data.mv_size,
                                       compress_data, &output_length) == SNAPPY_OK) {
                     xdag_hash2address((uint64_t *)(compress_data+2*sizeof(xdag_hash_t)), address);
@@ -1338,7 +1364,32 @@ int load_snapshot(void)
                     buf_pubkey[60], buf_pubkey[61], buf_pubkey[62], buf_pubkey[63]);
         }
         if (rc != MDB_NOTFOUND) {
-            printf("mdb_cursor_get pub key error");
+            printf("mdb_cursor_get signature error");
+            return -1;
+        }
+        mdb_cursor_close(cursor);
+        printf("Snapshot load blocks...\n");
+        if (mdb_cursor_open(g_mdb_pub_key_txn, g_block_dbi, &cursor)) {
+            printf("mdb_cursor_open block error");
+            return -1;
+        }
+        while ((rc = mdb_cursor_get(cursor, &block_key, &block_data, MDB_NEXT)) == 0) {
+            size_t output_length = 10 * sizeof(struct xdag_block);
+            if (snappy_uncompress((char*)block_data.mv_data, block_data.mv_size,
+                                  compress_data, &output_length) == SNAPPY_OK) {
+                bref = (struct xdag_block *) compress_data;
+                xdag_hash_t hash;
+                xdag_hash(bref, sizeof(struct xdag_block), hash);
+                xdag_hash2address(hash, address);
+            } else {
+                free(compress_data);
+                printf("block uncompress error\n");
+                return -1;
+            }
+            printf("block %s\n", address);
+        }
+        if (rc != MDB_NOTFOUND) {
+            printf("mdb_cursor_get block error");
             return -1;
         }
 
@@ -1346,6 +1397,7 @@ int load_snapshot(void)
         mdb_txn_abort(g_mdb_pub_key_txn);
         mdb_dbi_close(g_mdb_pub_key_env, g_pub_key_dbi);
         mdb_dbi_close(g_mdb_pub_key_env, g_signature_dbi);
+        mdb_dbi_close(g_mdb_pub_key_env, g_block_dbi);
         mdb_env_close(g_mdb_pub_key_env);
         printf("pub_key load end...\n");
     }
@@ -1385,7 +1437,7 @@ int load_snapshot(void)
 
     while ((rc = mdb_cursor_get(cursor, &mdb_key, &mdb_data, MDB_NEXT)) == 0) {
         if(g_snapshot_integer){
-            size_t output_length = 10 * sizeof(struct balance_data);
+            size_t output_length = 10 * sizeof(struct xdag_block);
             if (snappy_uncompress((char*)mdb_data.mv_data, mdb_data.mv_size,
                                   compress_data, &output_length) == SNAPPY_OK) {
 
