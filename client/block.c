@@ -51,6 +51,10 @@
 #define ORPHAN_HASH_SIZE	2
 #define MAX_ALLOWED_EXTRA	0x10000
 
+// sync problem fork height
+#define SYNC_FIX_HEIGHT 0
+#define SYNC_FIX_TESTNET_HEIGHT 10000
+
 struct block_backrefs;
 struct orphan_block;
 struct block_internal_index;
@@ -802,16 +806,22 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	set_pretop(top_main_chain);
 
 	if(xdag_diff_gt(tmpNodeBlock.difficulty, g_xdag_stats.difficulty)) {
+
+		uint64_t sync_fork_height = g_xdag_testnet?SYNC_FIX_TESTNET_HEIGHT:SYNC_FIX_HEIGHT;
+
 		/* Only log this if we are NOT loading state */
 		if(g_xdag_state != XDAG_STATE_LOAD)
         {
 			xdag_info("Diff  : %llx%016llx (+%llx%016llx)", xdag_diff_args(tmpNodeBlock.difficulty), xdag_diff_args(diff0));
         }
 
+		// 1. find the common ancestor
 		for(blockRef = nodeBlock, blockRef0 = 0; blockRef && !(blockRef->flags & BI_MAIN_CHAIN); blockRef = blockRef->link[blockRef->max_diff_link]) {
 			if((!blockRef->link[blockRef->max_diff_link] || xdag_diff_gt(blockRef->difficulty, blockRef->link[blockRef->max_diff_link]->difficulty))
 				&& (!blockRef0 || MAIN_TIME(blockRef0->time) > MAIN_TIME(blockRef->time))) {
-				blockRef->flags |= BI_MAIN_CHAIN;
+				if(g_xdag_stats.nmain < sync_fork_height) {
+					blockRef->flags |= BI_MAIN_CHAIN;
+				}
 				blockRef0 = blockRef;
 			}
 		}
@@ -820,7 +830,21 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 			blockRef = blockRef->link[blockRef->max_diff_link];
 		}
 
+		// 2. rollback to the ancestor
 		unwind_main(blockRef);
+
+		// 3. update the new chain flags
+		// if current nmain is higher than SYNC_FIX_XX_HEIGHT
+    	if(g_xdag_stats.nmain >= sync_fork_height) {
+			for(blockRef = nodeBlock, blockRef0 = 0; blockRef && !(blockRef->flags & BI_MAIN_CHAIN); blockRef = blockRef->link[blockRef->max_diff_link]) {
+				if((!blockRef->link[blockRef->max_diff_link] || xdag_diff_gt(blockRef->difficulty, blockRef->link[blockRef->max_diff_link]->difficulty))
+					&& (!blockRef0 || MAIN_TIME(blockRef0->time) > MAIN_TIME(blockRef->time))) {
+					blockRef->flags |= BI_MAIN_CHAIN;
+					blockRef0 = blockRef;
+				}
+			}
+		}
+
 		top_main_chain = nodeBlock;
 		g_xdag_stats.difficulty = tmpNodeBlock.difficulty;
 
