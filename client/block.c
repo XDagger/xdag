@@ -53,7 +53,7 @@
 
 // sync problem fork height
 #define SYNC_FIX_HEIGHT 0
-#define SYNC_FIX_TESTNET_HEIGHT 10000
+#define SYNC_FIX_TESTNET_HEIGHT 0
 
 struct block_backrefs;
 struct orphan_block;
@@ -815,6 +815,10 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 			xdag_info("Diff  : %llx%016llx (+%llx%016llx)", xdag_diff_args(tmpNodeBlock.difficulty), xdag_diff_args(diff0));
         }
 
+		//  |    epoch 1    |    epoch 2    |   epoch 3    |
+    	//        A <-------- B <-------- C
+    	//                         |
+    	//                         |------------- D
 		// 1. find the common ancestor
 		for(blockRef = nodeBlock, blockRef0 = 0; blockRef && !(blockRef->flags & BI_MAIN_CHAIN); blockRef = blockRef->link[blockRef->max_diff_link]) {
 			if((!blockRef->link[blockRef->max_diff_link] || xdag_diff_gt(blockRef->difficulty, blockRef->link[blockRef->max_diff_link]->difficulty))
