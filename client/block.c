@@ -835,16 +835,25 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	set_pretop(top_main_chain);
 
 	if(xdag_diff_gt(tmpNodeBlock.difficulty, g_xdag_stats.difficulty)) {
+		uint64_t sync_fork_height = 0;
+
 		/* Only log this if we are NOT loading state */
 		if(g_xdag_state != XDAG_STATE_LOAD)
         {
 			xdag_info("Diff  : %llx%016llx (+%llx%016llx)", xdag_diff_args(tmpNodeBlock.difficulty), xdag_diff_args(diff0));
         }
 
+		//  |    epoch 1    |    epoch 2    |   epoch 3    |
+    	//        A <-------- B <-------- C
+    	//                         |
+    	//                         |------------- D
+		// 1. find the common ancestor
 		for(blockRef = nodeBlock, blockRef0 = 0; blockRef && !(blockRef->flags & BI_MAIN_CHAIN); blockRef = blockRef->link[blockRef->max_diff_link]) {
 			if((!blockRef->link[blockRef->max_diff_link] || xdag_diff_gt(blockRef->difficulty, blockRef->link[blockRef->max_diff_link]->difficulty))
 				&& (!blockRef0 || MAIN_TIME(blockRef0->time) > MAIN_TIME(blockRef->time))) {
-				blockRef->flags |= BI_MAIN_CHAIN;
+				if(g_xdag_stats.nmain < sync_fork_height) {
+					blockRef->flags |= BI_MAIN_CHAIN;
+				}
 				blockRef0 = blockRef;
 			}
 		}
@@ -853,7 +862,20 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 			blockRef = blockRef->link[blockRef->max_diff_link];
 		}
 
+		// 2. rollback to the ancestor
 		unwind_main(blockRef);
+
+		// 3. update the new chain flags
+		// if current nmain is higher than SYNC_FIX_XX_HEIGHT
+    	if(g_xdag_stats.nmain >= sync_fork_height) {
+			for(blockRef = nodeBlock, blockRef0 = 0; blockRef && !(blockRef->flags & BI_MAIN_CHAIN); blockRef = blockRef->link[blockRef->max_diff_link]) {
+				if((!blockRef->link[blockRef->max_diff_link] || xdag_diff_gt(blockRef->difficulty, blockRef->link[blockRef->max_diff_link]->difficulty))
+					&& (!blockRef0 || MAIN_TIME(blockRef0->time) > MAIN_TIME(blockRef->time))) {
+					blockRef->flags |= BI_MAIN_CHAIN;
+					blockRef0 = blockRef;
+				}
+			}
+		}
 		top_main_chain = nodeBlock;
 		g_xdag_stats.difficulty = tmpNodeBlock.difficulty;
 
@@ -1515,7 +1537,7 @@ int xdag_traverse_our_blocks(void *data,
 	return res;
 }
 
-static int (*g_traverse_callback)(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, uint64_t storage_pos);
+static int (*g_traverse_callback)(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, uint64_t storage_pos, uint16_t flags);
 static void *g_traverse_data;
 
 static void traverse_all_callback(struct ldus_rbtree *node)
@@ -1528,12 +1550,12 @@ static void traverse_all_callback(struct ldus_rbtree *node)
 		bi = (struct block_internal *)node;
 	}
 
-	(*g_traverse_callback)(g_traverse_data, bi->hash, bi->amount, bi->time, bi->storage_pos);
+	(*g_traverse_callback)(g_traverse_data, bi->hash, bi->amount, bi->time, bi->storage_pos, bi->flags);
 }
 
 /* calls callback for each block */
 int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag_hash_t hash,
-	xdag_amount_t amount, xtime_t time, uint64_t storage_pos))
+	xdag_amount_t amount, xtime_t time, uint64_t storage_pos, uint16_t flags))
 {
 	pthread_mutex_lock(&block_mutex);
 	g_traverse_callback = callback;
@@ -1890,7 +1912,17 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 			pramount(amount >> ((MAIN_TIME(bi->time) - MAIN_TIME(XDAG_ERA)) >> MAIN_BIG_PERIOD_LOG)),
 			time_buf);
 	}
+
+	fprintf(out, "origin data\n");
+	struct xdag_block buf;
+	struct xdag_block *bref = xdag_storage_load(bi->hash, bi->time, bi->storage_pos, &buf);
+	for (int i = 0; i < 16; i++)
+	{
+		/* code */
+		fprintf(out, "      field: %016llx%016llx%016llx%016llx\n",
+		(unsigned long long)bref->field[i].hash[3], (unsigned long long)bref->field[i].hash[2], (unsigned long long)bref->field[i].hash[1], (unsigned long long)bref->field[i].hash[0]);
 	
+	}
 	return 0;
 }
 
@@ -2423,9 +2455,6 @@ int snapshot_pub_key(xdag_hash_t hash, int key_index, struct xdag_public_key *pu
         mdb_put(g_mdb_pub_key_txn, g_pub_key_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
     }
 
-//    printf("%s   %02X%02X%02X%02X%02X...%02X%02X%02X%02X\n", mdb_address, buf_pubkey[0],
-//           buf_pubkey[1], buf_pubkey[2], buf_pubkey[3], buf_pubkey[4],
-//           buf_pubkey[29], buf_pubkey[30], buf_pubkey[31], buf_pubkey[32]);
     return 0;
 }
 

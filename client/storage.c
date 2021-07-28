@@ -280,7 +280,9 @@ uint64_t xdag_load_blocks(xdag_frame_t start_time, xdag_frame_t end_time, void *
 			
 			pos = 0;
 		}
-        if(g_make_snapshot && g_xdag_stats.nmain >= (g_steps_height[g_steps_index] + g_snapshot_extra_height)){
+		// test remove extra
+        // if(g_make_snapshot && g_xdag_stats.nmain >= (g_steps_height[g_steps_index] + g_snapshot_extra_height)){
+		if(g_make_snapshot && g_xdag_stats.nmain >= (g_steps_height[g_steps_index])){
             break;
         }
 	}

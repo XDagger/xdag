@@ -944,7 +944,7 @@ void xdag_log_xfer(xdag_hash_t from, xdag_hash_t to, xdag_amount_t amount)
 	xdag_mess("Xfer : from %s to %s xfer %.9Lf %s", address_from, address_to, amount2xdags(amount), g_coinname);
 }
 
-static int out_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, uint64_t storage_pos)
+static int out_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, uint64_t storage_pos, uint16_t flags)
 {
 	struct out_balances_data *d = (struct out_balances_data *)data;
 	struct xdag_field f;
@@ -962,7 +962,7 @@ static int out_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amo
 	return 0;
 }
 
-static int snapshot_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, uint64_t storage_pos)
+static int snapshot_balances_callback(void *data, xdag_hash_t hash, xdag_amount_t amount, xtime_t time, uint64_t storage_pos, uint16_t flags)
 {
     struct snapshot_balances_data *d = (struct snapshot_balances_data *)data;
     struct balance_data f;
@@ -972,6 +972,7 @@ static int snapshot_balances_callback(void *data, xdag_hash_t hash, xdag_amount_
         return 0;
     }
     f.time = time;
+	f.flags = flags;
     f.storage_pos = storage_pos;
     if(d->blocksCount == d->maxBlocksCount) {
         d->maxBlocksCount = (d->maxBlocksCount ? d->maxBlocksCount * 2 : 0x100000);

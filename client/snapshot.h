@@ -8,17 +8,18 @@
 #include "block.h"
 
 struct stats_data {
-    uint64_t height;
-    xtime_t time;
-    xdag_hash_t hash;
-    xdag_diff_t difficulty;
+    uint64_t height; // 8
+    xtime_t time; // 8
+    xdag_hash_t hash; // 32
+    xdag_diff_t difficulty; //16
 };
 
 struct balance_data {
-    xdag_amount_t amount;
-    xtime_t time;
-    xdag_hash_t hash;
-    uint64_t storage_pos;
+    uint16_t flags; // 8bytes
+    xdag_amount_t amount; //8bytes
+    xtime_t time; //8bytes
+    xdag_hash_t hash; //32bytes
+    uint64_t storage_pos; //8
 };
 
 struct snapshot_balances_data {
