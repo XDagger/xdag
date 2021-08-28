@@ -107,6 +107,7 @@ struct block_internal {
     atomic_uintptr_t remark;
     uint16_t flags, in_mask, n_our_key;
     uint8_t nlinks:4, max_diff_link:4, reserved;
+	xdag_hash_t seed;
 };
 
 #define xdag_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)

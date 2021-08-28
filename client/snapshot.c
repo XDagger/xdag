@@ -6,6 +6,8 @@
 #include "utils/log.h"
 #include "snapshot.h"
 #include "global.h"
+#include "rx_hash.h"
+
 
 MDB_env *g_mdb_pub_key_env;
 MDB_env *g_mdb_balance_env;
@@ -114,6 +116,23 @@ int snapshot_stats() {
             printf("mdb put main block %d error\n", snapshot_height-i);
             return -1;
         }
+    }
+
+    uint64_t seed_epoch = g_xdag_testnet ? SEEDHASH_EPOCH_TESTNET_BLOCKS : SEEDHASH_EPOCH_BLOCKS;
+    uint64_t lag = g_xdag_testnet?SEEDHASH_EPOCH_TESTNET_LAG:SEEDHASH_EPOCH_LAG;
+    char key_val[32] = {0};
+    mdb_key.mv_data = key_val;
+    sprintf(key_val, "pre_seed");
+    mdb_key.mv_size = strlen(key_val);
+    xdag_hash_t hash = {0};
+    memcpy(hash, block_by_height(snapshot_height-seed_epoch-lag-1)->hash, sizeof(xdag_hashlow_t));
+    memcpy(mdb_data.mv_data,bi->seed,sizeof(xdag_hash_t));
+    mdb_data.mv_size = sizeof(xdag_hash_t);
+    printf("mdb put seed %016llx%016llx%016llx%016llx\n",
+		(unsigned long long)bi->seed[3], (unsigned long long)bi->seed[2], (unsigned long long)bi->seed[1], (unsigned long long)bi->seed[0]);
+    res = mdb_put(g_mdb_balance_txn, g_stats_dbi, &mdb_key, &mdb_data, MDB_NOOVERWRITE);
+    if(res) {
+        return -1;
     }
 
     return 0;

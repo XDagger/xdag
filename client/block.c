@@ -124,7 +124,7 @@ int32_t check_signature_out(struct block_internal*, struct xdag_public_key*, con
 static int32_t find_and_verify_signature_out(xdag_hash_t block_hash, struct xdag_block*, struct xdag_public_key*, const int);
 int do_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t send_time);
 int do_rx_mining(struct xdag_block *block, struct block_internal **pretop, xtime_t send_time);
-xdag_diff_t rx_hash_difficulty(struct xdag_block *block, xdag_frame_t t, xdag_hash_t hash);
+xdag_diff_t rx_hash_difficulty(struct xdag_block *block, xdag_frame_t t, xdag_hash_t hash, struct block_internal *b);
 void remove_orphan(struct block_internal*,int);
 void add_orphan(struct block_internal*,struct xdag_block*);
 static inline size_t remark_acceptance(xdag_remark_t);
@@ -704,7 +704,7 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 
 	keysCount = j;
     if (is_randomx_fork(MAIN_TIME(tmpNodeBlock.time)) && (tmpNodeBlock.time & 0xffff) == 0xffff) {
-        tmpNodeBlock.difficulty = diff0 = rx_hash_difficulty(newBlock, MAIN_TIME(tmpNodeBlock.time),tmpNodeBlock.hash);
+        tmpNodeBlock.difficulty = diff0 = rx_hash_difficulty(newBlock, MAIN_TIME(tmpNodeBlock.time),tmpNodeBlock.hash,&tmpNodeBlock);
     } else {
         tmpNodeBlock.difficulty = diff0 = xdag_hash_difficulty(tmpNodeBlock.hash);
     }
@@ -1814,6 +1814,8 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	// todo: display main block randomx hash instead of  dsha256
     fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 		(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
+		fprintf(out, "      seed: %016llx%016llx%016llx%016llx\n",
+		(unsigned long long)bi->seed[3], (unsigned long long)bi->seed[2], (unsigned long long)bi->seed[1], (unsigned long long)bi->seed[0]);
 	fprintf(out, "    remark: %s\n", get_remark(bi));
 	fprintf(out, "difficulty: %llx%016llx\n", xdag_diff_args(bi->difficulty));
 	xdag_hash2address(h, address);
@@ -2407,12 +2409,12 @@ static inline void remove_ourblock(struct block_internal *nodeBlock){
 }
 
 // block difficulty by randomx hash
-xdag_diff_t rx_hash_difficulty(struct xdag_block *block, xdag_frame_t t, xdag_hash_t sha_hash) {
+xdag_diff_t rx_hash_difficulty(struct xdag_block *block, xdag_frame_t t, xdag_hash_t sha_hash, struct block_internal *b) {
     xdag_hash_t rx_hash_data[2];
     xdag_rx_pre_hash(block,sizeof(struct xdag_block) - 1 * sizeof(struct xdag_field),rx_hash_data[0]);
     memcpy(rx_hash_data[1], block->field[XDAG_BLOCK_FIELDS-1].data, sizeof(struct xdag_field));
     xdag_hash_t rx_hash;
-    if (rx_block_hash(rx_hash_data, sizeof(rx_hash_data), t, rx_hash) == 0) {
+    if (rx_block_hash(rx_hash_data, sizeof(rx_hash_data), t, rx_hash, b) == 0) {
         xdag_info("rx hash for diff: %016llx%016llx%016llx%016llx t=%llx",
                   rx_hash[3], rx_hash[2], rx_hash[1], rx_hash[0], t);
         //store main block randomx hash
