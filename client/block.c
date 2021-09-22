@@ -134,6 +134,7 @@ static inline int get_nfield(struct xdag_block*, int);
 static inline const char* get_remark(struct block_internal*);
 static int load_remark(struct block_internal*);
 static void order_ourblocks_by_amount(struct block_internal *bi);
+static void order_ourblocks_by_time(struct block_internal *bi);
 static inline void add_ourblock(struct block_internal *nodeBlock);
 static inline void remove_ourblock(struct block_internal *nodeBlock);
 extern void *sync_thread(void *arg);
@@ -1814,6 +1815,8 @@ int xdag_print_block_info(xdag_hash_t hash, FILE *out)
 	// todo: display main block randomx hash instead of  dsha256
     fprintf(out, "      hash: %016llx%016llx%016llx%016llx\n",
 		(unsigned long long)h[3], (unsigned long long)h[2], (unsigned long long)h[1], (unsigned long long)h[0]);
+	fprintf(out, "  top hash: %016llx%016llx%016llx%016llx\n",
+		(unsigned long long)top_main_chain->hash[3], (unsigned long long)top_main_chain->hash[2], (unsigned long long)top_main_chain->hash[1], (unsigned long long)top_main_chain->hash[0]);
 		fprintf(out, "      seed: %016llx%016llx%016llx%016llx\n",
 		(unsigned long long)bi->seed[3], (unsigned long long)bi->seed[2], (unsigned long long)bi->seed[1], (unsigned long long)bi->seed[0]);
 	fprintf(out, "    remark: %s\n", get_remark(bi));
@@ -2386,6 +2389,27 @@ void order_ourblocks_by_amount(struct block_internal *bi)
 		*(ti->ournext ? &ti->ournext->ourprev : &ourlast) = ti;
 	}
  	while ((ti = bi->ournext) && bi->amount < ti->amount) {
+		bi->ournext = ti->ournext;
+		ti->ourprev = bi->ourprev;
+		bi->ourprev = ti;
+		ti->ournext = bi;
+		*(bi->ournext ? &bi->ournext->ourprev : &ourlast) = bi;
+		*(ti->ourprev ? &ti->ourprev->ournext : &ourfirst) = ti;
+	}
+ }
+
+ void order_ourblocks_by_time(struct block_internal *bi)
+{
+	struct block_internal *ti;
+	while ((ti = bi->ourprev) && bi->time > ti->time) {
+		bi->ourprev = ti->ourprev;
+		ti->ournext = bi->ournext;
+		bi->ournext = ti;
+		ti->ourprev = bi;
+		*(bi->ourprev ? &bi->ourprev->ournext : &ourfirst) = bi;
+		*(ti->ournext ? &ti->ournext->ourprev : &ourlast) = ti;
+	}
+ 	while ((ti = bi->ournext) && bi->time < ti->time) {
 		bi->ournext = ti->ournext;
 		ti->ourprev = bi->ourprev;
 		bi->ourprev = ti;

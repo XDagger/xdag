@@ -259,11 +259,6 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
                             g_make_snapshot = 1;
                             printf("  snapshot height:%d, steps:%d, extra height: %d, steps_height[0]:%d \n",
                                    g_snapshot_height, g_snapshot_steps, g_snapshot_extra_height,g_steps_height[0]);
-							if(is_wallet()) {
-          						// rx_init_flags(1, mining_threads_count);
-							} else {	
-            					rx_init_flags((int)g_xdag_rx_mode, 0);
-							}
                             return make_snapshot();
                         }
                     }
