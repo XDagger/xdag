@@ -264,9 +264,9 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
                             if(g_xdag_mine_type == XDAG_RANDOMX){
                                         rx_init_flags((int)g_xdag_rx_mode, 0);
                             }
-                            if(setup_pool(&parameters) < 0) {
-                            			return -1;
-                            }
+                            // if(setup_pool(&parameters) < 0) {
+                            // 			return -1;
+                            // }
                             return make_snapshot();
                         }
                     }
