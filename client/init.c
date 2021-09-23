@@ -259,6 +259,14 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
                             g_make_snapshot = 1;
                             printf("  snapshot height:%d, steps:%d, extra height: %d, steps_height[0]:%d \n",
                                    g_snapshot_height, g_snapshot_steps, g_snapshot_extra_height,g_steps_height[0]);
+
+                            // randomx
+                            if(g_xdag_mine_type == XDAG_RANDOMX){
+                                        rx_init_flags((int)g_xdag_rx_mode, 0);
+                            }
+                            if(setup_pool(&parameters) < 0) {
+                            			return -1;
+                            }
                             return make_snapshot();
                         }
                     }
