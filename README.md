@@ -98,6 +98,12 @@ Maintainers:
 
 Code Contributors:
 ---------------
+
+<a href = "https://github.com/XDagger/xdag/graphs/contributors">
+  <img src = "https://contrib.rocks/image?repo=XDagger/xdag"/>
+</a>
+
+
 * [trueserve](https://github.com/trueserve)
 * [sgaragagghu](https://github.com/sgaragagghu)
 * [Sofarlemineur](https://github.com/Sofarlemineur)
