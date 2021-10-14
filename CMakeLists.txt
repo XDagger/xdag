@@ -14,6 +14,7 @@ enable_language(C ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS "-std=gnu11 -O3 -g -Wall -Wmissing-prototypes -Wno-unused-result")
+set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
 
 #set(ENV{PKG_CONFIG_PATH} secp256k1)
 if ( NOT DEFINED ENV{SECP256K1_ROOT_DIR})
@@ -116,8 +117,8 @@ target_link_libraries(
   ${PROJECT_NAME}
   OpenSSL::SSL
   OpenSSL::Crypto
-  -L${SECP256K1_LIBDIR} ${SECP256K1_LIBRARIES}
-  -L${RANDOMX_LIBDIR} ${RANDOMX_LIBRARIES}
+  ${SECP256K1_LIBDIR}/libsecp256k1.a  
+  ${RANDOMX_LIBDIR}/librandomx.a 
   m
   -lstdc++
 )
