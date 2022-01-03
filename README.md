@@ -49,7 +49,7 @@ Daggers are mined in every main block. There are three periods of mining:
 | Block #1 to #1,017,322 | Block #1,017,323 | Each 2,097,152 blocks |
 | 1024 XDAG each block | 128 XDAG each block | 64 * (1/2)^n XDAG each block |
 
-The maximum XDAG supply is approximately 1.412 billion.
+The maximum XDAG supply is approximately 1.446294144 billion.
 
 Each dagger is equal to power(2,32) cheatoshino.
 Transaction is _valid_ if it is referenced by a main block.
