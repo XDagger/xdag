@@ -14,6 +14,7 @@ enable_language(C ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS "-std=gnu11 -O3 -g -Wall -Wmissing-prototypes -Wno-unused-result")
+set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
 
 #set(ENV{PKG_CONFIG_PATH} secp256k1)
 if ( NOT DEFINED ENV{SECP256K1_ROOT_DIR})

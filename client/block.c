@@ -54,6 +54,10 @@
 #define ORPHAN_HASH_SIZE	2
 #define MAX_ALLOWED_EXTRA	0x10000
 
+// sync problem fork height
+#define SYNC_FIX_HEIGHT 1851869
+#define SYNC_FIX_TESTNET_HEIGHT 0
+
 struct block_backrefs;
 struct orphan_block;
 struct block_internal_index;
@@ -395,9 +399,9 @@ static void set_main(struct block_internal *m)
 static void unset_main(struct block_internal *m)
 {
     xdag_amount_t amount = 0;
-	g_xdag_stats.nmain--;
 	g_xdag_stats.total_nmain--;
     amount = get_amount(g_xdag_stats.nmain);
+	g_xdag_stats.nmain--;
 	m->flags &= ~BI_MAIN;
 	accept_amount(m, (xdag_amount_t)0 - amount);
 	accept_amount(m, unapply_block(m));
@@ -836,7 +840,8 @@ static int add_block_nolock(struct xdag_block *newBlock, xtime_t limit)
 	set_pretop(top_main_chain);
 
 	if(xdag_diff_gt(tmpNodeBlock.difficulty, g_xdag_stats.difficulty)) {
-		uint64_t sync_fork_height = 0;
+
+		uint64_t sync_fork_height = g_xdag_testnet?SYNC_FIX_TESTNET_HEIGHT:SYNC_FIX_HEIGHT;
 
 		/* Only log this if we are NOT loading state */
 		if(g_xdag_state != XDAG_STATE_LOAD)
@@ -1110,6 +1115,49 @@ struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount,
             if (g_rx_pool_mem_index == 0) {
                 g_rx_pool_mem_index = (g_rx_hash_epoch_index - 1) & 1;
             }
+            if(g_rx_pool_mem_index == -1) {
+                struct block_internal * last_main = block_by_height(g_xdag_stats.nmain);
+                xdag_info("*#*top_main_chain time%llx, height%d", top_main_chain->time, top_main_chain->height);
+                xdag_info("*#*g_xdag_stat.nmain time%llx, height%d", last_main->time, last_main->height);
+                int ready_switch = -1;
+                if(g_rx_pool_mem[0].switch_time > g_rx_pool_mem[1].switch_time) {
+                    g_rx_pool_mem[1].is_switched = 1;
+                    if(MAIN_TIME(top_main_chain->time) >= g_rx_pool_mem[0].switch_time) {
+                        g_rx_pool_mem_index = 2;
+                        g_rx_pool_mem[0].is_switched = 1;
+                    } else {
+                        g_rx_pool_mem_index = 1;
+                        g_rx_pool_mem[0].is_switched = 0;
+                        ready_switch = 0;
+                    }
+                } else {  //g_rx_pool_mem[1].switch_time > g_rx_pool_mem[0].switch_time
+                    g_rx_pool_mem[0].is_switched = 1;
+                    if(MAIN_TIME(top_main_chain->time) >= g_rx_pool_mem[1].switch_time) {
+                        g_rx_pool_mem_index = 1;
+                        g_rx_pool_mem[1].is_switched = 1;
+                    } else {
+                        g_rx_pool_mem_index = 2;
+                        g_rx_pool_mem[1].is_switched = 0;
+                        ready_switch = 1;
+                    }
+                }
+                uint64_t seed_epoch = g_xdag_testnet ? SEEDHASH_EPOCH_TESTNET_BLOCKS : SEEDHASH_EPOCH_BLOCKS;
+                if (ready_switch > -1 && MAIN_TIME(send_time) > (g_rx_pool_mem[ready_switch].switch_time + seed_epoch)) {
+                    xdag_frame_t offset = MAIN_TIME(send_time) - MAIN_TIME(top_main_chain->time);
+                    xdag_info("*#*offset : %ld, %d, %ld", offset, ready_switch,  MAIN_TIME(send_time) - (g_rx_pool_mem[ready_switch].switch_time + seed_epoch),
+                              g_rx_pool_mem[0].is_switched);
+                    xdag_info("*#*g_rx_pool_mem[0]:%llx, %d", g_rx_pool_mem[0].switch_time,
+                              g_rx_pool_mem[0].is_switched);
+                    xdag_info("*#*g_rx_pool_mem[1]:%llx, %d", g_rx_pool_mem[1].switch_time,
+                              g_rx_pool_mem[1].is_switched);
+                    g_rx_pool_mem[0].switch_time += offset;
+                    g_rx_pool_mem[1].switch_time += offset;
+                }
+            }
+            xdag_info("*#*g_rx_pool_mem_index:%llu, send_time: %llx", g_rx_pool_mem_index, MAIN_TIME(send_time));
+            xdag_info("*#*g_rx_pool_mem[0]:%llx, %d", g_rx_pool_mem[0].switch_time, g_rx_pool_mem[0].is_switched);
+            xdag_info("*#*g_rx_pool_mem[1]:%llx, %d", g_rx_pool_mem[1].switch_time, g_rx_pool_mem[1].is_switched);
+
             uint64_t rx_mem_index = g_rx_pool_mem_index + 1;
             rx_pool_mem *next_rx_mem = &g_rx_pool_mem[rx_mem_index & 1];
             if(MAIN_TIME(send_time) >= next_rx_mem->switch_time && next_rx_mem->is_switched  == 0) {

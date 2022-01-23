@@ -79,6 +79,7 @@ inline void  rx_set_fork_time(struct block_internal *m) {
             if (xdag_cmphash(next_rx_mem->seed, hash) != 0) {
                 // to avoid main block roll back, get prior 128 height hash as seed
                 memcpy(next_rx_mem->seed, hash, sizeof(xdag_hashlow_t));
+                xdag_info("*#*SEED  %016llx%016llx%016llx", hash[2],hash[1],hash[0]);
                 rx_pool_update_seed(next_mem_index);
             }
             g_rx_hash_epoch_index = next_mem_index;
@@ -173,14 +174,16 @@ void rx_init_flags(int is_full_mem, uint32_t init_thread_count) {
     if (g_randomx_flags & RANDOMX_FLAG_LARGE_PAGES) {
         xdag_info(" - randomx large pages mode");
 #ifdef __linux__
-        unsigned long num = 0;
-        int ret;
-        ret = getHugePageNumber(&num);
-        if (ret == -1 || num < 2560) {
-            rx_abort("randomx: huge page not available.");
-            return;
+        if(!g_xdag_testnet) {
+            unsigned long num = 0;
+            int ret;
+            ret = getHugePageNumber(&num);
+            if (ret == -1 || num < 2560) {
+                rx_abort("randomx: huge page not available.");
+                return;
+            }
+            xdag_info("huge page free = %lu ", num);
         }
-        xdag_info( "huge page free = %lu ", num );
 #endif
     } else {
         xdag_info(" - randomx small pages mode");
@@ -556,6 +559,8 @@ void rx_loading_fork_time(void) {    // node start height greater than g_rx_fork
     struct block_internal* b;
 //    xdag_hashlow_t hash_seed = {0};
     if (g_xdag_stats.nmain >= g_rx_fork_seed_height) {
+        g_rx_hash_epoch_index = 0;
+        g_rx_pool_mem_index = -1;
 
         b = block_by_height(g_rx_fork_seed_height);
         g_rx_fork_time = MAIN_TIME(b->time) + g_rx_fork_lag;
@@ -592,7 +597,11 @@ void rx_loading_fork_time(void) {    // node start height greater than g_rx_fork
                       rx_mem->switch_time);
             rx_pool_update_seed(mem_index);
             g_rx_hash_epoch_index = mem_index;
-            rx_mem->is_switched = 0;
+            if(MAIN_TIME(block_by_height(g_xdag_stats.nmain)->time) >= rx_mem->switch_time) {
+                rx_mem->is_switched = 1;
+            } else {
+                rx_mem->is_switched = 0;
+            }
         }
     }
 }
