@@ -16,11 +16,13 @@
 #define SEEDHASH_EPOCH_BLOCKS   4096
 #define SEEDHASH_EPOCH_LAG      128 // lag time frames
 
-#define SEEDHASH_EPOCH_TESTNET_BLOCKS	64
-#define SEEDHASH_EPOCH_TESTNET_LAG		32
+#define SEEDHASH_EPOCH_TESTNET_BLOCKS	2048
+#define SEEDHASH_EPOCH_TESTNET_LAG		64
 
 #define RANDOMX_FORK_HEIGHT           1540096 // fork seed height, it's time frame + SEEDHASH_EPOCH_LAG = fork time frame
-#define RANDOMX_TESTNET_FORK_HEIGHT   196288 // 196288 % 64 = 0
+// #define RANDOMX_TESTNET_FORK_HEIGHT   184320 // 196288 % 64 = 0
+
+#define RANDOMX_TESTNET_FORK_HEIGHT   4096 // 196288 % 64 = 0
 
 typedef struct rx_pool_memory {
     xdag_hash_t seed;
@@ -58,7 +60,7 @@ extern uint64_t xdag_rx_mine_worker_hash(xdag_hash_t pre_hash, xdag_hash_t last_
 //randomx hash for pool verify mining share
 extern int rx_pool_calc_hash(void* data,size_t data_size,xdag_frame_t task_time,void* output_hash);
 //randomx hash for calculate block difficulty
-extern int rx_block_hash(void* data,size_t data_size,xdag_frame_t block_time,void* output_hash);
+extern int rx_block_hash(void* data,size_t data_size,xdag_frame_t block_time,void* output_hash,struct block_internal *b);
 // create & update pool randomx cache, vm , dataset
 extern int rx_pool_update_seed(uint64_t mem_index);
 // release pool randomx vm, cache and dataset

@@ -107,6 +107,7 @@ struct block_internal {
     atomic_uintptr_t remark;
     uint16_t flags, in_mask, n_our_key;
     uint8_t nlinks:4, max_diff_link:4, reserved;
+	xdag_hash_t seed;
 };
 
 #define xdag_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)
@@ -132,7 +133,7 @@ extern int xdag_traverse_our_blocks(void *data,
 
 // calls callback for each block
 extern int xdag_traverse_all_blocks(void *data, int (*callback)(void *data, xdag_hash_t hash,
-	xdag_amount_t amount, xtime_t time));
+	xdag_amount_t amount, xtime_t time, uint64_t storage_pos, uint16_t flags));
 
 // create a new block
 extern struct xdag_block* xdag_create_block(struct xdag_field *fields, int inputsCount, int outputsCount, int hasRemark, 
@@ -189,6 +190,7 @@ extern int xdag_get_block_info(xdag_hash_t, void *, int (*)(void*, int, xdag_has
 
 struct block_internal *block_by_height(const uint64_t height);
 
+int load_undo_log(int step_height, int recover);
 #ifdef __cplusplus
 };
 #endif

@@ -409,7 +409,7 @@ int rx_pool_calc_hash(void* data,size_t data_size,xdag_frame_t task_time,void* o
 }
 
 // randomx hash for calculate block difficulty used by add_block_nolock
-int rx_block_hash(void* data,size_t data_size,xdag_frame_t block_time,void* output_hash) {
+int rx_block_hash(void* data,size_t data_size,xdag_frame_t block_time,void* output_hash, struct block_internal *b) {
     pthread_rwlock_t *rwlock;
     rx_pool_mem *rx_memory;
 
@@ -434,6 +434,7 @@ int rx_block_hash(void* data,size_t data_size,xdag_frame_t block_time,void* outp
         }
     }
 
+    memcpy(b->seed,rx_memory->seed,sizeof(xdag_hash_t));
     pthread_rwlock_rdlock(rwlock);
     randomx_calculate_hash(rx_memory->block_vm, data, data_size, output_hash);
     pthread_rwlock_unlock(rwlock);

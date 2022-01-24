@@ -219,6 +219,65 @@ int parse_startup_parameters(int argc, char **argv, struct startup_parameters *p
                     return -1;
                 }
             }
+		} else if(ARG_EQUAL(argv[i], "-snapshot", "")){
+            if(++i < argc) {
+                 if(ARG_EQUAL(argv[i], "l", "L")){
+                    if(++i < argc && sscanf(argv[i], "%d", &g_snapshot_height) == 1) {
+                        if (g_snapshot_height <= 1) {
+                            printf(" snapshot height must be greater than 1 \n");
+                            return -1;
+                        }
+                    }else {
+                        printf(" snapshot height needed \n");
+                        return -1;
+                    }
+                    g_load_snapshot = 1;
+                    return load_snapshot();
+                } else if(sscanf(argv[i++], "%d", &g_snapshot_height) == 1) {
+                    if (g_snapshot_height <= 1) {
+                        printf(" snapshot height must be greater than 1 \n");
+                        return -1;
+                    }
+                    if (sscanf(argv[i++], "%d", &g_snapshot_steps) == 1) {
+
+                        if (g_snapshot_steps > 10 || g_snapshot_steps < 1) {
+                            printf(" snapshot steps must be between 1 an 10\n");
+                            return -1;
+                        }
+                        if (sscanf(argv[i], "%d", &g_snapshot_extra_height) == 1) {
+                            if(g_snapshot_extra_height <= 15) {
+                                printf("  snapshot extra height must be greater than 15\n");
+                                return -1;
+                            }
+                            for (int j = 0; j < g_snapshot_steps; j++) {
+                                int step = g_snapshot_height / g_snapshot_steps;
+                                g_steps_height[j] = (j + 1) * step;
+                            }
+                            if (g_snapshot_height % g_snapshot_steps != 0) {
+                                g_steps_height[g_snapshot_steps - 1] = g_snapshot_height;
+                            }
+                            g_make_snapshot = 1;
+                            printf("  snapshot height:%d, steps:%d, extra height: %d, steps_height[0]:%d \n",
+                                   g_snapshot_height, g_snapshot_steps, g_snapshot_extra_height,g_steps_height[0]);
+
+                            // randomx
+                            if(g_xdag_mine_type == XDAG_RANDOMX){
+                                        rx_init_flags((int)g_xdag_rx_mode, 0);
+                            }
+                            // if(setup_pool(&parameters) < 0) {
+                            // 			return -1;
+                            // }
+                            return make_snapshot();
+                        }
+                    }
+                    printf("Illevel use of option -snapshot\n");
+                    return -1;
+                 }
+                printf("Illevel use of option -snapshot\n");
+                return -1;
+            }
+            printf("Illevel use of option -snapshot\n");
+            return -1;
 		} else if(ARG_EQUAL(argv[i], "-r", "")) { /* load blocks and wait for run command */
 			g_xdag_run = 0;
 		} else if(ARG_EQUAL(argv[i], "-s", "")) { /* address of this node */
@@ -508,9 +567,10 @@ void printUsage(char* appName)
 		"  -rpc-port      - set HTTP JSON-RPC port (default is 7667)\n"
 		"  -threads N     - create N transport layer threads for pool (default is 6)\n"
         "  -randomx MODE  - set randomx mode for pool (miners ignore this, always use fast mode), MODE: \n"
-        "                     l - light mode, lower hash speed, less memeory usage(0.5GB),\n"
-        "                     f - fast mode, higher hash speed, more memeory usage(5GB),\n"
+        "                     l - light mode, lower hash speed, less memory usage(0.5GB),\n"
+        "                     f - fast mode, higher hash speed, more memory usage(5GB),\n"
 		"  -dm            - disable mining on pool (-P option is ignored)\n"
-		"  -tag           - tag for pool to distingush pools. Max length is 32 chars\n"
+		"  -tag           - tag for pool to distinguish pools. Max length is 32 chars\n"
+        "  -snapshot N M X   - generate snapshot of all accounts balance at blocks height N with M steps, load X extra height\n"
 		, appName);
 }
