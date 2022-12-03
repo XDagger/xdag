@@ -308,7 +308,7 @@ int pre_init(void)
 	RandAddSeed();
 
 	xdag_mess("Initializing cryptography...");
-	if(xdag_crypt_init(1)) return -1;
+	if(xdag_crypt_init()) return -1;
 	
 	xdag_mess("Starting synchonization engine...");
 	if(xdag_sync_init()) return -1;

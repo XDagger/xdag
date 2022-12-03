@@ -975,7 +975,7 @@ int out_balances()
 	unsigned i = 0;
 	xdag_set_log_level(0);
 	xdag_mem_init((xdag_get_frame() - xdag_get_start_frame()) << 17);
-	xdag_crypt_init(1);
+	xdag_crypt_init();
 	memset(&d, 0, sizeof(struct out_balances_data));
 	xdag_load_blocks(xdag_get_start_frame() << 16, xdag_get_frame() << 16, &i, &add_block_callback_sync);
 	xdag_traverse_all_blocks(&d, out_balances_callback);

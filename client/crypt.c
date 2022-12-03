@@ -39,15 +39,15 @@ uint64_t swapInt64(uint64_t value);
 //extern int OPENSSL_ia32_cpuid(unsigned int *);
 
 // initialization of the encryption system
-int xdag_crypt_init(int withrandom)
+int xdag_crypt_init(void)
 {
-	if(withrandom) {
-		uint64_t buf[64];
-//		OPENSSL_ia32_cpuid(OPENSSL_ia32cap_P);
-		dnet_generate_random_array(buf, sizeof(buf));
-		xdag_debug("Seed  : [%s]", xdag_log_array(buf, sizeof(buf)));
-		RAND_seed(buf, sizeof(buf));
-	}
+//	if(withrandom) {
+//		uint64_t buf[64];
+////		OPENSSL_ia32_cpuid(OPENSSL_ia32cap_P);
+//		dnet_generate_random_array(buf, sizeof(buf));
+//		xdag_debug("Seed  : [%s]", xdag_log_array(buf, sizeof(buf)));
+//		RAND_seed(buf, sizeof(buf));
+//	}
 
 	group = EC_GROUP_new_by_curve_name(NID_secp256k1);
 	if(!group) return -1;
