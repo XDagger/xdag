@@ -84,16 +84,18 @@ extern int xdag_initialize_miner(const char *pool_address)
 
 static int send_to_pool(struct xdag_field *fld, int nfld)
 {
-	struct xdag_field f[XDAG_BLOCK_FIELDS];
+	uint8_t to_send[sizeof(uint32_t) + sizeof(struct xdag_block)];
 	xdag_hash_t h;
 	struct miner *m = &g_local_miner;
-	int todo = nfld * sizeof(struct xdag_field), done = 0;
+	uint32_t todo = nfld * sizeof(struct xdag_field), done = 0;
 
 	if(g_socket < 0) {
 		return -1;
 	}
-
-	memcpy(f, fld, todo);
+	memcpy(to_send, &todo, sizeof(uint32_t));
+	memcpy(to_send + sizeof(uint32_t), fld, todo);
+	todo += sizeof(uint32_t);
+	struct xdag_field* f = (struct xdag_field*) (to_send + sizeof(uint32_t));
 
 	if(nfld == XDAG_BLOCK_FIELDS) {
 		f[0].transport_header = 0;
@@ -125,7 +127,7 @@ static int send_to_pool(struct xdag_field *fld, int nfld)
 
 		if(!(p.revents & POLLOUT)) continue;
 
-		int res = write(g_socket, (uint8_t*)f + done, todo);
+        int res = (int)write(g_socket, to_send + done, todo);
 		if(res <= 0) {
 			return -1;
 		}
