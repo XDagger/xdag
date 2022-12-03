@@ -10,29 +10,44 @@
 #include <openssl/err.h>
 #include <openssl/rand.h>
 #include <openssl/ecdsa.h>
-#include <secp256k1.h>
 #include "crypt.h"
-#include "transport.h"
 #include "utils/log.h"
 #include "system.h"
-
-#if USE_OPTIMIZED_EC == 1 || USE_OPTIMIZED_EC == 2
-secp256k1_context *ctx_noopenssl;
-#endif
+#include "../dnet/dnet_main.h"
+#include "utils/uint256.h"
 
 static EC_GROUP *group;
 
-extern unsigned int xOPENSSL_ia32cap_P[4];
-extern int xOPENSSL_ia32_cpuid(unsigned int *);
+//FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
+static xdag_hash_t secp256k1_ecdsa_const_order = {
+    0xFFFFFFFFFFFFFFFFUL,0xFFFFFFFFFFFFFFFEUL,
+    0xBAAEDCE6AF48A03BUL,0xBFD25E8CD0364141UL
+};
+
+//7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0
+static xdag_hash_t half_ecdsa_const_order = {
+    0x7FFFFFFFFFFFFFFFUL, 0xFFFFFFFFFFFFFFFFUL,
+    0x5D576E7357A4501DUL,0xDFE92F46681B20A0UL
+};
+void reverse(const xdag_hash_t hash, xdag_hash_t target);
+uint64_t swapInt64(uint64_t value);
+
+//extern unsigned int xOPENSSL_ia32cap_P[4];
+//extern int xOPENSSL_ia32_cpuid(unsigned int *);
+
+//extern unsigned int OPENSSL_ia32cap_P[4];
+//extern int OPENSSL_ia32_cpuid(unsigned int *);
 
 // initialization of the encryption system
-int xdag_crypt_init()
+int xdag_crypt_init(int withrandom)
 {
-	xOPENSSL_ia32_cpuid(xOPENSSL_ia32cap_P);
-
-#if USE_OPTIMIZED_EC == 1 || USE_OPTIMIZED_EC == 2
-	ctx_noopenssl = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
-#endif
+	if(withrandom) {
+		uint64_t buf[64];
+//		OPENSSL_ia32_cpuid(OPENSSL_ia32cap_P);
+		dnet_generate_random_array(buf, sizeof(buf));
+		xdag_debug("Seed  : [%s]", xdag_log_array(buf, sizeof(buf)));
+		RAND_seed(buf, sizeof(buf));
+	}
 
 	group = EC_GROUP_new_by_curve_name(NID_secp256k1);
 	if(!group) return -1;
@@ -269,7 +284,8 @@ int xdag_sign(const void *key, const xdag_hash_t hash, xdag_hash_t sign_r, xdag_
 		return -1;
 	}
 
-	p = buf + 3, s = *p++;
+	p = buf + 3;
+	s = *p++;
 
 	if(s >= sizeof(xdag_hash_t)) {
 		memcpy(sign_r, p + s - sizeof(xdag_hash_t), sizeof(xdag_hash_t));
@@ -278,7 +294,8 @@ int xdag_sign(const void *key, const xdag_hash_t hash, xdag_hash_t sign_r, xdag_
 		memcpy((uint8_t*)sign_r + sizeof(xdag_hash_t) - s, p, s);
 	}
 
-	p += s + 1, s = *p++;
+	p += s + 1;
+	s = *p++;
 
 	if(s >= sizeof(xdag_hash_t)) {
 		memcpy(sign_s, p + s - sizeof(xdag_hash_t), sizeof(xdag_hash_t));
@@ -286,6 +303,16 @@ int xdag_sign(const void *key, const xdag_hash_t hash, xdag_hash_t sign_r, xdag_
 		memset(sign_s, 0, sizeof(xdag_hash_t));
 		memcpy((uint8_t*)sign_s + sizeof(xdag_hash_t) - s, p, s);
 	}
+
+    xdag_hash_t temp;
+    reverse(sign_s, temp);
+
+    if (gt256((uint256_t*)temp, (uint256_t*)half_ecdsa_const_order)) {
+        xdag_hash_t new_s;
+        minus256((uint256_t*)secp256k1_ecdsa_const_order, (uint256_t*)temp,
+                 (uint256_t*)new_s);
+        reverse(new_s,sign_s);
+    }
 
 	xdag_debug("Sign  : hash=[%s] sign=[%s] r=[%s], s=[%s]", xdag_log_hash(hash),
 		xdag_log_array(buf, sig_len), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
@@ -318,7 +345,6 @@ static uint8_t *add_number_to_sign(uint8_t *sign, const xdag_hash_t num)
 
 // verify that the signature (sign_r, sign_s) corresponds to a hash 'hash', a version for its own key
 // returns 0 on success
-//static int counter = 0;
 int xdag_verify_signature(const void *key, const xdag_hash_t hash, const xdag_hash_t sign_r, const xdag_hash_t sign_s)
 {
 	uint8_t buf[72], *ptr;
@@ -328,93 +354,30 @@ int xdag_verify_signature(const void *key, const xdag_hash_t hash, const xdag_ha
 	ptr = add_number_to_sign(ptr, sign_s);
 	buf[0] = 0x30;
 	buf[1] = ptr - buf - 2;
-	res = ECDSA_verify(0, (const uint8_t*)hash, sizeof(xdag_hash_t), buf, ptr - buf, (EC_KEY*)key);
+	res = ECDSA_verify(0, (const uint8_t*)hash, sizeof(xdag_hash_t), buf, (int)(ptr - buf), (EC_KEY*)key);
 
-    xdag_debug("Verify: res=%2d key=%lx hash=[%s] sign=[%s] r=[%s], s=[%s]", res, (long)key, xdag_log_hash(hash),
-        xdag_log_array(buf, ptr - buf), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
+	xdag_debug("Verify: res=%2d key=%lx hash=[%s] sign=[%s] r=[%s], s=[%s]", res, (long)key, xdag_log_hash(hash),
+		xdag_log_array(buf, (int)(ptr - buf)), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
 
 	return res != 1;
 }
 
-#if USE_OPTIMIZED_EC == 1 || USE_OPTIMIZED_EC == 2
-
-static uint8_t *add_number_to_sign_optimized_ec(uint8_t *sign, const xdag_hash_t num)
+void reverse(const xdag_hash_t hash, xdag_hash_t target)
 {
-	uint8_t *n = (uint8_t*)num;
-	int i, len, leadzero;
-
-	for(i = 0; i < sizeof(xdag_hash_t) && !n[i]; ++i);
-
-	leadzero = (i < sizeof(xdag_hash_t) && n[i] & 0x80);
-	len = (sizeof(xdag_hash_t) - i) + leadzero;
-	*sign++ = 0x02;
-	if(len)
-		*sign++ = len;
-	else {
-		*sign++ = 1;
-		*sign++ = 0;
-		return sign;
-	}
-
-	if(leadzero) {
-		*sign++ = 0;
-	}
-
-	while(i < sizeof(xdag_hash_t)) {
-		*sign++ = n[i++];
-	}
-
-	return sign;
+    for(int i=0;i<4;i++){
+        target[i] = swapInt64(hash[i]);
+    }
 }
 
-// returns 0 on success
-int xdag_verify_signature_optimized_ec(const void *key, const xdag_hash_t hash, const xdag_hash_t sign_r, const xdag_hash_t sign_s)
-{
-	uint8_t buf_pubkey[sizeof(xdag_hash_t) + 1];
-	secp256k1_pubkey pubkey_noopenssl;
-	size_t pubkeylen = sizeof(xdag_hash_t) + 1;
-	secp256k1_ecdsa_signature sig_noopenssl;
-	secp256k1_ecdsa_signature sig_noopenssl_normalized;
-	int res = 0;
-
-	buf_pubkey[0] = 2 + ((uintptr_t)key & 1);
-	memcpy(&(buf_pubkey[1]), (xdag_hash_t*)((uintptr_t)key & ~1l), sizeof(xdag_hash_t));
-
-	if((res = secp256k1_ec_pubkey_parse(ctx_noopenssl, &pubkey_noopenssl, buf_pubkey, pubkeylen)) != 1) {
-		xdag_debug("Public key parsing failed: res=%2d key parity bit = %ld key=[%s] hash=[%s] r=[%s], s=[%s]", res, ((uintptr_t)key & 1),
-			xdag_log_hash((uint64_t*)((uintptr_t)key & ~1l)), xdag_log_hash(hash), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
-
-	}
-
-	uint8_t sign_buf[72], *ptr;
-
-	ptr = add_number_to_sign_optimized_ec(sign_buf + 2, sign_r);
-	ptr = add_number_to_sign_optimized_ec(ptr, sign_s);
-	sign_buf[0] = 0x30;
-	sign_buf[1] = ptr - sign_buf - 2;
-
-
-	if((res = secp256k1_ecdsa_signature_parse_der(ctx_noopenssl, &sig_noopenssl, sign_buf, ptr - sign_buf)) != 1) {
-		xdag_debug("Signature parsing failed: res=%2d key parity bit = %ld key=[%s] hash=[%s] sign=[%s] r=[%s], s=[%s]", res, ((uintptr_t)key & 1),
-			xdag_log_hash((uint64_t*)((uintptr_t)key & ~1l)), xdag_log_hash(hash),
-			xdag_log_array(sign_buf, ptr - sign_buf), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
-		return 1;
-	}
-
-	// never fail
-	secp256k1_ecdsa_signature_normalize(ctx_noopenssl, &sig_noopenssl_normalized, &sig_noopenssl);
-
-	if((res = secp256k1_ecdsa_verify(ctx_noopenssl, &sig_noopenssl_normalized, (unsigned char*)hash, &pubkey_noopenssl)) != 1) {
-		xdag_debug("Verify failed: res =%2d key parity bit = %ld key=[%s] hash=[%s] sign=[%s] r=[%s], s=[%s]", res, ((uintptr_t)key & 1),
-			xdag_log_hash((uint64_t*)((uintptr_t)key & ~1l)), xdag_log_hash(hash),
-			xdag_log_array(sign_buf, ptr - sign_buf), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
-		return 1;
-	}
-
-	xdag_debug("Verify completed: parity bit = %ld key=[%s] hash=[%s] sign=[%s] r=[%s], s=[%s]", ((uintptr_t)key & 1),
-		xdag_log_hash((uint64_t*)((uintptr_t)key & ~1l)), xdag_log_hash(hash),
-		xdag_log_array(sign_buf, ptr - sign_buf), xdag_log_hash(sign_r), xdag_log_hash(sign_s));
-	return 0;
+uint64_t swapInt64(uint64_t value){
+    uint64_t res = 0;
+    res =   ((value & 0x00000000000000FF) <<56) +
+            ((value & 0x000000000000FF00) <<40) +
+            ((value & 0x0000000000FF0000) <<24) +
+            ((value & 0x00000000FF000000) <<8) +
+            ((value & 0x000000FF00000000) >>8) +
+            ((value & 0x0000FF0000000000) >>24) +
+            ((value & 0x00FF000000000000) >>40) +
+            ((value & 0xFF00000000000000) >>56);
+    return res;
 }
-
-#endif
