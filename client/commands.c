@@ -1036,7 +1036,7 @@ void processHelpCommand(FILE *out)
 		"  state                - print the program state\n"
 		"  stats                - print statistics for loaded and all known blocks\n"
 		"  terminate            - terminate both daemon and this program\n"
-		"  xfer S A R            - transfer S %s to the address A with remark R\n"
+		"  xfer S A R           - transfer S %s to the address A with remark R\n"
 		"  disconnect O [A|IP]  - disconnect all connections or specified miners\n"
 		"                          O is option, can be all, address or ip\n"
 		"                          A is the miners' address\n"
