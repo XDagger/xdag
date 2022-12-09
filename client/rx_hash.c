@@ -131,14 +131,14 @@ void rx_init_flags(int is_full_mem, uint32_t init_thread_count) {
 
     g_randomx_flags = randomx_get_flags();
 
-#if defined (__MACOS__) || defined (__APPLE__)
-#else
-    g_randomx_flags |= RANDOMX_FLAG_LARGE_PAGES;
-#endif
-
-    if (is_full_mem == 1) {
-        g_randomx_flags |= RANDOMX_FLAG_FULL_MEM;
-    }
+//#if defined (__MACOS__) || defined (__APPLE__)
+//#else
+//    g_randomx_flags |= RANDOMX_FLAG_LARGE_PAGES;
+//#endif
+//
+//    if (is_full_mem == 1) {
+//        g_randomx_flags |= RANDOMX_FLAG_FULL_MEM;
+//    }
 
 
     // printf randomx flags info
@@ -171,23 +171,23 @@ void rx_init_flags(int is_full_mem, uint32_t init_thread_count) {
         xdag_info(" - randomx software AES mode");
     }
 
-    if (g_randomx_flags & RANDOMX_FLAG_LARGE_PAGES) {
-        xdag_info(" - randomx large pages mode");
-#ifdef __linux__
-        if(!g_xdag_testnet) {
-            unsigned long num = 0;
-            int ret;
-            ret = getHugePageNumber(&num);
-            if (ret == -1 || num < 2560) {
-                rx_abort("randomx: huge page not available.");
-                return;
-            }
-            xdag_info("huge page free = %lu ", num);
-        }
-#endif
-    } else {
-        xdag_info(" - randomx small pages mode");
-    }
+//    if (g_randomx_flags & RANDOMX_FLAG_LARGE_PAGES) {
+//        xdag_info(" - randomx large pages mode");
+//#ifdef __linux__
+//        if(!g_xdag_testnet) {
+//            unsigned long num = 0;
+//            int ret;
+//            ret = getHugePageNumber(&num);
+//            if (ret == -1 || num < 2560) {
+//                rx_abort("randomx: huge page not available.");
+//                return;
+//            }
+//            xdag_info("huge page free = %lu ", num);
+//        }
+//#endif
+//    } else {
+//        xdag_info(" - randomx small pages mode");
+//    }
 
     if (g_randomx_flags & RANDOMX_FLAG_JIT) {
         xdag_info(" - randomx JIT compiled mode");
